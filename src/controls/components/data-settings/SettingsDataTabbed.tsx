@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { TabbedLayout } from "@/components/LiteChat/common/TabbedLayout";
 import { SettingsDataManagement } from "./SettingsDataManagement";
 import { SettingsConfigSync } from "../config-sync-settings/SettingsConfigSync";
+import { SettingsCrea8Memory } from "./SettingsCrea8Memory";
 
 const SettingsDataTabbedComponent: React.FC = () => {
   const { t } = useTranslation('settings');
@@ -20,6 +21,12 @@ const SettingsDataTabbedComponent: React.FC = () => {
       label: t('dataManagement.tabs.configSync'),
       content: <SettingsConfigSync />,
       order: 2,
+    },
+    {
+      value: "crea8-memory",
+      label: "crea8 Memory",
+      content: <SettingsCrea8Memory />,
+      order: 3,
     },
   ];
 
