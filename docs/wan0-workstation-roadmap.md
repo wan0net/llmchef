@@ -91,8 +91,8 @@ Scope:
   - JSON tree/text preview (implemented as formatted text preview)
   - images, SVG as image when safe, audio, video (implemented)
   - code/text with syntax highlighting (implemented as safe text preview)
-- Add "open preview" action from VFS rows and generated code blocks. (VFS rows implemented)
-- Add "save generated block to VFS and preview" workflow.
+- Add "open preview" action from VFS rows and generated code blocks. (implemented)
+- Add "save generated block to VFS and preview" workflow. (implemented)
 
 Security:
 
