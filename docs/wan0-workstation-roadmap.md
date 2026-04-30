@@ -77,7 +77,7 @@ Acceptance:
 
 ## Feature C: Generated File Previewer
 
-Status: in progress
+Status: done
 
 Goal: Preview generated or VFS files inside LiteChat safely.
 
