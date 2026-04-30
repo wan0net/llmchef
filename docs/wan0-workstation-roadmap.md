@@ -77,13 +77,14 @@ Acceptance:
 
 ## Feature C: Generated File Previewer
 
-Status: planned
+Status: in progress
 
 Goal: Preview generated or VFS files inside LiteChat safely.
 
 Scope:
 
 - Add VFS file preview panel/modal.
+- Add preview type detection and sandbox policy helpers. (implemented)
 - Preview types:
   - HTML in sandboxed iframe
   - Markdown rendered preview
