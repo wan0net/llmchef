@@ -66,6 +66,7 @@ import { RatingActionControlModule } from "@/controls/modules/canvas/RatingActio
 import { EditResponseControlModule } from "@/controls/modules/canvas/EditResponseControlModule";
 import { EditCodeBlockControlModule } from "@/controls/modules/canvas/EditCodeBlockControlModule";
 import { PromoteInteractionControlModule } from "@/controls/modules/canvas/PromoteInteractionControlModule";
+import { Crea8MemoryProposalActionControlModule } from "@/controls/modules/canvas/Crea8MemoryProposalActionControlModule";
 import { TableOfContentsControlModule } from "@/controls/modules/canvas/TableOfContentsControlModule";
 // import { ExampleCanvasControlModule } from "@/controls/modules/example";
 import { FoldInteractionControlModule } from "@/controls/modules/canvas/interaction/FoldInteractionControlModule";
@@ -149,6 +150,7 @@ const controlModulesToRegister: ControlModuleConstructor[] = [
   ZipDownloadControlModule, // For InteractionCard header
   TableOfContentsControlModule, // For InteractionCard header
   PromoteInteractionControlModule, // For InteractionCard header
+  Crea8MemoryProposalActionControlModule, // For InteractionCard header
   RegenerateActionControlModule, // For InteractionCard footer
   RaceResultExportControlModule, // For race interaction footer
   RegenerateWithModelActionControlModule, // For InteractionCard footer
