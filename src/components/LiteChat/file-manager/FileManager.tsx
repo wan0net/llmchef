@@ -21,6 +21,15 @@ import { FileManagerToolbar } from "./FileManagerToolbar";
 import { CloneDialog } from "./CloneDialog";
 import { CommitDialog } from "./CommitDialog";
 import * as VfsOps from "@/lib/litechat/vfs-operations";
+import {
+  describeRealFsSyncResult,
+  isRealFsSyncSupported,
+  pickRealDirectory,
+  syncRealDirectoryToVfs,
+  syncRealDirectoryTwoWay,
+  syncVfsToRealDirectory,
+  type RealFsSyncDirection,
+} from "@/lib/litechat/real-fs-sync";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -321,6 +330,71 @@ export const FileManager = memo(() => {
   const handleFolderUploadClick = () => folderInputRef.current?.click();
   const handleArchiveUploadClick = () => archiveInputRef.current?.click();
 
+  const runRealFolderSync = useCallback(
+    async (direction: RealFsSyncDirection) => {
+      if (isAnyOperationLoading || isVfsLoading) return;
+      const fsInstance = useVfsStore.getState().fs;
+      if (!fsInstance) {
+        toast.error(t("fileManager.filesystemNotReady"));
+        return;
+      }
+
+      emitter.emit(vfsEvent.loadingStateChanged, {
+        isLoading: loading,
+        operationLoading: true,
+        error: null,
+      });
+
+      try {
+        const directoryHandle = await pickRealDirectory();
+        const options = { fsInstance, vfsPath: currentPath, directoryHandle };
+        const result =
+          direction === "import"
+            ? await syncRealDirectoryToVfs(options)
+            : direction === "export"
+              ? await syncVfsToRealDirectory(options)
+              : await syncRealDirectoryTwoWay(options);
+
+        toast.success(describeRealFsSyncResult(direction, result));
+        emitter.emit(vfsEvent.fetchNodesRequest, {
+          parentId: currentParentId,
+        });
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("Real folder sync error:", err);
+        toast.error(message);
+      } finally {
+        emitter.emit(vfsEvent.loadingStateChanged, {
+          isLoading: loading,
+          operationLoading: false,
+          error,
+        });
+      }
+    },
+    [
+      currentParentId,
+      currentPath,
+      error,
+      isAnyOperationLoading,
+      isVfsLoading,
+      loading,
+      t,
+    ]
+  );
+
+  const handleRealFolderImport = useCallback(() => {
+    void runRealFolderSync("import");
+  }, [runRealFolderSync]);
+
+  const handleRealFolderExport = useCallback(() => {
+    void runRealFolderSync("export");
+  }, [runRealFolderSync]);
+
+  const handleRealFolderSync = useCallback(() => {
+    void runRealFolderSync("two-way");
+  }, [runRealFolderSync]);
+
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
@@ -514,7 +588,7 @@ export const FileManager = memo(() => {
       );
       setIsCloneDialogOpen(false);
       emitter.emit(vfsEvent.fetchNodesRequest, { parentId: currentParentId });
-    } catch (_err) {
+    } catch {
       // Error handled by gitCloneOp
     } finally {
       setIsCloning(false);
@@ -543,12 +617,12 @@ export const FileManager = memo(() => {
     try {
       await VfsOps.gitCommitOp(commitPath, commitMessage.trim());
       setIsCommitDialogOpen(false);
-    } catch (_err) {
+    } catch {
       // Error handled by gitCommitOp
     } finally {
       setIsCommitting(false);
     }
-  }, [commitPath, commitMessage, loading, fsOperationLoading]);
+  }, [commitPath, commitMessage, loading, fsOperationLoading, t]);
 
   if (isVfsLoading) {
     return (
@@ -600,8 +674,12 @@ export const FileManager = memo(() => {
         handleUploadClick={handleUploadClick}
         handleFolderUploadClick={handleFolderUploadClick}
         handleArchiveUploadClick={handleArchiveUploadClick}
+        handleRealFolderImport={handleRealFolderImport}
+        handleRealFolderExport={handleRealFolderExport}
+        handleRealFolderSync={handleRealFolderSync}
         handleDownloadAll={handleDownloadAll}
         handleCloneClick={handleCloneClick}
+        isRealFsSyncSupported={isRealFsSyncSupported()}
         fileInputRef={fileInputRef}
         folderInputRef={folderInputRef}
         archiveInputRef={archiveInputRef}

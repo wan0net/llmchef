@@ -29,8 +29,12 @@ interface FileManagerToolbarProps {
   handleUploadClick: () => void;
   handleFolderUploadClick: () => void;
   handleArchiveUploadClick: () => void;
+  handleRealFolderImport: () => void;
+  handleRealFolderExport: () => void;
+  handleRealFolderSync: () => void;
   handleDownloadAll: () => void;
   handleCloneClick: () => void;
+  isRealFsSyncSupported: boolean;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   folderInputRef: React.RefObject<HTMLInputElement | null>;
   archiveInputRef: React.RefObject<HTMLInputElement | null>;
@@ -53,8 +57,12 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
   handleUploadClick,
   handleFolderUploadClick,
   handleArchiveUploadClick,
+  handleRealFolderImport,
+  handleRealFolderExport,
+  handleRealFolderSync,
   handleDownloadAll,
   handleCloneClick,
+  isRealFsSyncSupported,
   fileInputRef,
   folderInputRef,
   archiveInputRef,
@@ -251,6 +259,54 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
             )}
             <span className="hidden sm:inline">{t("fileManager.toolbar.zip")}</span>{" "}
             {/* Hide text on small screens */}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleRealFolderImport();
+            }}
+            disabled={isAnyLoading || !isRealFsSyncSupported}
+            className="h-8"
+            title={t("fileManager.toolbar.importRealFolder")}
+            type="button"
+          >
+            <FolderUpIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">{t("fileManager.toolbar.importFolder")}</span>{" "}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleRealFolderExport();
+            }}
+            disabled={isAnyLoading || !isRealFsSyncSupported}
+            className="h-8"
+            title={t("fileManager.toolbar.exportRealFolder")}
+            type="button"
+          >
+            <ArchiveIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">{t("fileManager.toolbar.exportFolder")}</span>{" "}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleRealFolderSync();
+            }}
+            disabled={isAnyLoading || !isRealFsSyncSupported}
+            className="h-8"
+            title={t("fileManager.toolbar.syncRealFolder")}
+            type="button"
+          >
+            <RefreshCwIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">{t("fileManager.toolbar.syncFolder")}</span>{" "}
           </Button>
           <Button
             variant="outline"
