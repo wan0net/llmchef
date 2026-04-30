@@ -151,6 +151,7 @@ export interface FullImportOptions {
   importPromptTemplates: boolean;
   importAgents: boolean;
   importWorkflows: boolean;
+  importSkills: boolean;
 }
 export type FullExportOptions = FullImportOptions;
 

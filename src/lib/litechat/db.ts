@@ -9,6 +9,7 @@ import type { SyncRepo } from "@/types/litechat/sync";
 import type { Project } from "@/types/litechat/project";
 import type { DbRule, DbTag, DbTagRuleLink } from "@/types/litechat/rules";
 import type { DbPromptTemplate } from "@/types/litechat/prompt-template";
+import type { DbSkill } from "@/types/litechat/skill";
 import type { 
   DbMarketplaceSource, 
   DbMarketplaceIndex, 
@@ -47,9 +48,31 @@ export class LiteChatDatabase extends Dexie {
   marketplaceSources!: Table<DbMarketplaceSource, string>;
   marketplaceIndexes!: Table<DbMarketplaceIndex, string>;
   installedMarketplaceItems!: Table<DbInstalledMarketplaceItem, string>;
+  skills!: Table<DbSkill, string>;
 
   constructor() {
     super("LiteChatDatabase_Rewrite_v1");
+    this.version(13).stores({
+      conversations:
+        "++id, title, createdAt, updatedAt, syncRepoId, lastSyncedAt, projectId",
+      interactions:
+        "++id, conversationId, index, type, status, startedAt, parentId, rating",
+      mods: "++id, &name, enabled, loadOrder",
+      appState: "&key",
+      providerConfigs: "++id, &name, type, isEnabled, apiKeyId",
+      apiKeys: "++id, &name",
+      syncRepos: "++id, &name, remoteUrl, username",
+      projects: "++id, &path, parentId, createdAt, updatedAt, name",
+      rules: "++id, &name, type, createdAt, updatedAt, description",
+      tags: "++id, &name, createdAt, updatedAt",
+      tagRuleLinks: "++id, tagId, ruleId, &[tagId+ruleId]",
+      promptTemplates: "++id, &name, createdAt, updatedAt, isPublic",
+      workflows: "++id, &name, createdAt, updatedAt",
+      marketplaceSources: "++id, &name, &url, enabled, createdAt, lastRefreshed",
+      marketplaceIndexes: "++id, sourceId, cachedAt, expiresAt",
+      installedMarketplaceItems: "++id, &packageId, sourceId, installedAt, enabled",
+      skills: "++id, &slug, name, installState, riskLevel, createdAt, updatedAt",
+    });
     // Bump version for rule descriptions
     this.version(12).stores({
       conversations:

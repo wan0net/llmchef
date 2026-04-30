@@ -63,7 +63,7 @@
     "@zenfs/core": "^2.3.5",
     "@zenfs/dom": "^1.1.9",
     "add": "^2.0.6",
-    "ai": "^5.0.0",
+    "ai": "^5.0.52",
     "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

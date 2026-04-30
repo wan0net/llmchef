@@ -9,6 +9,7 @@ import type { SyncRepo } from "@/types/litechat/sync";
 import type { Project } from "@/types/litechat/project";
 import type { DbRule, DbTag, DbTagRuleLink } from "@/types/litechat/rules";
 import type { DbPromptTemplate, PromptTemplate } from "@/types/litechat/prompt-template";
+import type { DbSkill, Skill } from "@/types/litechat/skill";
 import type { DbAppState, DbWorkflow } from "@/lib/litechat/db";
 import type { WorkflowTemplate } from "@/types/litechat/workflow";
 import type { FullExportOptions } from "./import-export.service";
@@ -71,6 +72,7 @@ export interface FullExportData {
   promptTemplates?: any[]; // All prompt templates
   agents?: any[]; // Agents with their tasks
   workflows?: WorkflowTemplate[]; // Workflow templates
+  skills?: Skill[];
 }
 
 export class PersistenceService {
@@ -580,6 +582,9 @@ export class PersistenceService {
     if (options.importWorkflows) {
       exportData.workflows = await this.loadWorkflows();
     }
+    if ((options as any).importSkills) {
+      exportData.skills = await this.loadSkills();
+    }
 
     return exportData;
   }
@@ -599,6 +604,7 @@ export class PersistenceService {
       importPromptTemplates?: boolean;
       importAgents?: boolean;
       importWorkflows?: boolean;
+      importSkills?: boolean;
     }
   ): Promise<void> {
     if (data.version !== 1) {
@@ -623,6 +629,7 @@ export class PersistenceService {
         db.syncRepos,
         db.promptTemplates,
         db.workflows,
+        db.skills,
       ],
       async () => {
         if (options.importSettings) await db.appState.clear();
@@ -670,6 +677,9 @@ export class PersistenceService {
         }
         if (options.importWorkflows) {
           await db.workflows.clear();
+        }
+        if (options.importSkills) {
+          await db.skills.clear();
         }
 
         if (options.importSettings && data.settings) {
@@ -762,6 +772,13 @@ export class PersistenceService {
             updatedAt: new Date(w.updatedAt),
           }));
           await db.workflows.bulkPut(workflowsToImport);
+        }
+        if (options.importSkills && data.skills) {
+          await db.skills.bulkPut(
+            data.skills.map((skill) =>
+              ensureDateFields(skill, ["createdAt", "updatedAt", "installedAt"])
+            ) as DbSkill[]
+          );
         }
       }
     );
@@ -874,6 +891,48 @@ export class PersistenceService {
     }
   }
 
+  // Skills
+  static async loadSkills(): Promise<Skill[]> {
+    try {
+      const skills = await db.skills.orderBy("name").toArray();
+      return skills.map((skill) =>
+        ensureDateFields(skill, ["createdAt", "updatedAt", "installedAt"])
+      ) as Skill[];
+    } catch (error) {
+      console.error("PersistenceService: Error loading skills:", error);
+      throw error;
+    }
+  }
+
+  static async saveSkill(skill: Skill): Promise<string> {
+    try {
+      return await db.skills.put(skill as DbSkill);
+    } catch (error) {
+      console.error("PersistenceService: Error saving skill:", error);
+      throw error;
+    }
+  }
+
+  static async deleteSkill(id: string): Promise<void> {
+    try {
+      await db.skills.delete(id);
+    } catch (error) {
+      console.error("PersistenceService: Error deleting skill:", error);
+      throw error;
+    }
+  }
+
+  static async loadSkillBySlug(slug: string): Promise<Skill | null> {
+    try {
+      const skill = await db.skills.where("slug").equals(slug).first();
+      if (!skill) return null;
+      return ensureDateFields(skill, ["createdAt", "updatedAt", "installedAt"]) as Skill;
+    } catch (error) {
+      console.error("PersistenceService: Error loading skill by slug:", error);
+      throw error;
+    }
+  }
+
   // --- Clear All Data ---
   static async clearAllData(): Promise<void> {
     try {
@@ -896,6 +955,7 @@ export class PersistenceService {
           db.marketplaceSources,
           db.marketplaceIndexes,
           db.installedMarketplaceItems,
+          db.skills,
         ],
         async () => {
           await db.conversations.clear();
@@ -914,6 +974,7 @@ export class PersistenceService {
           await db.marketplaceSources.clear();
           await db.marketplaceIndexes.clear();
           await db.installedMarketplaceItems.clear();
+          await db.skills.clear();
         }
       );
     } catch (error) {
