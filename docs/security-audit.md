@@ -178,6 +178,30 @@ Remaining work:
 - Add tests for ignored names and non-destructive behavior.
 - Add optional dry-run mode.
 
+### crea8 Memory Notes
+
+Files:
+
+- `src/lib/litechat/crea8-memory.ts`
+- `src/store/crea8-memory.store.ts`
+
+Current guardrails:
+
+- crea8 notes are treated as user-editable reference material, not hidden
+  privileged memory.
+- Prompt context includes an explicit injection boundary warning the model not
+  to obey instructions inside notes unless the user asks.
+- AI-originated memory writes are proposals by default, with accept/reject
+  status tracked separately from the durable note.
+
+Remaining work:
+
+- Add user review UI before accepted proposals write to crea8.
+- Keep note search/read access scoped to the selected project or explicitly
+  attached notes.
+- Record source conversation, interaction, skill, and target note references on
+  every accepted memory write.
+
 ### Git Repositories And Credentials
 
 Files:

@@ -152,6 +152,7 @@ export interface FullImportOptions {
   importAgents: boolean;
   importWorkflows: boolean;
   importSkills: boolean;
+  importCrea8MemoryProposals: boolean;
 }
 export type FullExportOptions = FullImportOptions;
 

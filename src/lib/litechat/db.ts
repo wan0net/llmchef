@@ -10,6 +10,7 @@ import type { Project } from "@/types/litechat/project";
 import type { DbRule, DbTag, DbTagRuleLink } from "@/types/litechat/rules";
 import type { DbPromptTemplate } from "@/types/litechat/prompt-template";
 import type { DbSkill } from "@/types/litechat/skill";
+import type { Crea8MemoryProposal } from "@/types/litechat/crea8-memory";
 import type { 
   DbMarketplaceSource, 
   DbMarketplaceIndex, 
@@ -31,6 +32,13 @@ export interface DbWorkflow {
   updatedAt: Date;
 }
 
+export interface DbCrea8MemoryProposal
+  extends Omit<Crea8MemoryProposal, "createdAt" | "updatedAt" | "resolvedAt"> {
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  resolvedAt?: string | Date | null;
+}
+
 export class LiteChatDatabase extends Dexie {
   conversations!: Table<Conversation, string>;
   interactions!: Table<Interaction, string>;
@@ -49,9 +57,33 @@ export class LiteChatDatabase extends Dexie {
   marketplaceIndexes!: Table<DbMarketplaceIndex, string>;
   installedMarketplaceItems!: Table<DbInstalledMarketplaceItem, string>;
   skills!: Table<DbSkill, string>;
+  crea8MemoryProposals!: Table<DbCrea8MemoryProposal, string>;
 
   constructor() {
     super("LiteChatDatabase_Rewrite_v1");
+    this.version(14).stores({
+      conversations:
+        "++id, title, createdAt, updatedAt, syncRepoId, lastSyncedAt, projectId",
+      interactions:
+        "++id, conversationId, index, type, status, startedAt, parentId, rating",
+      mods: "++id, &name, enabled, loadOrder",
+      appState: "&key",
+      providerConfigs: "++id, &name, type, isEnabled, apiKeyId",
+      apiKeys: "++id, &name",
+      syncRepos: "++id, &name, remoteUrl, username",
+      projects: "++id, &path, parentId, createdAt, updatedAt, name",
+      rules: "++id, &name, type, createdAt, updatedAt, description",
+      tags: "++id, &name, createdAt, updatedAt",
+      tagRuleLinks: "++id, tagId, ruleId, &[tagId+ruleId]",
+      promptTemplates: "++id, &name, createdAt, updatedAt, isPublic",
+      workflows: "++id, &name, createdAt, updatedAt",
+      marketplaceSources: "++id, &name, &url, enabled, createdAt, lastRefreshed",
+      marketplaceIndexes: "++id, sourceId, cachedAt, expiresAt",
+      installedMarketplaceItems: "++id, &packageId, sourceId, installedAt, enabled",
+      skills: "++id, &slug, name, installState, riskLevel, createdAt, updatedAt",
+      crea8MemoryProposals:
+        "++id, status, scope, createdAt, updatedAt, resolvedAt",
+    });
     this.version(13).stores({
       conversations:
         "++id, title, createdAt, updatedAt, syncRepoId, lastSyncedAt, projectId",

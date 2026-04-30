@@ -129,10 +129,15 @@ Acceptance:
 
 ## Feature E: crea8 Wiki Interface
 
-Status: planned
+Status: in progress
 
 Goal: Integrate crea8 as the persistent wiki/knowledge surface for LiteChat
 projects.
+
+Memory principle: crea8 notes are the durable memory source of truth. LiteChat
+should not maintain invisible long-term AI memory. AI-learned durable facts
+become proposed crea8 note updates; user edits to crea8 notes override future AI
+behavior.
 
 Scope:
 
@@ -143,6 +148,11 @@ Scope:
 - Browse/search crea8 pages from LiteChat.
 - Attach crea8 pages to prompts.
 - Generate or update crea8 pages from chat outputs and VFS files.
+- Add memory proposal flow:
+  AI proposes a durable memory update, user accepts/edits/rejects, accepted
+  content writes to crea8.
+- Add prompt context retrieval from selected crea8 notes with prompt-injection
+  boundaries.
 - Add workflows:
   - summarize chat into project page
   - publish generated docs to crea8
@@ -153,6 +163,7 @@ Acceptance:
 - A project can link to a crea8 space.
 - A user can browse and attach wiki pages to a prompt.
 - A user can publish a markdown summary from a chat to crea8.
+- Durable AI memory is visible as crea8 notes, not hidden app state.
 
 ## Feature F: Security Audit And Dependency Upgrade
 
@@ -196,9 +207,10 @@ Acceptance:
 5. Console workbench shell: interface mode and layout.
 6. Link42/crea8 theme refactor: tokens and wan0 console theme.
 7. Skill repo import: clone/scan/install flow.
-8. crea8 read connector: browse/search/attach wiki pages.
-9. crea8 write workflows: publish summaries/generated docs.
-10. Full security pass: dependency upgrades, threat-model closure, final hardening.
+8. crea8 memory foundation: note/proposal types and prompt-context contract.
+9. crea8 read connector: browse/search/attach wiki pages.
+10. crea8 write workflows: accept memory proposals and publish summaries/docs.
+11. Full security pass: dependency upgrades, threat-model closure, final hardening.
 
 ## Working Notes
 

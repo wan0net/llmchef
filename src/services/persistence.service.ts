@@ -10,7 +10,8 @@ import type { Project } from "@/types/litechat/project";
 import type { DbRule, DbTag, DbTagRuleLink } from "@/types/litechat/rules";
 import type { DbPromptTemplate, PromptTemplate } from "@/types/litechat/prompt-template";
 import type { DbSkill, Skill } from "@/types/litechat/skill";
-import type { DbAppState, DbWorkflow } from "@/lib/litechat/db";
+import type { Crea8MemoryProposal } from "@/types/litechat/crea8-memory";
+import type { DbAppState, DbCrea8MemoryProposal, DbWorkflow } from "@/lib/litechat/db";
 import type { WorkflowTemplate } from "@/types/litechat/workflow";
 import type { FullExportOptions } from "./import-export.service";
 import type { 
@@ -73,6 +74,7 @@ export interface FullExportData {
   agents?: any[]; // Agents with their tasks
   workflows?: WorkflowTemplate[]; // Workflow templates
   skills?: Skill[];
+  crea8MemoryProposals?: Crea8MemoryProposal[];
 }
 
 export class PersistenceService {
@@ -585,6 +587,9 @@ export class PersistenceService {
     if ((options as any).importSkills) {
       exportData.skills = await this.loadSkills();
     }
+    if ((options as any).importCrea8MemoryProposals) {
+      exportData.crea8MemoryProposals = await this.loadCrea8MemoryProposals();
+    }
 
     return exportData;
   }
@@ -605,6 +610,7 @@ export class PersistenceService {
       importAgents?: boolean;
       importWorkflows?: boolean;
       importSkills?: boolean;
+      importCrea8MemoryProposals?: boolean;
     }
   ): Promise<void> {
     if (data.version !== 1) {
@@ -630,6 +636,7 @@ export class PersistenceService {
         db.promptTemplates,
         db.workflows,
         db.skills,
+        db.crea8MemoryProposals,
       ],
       async () => {
         if (options.importSettings) await db.appState.clear();
@@ -680,6 +687,9 @@ export class PersistenceService {
         }
         if (options.importSkills) {
           await db.skills.clear();
+        }
+        if (options.importCrea8MemoryProposals) {
+          await db.crea8MemoryProposals.clear();
         }
 
         if (options.importSettings && data.settings) {
@@ -778,6 +788,20 @@ export class PersistenceService {
             data.skills.map((skill) =>
               ensureDateFields(skill, ["createdAt", "updatedAt", "installedAt"])
             ) as DbSkill[]
+          );
+        }
+        if (
+          options.importCrea8MemoryProposals &&
+          data.crea8MemoryProposals
+        ) {
+          await db.crea8MemoryProposals.bulkPut(
+            data.crea8MemoryProposals.map((proposal) =>
+              ensureDateFields(proposal, [
+                "createdAt",
+                "updatedAt",
+                "resolvedAt",
+              ])
+            ) as DbCrea8MemoryProposal[]
           );
         }
       }
@@ -933,6 +957,44 @@ export class PersistenceService {
     }
   }
 
+  // crea8 Memory Proposals
+  static async loadCrea8MemoryProposals(): Promise<Crea8MemoryProposal[]> {
+    try {
+      const proposals = await db.crea8MemoryProposals
+        .orderBy("updatedAt")
+        .reverse()
+        .toArray();
+      return proposals.map((proposal) =>
+        ensureDateFields(proposal, ["createdAt", "updatedAt", "resolvedAt"])
+      ) as Crea8MemoryProposal[];
+    } catch (error) {
+      console.error("PersistenceService: Error loading crea8 memory proposals:", error);
+      throw error;
+    }
+  }
+
+  static async saveCrea8MemoryProposal(
+    proposal: Crea8MemoryProposal
+  ): Promise<string> {
+    try {
+      return await db.crea8MemoryProposals.put(
+        proposal as DbCrea8MemoryProposal
+      );
+    } catch (error) {
+      console.error("PersistenceService: Error saving crea8 memory proposal:", error);
+      throw error;
+    }
+  }
+
+  static async deleteCrea8MemoryProposal(id: string): Promise<void> {
+    try {
+      await db.crea8MemoryProposals.delete(id);
+    } catch (error) {
+      console.error("PersistenceService: Error deleting crea8 memory proposal:", error);
+      throw error;
+    }
+  }
+
   // --- Clear All Data ---
   static async clearAllData(): Promise<void> {
     try {
@@ -956,6 +1018,7 @@ export class PersistenceService {
           db.marketplaceIndexes,
           db.installedMarketplaceItems,
           db.skills,
+          db.crea8MemoryProposals,
         ],
         async () => {
           await db.conversations.clear();
@@ -975,6 +1038,7 @@ export class PersistenceService {
           await db.marketplaceIndexes.clear();
           await db.installedMarketplaceItems.clear();
           await db.skills.clear();
+          await db.crea8MemoryProposals.clear();
         }
       );
     } catch (error) {
