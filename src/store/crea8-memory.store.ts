@@ -4,7 +4,9 @@ import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { PersistenceService } from "@/services/persistence.service";
 import { createMemoryProposal } from "@/lib/litechat/crea8-memory";
+import { applyMemoryProposalToConnector } from "@/lib/litechat/crea8-memory-write";
 import type {
+  Crea8MemoryConnector,
   Crea8MemoryProposal,
   Crea8MemoryProposalStatus,
   Crea8MemoryScope,
@@ -34,6 +36,11 @@ interface Crea8MemoryActions {
   resolveProposal: (
     id: string,
     status: Extract<Crea8MemoryProposalStatus, "accepted" | "rejected">,
+    finalContent?: string
+  ) => Promise<void>;
+  acceptProposalWithConnector: (
+    id: string,
+    connector: Crea8MemoryConnector,
     finalContent?: string
   ) => Promise<void>;
   deleteProposal: (id: string) => Promise<void>;
@@ -117,6 +124,30 @@ export const useCrea8MemoryStore = create(
         finalContent,
         resolvedAt: new Date(),
       });
+    },
+
+    acceptProposalWithConnector: async (id, connector, finalContent) => {
+      const existing = get().proposals.find((proposal) => proposal.id === id);
+      if (!existing) throw new Error("Memory proposal not found.");
+
+      try {
+        const updated = await applyMemoryProposalToConnector({
+          proposal: existing,
+          connector,
+          finalContent,
+        });
+
+        set((state) => {
+          const index = state.proposals.findIndex((proposal) => proposal.id === id);
+          if (index !== -1) state.proposals[index] = updated;
+        });
+
+        await PersistenceService.saveCrea8MemoryProposal(updated);
+        toast.success("Memory proposal written to crea8.");
+      } catch (error) {
+        await get().loadProposals();
+        throw error;
+      }
     },
 
     deleteProposal: async (id) => {
