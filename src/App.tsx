@@ -42,6 +42,7 @@ import { AgentControlModule } from "@/controls/modules/AgentControlModule";
 import { WorkflowControlModule } from "@/controls/modules/WorkflowControlModule";
 import { WorkflowDisplayModule } from "@/controls/modules/WorkflowDisplayModule";
 import { OpenRouterProviderControlModule } from "@/controls/modules/OpenRouterProviderControlModule";
+import { Crea8MemoryControlModule } from "@/controls/modules/Crea8MemoryControlModule";
 
 
 // Import new/updated Settings Modules
@@ -115,6 +116,7 @@ const controlModulesToRegister: ControlModuleConstructor[] = [
   WorkflowWebSearchControlModule,
   ImageGenerationControlModule,
   FileControlModule,
+  Crea8MemoryControlModule,
   VfsControlModule,
   RulesControlModule,
   OpenRouterProviderControlModule,
