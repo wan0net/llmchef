@@ -3,6 +3,7 @@
 import type React from "react";
 import type { ModelMessage, Tool } from "ai";
 import { ChatControlStatus } from "./chat";
+import type { Crea8MemoryNoteRef } from "./crea8-memory";
 
 // Define a structure for resolved rule content in metadata
 export interface ResolvedRuleContent {
@@ -33,6 +34,7 @@ export interface PromptTurnObject {
     activeRuleIds?: string[]; // IDs of rules explicitly activated for the turn
     // New field for pre-resolved rule content
     effectiveRulesContent?: ResolvedRuleContent[];
+    crea8MemoryRefs?: Crea8MemoryNoteRef[];
     autoTitleEnabledForTurn?: boolean;
     maxSteps?: number;
   };
@@ -59,6 +61,9 @@ export interface PromptObject {
       path?: string;
     }[];
     modelId?: string;
+    crea8MemoryRefs?: Crea8MemoryNoteRef[];
+    resolvedCrea8MemoryRefs?: Crea8MemoryNoteRef[];
+    failedCrea8MemoryRefs?: Crea8MemoryNoteRef[];
     regeneratedFromId?: string;
     isTitleGeneration?: boolean;
   };

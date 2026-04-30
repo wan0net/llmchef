@@ -3,6 +3,7 @@
 
 import type { PromptTurnObject, PromptObject } from "@/types/litechat/prompt";
 import type { ResolvedRuleContent } from "@/types/litechat/prompt";
+import type { Crea8MemoryNoteRef } from "@/types/litechat/crea8-memory";
 import type { AttachedFileMetadata } from "@/store/input.store";
 import type { Interaction } from "@/types/litechat/interaction";
 import type { ModelMessage, TextPart, ImagePart } from "ai";
@@ -14,6 +15,8 @@ import { useControlRegistryStore } from "@/store/control.store";
 import { buildHistoryMessages } from "@/lib/litechat/ai-helpers";
 import { processFileMetaToUserContent } from "@/lib/litechat/ai-helpers";
 import * as VfsOps from "@/lib/litechat/vfs-operations";
+import { createCrea8VfsConnector } from "@/lib/litechat/crea8-vfs-connector";
+import { resolveCrea8MemoryPromptContext } from "@/lib/litechat/crea8-prompt-context";
 import { useVfsStore } from "@/store/vfs.store";
 import { emitter } from "@/lib/litechat/event-emitter";
 import { vfsEvent } from "@/types/litechat/events/vfs.events";
@@ -185,6 +188,43 @@ ${userContent}`;
 `)}`;
     }
 
+    const crea8MemoryRefs = turnData.metadata?.crea8MemoryRefs ?? [];
+    let resolvedCrea8MemoryRefs: Crea8MemoryNoteRef[] = [];
+    let failedCrea8MemoryRefs: Crea8MemoryNoteRef[] = [];
+
+    if (crea8MemoryRefs.length > 0) {
+      const targetVfsKey = currentProjectId ?? "orphan";
+      try {
+        const fsInstance = await this._ensureVfsReady(targetVfsKey);
+        const connector = createCrea8VfsConnector({
+          rootPath: "/Memory",
+          fsInstance,
+        });
+        const memoryContext = await resolveCrea8MemoryPromptContext({
+          refs: crea8MemoryRefs,
+          connector,
+        });
+
+        resolvedCrea8MemoryRefs = memoryContext.resolvedRefs;
+        failedCrea8MemoryRefs = memoryContext.failedRefs;
+
+        if (memoryContext.context) {
+          baseSystemPrompt = baseSystemPrompt
+            ? `${baseSystemPrompt}
+
+${memoryContext.context}`
+            : memoryContext.context;
+        }
+      } catch (error) {
+        console.warn("[PromptCompilationService] Unable to load crea8 memory.", {
+          targetVfsKey,
+          error,
+        });
+        toast.error("Memory notes unavailable for this prompt.");
+        failedCrea8MemoryRefs = crea8MemoryRefs;
+      }
+    }
+
     // Build final parameters - merge control parameters with turn data parameters
     const finalParameters = {
       temperature: promptState.temperature,
@@ -217,15 +257,35 @@ ${userContent}`;
           effectiveRulesContent: _effectiveRulesContent,
           autoTitleEnabledForTurn,
           ...restMeta
-        }) => ({
-          ...restMeta,
-          effectivelyAppliedTagIds: activeTagIds,
-          effectivelyAppliedRuleIds: activeRuleIds,
-        }))(combinedMetadata ?? {}),
+        }) => {
+          void _turnSystemPrompt;
+          void _effectiveRulesContent;
+          void autoTitleEnabledForTurn;
+
+          return {
+            ...restMeta,
+            effectivelyAppliedTagIds: activeTagIds,
+            effectivelyAppliedRuleIds: activeRuleIds,
+          };
+        })(combinedMetadata ?? {}),
         modelId: (combinedMetadata?.modelId || promptState.modelId) ?? undefined,
-        attachedFiles: turnData.metadata?.attachedFiles?.map(
-          ({ contentBase64, contentText, ...rest }) => rest
-        ),
+        attachedFiles: turnData.metadata?.attachedFiles?.map(({
+          contentBase64,
+          contentText,
+          ...rest
+        }) => {
+          void contentBase64;
+          void contentText;
+
+          return rest;
+        }),
+        ...(crea8MemoryRefs.length > 0
+          ? {
+              crea8MemoryRefs,
+              resolvedCrea8MemoryRefs,
+              failedCrea8MemoryRefs,
+            }
+          : {}),
       },
     };
 
@@ -283,7 +343,7 @@ ${userContent}`;
       const targetVfsKey = currentConversation?.projectId ?? "orphan";
       try {
         vfsInstance = await this._ensureVfsReady(targetVfsKey);
-      } catch (fsError) {
+      } catch {
         toast.error(
           `Filesystem unavailable for key ${targetVfsKey}. VFS files cannot be processed.`
         );
