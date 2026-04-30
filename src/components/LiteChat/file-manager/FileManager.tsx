@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import { useVfsStore } from "@/store/vfs.store";
 import { useShallow } from "zustand/react/shallow";
-import { VfsNode } from "@/types/litechat/vfs";
+import { VfsFile, VfsNode } from "@/types/litechat/vfs";
 import {
   dirname,
   basename,
@@ -35,10 +35,21 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FileManagerList } from "./FileManagerList";
+import { FilePreviewDialog } from "./FilePreviewDialog";
 import { emitter } from "@/lib/litechat/event-emitter";
 import { vfsEvent } from "@/types/litechat/events/vfs.events";
 import type { ModEventPayloadMap } from "@/types/litechat/modding";
 import { useTranslation } from "react-i18next";
+import {
+  inferFilePreviewDescriptor,
+  type FilePreviewDescriptor,
+} from "@/lib/litechat/file-preview";
+
+interface ActiveFilePreview {
+  entry: VfsFile;
+  descriptor: FilePreviewDescriptor;
+  data: Uint8Array;
+}
 
 export const FileManager = memo(() => {
   const { t } = useTranslation("vfs");
@@ -87,6 +98,13 @@ export const FileManager = memo(() => {
   const [isCommitting, setIsCommitting] = useState(false);
   const [isGitOpLoading, setIsGitOpLoading] = useState<Record<string, boolean>>(
     {}
+  );
+  const [activePreview, setActivePreview] = useState<ActiveFilePreview | null>(
+    null
+  );
+  const [isFilePreviewOpen, setIsFilePreviewOpen] = useState(false);
+  const [previewLoadingPath, setPreviewLoadingPath] = useState<string | null>(
+    null
   );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -479,6 +497,53 @@ export const FileManager = memo(() => {
     [loading, error]
   );
 
+  const handlePreview = useCallback(
+    async (entry: VfsNode) => {
+      if (entry.type !== "file" || previewLoadingPath) return;
+
+      const descriptor = inferFilePreviewDescriptor({
+        name: entry.name,
+        path: entry.path,
+        size: entry.size,
+        mimeType: entry.mimeType,
+      });
+
+      if (!descriptor.canPreview) {
+        toast.info(
+          descriptor.reason ??
+            t("fileManager.previewUnavailable", "Preview unavailable.")
+        );
+        return;
+      }
+
+      const fsInstance = useVfsStore.getState().fs;
+      if (!fsInstance) {
+        toast.error(t("fileManager.filesystemNotReady"));
+        return;
+      }
+
+      setPreviewLoadingPath(entry.path);
+      try {
+        const data = await VfsOps.readFileOp(entry.path, {
+          fsInstance,
+          silent: true,
+        });
+        setActivePreview({ entry, descriptor, data });
+        setIsFilePreviewOpen(true);
+      } catch (err) {
+        console.error("Preview error:", err);
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : t("fileManager.previewFailed", "Could not preview file.")
+        );
+      } finally {
+        setPreviewLoadingPath(null);
+      }
+    },
+    [previewLoadingPath, t]
+  );
+
   const handleDownloadAll = useCallback(async () => {
     if (currentNodes.length === 0) return;
     emitter.emit(vfsEvent.loadingStateChanged, {
@@ -704,6 +769,7 @@ export const FileManager = memo(() => {
           cancelCreatingFolder={cancelCreatingFolder}
           handleCreateFolder={handleCreateFolder}
           handleDownload={handleDownload}
+          handlePreview={handlePreview}
           handleDelete={handleDelete}
           setNewName={setNewName}
           setNewFolderName={setNewFolderName}
@@ -715,6 +781,7 @@ export const FileManager = memo(() => {
           handleGitCommit={handleGitCommit}
           handleGitPush={handleGitPush}
           handleGitStatus={handleGitStatus}
+          previewLoadingPath={previewLoadingPath}
         />
       </div>
       <div className="flex-grow overflow-auto block md:hidden">
@@ -734,6 +801,7 @@ export const FileManager = memo(() => {
           cancelCreatingFolder={cancelCreatingFolder}
           handleCreateFolder={handleCreateFolder}
           handleDownload={handleDownload}
+          handlePreview={handlePreview}
           handleDelete={handleDelete}
           setNewName={setNewName}
           setNewFolderName={setNewFolderName}
@@ -745,6 +813,7 @@ export const FileManager = memo(() => {
           handleGitCommit={handleGitCommit}
           handleGitPush={handleGitPush}
           handleGitStatus={handleGitStatus}
+          previewLoadingPath={previewLoadingPath}
         />
       </div>
       <CloneDialog
@@ -766,6 +835,19 @@ export const FileManager = memo(() => {
         setCommitMessage={setCommitMessage}
         isCommitting={isCommitting}
         onSubmitCommit={onSubmitCommit}
+      />
+      <FilePreviewDialog
+        open={isFilePreviewOpen}
+        onOpenChange={setIsFilePreviewOpen}
+        descriptor={activePreview?.descriptor ?? null}
+        data={activePreview?.data ?? null}
+        onDownload={
+          activePreview
+            ? () => {
+                void handleDownload(activePreview.entry);
+              }
+            : undefined
+        }
       />
     </div>
   );

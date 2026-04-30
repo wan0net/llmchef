@@ -83,15 +83,15 @@ Goal: Preview generated or VFS files inside LiteChat safely.
 
 Scope:
 
-- Add VFS file preview panel/modal.
+- Add VFS file preview panel/modal. (implemented)
 - Add preview type detection and sandbox policy helpers. (implemented)
 - Preview types:
-  - HTML in sandboxed iframe
-  - Markdown rendered preview
-  - JSON tree/text preview
-  - images, SVG as image when safe, audio, video
-  - code/text with syntax highlighting
-- Add "open preview" action from VFS rows and generated code blocks.
+  - HTML in sandboxed iframe (implemented)
+  - Markdown rendered preview (implemented as safe text preview)
+  - JSON tree/text preview (implemented as formatted text preview)
+  - images, SVG as image when safe, audio, video (implemented)
+  - code/text with syntax highlighting (implemented as safe text preview)
+- Add "open preview" action from VFS rows and generated code blocks. (VFS rows implemented)
 - Add "save generated block to VFS and preview" workflow.
 
 Security:

@@ -17,6 +17,7 @@ import {
   FolderGitIcon,
   Loader2Icon,
   MoreVerticalIcon,
+  EyeIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -50,6 +51,7 @@ interface FileManagerListProps {
   cancelCreatingFolder: () => void;
   handleCreateFolder: () => void;
   handleDownload: (entry: VfsNode) => void;
+  handlePreview: (entry: VfsNode) => void;
   handleDelete: (entry: VfsNode) => void;
   setNewName: (name: string) => void;
   setNewFolderName: (name: string) => void;
@@ -61,6 +63,7 @@ interface FileManagerListProps {
   handleGitCommit: (path: string) => void;
   handleGitPush: (path: string) => void;
   handleGitStatus: (path: string) => void;
+  previewLoadingPath: string | null;
 }
 
 export const FileManagerList: React.FC<FileManagerListProps> = ({
@@ -79,6 +82,7 @@ export const FileManagerList: React.FC<FileManagerListProps> = ({
   cancelCreatingFolder,
   handleCreateFolder,
   handleDownload,
+  handlePreview,
   handleDelete,
   setNewName,
   setNewFolderName,
@@ -90,6 +94,7 @@ export const FileManagerList: React.FC<FileManagerListProps> = ({
   handleGitCommit,
   handleGitPush,
   handleGitStatus,
+  previewLoadingPath,
 }) => {
   const { t } = useTranslation("vfs");
 
@@ -130,6 +135,7 @@ export const FileManagerList: React.FC<FileManagerListProps> = ({
         const isChecked = selectedFileIds.has(entry.id);
         const isGitRepo = gitRepoStatus[entry.path] ?? false;
         const isDirectory = entry.type === "folder";
+        const isPreviewLoading = previewLoadingPath === entry.path;
         const Icon = isDirectory
           ? isGitRepo
             ? FolderGitIcon
@@ -262,6 +268,19 @@ export const FileManagerList: React.FC<FileManagerListProps> = ({
                     {isDirectory && (
                       <DropdownMenuItem onSelect={() => handleNavigate(entry)}>
                         Open Folder
+                      </DropdownMenuItem>
+                    )}
+                    {!isDirectory && (
+                      <DropdownMenuItem
+                        onSelect={() => handlePreview(entry)}
+                        disabled={isPreviewLoading}
+                      >
+                        {isPreviewLoading ? (
+                          <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <EyeIcon className="mr-2 h-4 w-4" />
+                        )}
+                        Preview
                       </DropdownMenuItem>
                     )}
                     {!isDirectory && (

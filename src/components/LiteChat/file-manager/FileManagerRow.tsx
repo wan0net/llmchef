@@ -19,6 +19,7 @@ import {
   InfoIcon,
   FolderGitIcon,
   Loader2Icon,
+  EyeIcon,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -47,6 +48,7 @@ interface FileManagerRowProps {
   cancelEditing: () => void;
   handleRename: () => void;
   handleDownload: (entry: VfsNode) => void;
+  handlePreview: (entry: VfsNode) => void;
   handleDelete: (entry: VfsNode) => void;
   setNewName: (name: string) => void;
   renameInputRef: React.RefObject<HTMLInputElement | null>;
@@ -55,6 +57,7 @@ interface FileManagerRowProps {
   handleGitCommit: (path: string) => void;
   handleGitPush: (path: string) => void;
   handleGitStatus: (path: string) => void;
+  previewLoadingPath: string | null;
 }
 
 export const FileManagerRow: React.FC<FileManagerRowProps> = ({
@@ -71,6 +74,7 @@ export const FileManagerRow: React.FC<FileManagerRowProps> = ({
   cancelEditing,
   handleRename,
   handleDownload,
+  handlePreview,
   handleDelete,
   setNewName,
   renameInputRef,
@@ -79,9 +83,11 @@ export const FileManagerRow: React.FC<FileManagerRowProps> = ({
   handleGitCommit,
   handleGitPush,
   handleGitStatus,
+  previewLoadingPath,
 }) => {
   const { t } = useTranslation('vfs');
   const isDirectory = entry.type === "folder";
+  const isPreviewLoading = previewLoadingPath === entry.path;
 
   const handleRowClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
     // Prevent navigation/selection if clicking on interactive elements
@@ -230,6 +236,27 @@ export const FileManagerRow: React.FC<FileManagerRowProps> = ({
             </>
           ) : (
             <>
+              {!isDirectory && (
+                <ActionTooltipButton
+                  tooltipText={t('fileList.preview', 'Preview')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePreview(entry);
+                  }}
+                  aria-label={t('fileList.preview', 'Preview')}
+                  disabled={
+                    isOperationLoading || creatingFolder || isPreviewLoading
+                  }
+                  icon={
+                    isPreviewLoading ? (
+                      <Loader2Icon className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <EyeIcon />
+                    )
+                  }
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                />
+              )}
               <ActionTooltipButton
                 tooltipText={t('fileList.rename')}
                 onClick={(e) => {
@@ -375,6 +402,17 @@ export const FileManagerRow: React.FC<FileManagerRowProps> = ({
             disabled={isOperationLoading}
           >
             {isChecked ? t('fileList.contextMenu.deselectFile') : t('fileList.contextMenu.selectFile')}
+          </ContextMenuItem>
+          <ContextMenuItem
+            onSelect={() => handlePreview(entry)}
+            disabled={isOperationLoading || isPreviewLoading}
+          >
+            {isPreviewLoading ? (
+              <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <EyeIcon className="mr-2 h-4 w-4" />
+            )}
+            {t('fileList.contextMenu.preview', 'Preview')}
           </ContextMenuItem>
           <ContextMenuItem
             onSelect={() => startEditing(entry)}

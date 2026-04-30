@@ -32,6 +32,7 @@ interface FileManagerTableProps {
   cancelCreatingFolder: () => void;
   handleCreateFolder: () => void;
   handleDownload: (entry: VfsNode) => void;
+  handlePreview: (entry: VfsNode) => void;
   handleDelete: (entry: VfsNode) => void;
   setNewName: (name: string) => void;
   setNewFolderName: (name: string) => void;
@@ -43,6 +44,7 @@ interface FileManagerTableProps {
   handleGitCommit: (path: string) => void;
   handleGitPush: (path: string) => void;
   handleGitStatus: (path: string) => void;
+  previewLoadingPath: string | null;
 }
 
 export const FileManagerTable: React.FC<FileManagerTableProps> = ({
@@ -62,6 +64,7 @@ export const FileManagerTable: React.FC<FileManagerTableProps> = ({
   cancelCreatingFolder,
   handleCreateFolder,
   handleDownload,
+  handlePreview,
   handleDelete,
   setNewName,
   setNewFolderName,
@@ -73,6 +76,7 @@ export const FileManagerTable: React.FC<FileManagerTableProps> = ({
   handleGitCommit,
   handleGitPush,
   handleGitStatus,
+  previewLoadingPath,
 }) => {
   const { t } = useTranslation("vfs");
   const memoizedEntries = useMemo(() => entries, [entries]);
@@ -133,6 +137,7 @@ export const FileManagerTable: React.FC<FileManagerTableProps> = ({
                 cancelEditing={cancelEditing}
                 handleRename={handleRename}
                 handleDownload={handleDownload}
+                handlePreview={handlePreview}
                 handleDelete={handleDelete}
                 setNewName={setNewName}
                 renameInputRef={renameInputRef}
@@ -141,6 +146,7 @@ export const FileManagerTable: React.FC<FileManagerTableProps> = ({
                 handleGitCommit={handleGitCommit}
                 handleGitPush={handleGitPush}
                 handleGitStatus={handleGitStatus}
+                previewLoadingPath={previewLoadingPath}
               />
             );
           })}
