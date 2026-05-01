@@ -31,6 +31,8 @@ bin/releaser
 
 If `public/pyodide/v0.27.7/full/pyodide.js` is missing, Python runnable blocks will fail closed instead of contacting a CDN.
 
+Python packages are also resolved from the local Pyodide bundle. LLMChef does not fall back to PyPI package installation at runtime.
+
 ## Offline Check
 
 After unzipping `latest.zip`, serve the folder from localhost and open Settings -> Network. Same-origin assets and loopback are allowed by default. Other remote hosts only appear when providers, MCP servers, marketplace sources, remote mods, service URLs, or sync repositories are configured.

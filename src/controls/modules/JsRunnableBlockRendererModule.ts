@@ -4,8 +4,16 @@ import type {
   BlockRenderer,
   BlockRendererContext,
 } from "@/types/litechat/canvas/block-renderer";
-import { JsRunnableBlockRenderer } from "@/components/LiteChat/common/JsRunnableBlockRenderer";
+import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
+
+const JsRunnableBlockRenderer = createLazyBlockRenderer<any>(
+  () =>
+    import("@/components/LiteChat/common/JsRunnableBlockRenderer").then((module) => ({
+      default: module.JsRunnableBlockRenderer,
+    })),
+  "Loading JavaScript renderer...",
+);
 
 const assertLocalUrl = (url: string, label: string): void => {
   const parsed = new URL(url, window.location.origin);

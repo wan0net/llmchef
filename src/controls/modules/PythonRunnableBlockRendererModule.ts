@@ -1,8 +1,16 @@
 import type { ControlModule } from "@/types/litechat/control";
 import type { LiteChatModApi } from "@/types/litechat/modding";
 import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
-import { PythonRunnableBlockRenderer } from "@/components/LiteChat/common/PythonRunnableBlockRenderer";
+import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
+
+const PythonRunnableBlockRenderer = createLazyBlockRenderer<any>(
+  () =>
+    import("@/components/LiteChat/common/PythonRunnableBlockRenderer").then((module) => ({
+      default: module.PythonRunnableBlockRenderer,
+    })),
+  "Loading Python renderer...",
+);
 
 // Control rule prompt for Python runnable blocks
 export const PYTHON_RUNNABLE_CONTROL_PROMPT = `# Python Scientific Computing Environment
@@ -262,4 +270,4 @@ export class PythonRunnableBlockRendererModule implements ControlModule {
       target: previewElement
     };
   }
-} 
+}

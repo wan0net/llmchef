@@ -1,8 +1,16 @@
 import type { ControlModule } from "@/types/litechat/control";
 import type { LiteChatModApi } from "@/types/litechat/modding";
 import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
-import { MermaidBlockRenderer } from "@/components/LiteChat/common/MermaidBlockRenderer";
+import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
+
+const MermaidBlockRenderer = createLazyBlockRenderer<any>(
+  () =>
+    import("@/components/LiteChat/common/MermaidBlockRenderer").then((module) => ({
+      default: module.MermaidBlockRenderer,
+    })),
+  "Loading diagram renderer...",
+);
 
 // Control rule prompt for Mermaid diagrams
 export const MERMAID_CONTROL_PROMPT = `Litechat support MermaidJS diagrams. only valid uncommented diagrams are supported.
@@ -71,4 +79,4 @@ export class MermaidBlockRendererModule implements ControlModule {
       this.unregisterRuleCallback = undefined;
     }
   }
-} 
+}

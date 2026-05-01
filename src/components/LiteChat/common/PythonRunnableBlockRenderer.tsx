@@ -198,22 +198,9 @@ _global_capture = GlobalOutputCapture()
       
       toast.success(`Packages loaded: ${newPackages.join(', ')}`);
     } catch (error) {
-      console.warn("Some packages failed to load via pyodide.loadPackage, trying micropip:", error);
-      
-      // Fallback to micropip for packages not in pyodide
-      try {
-        const micropip = window.pyodide.pyimport("micropip");
-        for (const pkg of newPackages) {
-          await micropip.install(pkg);
-          this.loadedPackages.add(pkg);
-        }
-        window.liteChatPython!.loadedPackages = this.loadedPackages;
-        toast.success(`Packages installed via micropip: ${newPackages.join(', ')}`);
-      } catch (micropipError) {
-        console.error("Failed to install packages:", micropipError);
-        toast.error("Some packages failed to install. Code may not work correctly.");
-        throw micropipError;
-      }
+      console.error("Failed to load local Pyodide packages:", error);
+      toast.error("Some packages are missing from the local Pyodide bundle.");
+      throw error;
     }
   }
 
@@ -412,7 +399,7 @@ const PythonRunnableBlockRendererComponent: React.FC<PythonRunnableBlockRenderer
     // Ensure Python is loaded
     try {
       await pythonManager.ensurePythonLoaded();
-    } catch (error) {
+    } catch {
       setIsRunning(false); // Reset running state on error
       toast.error(t('pythonRunnableBlock.loadFailed'));
       return;
@@ -934,4 +921,4 @@ print("✓ Matplotlib configured for Pyodide with always-present target element"
   );
 };
 
-export const PythonRunnableBlockRenderer = memo(PythonRunnableBlockRendererComponent); 
+export const PythonRunnableBlockRenderer = memo(PythonRunnableBlockRendererComponent);
