@@ -4,6 +4,7 @@ import {
   clearOutboundRequestLog,
   getOutboundHost,
   getOutboundRequestLog,
+  isOutboundHostAllowed,
   subscribeOutboundRequestLog,
 } from "./outbound-policy";
 
@@ -40,6 +41,12 @@ describe("outbound-policy", () => {
     expect(() => getOutboundHost("file:///etc/passwd")).toThrow(
       /Blocked non-HTTP outbound URL/,
     );
+  });
+
+  it("allows exact hosts and subdomains", () => {
+    expect(isOutboundHostAllowed("api.openai.com", ["api.openai.com"])).toBe(true);
+    expect(isOutboundHostAllowed("queue.fal.run", ["fal.run"])).toBe(true);
+    expect(isOutboundHostAllowed("evilfal.run", ["fal.run"])).toBe(false);
   });
 
   it("notifies subscribers when the log changes", () => {

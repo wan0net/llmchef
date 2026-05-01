@@ -23,6 +23,14 @@ const parseHttpUrl = (url: string): URL => {
 
 export const getOutboundHost = (url: string): string => parseHttpUrl(url).host;
 
+const hostMatchesAllowed = (host: string, allowedHost: string): boolean =>
+  host === allowedHost || host.endsWith(`.${allowedHost}`);
+
+export const isOutboundHostAllowed = (
+  host: string,
+  allowedHosts: readonly string[],
+): boolean => allowedHosts.some((allowedHost) => hostMatchesAllowed(host, allowedHost));
+
 export const recordOutboundRequest = (
   url: string,
   purpose: string,
@@ -50,7 +58,7 @@ export const assertAllowedOutboundUrl = (
   allowedHosts?: readonly string[],
 ): string => {
   const parsed = parseHttpUrl(url);
-  if (allowedHosts?.length && !allowedHosts.includes(parsed.host)) {
+  if (allowedHosts?.length && !isOutboundHostAllowed(parsed.host, allowedHosts)) {
     throw new Error(
       `Blocked outbound request for ${purpose}: ${parsed.host} is not in the allowed host list.`,
     );

@@ -4,9 +4,11 @@ import App from "./App.tsx";
 import "./index.css";
 import { enableMapSet } from "immer";
 import { PWAService } from "./services/pwa.service";
+import { installOutboundFetchGuard } from "./services/outbound-fetch-guard.service";
 import "./i18n/config"; // Initialize i18next
 
 enableMapSet();
+installOutboundFetchGuard();
 
 // Initialize PWA service for proper architecture
 PWAService.initialize()
