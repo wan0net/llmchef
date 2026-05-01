@@ -68,7 +68,8 @@ export const parseSkillPackage = (
   files: SkillPackageFile[],
   source: SkillSource
 ): Omit<Skill, "id" | "createdAt" | "updatedAt"> => {
-  const manifestFile = files.find((file) => file.path === MANIFEST_PATH);
+  const safeFiles = validateSkillPackageFiles(files);
+  const manifestFile = safeFiles.find((file) => file.path === MANIFEST_PATH);
   if (!manifestFile) {
     throw new Error(`Skill package requires ${MANIFEST_PATH}.`);
   }
@@ -83,7 +84,7 @@ export const parseSkillPackage = (
     tags: manifest.tags ?? [],
     source,
     manifest,
-    files: sortSkillFiles(files),
+    files: sortSkillFiles(safeFiles),
     installState: "available",
     riskLevel: estimateSkillRisk(manifest),
     installedAt: null,
@@ -98,6 +99,38 @@ export const serializeSkillPackage = (skill: Skill): SkillPackageFile[] =>
     },
     ...skill.files.filter((file) => file.path !== MANIFEST_PATH),
   ]);
+
+export const validateSkillPackageFiles = (
+  files: SkillPackageFile[]
+): SkillPackageFile[] => {
+  const seenPaths = new Set<string>();
+  return files.map((file) => {
+    const path = validateSkillPackagePath(file.path);
+    if (seenPaths.has(path)) {
+      throw new Error(`Skill package contains duplicate file path: ${path}.`);
+    }
+    seenPaths.add(path);
+    return { path, content: file.content };
+  });
+};
+
+export const validateSkillPackagePath = (value: string): string => {
+  const path = value.trim();
+  if (!path) throw new Error("Skill package file path cannot be empty.");
+  if (path.includes("\\")) {
+    throw new Error(`Skill package file path cannot use backslashes: ${path}.`);
+  }
+  if (path.startsWith("/") || /^[a-zA-Z]:/.test(path)) {
+    throw new Error(`Skill package file path must be relative: ${path}.`);
+  }
+
+  const segments = path.split("/");
+  if (segments.some((segment) => !segment || segment === "." || segment === "..")) {
+    throw new Error(`Skill package file path contains unsafe segments: ${path}.`);
+  }
+
+  return path;
+};
 
 export const estimateSkillRisk = (manifest: SkillManifest): SkillRiskLevel => {
   const permissionIds = new Set(
@@ -138,4 +171,4 @@ const normalizePermissions = (value: unknown): SkillPermission[] => {
 };
 
 const sortSkillFiles = (files: SkillPackageFile[]): SkillPackageFile[] =>
-  [...files].sort((a, b) => a.path.localeCompare(b.path));
+  validateSkillPackageFiles(files).sort((a, b) => a.path.localeCompare(b.path));

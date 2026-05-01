@@ -5,6 +5,7 @@ import {
   parseSkillPackage,
   serializeSkillPackage,
   validateSkillManifest,
+  validateSkillPackagePath,
 } from "./skill-package";
 import type { Skill } from "@/types/litechat/skill";
 
@@ -25,6 +26,49 @@ describe("skill-package", () => {
 
     expect(manifest.slug).toBe("my-skill");
     expect(manifest.tags).toEqual(["agent"]);
+  });
+
+  it("rejects unsafe package file paths", () => {
+    expect(validateSkillPackagePath(" prompts/review.md ")).toBe(
+      "prompts/review.md"
+    );
+    expect(() => validateSkillPackagePath("../secret.md")).toThrow(
+      "unsafe segments"
+    );
+    expect(() => validateSkillPackagePath("/absolute.md")).toThrow(
+      "must be relative"
+    );
+    expect(() => validateSkillPackagePath("tools\\run.js")).toThrow(
+      "backslashes"
+    );
+  });
+
+  it("rejects duplicate package file paths", () => {
+    expect(() =>
+      parseSkillPackage(
+        [
+          {
+            path: "skill.json",
+            content: JSON.stringify({
+              schemaVersion: 1,
+              slug: "demo",
+              name: "Demo",
+              description: "Demo skill.",
+              version: "1.0.0",
+            }),
+          },
+          {
+            path: " README.md ",
+            content: "# Demo\n",
+          },
+          {
+            path: "README.md",
+            content: "# Duplicate\n",
+          },
+        ],
+        { type: "local" }
+      )
+    ).toThrow("duplicate file path");
   });
 
   it("parses skill packages and estimates risk from permissions", () => {

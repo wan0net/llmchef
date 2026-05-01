@@ -192,6 +192,7 @@ Scope:
   manifest permissions for skills
   import/install review
   sandboxed previews
+  package path validation for imported skills
   blocked path defaults for real FS sync
   no automatic destructive sync
   explicit consent before tools/mods run privileged behavior
