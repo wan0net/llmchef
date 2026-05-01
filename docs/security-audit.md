@@ -201,6 +201,17 @@ Required guardrails:
 - For model-generated or file-generated HTML, prefer sandboxed iframe preview.
 - Avoid rendering untrusted HTML directly into the app DOM.
 
+Sink inventory:
+
+| File | Source | Sanitizer status | Risk | Next action |
+| --- | --- | --- | --- | --- |
+| `src/components/LiteChat/common/FlowBlockRenderer.tsx` | Flow node labels with embedded image/SVG markup | Uses `DOMPurify.sanitize` with a narrow tag/attribute allowlist | Medium | Add regression tests for blocked event handlers, scripts, and external references. |
+| `src/components/LiteChat/common/MermaidBlockRenderer.tsx` | Mermaid-generated SVG | Mermaid output is injected directly | Medium | Sanitize SVG output or render in an isolated preview frame before treating diagrams from untrusted prompts as safe. |
+| `src/components/ui/chart.tsx` | Local chart CSS variables | App-generated CSS string from chart config | Low | Validate chart color values if chart config can ever come from model/file input. |
+| `src/components/LiteChat/canvas/interaction/AssistantResponse.tsx` | Parsed assistant markdown HTML | Parser output is injected directly | High | Centralize markdown rendering through a sanitizer before DOM insertion. |
+| `src/components/LiteChat/canvas/UserPromptDisplay.tsx` | Parsed user markdown HTML | Parser output is injected directly | Medium | Use the same sanitizer as assistant markdown; user content can include pasted untrusted text/files. |
+| `src/components/LiteChat/canvas/StreamingContentView.tsx` | Parsed streaming markdown and fallback `MarkdownIt().render` | Parser output is injected directly | High | Remove raw fallback or sanitize rendered markdown before insertion. |
+
 ### Skills And Imported Packages
 
 Files:
