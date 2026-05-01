@@ -13,13 +13,13 @@ LLMChef is now positioned as a fork of LiteChat with a CyberChef-style operating
 - The app still has intentional execution surfaces for mods, runnable JavaScript, runnable Python, and generated standalone HTML. Treat these as user-consented execution zones, not passive document rendering.
 - Error reports are redacted before export and link to the LLMChef repository.
 - The MCP bridge allows configured origins only. Defaults include localhost and the project GitHub Pages origin; deployments should narrow this further when possible.
-- `npm audit` currently reports transitive dependency issues in `vite-plugin-node-polyfills` and `mermaid`; there is no clean non-breaking fix for the Mermaid chain yet.
+- `npm audit` currently reports only the transitive Mermaid/UUID issue; there is no clean non-breaking fix for that chain yet.
 
 ## Optimization Review
 
 - The built app is large: the main bundle is roughly 6 MB before gzip, and `dist` is roughly 16 MB after a production build.
 - Mermaid and its diagram dependencies are split into separate chunks, but the app shell still carries a lot of control, provider, and rendering code.
-- The build now uses explicit Vite vendor chunks for React, AI SDK/provider adapters, storage/git, editor, diagram, and UI dependencies. Settings tab bodies and advanced block renderers are lazy-loaded when opened or encountered. Best next reductions are reviewing the need for browser Node polyfills and moving more optional controls behind dynamic imports.
+- The build now uses explicit Vite vendor chunks for React, AI SDK/provider adapters, storage/git, editor, diagram, and UI dependencies. Settings tab bodies and advanced block renderers are lazy-loaded when opened or encountered. Browser Node polyfills were removed after the production build passed without them. Best next reductions are moving more optional controls behind dynamic imports and evaluating Mermaid alternatives.
 - The runnable-code and workflow surfaces should keep their current explicit-user-action model; optimization work should not hide execution behind automatic previews.
 
 ## New Ideas

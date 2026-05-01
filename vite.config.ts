@@ -4,7 +4,6 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { readFileSync, existsSync } from "fs";
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
 // import { analyzer } from 'vite-bundle-analyzer';
 import { VitePWA } from "vite-plugin-pwa";
 
@@ -113,14 +112,6 @@ export default defineConfig({
     react(),
     tailwindcss(),
     buildTimeConfigPlugin(),
-    nodePolyfills({
-      // Whether to polyfill specific globals.
-      globals: {
-        Buffer: true, // can also be 'build', 'dev', or false
-      },
-      // Whether to polyfill `node:` protocol imports.
-      protocolImports: true,
-    }),
     VitePWA({
       registerType: 'prompt',
       devOptions: {

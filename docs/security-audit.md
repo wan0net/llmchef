@@ -54,7 +54,8 @@ Notable direct dependencies in the initial audit:
 - `vite-plugin-pwa >=0.20.0`: high severity through `workbox-build` /
   `@rollup/plugin-terser` / `serialize-javascript`.
 - `vite-plugin-node-polyfills >=0.3.0`: low severity through
-  `node-stdlib-browser` and browser crypto polyfills.
+  `node-stdlib-browser` and browser crypto polyfills. This dependency was
+  later removed after the browser build passed without Node core polyfills.
 
 Notable initial transitive findings:
 
@@ -143,6 +144,30 @@ Remaining dependency findings:
 | --- | --- | --- | --- | --- |
 | Node crypto polyfills | Low | `vite-plugin-node-polyfills -> node-stdlib-browser -> crypto-browserify -> elliptic` | Accepted for now | npm suggests downgrading `vite-plugin-node-polyfills` to `0.2.0`, which is a breaking force fix. Prefer removing/reducing browser node polyfills instead. |
 | Mermaid UUID usage | Moderate | `mermaid-isomorphic -> mermaid -> uuid` | Accepted for now | npm reports no fix available. Risk appears limited unless LLMChef passes attacker-controlled buffers into UUID v3/v5/v6 paths through Mermaid. |
+
+## Dependency Remediation Pass 3
+
+Commands:
+
+```bash
+npm uninstall vite-plugin-node-polyfills
+npm audit
+npm run build
+```
+
+Result:
+
+- Removed the broad browser Node core polyfill plugin and its
+  `node-stdlib-browser -> crypto-browserify -> elliptic` advisory chain.
+- Full `npm audit` now reports only the `mermaid-isomorphic -> mermaid -> uuid`
+  moderate advisory.
+- Production build still passes without explicit Node polyfills.
+
+Remaining dependency findings:
+
+| Area | Severity | Path | Status | Notes |
+| --- | --- | --- | --- | --- |
+| Mermaid UUID usage | Moderate | `mermaid-isomorphic -> mermaid -> uuid` | Accepted for now | npm reports no fix available. Mermaid rendering is lazy-loaded and sanitized, but this dependency should be revisited when Mermaid ships a patched UUID chain or if LLMChef replaces Mermaid rendering. |
 
 ## Runtime Attack Surface
 
