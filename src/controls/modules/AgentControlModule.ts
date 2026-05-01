@@ -8,10 +8,18 @@ import type {
   PromptFormData,
   CompiledPrompt,
 } from "@/types/litechat/prompt-template";
-import { AgentControl } from "@/controls/components/prompt/AgentControl";
+import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { usePromptTemplateStore } from "@/store/prompt-template.store";
 import { useControlRegistryStore } from "@/store/control.store";
 import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+
+const AgentControl = createLazyControlComponent<any>(
+  () =>
+    import("@/controls/components/prompt/AgentControl").then((module) => ({
+      default: module.AgentControl,
+    })),
+  "Loading agents...",
+);
 
 export class AgentControlModule implements ControlModule {
   readonly id = "agent-control";
@@ -369,7 +377,7 @@ export class AgentControlModule implements ControlModule {
     }
   };
 
-  destroy(_modApi: LiteChatModApi): void {
+  destroy(): void {
     // Clean up event listeners
     this.eventUnsubscribers.forEach((unsubscribe) => unsubscribe());
     this.eventUnsubscribers = [];

@@ -19,7 +19,7 @@ LLMChef is now positioned as a fork of LiteChat with a CyberChef-style operating
 
 - The built app is large: the main bundle is roughly 6 MB before gzip, and `dist` is roughly 16 MB after a production build.
 - Mermaid and its diagram dependencies are split into separate chunks, but the app shell still carries a lot of control, provider, and rendering code.
-- The build now uses explicit Vite vendor chunks for React, AI SDK/provider adapters, storage/git, editor, diagram, and UI dependencies. Settings tab bodies, advanced/specialized block renderers, and heavier modal/panel controls are lazy-loaded when opened or encountered. Browser Node polyfills were removed after the production build passed without them. Best next reductions are moving more optional prompt controls behind dynamic imports and evaluating Mermaid alternatives.
+- The build now uses explicit Vite vendor chunks for React, AI SDK/provider adapters, storage/git, editor, diagram, and UI dependencies. Settings tab bodies, optional prompt controls, advanced/specialized block renderers, and heavier modal/panel controls are lazy-loaded when opened or encountered. Browser Node polyfills were removed after the production build passed without them. Best next reductions are evaluating Mermaid alternatives and auditing remaining always-on controls.
 - The runnable-code and workflow surfaces should keep their current explicit-user-action model; optimization work should not hide execution behind automatic previews.
 
 ## New Ideas

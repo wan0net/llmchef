@@ -1,7 +1,7 @@
 import React from "react";
 import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
-import { PromptLibraryControl } from "@/controls/components/prompt/PromptLibraryControl";
+import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { usePromptTemplateStore } from "@/store/prompt-template.store";
 import { interactionEvent } from "@/types/litechat/events/interaction.events";
 import { useInteractionStore } from "@/store/interaction.store";
@@ -9,6 +9,14 @@ import { promptEvent } from "@/types/litechat/events/prompt.events";
 import type { PromptFormData, CompiledPrompt } from "@/types/litechat/prompt-template";
 import { useControlRegistryStore } from "@/store/control.store";
 import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+
+const PromptLibraryControl = createLazyControlComponent<any>(
+  () =>
+    import("@/controls/components/prompt/PromptLibraryControl").then((module) => ({
+      default: module.PromptLibraryControl,
+    })),
+  "Loading prompt library...",
+);
 
 export class PromptLibraryControlModule implements ControlModule {
   readonly id = "core-prompt-library";
@@ -153,4 +161,4 @@ export class PromptLibraryControlModule implements ControlModule {
 
     console.log(`[${this.id}] Destroyed.`);
   }
-} 
+}

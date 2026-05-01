@@ -1,7 +1,7 @@
 import React from "react";
 import { type ControlModule } from "@/types/litechat/control";
 import type { LiteChatModApi } from "@/types/litechat/modding";
-import { RacePromptControl } from "@/controls/components/prompt/RacePromptControl";
+import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { useProviderStore } from "@/store/provider.store";
 import { useInteractionStore } from "@/store/interaction.store";
 import { providerEvent } from "@/types/litechat/events/provider.events";
@@ -16,6 +16,14 @@ import type { Interaction } from "@/types/litechat/interaction";
 import { nanoid } from "nanoid";
 import { emitter } from "@/lib/litechat/event-emitter";
 import { interactionEvent } from "@/types/litechat/events/interaction.events";
+
+const RacePromptControl = createLazyControlComponent<any>(
+  () =>
+    import("@/controls/components/prompt/RacePromptControl").then((module) => ({
+      default: module.RacePromptControl,
+    })),
+  "Loading race controls...",
+);
 
 
 
@@ -923,4 +931,4 @@ ${raceResponses}`;
       },
     });
   }
-} 
+}

@@ -1,12 +1,20 @@
 import React from "react";
 import { type ControlModule } from "@/types/litechat/control";
 import type { LiteChatModApi } from "@/types/litechat/modding";
-import { ImprovePromptControl } from "@/controls/components/prompt/ImprovePromptControl";
+import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { providerEvent } from "@/types/litechat/events/provider.events";
 import { promptEvent } from "@/types/litechat/events/prompt.events";
 import type { ModelListItem } from "@/types/litechat/provider";
 import { PromptEnhancementService } from "@/services/prompt-enhancement.service";
 import { useProviderStore } from "@/store/provider.store";
+
+const ImprovePromptControl = createLazyControlComponent<any>(
+  () =>
+    import("@/controls/components/prompt/ImprovePromptControl").then((module) => ({
+      default: module.ImprovePromptControl,
+    })),
+  "Loading prompt improver...",
+);
 
 export class ImprovePromptControlModule implements ControlModule {
   public readonly id = "improve-prompt-control";
@@ -134,4 +142,4 @@ export class ImprovePromptControlModule implements ControlModule {
       },
     });
   }
-} 
+}
