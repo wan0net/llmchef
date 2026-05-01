@@ -1,8 +1,16 @@
 import type { ControlModule } from "@/types/litechat/control";
 import type { LiteChatModApi } from "@/types/litechat/modding";
 import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
-import { WorkflowBlockRenderer } from "@/components/LiteChat/common/WorkflowBlockRenderer";
+import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
+
+const WorkflowBlockRenderer = createLazyBlockRenderer<any>(
+  () =>
+    import("@/components/LiteChat/common/WorkflowBlockRenderer").then((module) => ({
+      default: module.WorkflowBlockRenderer,
+    })),
+  "Loading workflow renderer...",
+);
 
 // Control rule prompt for Workflow code blocks
 export const WORKFLOW_CONTROL_PROMPT = `LLMChef supports interactive workflow definitions using the \`workflow\` or \`wf\` codeblock. These allow users to save, edit, and run complex multi-step AI workflows directly from the chat interface.

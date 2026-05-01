@@ -1,8 +1,16 @@
 import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi, type ModControlRule } from "@/types/litechat/modding";
 import { type BlockRenderer, type BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
-import { ChartBlockRenderer } from "@/components/LiteChat/common/ChartBlockRenderer";
+import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
+
+const ChartBlockRenderer = createLazyBlockRenderer<any>(
+  () =>
+    import("@/components/LiteChat/common/ChartBlockRenderer").then((module) => ({
+      default: module.ChartBlockRenderer,
+    })),
+  "Loading chart renderer...",
+);
 
 const CHART_CONTROL_PROMPT = `You can generate rich, interactive charts for data visualization. Use the \`chart\` language identifier with a JSON object.
 
@@ -114,7 +122,7 @@ export class ChartBlockRendererModule implements ControlModule {
     private unregisterCallback?: () => void;
     private unregisterRuleCallback?: () => void;
 
-    async initialize(_modApi: LiteChatModApi): Promise<void> {
+    async initialize(): Promise<void> {
         // No async initialization needed
     }
 
@@ -146,8 +154,8 @@ export class ChartBlockRendererModule implements ControlModule {
         this.unregisterRuleCallback = modApi.registerRule(controlRule);
     }
 
-    destroy(_modApi: LiteChatModApi): void {
+    destroy(): void {
         this.unregisterCallback?.();
         this.unregisterRuleCallback?.();
     }
-} 
+}

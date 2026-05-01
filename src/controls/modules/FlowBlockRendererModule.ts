@@ -1,8 +1,16 @@
 import type { ControlModule } from "@/types/litechat/control";
 import type { LiteChatModApi } from "@/types/litechat/modding";
 import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
-import { FlowBlockRenderer } from "@/components/LiteChat/common/FlowBlockRenderer";
+import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
+
+const FlowBlockRenderer = createLazyBlockRenderer<any>(
+  () =>
+    import("@/components/LiteChat/common/FlowBlockRenderer").then((module) => ({
+      default: module.FlowBlockRenderer,
+    })),
+  "Loading flow renderer...",
+);
 
 // Control rule prompt for Flow diagrams
 export const FLOW_CONTROL_PROMPT = `LLMChef supports interactive workflow flow diagrams using the \`flow\` codeblock. These are particularly useful for visualizing workflows, processes, and step-by-step procedures.

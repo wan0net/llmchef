@@ -1,8 +1,16 @@
 import type { ControlModule } from "@/types/litechat/control";
 import type { LiteChatModApi } from "@/types/litechat/modding";
 import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
-import { FormedibleBlockRenderer } from "@/components/LiteChat/common/FormedibleBlockRenderer";
+import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
+
+const FormedibleBlockRenderer = createLazyBlockRenderer<any>(
+  () =>
+    import("@/components/LiteChat/common/FormedibleBlockRenderer").then((module) => ({
+      default: module.FormedibleBlockRenderer,
+    })),
+  "Loading form renderer...",
+);
 
 // Control rule prompt for Formedible code blocks - extracted from system prompt for easy modification
 export const FORMEDIBLE_CONTROL_PROMPT = `For guided deterministic interaction with the user through a form, you can use the \`formedible\` codeblock.
@@ -144,4 +152,4 @@ export class FormedibleBlockRendererModule implements ControlModule {
       this.unregisterRuleCallback = undefined;
     }
   }
-} 
+}

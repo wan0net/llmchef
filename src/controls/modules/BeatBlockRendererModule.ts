@@ -1,8 +1,16 @@
 import type { ControlModule } from "@/types/litechat/control";
 import type { LiteChatModApi } from "@/types/litechat/modding";
 import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
-import { BeatBlockRenderer } from "@/components/LiteChat/common/BeatBlockRenderer";
+import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
+
+const BeatBlockRenderer = createLazyBlockRenderer<any>(
+  () =>
+    import("@/components/LiteChat/common/BeatBlockRenderer").then((module) => ({
+      default: module.BeatBlockRenderer,
+    })),
+  "Loading beat renderer...",
+);
 
 // Control rule prompt for Beat/Strudel blocks
 export const BEAT_STRUDEL_CONTROL_PROMPT = `🎛️ Strudel Beat Composer
