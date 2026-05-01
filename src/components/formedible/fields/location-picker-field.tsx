@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
 
 // Built-in search providers
 const builtInProviders = {
@@ -43,7 +44,11 @@ const builtInProviders = {
     });
 
     try {
-      const response = await fetch(`${endpoint}?${params}`);
+      const requestUrl = assertAllowedOutboundUrl(
+        `${endpoint}?${params}`,
+        "formedible:location-search",
+      );
+      const response = await fetch(requestUrl);
       const data = await response.json();
 
       return data.map((item: any, index: number) => ({
@@ -95,7 +100,11 @@ const builtInProviders = {
     });
 
     try {
-      const response = await fetch(`${endpoint}?${params}`);
+      const requestUrl = assertAllowedOutboundUrl(
+        `${endpoint}?${params}`,
+        "formedible:reverse-geocode",
+      );
+      const response = await fetch(requestUrl);
       const data = await response.json();
 
       return {

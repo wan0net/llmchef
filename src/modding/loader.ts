@@ -10,6 +10,7 @@ import { appEvent } from "@/types/litechat/events/app.events";
 import { createModApi } from "./api-factory";
 import { toast } from "sonner";
 import { emitter } from "@/lib/litechat/event-emitter";
+import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
 
 export async function loadMods(dbMods: DbMod[]): Promise<ModInstance[]> {
   const enabledMods = dbMods.filter((mod) => mod.enabled);
@@ -25,7 +26,11 @@ export async function loadMods(dbMods: DbMod[]): Promise<ModInstance[]> {
             `[ModLoader] Fetching script for ${mod.name} from ${mod.sourceUrl}`
           );
           try {
-            const response = await fetch(mod.sourceUrl);
+            const sourceUrl = assertAllowedOutboundUrl(
+              mod.sourceUrl,
+              `mod:script:${mod.name}`,
+            );
+            const response = await fetch(sourceUrl);
             if (!response.ok) {
               throw new Error(
                 `Failed to fetch mod script: ${response.status} ${response.statusText}`

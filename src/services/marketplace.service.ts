@@ -8,6 +8,7 @@ import type {
 } from "@/types/litechat/marketplace";
 import { emitter } from "@/lib/litechat/event-emitter";
 import { PersistenceService } from "./persistence.service";
+import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
 
 export class MarketplaceService {
   private static instance: MarketplaceService;
@@ -25,7 +26,11 @@ export class MarketplaceService {
    */
   async fetchMarketplaceIndex(source: MarketplaceSource): Promise<MarketplaceIndex> {
     try {
-      const response = await fetch(source.url, {
+      const sourceUrl = assertAllowedOutboundUrl(
+        source.url,
+        `marketplace:index:${source.name}`,
+      );
+      const response = await fetch(sourceUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -106,7 +111,11 @@ export class MarketplaceService {
    */
   async fetchMarketplacePackage(packageUrl: string): Promise<MarketplacePackage> {
     try {
-      const response = await fetch(packageUrl, {
+      const validatedPackageUrl = assertAllowedOutboundUrl(
+        packageUrl,
+        'marketplace:package',
+      );
+      const response = await fetch(validatedPackageUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
