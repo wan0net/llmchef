@@ -8,6 +8,7 @@ import { interactionEvent } from "@/types/litechat/events/interaction.events";
 import { OpenRouterProviderControlTrigger } from "@/controls/components/openrouter/OpenRouterProviderControlTrigger";
 import { useProviderStore } from "@/store/provider.store";
 import { splitModelId } from "@/lib/litechat/provider-helpers";
+import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
 import { toast } from "sonner";
 
 interface OpenRouterEndpointsResponse {
@@ -131,7 +132,11 @@ export class OpenRouterProviderControlModule implements ControlModule {
     this.notifyComponentUpdate?.();
 
     try {
-      const url = `https://openrouter.ai/api/v1/models/${modelId}/endpoints`;
+      const url = assertAllowedOutboundUrl(
+        `https://openrouter.ai/api/v1/models/${modelId}/endpoints`,
+        "openrouter:endpoints",
+        ["openrouter.ai"],
+      );
       const response = await fetch(url);
       
       if (!response.ok) {

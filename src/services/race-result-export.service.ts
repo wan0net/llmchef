@@ -4,6 +4,7 @@
 
 import JSZip from "jszip";
 import type { Interaction } from "@/types/litechat/interaction";
+import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
 
 interface RaceResultData {
   modelName: string;
@@ -122,7 +123,12 @@ export class RaceResultExportService {
       ) as HTMLLinkElement;
       if (prodCssLink) {
         try {
-          const response = await fetch(prodCssLink.href);
+          const cssUrl = assertAllowedOutboundUrl(
+            prodCssLink.href,
+            "race-export:stylesheet",
+            [window.location.host],
+          );
+          const response = await fetch(cssUrl);
           if (response.ok) {
             return await response.text();
           }
@@ -317,8 +323,7 @@ export class RaceResultExportService {
    * Generates an individual model's HTML page
    */
   private static generateModelHtmlPage(
-    data: RaceResultData,
-    _promptText: string = "Race interaction results"
+    data: RaceResultData
   ): string {
     const sanitizedResponse = data.fullResponse
       ? data.fullResponse.replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -837,7 +842,7 @@ export class RaceResultExportService {
 
     // Generate individual model HTML files
     for (const result of results) {
-      const modelHtml = this.generateModelHtmlPage(result, promptText);
+      const modelHtml = this.generateModelHtmlPage(result);
       // Use appropriate filename based on race type
       const fileName = result.isPromptRace 
         ? (result.promptVariantLabel || "unknown").replace(/[^a-zA-Z0-9\-_]/g, '_')
