@@ -43,8 +43,8 @@ interface ProjectSettingsModalProps {
 }
 
 const projectParamsSchema = z.object({
-  temperature: z.number().min(0).max(1),
-  topP: z.number().min(0).max(1),
+  temperature: z.number().min(0).max(1).nullable(),
+  topP: z.number().min(0).max(1).nullable(),
   maxTokens: z.number().min(1).nullable(),
   topK: z.number().min(1).nullable(),
   presencePenalty: z.number().min(-2).max(2),
@@ -140,8 +140,8 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       setDefaultRuleIds(project.defaultRuleIds ?? null);
 
       paramsForm.reset({
-        temperature: project.temperature ?? 0.7,
-        topP: project.topP ?? 1.0,
+        temperature: project.temperature ?? null,
+        topP: project.topP ?? null,
         maxTokens: project.maxTokens ?? null,
         topK: project.topK ?? null,
         presencePenalty: project.presencePenalty ?? 0.0,
@@ -156,8 +156,8 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       setDefaultTagIds(null);
       setDefaultRuleIds(null);
       paramsForm.reset({
-        temperature: 0.7,
-        topP: 1.0,
+        temperature: null,
+        topP: null,
         maxTokens: null,
         topK: null,
         presencePenalty: 0.0,

@@ -1,6 +1,6 @@
 // src/controls/components/assitant/SettingsAssistantParameters.tsx
 // FULL FILE
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "@/store/settings.store";
 import { useShallow } from "zustand/react/shallow";
@@ -29,6 +29,8 @@ const assistantParamsSchema = z.object({
 
 export const SettingsAssistantParameters: React.FC = () => {
   const { t } = useTranslation('assistantSettings');
+  const [temperatureEnabled, setTemperatureEnabled] = useState(false);
+  const [topPEnabled, setTopPEnabled] = useState(false);
   const store = useSettingsStore(
     useShallow((state) => ({
       temperature: state.temperature,
@@ -61,8 +63,8 @@ export const SettingsAssistantParameters: React.FC = () => {
     },
     onSubmit: async ({ value }) => {
       try {
-        store.setTemperature(value.temperature);
-        store.setTopP(value.topP);
+        store.setTemperature(temperatureEnabled ? value.temperature : null);
+        store.setTopP(topPEnabled ? value.topP : null);
         store.setMaxTokens(value.maxTokens ?? null);
         store.setTopK(value.topK ?? null);
         store.setPresencePenalty(value.presencePenalty);
@@ -84,6 +86,8 @@ export const SettingsAssistantParameters: React.FC = () => {
       presencePenalty: store.presencePenalty ?? 0.0,
       frequencyPenalty: store.frequencyPenalty ?? 0.0,
     });
+    setTemperatureEnabled(store.temperature !== null);
+    setTopPEnabled(store.topP !== null);
   }, [
     store.temperature,
     store.topP,
@@ -106,7 +110,27 @@ export const SettingsAssistantParameters: React.FC = () => {
       <p className="text-xs text-muted-foreground mb-3">
         {t('parameters.description')}
       </p>
+
+      <div className="rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+        Enable only the sampling parameters you want sent to the AI provider.
+        If both Temperature and Top P are enabled, Temperature is sent and Top P
+        is omitted because some providers reject both together.
+      </div>
       
+      <div className="flex items-center justify-between gap-3">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={temperatureEnabled}
+            onChange={(event) => setTemperatureEnabled(event.target.checked)}
+            className="h-4 w-4 accent-primary"
+          />
+          Send {t('parameters.temperature')}
+        </label>
+        {!temperatureEnabled && (
+          <span className="text-xs text-muted-foreground">Off</span>
+        )}
+      </div>
       <SliderField
         form={form}
         name="temperature"
@@ -115,9 +139,24 @@ export const SettingsAssistantParameters: React.FC = () => {
         max={1}
         step={0.01}
         valueDisplayPrecision={2}
+        disabled={!temperatureEnabled}
         wrapperClassName="space-y-1.5"
       />
 
+      <div className="flex items-center justify-between gap-3">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={topPEnabled}
+            onChange={(event) => setTopPEnabled(event.target.checked)}
+            className="h-4 w-4 accent-primary"
+          />
+          Send {t('parameters.topP')}
+        </label>
+        {!topPEnabled && (
+          <span className="text-xs text-muted-foreground">Off</span>
+        )}
+      </div>
       <SliderField
         form={form}
         name="topP"
@@ -126,6 +165,7 @@ export const SettingsAssistantParameters: React.FC = () => {
         max={1}
         step={0.01}
         valueDisplayPrecision={2}
+        disabled={!topPEnabled}
         wrapperClassName="space-y-1.5"
       />
 

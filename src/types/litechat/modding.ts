@@ -85,7 +85,7 @@ export interface ReadonlyChatContextSnapshot {
   readonly selectedProviderId: string | null;
   readonly selectedModelId: string | null;
   readonly activeSystemPrompt: string | null;
-  readonly temperature: number;
+  readonly temperature: number | null;
   readonly maxTokens: number | null;
   readonly theme: SettingsState["theme"];
   readonly gitUserName: string | null;

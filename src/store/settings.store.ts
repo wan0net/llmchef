@@ -55,7 +55,7 @@ export interface CustomThemeColors {
 export interface SettingsState {
   theme: Theme;
   globalSystemPrompt: string | null;
-  temperature: number;
+  temperature: number | null;
   maxTokens: number | null;
   topP: number | null;
   topK: number | null;
@@ -128,7 +128,7 @@ export interface SettingsState {
 interface SettingsActions {
   setTheme: (theme: SettingsState["theme"]) => void;
   setGlobalSystemPrompt: (prompt: string | null) => void;
-  setTemperature: (temp: number) => void;
+  setTemperature: (temp: number | null) => void;
   setMaxTokens: (tokens: number | null) => void;
   setTopP: (topP: number | null) => void;
   setTopK: (topK: number | null) => void;
@@ -210,7 +210,7 @@ interface SettingsActions {
 // Define default constants
 const DEFAULT_THEME: Theme = "system";
 const DEFAULT_SYSTEM_PROMPT = BUNDLED_SYSTEM_PROMPT;
-const DEFAULT_TEMPERATURE = 0.7;
+const DEFAULT_TEMPERATURE = null;
 const DEFAULT_MAX_TOKENS = null;
 const DEFAULT_TOP_P = null;
 const DEFAULT_TOP_K = null;

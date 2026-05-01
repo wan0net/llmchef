@@ -21,6 +21,7 @@ import { useVfsStore } from "@/store/vfs.store";
 import { emitter } from "@/lib/litechat/event-emitter";
 import { vfsEvent } from "@/types/litechat/events/vfs.events";
 import { toast } from "sonner";
+import { cleanPromptParameters } from "@/lib/litechat/prompt-parameters";
 
 export class PromptCompilationService {
   /**
@@ -226,7 +227,7 @@ ${memoryContext.context}`
     }
 
     // Build final parameters - merge control parameters with turn data parameters
-    const finalParameters = {
+    const finalParameters = cleanPromptParameters({
       temperature: promptState.temperature,
       max_tokens: promptState.maxTokens,
       top_p: promptState.topP,
@@ -235,14 +236,6 @@ ${memoryContext.context}`
       frequency_penalty: promptState.frequencyPenalty,
       ...controlParameters, // Control parameters override prompt state
       ...(turnData.parameters ?? {}), // Turn data parameters have highest priority
-    };
-    Object.keys(finalParameters).forEach((key) => {
-      if (
-        finalParameters[key as keyof typeof finalParameters] === null ||
-        finalParameters[key as keyof typeof finalParameters] === undefined
-      ) {
-        delete finalParameters[key as keyof typeof finalParameters];
-      }
     });
 
     const promptObject: PromptObject = {

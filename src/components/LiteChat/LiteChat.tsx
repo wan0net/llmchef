@@ -258,12 +258,37 @@ export const LiteChat: React.FC<LiteChatProps> = ({ controls = [] }) => {
       settingsEvent.temperatureChanged,
       updatePromptStateFromEffectiveSettings
     );
+    const unsubTopP = modApi.on(
+      settingsEvent.topPChanged,
+      updatePromptStateFromEffectiveSettings
+    );
+    const unsubMaxTokens = modApi.on(
+      settingsEvent.maxTokensChanged,
+      updatePromptStateFromEffectiveSettings
+    );
+    const unsubTopK = modApi.on(
+      settingsEvent.topKChanged,
+      updatePromptStateFromEffectiveSettings
+    );
+    const unsubPresencePenalty = modApi.on(
+      settingsEvent.presencePenaltyChanged,
+      updatePromptStateFromEffectiveSettings
+    );
+    const unsubFrequencyPenalty = modApi.on(
+      settingsEvent.frequencyPenaltyChanged,
+      updatePromptStateFromEffectiveSettings
+    );
 
     return () => {
       unsubSettings();
       unsubProjectUpdated();
       unsubGlobalSystemPrompt();
       unsubTemperature();
+      unsubTopP();
+      unsubMaxTokens();
+      unsubTopK();
+      unsubPresencePenalty();
+      unsubFrequencyPenalty();
     };
   }, [
     selectedItemId,

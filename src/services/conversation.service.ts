@@ -17,6 +17,7 @@ import {
 } from "@/lib/litechat/ai-helpers";
 import type { ModelMessage, ImagePart, TextPart } from "ai";
 import { toast } from "sonner";
+import { cleanPromptParameters } from "@/lib/litechat/prompt-parameters";
 import type { AttachedFileMetadata } from "@/store/input.store";
 import type { fs as FsType } from "@zenfs/core";
 import { useConversationStore } from "@/store/conversation.store";
@@ -306,7 +307,7 @@ ${userContent}`;
 `)}`;
     }
 
-    const finalParameters = {
+    const finalParameters = cleanPromptParameters({
       temperature: promptState.temperature,
       max_tokens: promptState.maxTokens,
       top_p: promptState.topP,
@@ -314,14 +315,6 @@ ${userContent}`;
       presence_penalty: promptState.presencePenalty,
       frequency_penalty: promptState.frequencyPenalty,
       ...(originalTurnData.parameters ?? {}),
-    };
-    Object.keys(finalParameters).forEach((key) => {
-      if (
-        finalParameters[key as keyof typeof finalParameters] === null ||
-        finalParameters[key as keyof typeof finalParameters] === undefined
-      ) {
-        delete finalParameters[key as keyof typeof finalParameters];
-      }
     });
 
     const promptObject: PromptObject = {
@@ -329,23 +322,29 @@ ${userContent}`;
       messages: historyMessages,
       parameters: finalParameters,
       metadata: {
-        ...(({
-          turnSystemPrompt: _turnSystemPrompt,
-          activeTagIds,
-          activeRuleIds,
-          effectiveRulesContent: _effectiveRulesContent,
-          autoTitleEnabledForTurn,
-          ...restMeta
-        }) => ({
-          ...restMeta,
-          effectivelyAppliedTagIds: activeTagIds,
-          effectivelyAppliedRuleIds: activeRuleIds,
-        }))(originalTurnData.metadata ?? {}),
+        ...((metadata) => {
+          const activeTagIds = metadata.activeTagIds;
+          const activeRuleIds = metadata.activeRuleIds;
+          const restMeta = { ...metadata };
+          delete restMeta.turnSystemPrompt;
+          delete restMeta.activeTagIds;
+          delete restMeta.activeRuleIds;
+          delete restMeta.effectiveRulesContent;
+          delete restMeta.autoTitleEnabledForTurn;
+          return {
+            ...restMeta,
+            effectivelyAppliedTagIds: activeTagIds,
+            effectivelyAppliedRuleIds: activeRuleIds,
+          };
+        })(originalTurnData.metadata ?? {}),
         modelId: promptState.modelId ?? undefined,
         regeneratedFromId: interactionId,
-        attachedFiles: originalAttachedFiles.map(
-          ({ contentBase64, contentText, ...rest }) => rest
-        ),
+        attachedFiles: originalAttachedFiles.map((fileMeta) => {
+          const rest = { ...fileMeta };
+          delete rest.contentBase64;
+          delete rest.contentText;
+          return rest;
+        }),
       },
     };
 
@@ -484,23 +483,13 @@ ${userContent}`;
 
 Provide a clear, comprehensive explanation that would help someone understand this content better.`;
 
-    const finalParameters = {
+    const finalParameters = cleanPromptParameters({
       temperature: promptState.temperature,
       max_tokens: promptState.maxTokens,
       top_p: promptState.topP,
       top_k: promptState.topK,
       presence_penalty: promptState.presencePenalty,
       frequency_penalty: promptState.frequencyPenalty,
-    };
-
-    // Remove null/undefined parameters
-    Object.keys(finalParameters).forEach((key) => {
-      if (
-        finalParameters[key as keyof typeof finalParameters] === null ||
-        finalParameters[key as keyof typeof finalParameters] === undefined
-      ) {
-        delete finalParameters[key as keyof typeof finalParameters];
-      }
     });
 
     const promptObject: PromptObject = {
@@ -944,7 +933,7 @@ Keep the summary detailed enough that we can seamlessly continue our discussion,
       const targetVfsKey = currentConversation?.projectId ?? "orphan";
       try {
         vfsInstance = await this._ensureVfsReady(targetVfsKey);
-      } catch (fsError) {
+      } catch {
         toast.error(
           `Filesystem unavailable for key ${targetVfsKey}. VFS files cannot be processed.`
         );
