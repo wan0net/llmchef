@@ -9,6 +9,10 @@ import {
   ensureV1Path,
   DEFAULT_SUPPORTED_PARAMS,
 } from "@/lib/litechat/provider-helpers";
+import {
+  assertAllowedOutboundUrl,
+  getOutboundHost,
+} from "@/lib/litechat/outbound-policy";
 
 // Use OpenRouterModel as the return type
 type FetchedModel = OpenRouterModel;
@@ -16,6 +20,38 @@ type FetchedModel = OpenRouterModel;
 // Simple in-memory cache for fetched models
 const fetchCache = new Map<string, Promise<FetchedModel[]>>();
 const CACHE_DURATION_MS = 5 * 60 * 1000;
+
+const getModelFetchAllowedHosts = (
+  config: DbProviderConfig,
+): string[] | undefined => {
+  switch (config.type) {
+    case "openai":
+      return ["api.openai.com"];
+    case "openrouter":
+      return ["openrouter.ai"];
+    case "mistral":
+      return ["api.mistral.ai"];
+    case "anthropic":
+      return ["api.anthropic.com"];
+    case "xai":
+      return ["api.x.ai"];
+    case "google":
+      return ["generativelanguage.googleapis.com"];
+    case "fal":
+      return ["fal.run"];
+    case "replicate":
+      return ["api.replicate.com"];
+    case "deepinfra":
+      return ["api.deepinfra.com"];
+    case "fireworks":
+      return ["api.fireworks.ai"];
+    case "ollama":
+    case "openai-compatible":
+      return config.baseURL ? [getOutboundHost(config.baseURL)] : undefined;
+    default:
+      return undefined;
+  }
+};
 
 // --- Helper to Map Fetched Data to OpenRouterModel ---
 const mapToOpenRouterModel = (
@@ -239,13 +275,14 @@ export async function fetchModelsForProvider(
             globalThis.location?.origin || "http://localhost:3000";
           headers["X-Title"] = "LLMChef";
           break;
-        case "ollama":
+        case "ollama": {
           const ollamaBase =
             config.baseURL?.replace(/\/$/, "") || "http://localhost:11434";
           url = new URL("/api/tags", ollamaBase).toString();
           delete headers["Authorization"];
           break;
-        case "openai-compatible":
+        }
+        case "openai-compatible": {
           if (!config.baseURL)
             throw new Error("Base URL required for OpenAI-Compatible");
           const baseUrlWithV1 = ensureV1Path(config.baseURL);
@@ -254,6 +291,7 @@ export async function fetchModelsForProvider(
             baseUrlWithV1.endsWith("/") ? baseUrlWithV1 : baseUrlWithV1 + "/",
           ).toString();
           break;
+        }
         case "mistral":
           if (!apiKey) throw new Error("API Key required for Mistral AI");
           url = "https://api.mistral.ai/v1/models";
@@ -316,6 +354,11 @@ export async function fetchModelsForProvider(
     );
 
     try {
+      url = assertAllowedOutboundUrl(
+        url,
+        `model-list:${config.type}:${config.name}`,
+        getModelFetchAllowedHosts(config),
+      );
       const response = await fetch(url, { headers });
 
       if (!response.ok) {

@@ -13,6 +13,7 @@ import type {
 import { load } from 'cheerio';
 import { useSettingsStore } from '@/store/settings.store';
 import { toast } from 'sonner';
+import { assertAllowedOutboundUrl } from '@/lib/litechat/outbound-policy';
 
 export class WebSearchService {
   private static readonly DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
@@ -128,7 +129,11 @@ export class WebSearchService {
         headers['X-LLMChef-Auth'] = 'LLMChef is G.O.A.T.';
       }
 
-      const response = await fetch(`${markdownServiceUrl}?url=${encodeURIComponent(url)}`, {
+      const requestUrl = assertAllowedOutboundUrl(
+        `${markdownServiceUrl}?url=${encodeURIComponent(url)}`,
+        'websearch:markdown-extract',
+      );
+      const response = await fetch(requestUrl, {
         method: 'GET',
         headers,
       });
@@ -269,7 +274,12 @@ export class WebSearchService {
       throw new Error('No CORS proxy configured for web search.');
     }
     const targetUrl = `https://duckduckgo.com/html?${params}`;
-    const response = await fetch(`${corsProxy}${encodeURIComponent(targetUrl)}`, {
+    assertAllowedOutboundUrl(targetUrl, 'websearch:duckduckgo-target', ['duckduckgo.com']);
+    const requestUrl = assertAllowedOutboundUrl(
+      `${corsProxy}${encodeURIComponent(targetUrl)}`,
+      'websearch:cors-proxy',
+    );
+    const response = await fetch(requestUrl, {
       headers: {
         "User-Agent": this.DEFAULT_USER_AGENT,
       },
@@ -291,7 +301,12 @@ export class WebSearchService {
       throw new Error('No CORS proxy configured for image search.');
     }
     const targetUrl = `https://duckduckgo.com/html?${params}`;
-    const html = await fetch(`${corsProxy}${encodeURIComponent(targetUrl)}`, {
+    assertAllowedOutboundUrl(targetUrl, 'websearch:duckduckgo-target', ['duckduckgo.com']);
+    const htmlRequestUrl = assertAllowedOutboundUrl(
+      `${corsProxy}${encodeURIComponent(targetUrl)}`,
+      'websearch:cors-proxy',
+    );
+    const html = await fetch(htmlRequestUrl, {
       headers: {
         "User-Agent": this.DEFAULT_USER_AGENT,
       },
@@ -311,7 +326,12 @@ export class WebSearchService {
     // Now search images using i.js API
     const imageParams = new URLSearchParams({ q: query, vqd, l: 'us-en' });
     const imageUrl = `https://duckduckgo.com/i.js?${imageParams}`;
-    const imageResponse = await fetch(`${corsProxy}${encodeURIComponent(imageUrl)}`, {
+    assertAllowedOutboundUrl(imageUrl, 'websearch:duckduckgo-target', ['duckduckgo.com']);
+    const imageRequestUrl = assertAllowedOutboundUrl(
+      `${corsProxy}${encodeURIComponent(imageUrl)}`,
+      'websearch:cors-proxy',
+    );
+    const imageResponse = await fetch(imageRequestUrl, {
       headers: {
         "User-Agent": this.DEFAULT_USER_AGENT,
       },
@@ -465,7 +485,7 @@ export class WebSearchService {
     const snippet = (result.snippet || '').toLowerCase();
     
     let score = 0;
-    let totalTerms = queryTerms.length;
+    const totalTerms = queryTerms.length;
     
     for (const term of queryTerms) {
       if (title.includes(term)) score += 0.6;
