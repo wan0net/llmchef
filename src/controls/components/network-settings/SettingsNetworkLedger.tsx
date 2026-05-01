@@ -123,3 +123,4 @@ const SettingsNetworkLedgerComponent: React.FC = () => {
 };
 
 export const SettingsNetworkLedger = React.memo(SettingsNetworkLedgerComponent);
+export default SettingsNetworkLedger;

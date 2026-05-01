@@ -2,15 +2,21 @@
 // NEW FILE
 import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
-import { SettingsTheme } from "@/controls/components/theme-settings/SettingsTheme";
+import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import i18next from 'i18next';
 import type { ControlModuleConstructor } from '@/types/litechat/control';
+
+const SettingsTheme = createLazySettingTab(() =>
+  import("@/controls/components/theme-settings/SettingsTheme").then((module) => ({
+    default: module.SettingsTheme,
+  }))
+);
 
 export class ThemeSettingsControlModule implements ControlModule {
   readonly id = "core-settings-theme";
   private unregisterCallback: (() => void) | null = null;
 
-  async initialize(_modApi: LiteChatModApi): Promise<void> {
+  async initialize(): Promise<void> {
     // console.log(`[${this.id}] Initialized.`);
   }
 

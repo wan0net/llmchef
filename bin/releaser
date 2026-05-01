@@ -41,6 +41,13 @@ fi
 
 echo "Packaging LLMChef v${VERSION}..."
 
+PYODIDE_VERSION="${VITE_PYODIDE_VERSION:-0.27.7}"
+if [ ! -f "dist/pyodide/v${PYODIDE_VERSION}/full/pyodide.js" ]; then
+    echo "Warning: dist/pyodide/v${PYODIDE_VERSION}/full/pyodide.js not found."
+    echo "         Runnable Python blocks will not work from this release unless Pyodide is vendored."
+    echo "         Run: npm install --save-dev pyodide@${PYODIDE_VERSION} && npm run vendor:pyodide && npm run build"
+fi
+
 # Create temp directory for packaging
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf -- "$TEMP_DIR"' EXIT
@@ -48,6 +55,16 @@ trap 'rm -rf -- "$TEMP_DIR"' EXIT
 # Copy distribution files to temp directory
 echo "Copying distribution files..."
 cp -r dist/* "$TEMP_DIR/"
+
+cat > "$TEMP_DIR/LOCAL-FIRST.md" <<EOF
+# LLMChef Local Bundle
+
+Serve this directory from a local static server and open it in your browser.
+
+The app is static and local-first. Same-origin assets and loopback hosts are allowed by default. Remote hosts are blocked by the runtime fetch guard unless they are configured as providers, service URLs, MCP servers, marketplace sources, remote mods, or sync repositories.
+
+Runnable Python blocks require Pyodide at /pyodide/v${PYODIDE_VERSION}/full/pyodide.js inside this bundle.
+EOF
 
 rm -rf "$TEMP_DIR/release/";
 rm -rf "$TEMP_DIR/versions/";

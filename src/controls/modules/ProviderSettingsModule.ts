@@ -3,7 +3,7 @@
 import React from "react";
 import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
-import { SettingsProviders } from "@/controls/components/provider-settings/SettingsProviders";
+import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import { providerEvent } from "@/types/litechat/events/provider.events";
 import i18next from 'i18next';
 import type { ControlModuleConstructor } from '@/types/litechat/control';
@@ -47,17 +47,20 @@ export class ProviderSettingsModule implements ControlModule {
 
   register(modApi: LiteChatModApi): void {
     this.modApiRef = modApi;
+    const SettingsProviders = createLazySettingTab(() =>
+      import("@/controls/components/provider-settings/SettingsProviders").then((module) => ({
+        default: () =>
+          React.createElement(module.SettingsProviders, {
+            setGlobalModelSortOrderFromModule:
+              this.setGlobalModelSortOrderFromModule,
+          }),
+      }))
+    );
     modApi.registerSettingsTab({
       id: "providers",
       title: i18next.t("controls:settings.tabs.providers"),
       order: 20,
-      component: () =>
-        // SettingsProviders will fetch its own data from the store.
-        // We only need to pass the action for setting sort order to GlobalModelOrganizer.
-        React.createElement(SettingsProviders, {
-          setGlobalModelSortOrderFromModule:
-            this.setGlobalModelSortOrderFromModule,
-        }),
+      component: SettingsProviders,
     });
   }
 

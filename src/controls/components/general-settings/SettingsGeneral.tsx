@@ -443,3 +443,4 @@ const SettingsGeneralComponent: React.FC = () => {
 };
 
 export const SettingsGeneral = React.memo(SettingsGeneralComponent);
+export default SettingsGeneral;

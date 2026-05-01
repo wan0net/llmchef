@@ -1,7 +1,11 @@
 import { type ControlModule, type ControlModuleConstructor } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
-import { SettingsNetworkLedger } from "@/controls/components/network-settings/SettingsNetworkLedger";
+import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import i18next from "i18next";
+
+const SettingsNetworkLedger = createLazySettingTab(() =>
+  import("@/controls/components/network-settings/SettingsNetworkLedger")
+);
 
 export class NetworkLedgerSettingsModule implements ControlModule {
   readonly id = "core-settings-network-ledger";

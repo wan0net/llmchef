@@ -9,6 +9,7 @@ LLMChef is now positioned as a fork of LiteChat with a CyberChef-style operating
 - Outbound traffic is concentrated in provider calls, provider model-list fetches, optional image providers, optional DuckDuckGo proxy search, optional MCP bridge usage, sync/marketplace URLs configured by the user, and package/update checks.
 - Model-list fetching, optional web search/content extraction, marketplace downloads, remote mod scripts, MCP HTTP/bridge calls, OpenRouter endpoint metadata, race-export stylesheet capture, and Formedible location lookups now pass through `src/lib/litechat/outbound-policy.ts`, which blocks non-HTTP(S) URLs, enforces known provider hosts for model-list requests, and keeps an in-memory destination log shown in Settings -> Network.
 - A runtime fetch guard is installed at startup to catch provider SDK and other indirect `fetch` calls. Same-origin and local loopback requests are allowed; remote hosts must come from configured providers, service URLs, MCP servers, marketplace sources, remote mods, or sync repositories. Settings -> Network lists both the session ledger and the configured remote host set.
+- `docs/local-release.md` documents the local bundle flow. `npm run vendor:pyodide` vendors Pyodide into `public/pyodide/...` before build so runnable Python can work without any CDN fallback.
 - The app still has intentional execution surfaces for mods, runnable JavaScript, runnable Python, and generated standalone HTML. Treat these as user-consented execution zones, not passive document rendering.
 - Error reports are redacted before export and link to the LLMChef repository.
 - The MCP bridge allows configured origins only. Defaults include localhost and the project GitHub Pages origin; deployments should narrow this further when possible.
@@ -18,7 +19,7 @@ LLMChef is now positioned as a fork of LiteChat with a CyberChef-style operating
 
 - The built app is large: the main bundle is roughly 6 MB before gzip, and `dist` is roughly 16 MB after a production build.
 - Mermaid and its diagram dependencies are split into separate chunks, but the app shell still carries a lot of control, provider, and rendering code.
-- The build now uses explicit Vite vendor chunks for React, AI SDK/provider adapters, storage/git, editor, diagram, and UI dependencies. Best next reductions are lazy-loading settings panels and control modules, making advanced renderers load on demand, and reviewing the need for browser Node polyfills.
+- The build now uses explicit Vite vendor chunks for React, AI SDK/provider adapters, storage/git, editor, diagram, and UI dependencies. Settings tab bodies are lazy-loaded when opened. Best next reductions are making advanced renderers load on demand and reviewing the need for browser Node polyfills.
 - The runnable-code and workflow surfaces should keep their current explicit-user-action model; optimization work should not hide execution behind automatic previews.
 
 ## New Ideas

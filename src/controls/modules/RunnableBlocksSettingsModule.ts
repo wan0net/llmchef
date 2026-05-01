@@ -1,9 +1,15 @@
 import React from "react";
 import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
-import { SettingsRunnableBlocks } from "@/controls/components/runnable-blocks-settings/SettingsRunnableBlocks";
+import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import { useSettingsStore } from "@/store/settings.store";
 import { settingsEvent } from "@/types/litechat/events/settings.events";
+
+const SettingsRunnableBlocks = createLazySettingTab(() =>
+  import("@/controls/components/runnable-blocks-settings/SettingsRunnableBlocks").then((module) => ({
+    default: module.SettingsRunnableBlocks,
+  }))
+);
 
 export class RunnableBlocksSettingsModule implements ControlModule {
   readonly id = "core-settings-runnable-blocks";
@@ -55,4 +61,4 @@ export class RunnableBlocksSettingsModule implements ControlModule {
     }
     console.log(`[${this.id}] Destroyed.`);
   }
-} 
+}

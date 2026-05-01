@@ -117,6 +117,17 @@ php -S localhost:8080                    # PHP
 # Open http://localhost:8080 in your browser
 ```
 
+For fully local runnable Python support, vendor Pyodide before building a release:
+
+```bash
+npm install --save-dev pyodide@0.27.7
+npm run vendor:pyodide
+npm run build
+bin/releaser
+```
+
+See [docs/local-release.md](docs/local-release.md) for the local bundle checklist.
+
 ### Development Setup
 
 ```bash

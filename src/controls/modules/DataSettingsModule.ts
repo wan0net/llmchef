@@ -2,14 +2,20 @@
 // FULL FILE
 import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
-import { SettingsDataTabbed } from "@/controls/components/data-settings/SettingsDataTabbed";
+import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import i18next from "i18next";
+
+const SettingsDataTabbed = createLazySettingTab(() =>
+  import("@/controls/components/data-settings/SettingsDataTabbed").then((module) => ({
+    default: module.SettingsDataTabbed,
+  }))
+);
 
 export class DataSettingsModule implements ControlModule {
   readonly id = "core-settings-data";
   private unregisterCallback: (() => void) | null = null;
 
-  async initialize(_modApi: LiteChatModApi): Promise<void> {
+  async initialize(): Promise<void> {
     // console.log(`[${this.id}] Initialized.`);
   }
 

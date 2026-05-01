@@ -2,9 +2,15 @@
 // FULL FILE
 import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
-import { SettingsMods } from "@/controls/components/mod-settings/SettingsMods";
+import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import { useSettingsStore } from "@/store/settings.store";
 import { settingsEvent } from "@/types/litechat/events/settings.events";
+
+const SettingsMods = createLazySettingTab(() =>
+  import("@/controls/components/mod-settings/SettingsMods").then((module) => ({
+    default: module.SettingsMods,
+  }))
+);
 
 export class ModSettingsModule implements ControlModule {
   readonly id = "core-settings-mods";
