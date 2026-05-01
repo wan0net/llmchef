@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSkillStore } from "@/store/skill.store";
 import type { Skill, SkillPackageFile } from "@/types/litechat/skill";
 import { normalizeSkillSlug } from "@/lib/litechat/skill-package";
+import { findSkillPackagesInVfs } from "@/lib/litechat/skill-vfs-import";
+import { useVfsStore } from "@/store/vfs.store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +17,7 @@ import {
   SaveIcon,
   Trash2Icon,
   UploadIcon,
+  HardDriveIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,6 +46,8 @@ export const SettingsSkills: React.FC = () => {
   const [draft, setDraft] = useState<DraftSkill>(EMPTY_DRAFT);
   const [isCreating, setIsCreating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [vfsImportPath, setVfsImportPath] = useState("/.litechat/skills");
+  const [isImportingFromVfs, setIsImportingFromVfs] = useState(false);
 
   const {
     skills,
@@ -55,6 +60,7 @@ export const SettingsSkills: React.FC = () => {
     setSkillInstallState,
     deleteSkill,
   } = useSkillStore();
+  const fsInstance = useVfsStore((state) => state.fs);
 
   useEffect(() => {
     void loadSkills();
@@ -145,6 +151,43 @@ export const SettingsSkills: React.FC = () => {
     },
     [importSkillPackage]
   );
+
+  const handleImportFromVfs = useCallback(async () => {
+    if (!fsInstance) {
+      toast.error("VFS is not ready.");
+      return;
+    }
+
+    setIsImportingFromVfs(true);
+    try {
+      const packages = await findSkillPackagesInVfs(vfsImportPath, {
+        fsInstance,
+      });
+
+      if (packages.length === 0) {
+        toast.info("No skill packages found at that VFS path.");
+        return;
+      }
+
+      for (const pkg of packages) {
+        await importSkillPackage(pkg.files, {
+          type: "vfs",
+          path: pkg.rootPath,
+          uri: pkg.rootPath,
+        });
+      }
+
+      toast.success(`Imported ${packages.length} skill package(s) from VFS.`);
+    } catch (vfsImportError) {
+      toast.error(
+        vfsImportError instanceof Error
+          ? vfsImportError.message
+          : "Failed to import skills from VFS."
+      );
+    } finally {
+      setIsImportingFromVfs(false);
+    }
+  }, [fsInstance, importSkillPackage, vfsImportPath]);
 
   const handleDelete = useCallback(
     async (skill: Skill) => {
@@ -237,6 +280,39 @@ export const SettingsSkills: React.FC = () => {
             )}
             Save Skill
           </Button>
+
+          <div className="border-t pt-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Import From VFS</h3>
+              <HardDriveIcon className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Use a skill folder, a folder containing skill folders, or a cloned
+              repo with `.litechat/skills/&lt;slug&gt;/skill.json`.
+            </p>
+            <div className="grid gap-2">
+              <Label htmlFor="skill-vfs-path">VFS Path</Label>
+              <Input
+                id="skill-vfs-path"
+                value={vfsImportPath}
+                onChange={(event) => setVfsImportPath(event.target.value)}
+                placeholder="/repo or /.litechat/skills"
+                className="font-mono text-xs"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleImportFromVfs}
+              disabled={isImportingFromVfs || !fsInstance}
+            >
+              {isImportingFromVfs ? (
+                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <HardDriveIcon className="mr-2 h-4 w-4" />
+              )}
+              Import VFS Skills
+            </Button>
+          </div>
         </section>
 
         <section className="space-y-3">

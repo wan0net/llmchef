@@ -31,8 +31,8 @@ Scope:
 - Add local skill persistence in IndexedDB. (implemented)
 - Add skill manager UI for create, edit, duplicate, delete, import, export, and
   install. (create, delete, import, export, and install implemented)
-- Support importing skill packages from VFS folders.
-- Support importing skill packages from Git repos cloned into VFS.
+- Support importing skill packages from VFS folders. (implemented)
+- Support importing skill packages from Git repos cloned into VFS. (implemented)
 - Define package format:
   - `.litechat/skills/<slug>/skill.json`
   - `README.md`
