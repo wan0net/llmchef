@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSkillStore } from "@/store/skill.store";
 import type { Skill, SkillPackageFile } from "@/types/litechat/skill";
 import { normalizeSkillSlug } from "@/lib/litechat/skill-package";
+import { reviewSkillForInstall } from "@/lib/litechat/skill-install-review";
 import { findSkillPackagesInVfs } from "@/lib/litechat/skill-vfs-import";
 import { useVfsStore } from "@/store/vfs.store";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   DownloadIcon,
+  AlertTriangleIcon,
   Loader2Icon,
   PackagePlusIcon,
   SaveIcon,
+  ShieldCheckIcon,
   Trash2Icon,
   UploadIcon,
   HardDriveIcon,
@@ -197,6 +200,29 @@ export const SettingsSkills: React.FC = () => {
     [deleteSkill]
   );
 
+  const handleToggleInstall = useCallback(
+    async (skill: Skill) => {
+      if (skill.installState === "installed") {
+        await setSkillInstallState(skill.id, "disabled");
+        return;
+      }
+
+      const review = reviewSkillForInstall(skill);
+      if (review.requiresConfirmation) {
+        const summary = review.findings
+          .map((finding) => `- ${finding.title}: ${finding.detail}`)
+          .join("\n");
+        const confirmed = window.confirm(
+          `Install "${skill.name}"?\n\nSecurity review:\n${summary}\n\nOnly install skills from sources you trust.`
+        );
+        if (!confirmed) return;
+      }
+
+      await setSkillInstallState(skill.id, "installed");
+    },
+    [setSkillInstallState]
+  );
+
   return (
     <div className="space-y-4 p-1">
       <div className="grid gap-3 lg:grid-cols-[minmax(280px,380px)_1fr]">
@@ -360,11 +386,10 @@ export const SettingsSkills: React.FC = () => {
             </div>
           )}
           <div className="grid gap-2">
-            {sortedSkills.map((skill) => (
-              <article
-                key={skill.id}
-                className="rounded-md border bg-card p-3"
-              >
+            {sortedSkills.map((skill) => {
+              const review = reviewSkillForInstall(skill);
+              return (
+              <article key={skill.id} className="rounded-md border bg-card p-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
@@ -393,6 +418,30 @@ export const SettingsSkills: React.FC = () => {
                     <p className="font-mono text-xs text-muted-foreground">
                       {skill.slug} | {skill.files.length} files
                     </p>
+                    <div className="rounded-md border bg-muted/30 p-2 text-xs">
+                      <div className="mb-1 flex items-center gap-2 font-medium">
+                        {review.requiresConfirmation ? (
+                          <AlertTriangleIcon className="h-3.5 w-3.5 text-amber-500" />
+                        ) : (
+                          <ShieldCheckIcon className="h-3.5 w-3.5 text-emerald-500" />
+                        )}
+                        Install review
+                      </div>
+                      <ul className="space-y-1 text-muted-foreground">
+                        {review.findings.slice(0, 3).map((finding) => (
+                          <li key={`${skill.id}-${finding.title}`}>
+                            <span className={cn(findingClassName(finding.severity))}>
+                              {finding.title}
+                            </span>
+                            {": "}
+                            {finding.detail}
+                          </li>
+                        ))}
+                        {review.findings.length > 3 && (
+                          <li>{review.findings.length - 3} more finding(s)</li>
+                        )}
+                      </ul>
+                    </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-1">
                     <Button
@@ -406,14 +455,7 @@ export const SettingsSkills: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() =>
-                        void setSkillInstallState(
-                          skill.id,
-                          skill.installState === "installed"
-                            ? "disabled"
-                            : "installed"
-                        )
-                      }
+                      onClick={() => void handleToggleInstall(skill)}
                     >
                       {skill.installState === "installed"
                         ? "Disable"
@@ -431,7 +473,8 @@ export const SettingsSkills: React.FC = () => {
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         </section>
       </div>
@@ -483,4 +526,14 @@ const riskClassName = (riskLevel: Skill["riskLevel"]): string => {
     return "border-amber-500/40 text-amber-600 dark:text-amber-400";
   }
   return "border-emerald-500/40 text-emerald-600 dark:text-emerald-400";
+};
+
+const findingClassName = (
+  severity: "info" | "warning" | "danger"
+): string => {
+  if (severity === "danger") return "font-medium text-destructive";
+  if (severity === "warning") {
+    return "font-medium text-amber-600 dark:text-amber-400";
+  }
+  return "font-medium text-emerald-600 dark:text-emerald-400";
 };

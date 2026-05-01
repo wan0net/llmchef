@@ -41,7 +41,8 @@ Scope:
   prompt templates, agents, workflows, rules, tools, and VFS examples.
   (installed skill entry prompts implemented as prompt context)
 - Add safety review before installation for tools, runnable blocks, mods, or
-  prompt instructions that request broad authority.
+  prompt instructions that request broad authority. (basic static install
+  review implemented)
 
 Acceptance:
 
@@ -50,6 +51,8 @@ Acceptance:
 - A user can import a repo-hosted skill package from VFS.
 - Installed skills are visible and usable from prompt/agent workflows. (prompt
   context implemented)
+- Installing risky skills shows requested permissions and static safety
+  findings before enabling them. (implemented)
 
 ## Feature B: Console Workbench UI
 
