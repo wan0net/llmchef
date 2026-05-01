@@ -1,10 +1,24 @@
 # Security Audit
 
-Date: 2026-04-30
+Date: 2026-05-01
 
-Scope: wan0 LiteChat fork, especially upcoming workstation features: skills,
-repo import, VFS real-folder sync, generated file previews, console UI, and crea8
-wiki integration.
+Scope: wan0 LiteChat fork, especially workstation features: skills, repo import,
+VFS real-folder sync, generated file previews, console UI, and crea8 wiki/memory
+integration.
+
+Overall status: in progress.
+
+Recent hardening shipped:
+
+- Prompt sampling parameters are now opt-in, preventing providers from receiving
+  both `temperature` and `top_p` when they reject that combination.
+- HTML/VFS previews use sandboxed rendering helpers and blob URL cleanup.
+- Installed skill prompts are wrapped as contextual guidance, not higher-priority
+  system policy.
+- Skill install now shows static safety findings before enabling permissioned,
+  executable, or sensitive packages.
+- Imported skill package paths now reject absolute paths, backslashes, empty
+  segments, `.` segments, `..`, and duplicates.
 
 ## Current Dependency Baseline
 
@@ -14,7 +28,7 @@ Command:
 npm audit --json
 ```
 
-Result:
+Initial result on 2026-04-30:
 
 - Total vulnerabilities: 36
 - High: 14
@@ -22,7 +36,7 @@ Result:
 - Low: 7
 - Critical: 0
 
-Notable direct dependencies in the audit:
+Notable direct dependencies in the initial audit:
 
 - `ai <5.0.52`: low severity filetype whitelist bypass.
 - `vite 7.0.0 - 7.3.1`: high aggregate severity across dev-server file-read
@@ -32,7 +46,7 @@ Notable direct dependencies in the audit:
 - `vite-plugin-node-polyfills >=0.3.0`: low severity through
   `node-stdlib-browser` and browser crypto polyfills.
 
-Notable transitive findings:
+Notable initial transitive findings:
 
 - `serialize-javascript`: high severity RCE/DoS advisories via PWA build stack.
 - `rollup`: high severity arbitrary file write/path traversal advisories.
@@ -42,15 +56,6 @@ Notable transitive findings:
 - `dompurify`: moderate XSS advisories.
 - `postcss`, `qs`, `js-yaml`, `brace-expansion`, `bn.js`, `uuid`: moderate
   advisories.
-
-Planned remediation:
-
-- Run conservative semver-compatible audit fixes first.
-- Prefer direct package upgrades for `vite`, `ai`, and PWA-related packages.
-- Avoid major AI SDK/provider upgrades until provider behavior is covered by
-  tests.
-- Re-run `npm audit`, targeted tests, and `npm run build` after each upgrade
-  slice.
 
 ## Dependency Remediation Pass 1
 
@@ -70,16 +75,15 @@ Result:
 - `ai` was pinned to `^5.0.52`, the minimum patched version from the audit
   advisory that still preserves LiteChat's MCP build compatibility.
 
-Remaining issues:
+Remaining issues after pass 1:
 
 - `vite-plugin-pwa` chain through `workbox-build`, `@rollup/plugin-terser`,
-  and `serialize-javascript`. `npm audit` recommends `vite-plugin-pwa@0.19.8`
-  via `--force`, which is a breaking downgrade from the current `1.x` line and
-  needs manual review.
+  and `serialize-javascript`. `npm audit` recommended `vite-plugin-pwa@0.19.8`
+  via `--force`, which is a breaking downgrade from the current `1.x` line.
 - `vite-plugin-node-polyfills` chain through `node-stdlib-browser`,
-  `crypto-browserify`, and `elliptic`. `npm audit` recommends
+  `crypto-browserify`, and `elliptic`. `npm audit` recommended
   `vite-plugin-node-polyfills@0.2.0` via `--force`, also a breaking downgrade.
-- `mermaid-isomorphic` through `mermaid` and `uuid`. `npm audit` reports no
+- `mermaid-isomorphic` through `mermaid` and `uuid`. `npm audit` reported no
   available fix.
 
 Decision:
@@ -89,6 +93,46 @@ Decision:
   - evaluate disabling or replacing PWA generation
   - evaluate whether node polyfills can be reduced
   - evaluate replacing or isolating Mermaid rendering
+
+## Dependency Remediation Pass 2
+
+Commands:
+
+```bash
+npm audit --audit-level=low
+npm outdated --long
+npm install
+npm audit --audit-level=low
+```
+
+Result before overrides on 2026-05-01:
+
+- 13 total vulnerabilities.
+- 4 high from `serialize-javascript <=7.0.4` through
+  `vite-plugin-pwa -> workbox-build -> @rollup/plugin-terser`.
+- 6 low from `elliptic` through
+  `vite-plugin-node-polyfills -> node-stdlib-browser -> crypto-browserify`.
+- 3 moderate from `uuid <14` through `mermaid-isomorphic -> mermaid`.
+
+Remediation applied:
+
+- Added a package override for `serialize-javascript@^7.0.5`.
+- Added a package override for `elliptic@^6.6.1`, keeping the tree on the newest
+  available release even though the advisory still currently marks `<=6.6.1`.
+
+Current result after `npm install`:
+
+- 9 total vulnerabilities.
+- 0 high, 0 critical.
+- 6 low remain in the node polyfill crypto chain.
+- 3 moderate remain in the mermaid/uuid chain.
+
+Remaining dependency findings:
+
+| Area | Severity | Path | Status | Notes |
+| --- | --- | --- | --- | --- |
+| Node crypto polyfills | Low | `vite-plugin-node-polyfills -> node-stdlib-browser -> crypto-browserify -> elliptic` | Accepted for now | npm suggests downgrading `vite-plugin-node-polyfills` to `0.2.0`, which is a breaking force fix. Prefer removing/reducing browser node polyfills instead. |
+| Mermaid UUID usage | Moderate | `mermaid-isomorphic -> mermaid -> uuid` | Accepted for now | npm reports no fix available. Risk appears limited unless LiteChat passes attacker-controlled buffers into UUID v3/v5/v6 paths through Mermaid. |
 
 ## Runtime Attack Surface
 
@@ -156,6 +200,31 @@ Required guardrails:
 - Inventory each HTML sink and confirm sanitizer coverage.
 - For model-generated or file-generated HTML, prefer sandboxed iframe preview.
 - Avoid rendering untrusted HTML directly into the app DOM.
+
+### Skills And Imported Packages
+
+Files:
+
+- `src/lib/litechat/skill-package.ts`
+- `src/lib/litechat/skill-install-review.ts`
+- `src/lib/litechat/skill-vfs-import.ts`
+- `src/controls/components/skill-settings/SettingsSkills.tsx`
+
+Current guardrails:
+
+- Manifest permissions are normalized and used for risk estimates.
+- Install review highlights declared permissions, executable paths, and common
+  sensitive behavior strings.
+- Path validation blocks traversal, absolute paths, backslashes, empty segments,
+  `.` segments, `..`, and duplicate package paths.
+- Installed skill prompts are injected as bounded context rather than privileged
+  policy.
+
+Remaining work:
+
+- Add richer manifest permission schema and explicit deny/allow install policy.
+- Keep imported tools/mods inert until separately reviewed and enabled.
+- Add source/revision display for Git-imported skills.
 
 ### VFS Real-Folder Sync
 
@@ -253,11 +322,11 @@ Files:
 Risk:
 
 - Service workers can preserve old app code and cache generated artifacts.
-- PWA dependency chain currently contributes high audit findings.
+- PWA dependency chain has produced high audit findings.
 
 Required guardrails:
 
-- Upgrade/remediate PWA build dependencies.
+- Continue remediating PWA build dependencies.
 - Confirm `/litechat/` scope is correct.
 - Document cache-clearing steps for security-sensitive upgrades.
 
@@ -276,12 +345,28 @@ Required guardrails:
 
 ## High-Priority Remediation Checklist
 
-- [ ] Upgrade semver-compatible vulnerable dependencies.
-- [ ] Re-run `npm audit --json` and update this file.
-- [ ] Add skill manifest and permission model before repo-imported skills.
-- [ ] Add sandboxed VFS previewer for HTML instead of direct DOM render.
+- [x] Upgrade semver-compatible vulnerable dependencies.
+- [x] Re-run `npm audit --json` and update this file.
+- [x] Add skill manifest and permission model before repo-imported skills.
+- [x] Add sandboxed VFS previewer for HTML instead of direct DOM render.
 - [ ] Audit all `dangerouslySetInnerHTML` sinks and document sanitizer status.
 - [ ] Add dry-run/write summary for real-folder sync.
 - [ ] Add redaction helper for diagnostics involving API keys or Git tokens.
-- [ ] Add install review UI for imported skills/mods/tools.
+- [x] Add install review UI for imported skills/mods/tools.
 - [ ] Add service-worker cache guidance after security upgrades.
+
+## Verification Commands
+
+Run these after security-related changes:
+
+```bash
+npm audit --audit-level=low
+npm test -- --run
+npm run build
+```
+
+For targeted skill/import hardening:
+
+```bash
+npm test -- skill-package.test.ts skill-install-review.test.ts skill-vfs-import.test.ts --run
+```

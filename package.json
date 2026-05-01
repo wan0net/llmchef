@@ -20,6 +20,10 @@
     "serve": "npm run build && npx http-server dist --port ${LITECHAT_PORT:=5173}",
     "update": "git pull ${LITECHAT_ORIGIN:=origin} ${LITECHAT_BRANCH:=main} && npm install && npm run serve"
   },
+  "overrides": {
+    "elliptic": "^6.6.1",
+    "serialize-javascript": "^7.0.5"
+  },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.0",
     "@ai-sdk/deepinfra": "^1.0.0",

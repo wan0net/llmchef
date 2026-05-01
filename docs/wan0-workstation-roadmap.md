@@ -173,15 +173,16 @@ Acceptance:
 
 ## Feature F: Security Audit And Dependency Upgrade
 
-Status: planned
+Status: in progress
 
 Goal: Audit the fork before it becomes a self-modifying, repo-importing,
 code-previewing workstation.
 
 Scope:
 
-- Run dependency audit and document findings.
-- Upgrade libraries conservatively.
+- Run dependency audit and document findings. (baseline implemented)
+- Upgrade libraries conservatively. (`serialize-javascript` override applied;
+  remaining npm advisories documented)
 - Review code execution surfaces:
   runnable JS/Python blocks, HTML previews, mods, MCP tools, imported skills,
   Git/VFS sync, API keys, and IndexedDB persistence.
