@@ -72,6 +72,40 @@ function buildTimeConfigPlugin() {
 const base = process.env.VITE_BASE || '/';
 const lang = process.env.VITE_APP_LANG || 'en';
 
+const vendorChunkGroups: { name: string; match: string[] }[] = [
+  {
+    name: 'vendor-react',
+    match: ['/node_modules/react/', '/node_modules/react-dom/', '/node_modules/scheduler/'],
+  },
+  {
+    name: 'vendor-ai',
+    match: ['/node_modules/ai/', '/node_modules/@ai-sdk/', '/node_modules/@openrouter/', '/node_modules/ollama-ai-provider/'],
+  },
+  {
+    name: 'vendor-data',
+    match: ['/node_modules/dexie/', '/node_modules/@zenfs/', '/node_modules/isomorphic-git/'],
+  },
+  {
+    name: 'vendor-editor',
+    match: ['/node_modules/@codemirror/', '/node_modules/@uiw/', '/node_modules/prismjs/'],
+  },
+  {
+    name: 'vendor-diagrams',
+    match: ['/node_modules/mermaid/', '/node_modules/cytoscape/', '/node_modules/katex/'],
+  },
+  {
+    name: 'vendor-ui',
+    match: ['/node_modules/@radix-ui/', '/node_modules/lucide-react/', '/node_modules/sonner/'],
+  },
+];
+
+const manualChunks = (id: string): string | undefined => {
+  if (!id.includes('/node_modules/')) return undefined;
+  return vendorChunkGroups.find((group) =>
+    group.match.some((needle) => id.includes(needle)),
+  )?.name;
+};
+
 // https://vitejs.dev/config/
 export default defineConfig({
   base,
@@ -167,6 +201,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       external: [], // Don't externalize any modules for better compatibility
+      output: {
+        manualChunks,
+      },
     },
   },
   test: {
