@@ -48,6 +48,7 @@ import { SkillsPromptControlModule } from "@/controls/modules/SkillsPromptContro
 
 // Import new/updated Settings Modules
 import { GeneralSettingsModule } from "@/controls/modules/GeneralSettingsModule";
+import { NetworkLedgerSettingsModule } from "@/controls/modules/NetworkLedgerSettingsModule";
 import { ThemeSettingsControlModule } from "@/controls/modules/ThemeSettingsControlModule";
 import { ProviderSettingsModule } from "@/controls/modules/ProviderSettingsModule";
 import { AssistantSettingsModule } from "@/controls/modules/AssistantSettingsModule";
@@ -98,6 +99,7 @@ const controlModulesToRegister: ControlModuleConstructor[] = [
   UrlParameterControlModule,
   PWAControlModule,
   GeneralSettingsModule,
+  NetworkLedgerSettingsModule,
   ThemeSettingsControlModule,
   ProviderSettingsModule,
   AssistantSettingsModule,

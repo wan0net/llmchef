@@ -4,6 +4,7 @@ import {
   clearOutboundRequestLog,
   getOutboundHost,
   getOutboundRequestLog,
+  subscribeOutboundRequestLog,
 } from "./outbound-policy";
 
 describe("outbound-policy", () => {
@@ -39,5 +40,19 @@ describe("outbound-policy", () => {
     expect(() => getOutboundHost("file:///etc/passwd")).toThrow(
       /Blocked non-HTTP outbound URL/,
     );
+  });
+
+  it("notifies subscribers when the log changes", () => {
+    let notifications = 0;
+    const unsubscribe = subscribeOutboundRequestLog(() => {
+      notifications += 1;
+    });
+
+    assertAllowedOutboundUrl("https://api.openai.com/v1/models", "model-list");
+    clearOutboundRequestLog();
+    unsubscribe();
+    assertAllowedOutboundUrl("https://api.openai.com/v1/models", "model-list");
+
+    expect(notifications).toBe(2);
   });
 });

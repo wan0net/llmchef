@@ -7,6 +7,11 @@ export interface OutboundRequestRecord {
 
 const MAX_OUTBOUND_LOG_ENTRIES = 200;
 const outboundRequestLog: OutboundRequestRecord[] = [];
+const outboundLogListeners = new Set<() => void>();
+
+const notifyOutboundLogListeners = (): void => {
+  outboundLogListeners.forEach((listener) => listener());
+};
 
 const parseHttpUrl = (url: string): URL => {
   const parsed = new URL(url, globalThis.location?.origin ?? "http://localhost");
@@ -35,6 +40,7 @@ export const recordOutboundRequest = (
     outboundRequestLog.length = MAX_OUTBOUND_LOG_ENTRIES;
   }
 
+  notifyOutboundLogListeners();
   return record;
 };
 
@@ -59,4 +65,14 @@ export const getOutboundRequestLog = (): OutboundRequestRecord[] => [
 
 export const clearOutboundRequestLog = (): void => {
   outboundRequestLog.length = 0;
+  notifyOutboundLogListeners();
+};
+
+export const subscribeOutboundRequestLog = (
+  listener: () => void,
+): (() => void) => {
+  outboundLogListeners.add(listener);
+  return () => {
+    outboundLogListeners.delete(listener);
+  };
 };
