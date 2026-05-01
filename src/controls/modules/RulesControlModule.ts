@@ -8,7 +8,7 @@ import { rulesEvent } from "@/types/litechat/events/rules.events";
 import { controlRegistryEvent } from "@/types/litechat/events/control.registry.events";
 import { uiEvent } from "@/types/litechat/events/ui.events";
 import { RulesControlTrigger } from "@/controls/components/rules/RulesControlTrigger";
-import { SettingsRulesAndTags } from "@/controls/components/rules/SettingsRulesAndTags";
+import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import type { DbRule, DbTag } from "@/types/litechat/rules";
 import type { ResolvedRuleContent } from "@/types/litechat/prompt";
 import type { ModControlRule } from "@/types/litechat/modding";
@@ -29,6 +29,13 @@ import type { Interaction } from "@/types/litechat/interaction";
 import type { PromptTurnObject } from "@/types/litechat/prompt";
 import i18next from "i18next";
 import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+
+const SettingsRulesAndTags = createLazyControlComponent<any>(() =>
+  import("@/controls/components/rules/SettingsRulesAndTags").then((module) => ({
+    default: module.SettingsRulesAndTags,
+  })),
+  "Loading rules...",
+);
 
 export class RulesControlModule implements ControlModule {
   readonly id = "core-rules-tags";
@@ -529,7 +536,7 @@ export class RulesControlModule implements ControlModule {
   // Helper method to check if a rule is a control rule
   public isControlRule = (ruleId: string): boolean => {
     const controlRules = this.getControlRulesFromStore();
-    return controlRules.hasOwnProperty(ruleId);
+    return Object.prototype.hasOwnProperty.call(controlRules, ruleId);
   };
 
   public autoSelectRules = async (promptOverride?: string) => {

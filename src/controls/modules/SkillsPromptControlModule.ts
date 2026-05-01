@@ -1,5 +1,5 @@
 import React from "react";
-import { SkillsPromptControl } from "@/controls/components/skills/SkillsPromptControl";
+import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import {
   buildSkillPromptContext,
   skillPromptRefs,
@@ -8,6 +8,14 @@ import { useSkillStore } from "@/store/skill.store";
 import type { ControlModule } from "@/types/litechat/control";
 import type { LiteChatModApi } from "@/types/litechat/modding";
 import type { Skill } from "@/types/litechat/skill";
+
+const SkillsPromptControl = createLazyControlComponent<any>(
+  () =>
+    import("@/controls/components/skills/SkillsPromptControl").then((module) => ({
+      default: module.SkillsPromptControl,
+    })),
+  "Loading skills...",
+);
 
 export class SkillsPromptControlModule implements ControlModule {
   readonly id = "core-skills-prompt";
