@@ -13,7 +13,7 @@ LLMChef is now positioned as a fork of LiteChat with a CyberChef-style operating
 - The app still has intentional execution surfaces for mods, runnable JavaScript, runnable Python, and generated standalone HTML. Treat these as user-consented execution zones, not passive document rendering.
 - Error reports are redacted before export and link to the LLMChef repository.
 - The MCP bridge allows configured origins only. Defaults include localhost and the project GitHub Pages origin; deployments should narrow this further when possible.
-- `npm audit` currently reports only the transitive Mermaid/UUID issue; there is no clean non-breaking fix for that chain yet.
+- `npm audit` currently reports only the Mermaid/UUID issue; the suggested force fix downgrades Mermaid and is not a clean non-breaking fix.
 
 ## Optimization Review
 

@@ -94,8 +94,7 @@ Remaining issues after pass 1:
 - `vite-plugin-node-polyfills` chain through `node-stdlib-browser`,
   `crypto-browserify`, and `elliptic`. `npm audit` recommended
   `vite-plugin-node-polyfills@0.2.0` via `--force`, also a breaking downgrade.
-- `mermaid-isomorphic` through `mermaid` and `uuid`. `npm audit` reported no
-  available fix.
+- `mermaid` through `uuid`. `npm audit` reported no available fix.
 
 Decision:
 
@@ -123,7 +122,7 @@ Result before overrides on 2026-05-01:
   `vite-plugin-pwa -> workbox-build -> @rollup/plugin-terser`.
 - 6 low from `elliptic` through
   `vite-plugin-node-polyfills -> node-stdlib-browser -> crypto-browserify`.
-- 3 moderate from `uuid <14` through `mermaid-isomorphic -> mermaid`.
+- 3 moderate from `uuid <14` through `mermaid`.
 
 Remediation applied:
 
@@ -143,7 +142,7 @@ Remaining dependency findings:
 | Area | Severity | Path | Status | Notes |
 | --- | --- | --- | --- | --- |
 | Node crypto polyfills | Low | `vite-plugin-node-polyfills -> node-stdlib-browser -> crypto-browserify -> elliptic` | Accepted for now | npm suggests downgrading `vite-plugin-node-polyfills` to `0.2.0`, which is a breaking force fix. Prefer removing/reducing browser node polyfills instead. |
-| Mermaid UUID usage | Moderate | `mermaid-isomorphic -> mermaid -> uuid` | Accepted for now | npm reports no fix available. Risk appears limited unless LLMChef passes attacker-controlled buffers into UUID v3/v5/v6 paths through Mermaid. |
+| Mermaid UUID usage | Moderate | `mermaid -> uuid` | Accepted for now | npm reports no fix available. Risk appears limited unless LLMChef passes attacker-controlled buffers into UUID v3/v5/v6 paths through Mermaid. |
 
 ## Dependency Remediation Pass 3
 
@@ -159,15 +158,34 @@ Result:
 
 - Removed the broad browser Node core polyfill plugin and its
   `node-stdlib-browser -> crypto-browserify -> elliptic` advisory chain.
-- Full `npm audit` now reports only the `mermaid-isomorphic -> mermaid -> uuid`
-  moderate advisory.
+- Full `npm audit` now reports only the `mermaid -> uuid` moderate advisory.
 - Production build still passes without explicit Node polyfills.
 
 Remaining dependency findings:
 
 | Area | Severity | Path | Status | Notes |
 | --- | --- | --- | --- | --- |
-| Mermaid UUID usage | Moderate | `mermaid-isomorphic -> mermaid -> uuid` | Accepted for now | npm reports no fix available. Mermaid rendering is lazy-loaded and sanitized, but this dependency should be revisited when Mermaid ships a patched UUID chain or if LLMChef replaces Mermaid rendering. |
+| Mermaid UUID usage | Moderate | `mermaid -> uuid` | Accepted for now | npm reports no fix available. Mermaid rendering is lazy-loaded and sanitized, but this dependency should be revisited when Mermaid ships a patched UUID chain or if LLMChef replaces Mermaid rendering. |
+
+## Dependency Remediation Pass 4
+
+Commands:
+
+```bash
+npm uninstall mermaid-isomorphic
+npm install mermaid@11.14.0
+npm audit
+npm run build
+```
+
+Result:
+
+- Removed the `mermaid-isomorphic` wrapper and kept Mermaid as the direct browser renderer dependency.
+- The remaining audit path is shorter: `mermaid -> uuid`.
+- Full `npm audit` now reports 2 moderate vulnerabilities, both from the direct
+  Mermaid UUID chain. The suggested force fix downgrades Mermaid to `9.1.7`,
+  which is a breaking change and is not applied.
+- Mermaid rendering remains lazy-loaded and now initializes Mermaid with `startOnLoad: false` and `securityLevel: "strict"` before the existing DOMPurify SVG sanitization pass.
 
 ## Runtime Attack Surface
 

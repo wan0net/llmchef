@@ -4,10 +4,11 @@ import React, {
   useRef,
   useMemo,
   useCallback,
+  useId,
   memo,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { createMermaidRenderer } from "mermaid-isomorphic";
+import mermaid from "mermaid";
 import { useSettingsStore } from "@/store/settings.store";
 import { useShallow } from "zustand/react/shallow";
 import type { CanvasControl } from "@/types/litechat/canvas/control";
@@ -23,11 +24,24 @@ interface MermaidBlockRendererProps {
   isStreaming?: boolean;
 }
 
+let mermaidInitialized = false;
+
+const initializeMermaid = () => {
+  if (mermaidInitialized) return;
+
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: "strict",
+  });
+  mermaidInitialized = true;
+};
+
 const MermaidBlockRendererComponent: React.FC<MermaidBlockRendererProps> = ({
   code,
   isStreaming = false,
 }) => {
   const { t } = useTranslation('renderers');
+  const mermaidId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
 
   const { foldStreamingCodeBlocks } = useSettingsStore(
     useShallow((state) => ({
@@ -95,30 +109,22 @@ const MermaidBlockRendererComponent: React.FC<MermaidBlockRendererProps> = ({
     setSvgContent(null);
 
     try {
-      // Create renderer with default options
-      const renderer = createMermaidRenderer();
-      
-      const results = await renderer([code]);
-      
-      if (results.length > 0 && results[0].status === "fulfilled") {
-        setSvgContent(
-          DOMPurify.sanitize(results[0].value.svg, {
-            USE_PROFILES: { svg: true, svgFilters: true },
-          })
-        );
-      } else if (results.length > 0 && results[0].status === "rejected") {
-        const reason = results[0].reason;
-        setError(reason?.message || t('mermaidBlock.renderError'));
-      } else {
-        setError(t('mermaidBlock.noResults'));
-      }
+      initializeMermaid();
+
+      const result = await mermaid.render(`mermaid-${mermaidId}`, code);
+
+      setSvgContent(
+        DOMPurify.sanitize(result.svg, {
+          USE_PROFILES: { svg: true, svgFilters: true },
+        })
+      );
     } catch (err) {
       console.error("Mermaid rendering error:", err);
       setError(err instanceof Error ? err.message : t('mermaidBlock.renderError'));
     } finally {
       setIsLoading(false);
     }
-  }, [code, isFolded]);
+  }, [code, isFolded, mermaidId, t]);
 
   useEffect(() => {
     if (!isFolded && code.trim() && !showCode) {
@@ -155,7 +161,7 @@ const MermaidBlockRendererComponent: React.FC<MermaidBlockRendererProps> = ({
       console.error("Download error:", err);
       toast.error(t('mermaidBlock.downloadFailed'));
     }
-  }, [svgContent]);
+  }, [svgContent, t]);
 
   // const handleCopyCode = useCallback(async () => {
   //   try {
