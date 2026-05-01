@@ -6,6 +6,7 @@ import {
   getOutboundRequestLog,
   subscribeOutboundRequestLog,
 } from "@/lib/litechat/outbound-policy";
+import { getRuntimeAllowedOutboundHosts } from "@/services/outbound-fetch-guard.service";
 
 const emptySnapshot: ReturnType<typeof getOutboundRequestLog> = [];
 
@@ -27,6 +28,7 @@ const SettingsNetworkLedgerComponent: React.FC = () => {
     getOutboundRequestLog,
     () => emptySnapshot,
   );
+  const allowedHosts = getRuntimeAllowedOutboundHosts();
 
   const handleClear = useCallback(() => {
     clearOutboundRequestLog();
@@ -88,6 +90,31 @@ const SettingsNetworkLedgerComponent: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-md border p-3 space-y-2">
+        <div>
+          <h4 className="text-sm font-medium">Configured Remote Hosts</h4>
+          <p className="text-xs text-muted-foreground">
+            Same-origin assets and localhost are always allowed. Other remote hosts come from configured providers and integrations.
+          </p>
+        </div>
+        {allowedHosts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No configured remote hosts yet.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {allowedHosts.map((host) => (
+              <span
+                key={host}
+                className="rounded border bg-muted/40 px-2 py-1 font-mono text-xs"
+              >
+                {host}
+              </span>
+            ))}
           </div>
         )}
       </div>

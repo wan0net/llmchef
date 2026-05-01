@@ -53,7 +53,7 @@ const isLocalOrSameOriginHost = (host: string): boolean => {
   );
 };
 
-const getConfiguredOutboundHosts = (): string[] => {
+export const getRuntimeAllowedOutboundHosts = (): string[] => {
   const hosts = new Set<string>();
 
   for (const provider of useProviderStore.getState().dbProviderConfigs) {
@@ -126,7 +126,7 @@ export const installOutboundFetchGuard = (): void => {
     }
 
     if (!isLocalOrSameOriginHost(parsed.host)) {
-      const allowedHosts = getConfiguredOutboundHosts();
+      const allowedHosts = getRuntimeAllowedOutboundHosts();
       if (!isOutboundHostAllowed(parsed.host, allowedHosts)) {
         throw new Error(
           `Blocked outbound fetch to ${parsed.host}. Configure this host before LLMChef can contact it.`,
