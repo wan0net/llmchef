@@ -1,6 +1,6 @@
 # TypeScript Type Definitions
 
-This reference covers LiteChat's key TypeScript interfaces, types, and data structures. Understanding these types is essential for working with LiteChat's codebase and extending its functionality.
+This reference covers LLMChef's key TypeScript interfaces, types, and data structures. Understanding these types is essential for working with LLMChef's codebase and extending its functionality.
 
 ## Core Domain Types
 
@@ -61,7 +61,7 @@ interface Project {
   parentId: string | null
   createdAt: Date
   updatedAt: Date
-  
+
   // AI Settings (can be null to inherit)
   systemPrompt: string | null
   modelId: string | null
@@ -71,11 +71,11 @@ interface Project {
   topK: number | null
   presencePenalty: number | null
   frequencyPenalty: number | null
-  
+
   // Rules & Tags
   defaultTagIds: string[] | null
   defaultRuleIds: string[] | null
-  
+
   metadata?: Record<string, any>
 }
 ```
@@ -287,7 +287,7 @@ interface VfsEventPayloads {
 
 #### ModEventPayloadMap
 ```typescript
-type ModEventPayloadMap = 
+type ModEventPayloadMap =
   & ProviderEventPayloads
   & ConversationEventPayloads
   & InteractionEventPayloads
@@ -396,7 +396,7 @@ interface ModInstance {
 interface LiteChatModApi {
   // Event system
   eventEmitter: EventEmitter<ModEventPayloadMap>
-  
+
   // Store access
   stores: {
     conversation: ConversationStore
@@ -406,17 +406,17 @@ interface LiteChatModApi {
     vfs: VfsStore
     // ... other stores
   }
-  
+
   // Control registration
   registerChatControl: (control: ChatControl) => void
   unregisterChatControl: (controlId: string) => void
   registerPromptControl: (control: PromptControl) => void
   unregisterPromptControl: (controlId: string) => void
-  
+
   // Settings
   addSettingsTab: (tab: CustomSettingTab) => void
   removeSettingsTab: (tabId: string) => void
-  
+
   // Middleware
   addMiddleware: <T extends ModMiddlewareHookName>(
     hookName: T,
@@ -694,4 +694,4 @@ interface UseDataResult<T> {
 }
 ```
 
-This type reference provides the foundation for understanding and working with LiteChat's TypeScript codebase. All types are designed to be strict, composable, and maintainable while supporting the application's extensible architecture. 
+This type reference provides the foundation for understanding and working with LLMChef's TypeScript codebase. All types are designed to be strict, composable, and maintainable while supporting the application's extensible architecture.

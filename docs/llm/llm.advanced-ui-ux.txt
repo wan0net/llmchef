@@ -1,7 +1,7 @@
-# LiteChat Advanced UI/UX Patterns (for LLMs)
+# LLMChef Advanced UI/UX Patterns (for LLMs)
 
 ## Overview
-LiteChat's UI is built for advanced, event-driven, highly interactive workflows. It features live preview, debounced validation, drag-and-drop, visual workflow editing, raw JSON editing, and robust error handling. All forms use TanStack Form via the `useFormedible` abstraction.
+LLMChef's UI is built for advanced, event-driven, highly interactive workflows. It features live preview, debounced validation, drag-and-drop, visual workflow editing, raw JSON editing, and robust error handling. All forms use TanStack Form via the `useFormedible` abstraction.
 
 ---
 
@@ -65,4 +65,4 @@ LiteChat's UI is built for advanced, event-driven, highly interactive workflows.
 - Form: `src/hooks/use-formedible.tsx`
 - Workflow: `src/controls/components/workflow/WorkflowBuilder.tsx`, `WorkflowVisualizer.tsx`, `WorkflowRawEditor.tsx`
 - UI: `src/controls/components/LiteChat/common/TabbedLayout.tsx`, `ActionTooltipButton.tsx`
-- Error Handling: `src/store/mcp.store.ts` 
+- Error Handling: `src/store/mcp.store.ts`

@@ -1,7 +1,7 @@
-# LiteChat Workflow Engine (for LLMs)
+# LLMChef Workflow Engine (for LLMs)
 
 ## Overview
-The workflow engine in LiteChat enables multi-step, event-driven orchestration of AI, tool, and human-in-the-loop (HITL) steps. It supports advanced branching, parallelism, sub-workflows, agent/task logic, and full prompt/template integration.
+The workflow engine in LLMChef enables multi-step, event-driven orchestration of AI, tool, and human-in-the-loop (HITL) steps. It supports advanced branching, parallelism, sub-workflows, agent/task logic, and full prompt/template integration.
 
 ---
 
@@ -76,4 +76,4 @@ The workflow engine in LiteChat enables multi-step, event-driven orchestration o
 - Engine: `src/services/workflow.service.ts`
 - Types: `src/types/litechat/workflow.ts`, `src/types/litechat/prompt-template.ts`, `src/types/litechat/prompt.ts`
 - Flow: `src/lib/litechat/workflow-flow-generator.ts`
-- UI: `src/controls/components/workflow/`, `src/controls/modules/WorkflowBlockRendererModule.ts` 
+- UI: `src/controls/components/workflow/`, `src/controls/modules/WorkflowBlockRendererModule.ts`

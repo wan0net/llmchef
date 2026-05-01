@@ -454,9 +454,9 @@ export const ConversationListControlComponent: React.FC<
     <div className="p-2 border-r border-[--border] bg-card text-card-foreground h-full flex flex-col">
       <div className="flex justify-between items-center mb-2 flex-shrink-0 px-1">
         <div className="flex items-center space-x-2">
-          <h3 className="text-sm font-semibold">{t('conversationList.title', 'LiteChat')}</h3>
+          <h3 className="text-sm font-semibold">{t('conversationList.title', 'LLMChef')}</h3>
           <Lnk
-            href="https://github.com/wan0net/litechat"
+            href="https://github.com/wan0net/llmchef"
             target="_blank"
             rel="noopener noreferrer"
             aria-label={t('conversationList.githubRepo')}
@@ -467,8 +467,8 @@ export const ConversationListControlComponent: React.FC<
           </Lnk>
           <Lnk
             href="release/latest.zip"
-            download="LiteChat.zip"
-            aria-label={t('conversationList.downloadLiteChat')}
+            download="LLMChef.zip"
+            aria-label={t('conversationList.downloadLLMChef')}
           >
             <Button size="sm" variant="ghost" className="h-4 w-4 p-0">
               <DownloadIcon className="h-4 w-4" />

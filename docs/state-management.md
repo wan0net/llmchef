@@ -1,6 +1,6 @@
 # State Management
 
-LiteChat uses Zustand for state management with a modular, event-driven architecture. Each domain has its own store that manages a specific slice of application state, providing clean separation of concerns and maintainable state updates.
+LLMChef uses Zustand for state management with a modular, event-driven architecture. Each domain has its own store that manages a specific slice of application state, providing clean separation of concerns and maintainable state updates.
 
 ## Architecture Overview
 
@@ -22,11 +22,11 @@ export const useMyStore = create(
     data: [],
     isLoading: false,
     error: null,
-    
+
     // Action methods
     loadData: async () => { /* implementation */ },
     updateItem: (id, changes) => { /* implementation */ },
-    
+
     // Event integration
     getRegisteredActionHandlers: () => { /* event handlers */ }
   }))
@@ -70,7 +70,7 @@ emitter.emit(conversationEvent.selectedItemChanged, { itemId, itemType });
 emitter.emit(interactionEvent.setCurrentConversationIdRequest, { id });
 ```
 
-### InteractionStore  
+### InteractionStore
 [`src/store/interaction.store.ts`](../src/store/interaction.store.ts)
 
 **Purpose**: Manages messages/interactions for the currently selected conversation and streaming state.
@@ -147,17 +147,17 @@ interface SettingsState {
   theme: string;
   customThemeColors: Record<string, string>;
   chatMaxWidth: number;
-  
-  // AI Settings  
+
+  // AI Settings
   globalSystemPrompt: string;
   temperature: number;
   maxTokens: number;
   topP: number;
-  
+
   // Git Settings
   gitUserName: string;
   gitUserEmail: string;
-  
+
   // Auto-generation
   autoTitlePrompt: string;
   enableAutoTitle: boolean;
@@ -420,7 +420,7 @@ loadConversations: async () => {
   set({ isLoading: true });
   const conversations = await PersistenceService.loadConversations();
   set({ conversations, isLoading: false });
-  
+
   // 3. Emit change notification
   emitter.emit(conversationEvent.loaded, { conversations });
 }
@@ -483,18 +483,18 @@ Stores automatically persist changes through [`PersistenceService`](../src/servi
 // Store action with persistence
 addConversation: async (conversationData) => {
   const newConversation = { /* ... */ };
-  
+
   // Persist first
   await PersistenceService.saveConversation(newConversation);
-  
+
   // Then update state
   set((state) => {
     state.conversations.unshift(newConversation);
   });
-  
+
   // Emit event
   emitter.emit(conversationEvent.conversationAdded, { conversation: newConversation });
-  
+
   return newConversation.id;
 }
 ```
@@ -535,11 +535,11 @@ Stores communicate through events, not direct references:
 // ConversationStore triggers InteractionStore updates
 selectItem: async (id, type) => {
   set({ selectedItemId: id, selectedItemType: type });
-  
+
   // Trigger interaction loading via event
   const conversationId = type === "conversation" ? id : null;
   emitter.emit(interactionEvent.setCurrentConversationIdRequest, { id: conversationId });
-  
+
   emitter.emit(conversationEvent.selectedItemChanged, { itemId: id, itemType: type });
 }
 ```
@@ -550,13 +550,13 @@ Prevent unnecessary updates and ensure consistency:
 ```typescript
 setCurrentConversationId: async (id) => {
   const currentId = get().currentConversationId;
-  
+
   // Only update if different
   if (currentId === id) return;
-  
+
   set({ currentConversationId: id });
   emitter.emit(interactionEvent.currentConversationIdChanged, { conversationId: id });
-  
+
   // Load interactions for new conversation
   if (id) {
     await get().loadInteractions(id);
@@ -572,7 +572,7 @@ Consistent error handling across stores:
 ```typescript
 someAsyncAction: async (params) => {
   const { _setLoading, _setError } = get();
-  
+
   _setLoading(true);
   try {
     const result = await someApiCall(params);
@@ -599,7 +599,7 @@ updateItem: async (id, changes) => {
     const item = state.items.find(item => item.id === id);
     if (item) Object.assign(item, changes);
   });
-  
+
   try {
     await PersistenceService.updateItem(id, changes);
     emitter.emit(myEvent.itemUpdated, { id, changes });
@@ -628,7 +628,7 @@ interface MyFeatureState {
   error: string | null;
 }
 
-// Actions interface  
+// Actions interface
 interface MyFeatureActions {
   loadItems: () => Promise<void>;
   selectItem: (id: string) => void;
@@ -648,7 +648,7 @@ export const useMyFeatureStore = create(
     selectedId: null,
     isLoading: false,
     error: null,
-    
+
     // Actions
     loadItems: async () => {
       set({ isLoading: true, error: null });
@@ -660,12 +660,12 @@ export const useMyFeatureStore = create(
         set({ error: error.message, isLoading: false });
       }
     },
-    
+
     selectItem: (id) => {
       set({ selectedId: id });
       emitter.emit(myFeatureEvent.itemSelected, { itemId: id });
     },
-    
+
     // Event handlers registration
     getRegisteredActionHandlers: () => [
       {
@@ -725,7 +725,7 @@ Each store should manage one domain:
 export const useConversationStore = /* manages conversations only */;
 export const useInteractionStore = /* manages interactions only */;
 
-// Avoid: Mixed responsibilities  
+// Avoid: Mixed responsibilities
 export const useChatStore = /* manages conversations, interactions, UI state, etc. */;
 ```
 
@@ -740,9 +740,9 @@ set((state) => {
 });
 
 // Avoid: Direct mutation
-set({ 
+set({
   items: [...get().items, newItem],
-  selectedId: newItem.id 
+  selectedId: newItem.id
 });
 ```
 
@@ -786,4 +786,4 @@ interface StrictState {
 updateItem: (id: string, changes: Partial<MyItem>) => Promise<void>;
 ```
 
-The state management system provides a robust foundation for LiteChat's modular architecture. By following these patterns and leveraging the event-driven approach, you can build maintainable, scalable features that integrate seamlessly with the existing application state. 
+The state management system provides a robust foundation for LLMChef's modular architecture. By following these patterns and leveraging the event-driven approach, you can build maintainable, scalable features that integrate seamlessly with the existing application state.

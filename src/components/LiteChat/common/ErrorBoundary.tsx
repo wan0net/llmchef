@@ -19,8 +19,8 @@ interface State {
   errorInfo: ErrorInfo | null;
 }
 
-const LITECHAT_VERSION = "0.1.0-dev";
-const GITHUB_REPO_URL = "https://github.com/wan0net/litechat";
+const LLMCHEF_VERSION = "0.1.0-dev";
+const GITHUB_REPO_URL = "https://github.com/wan0net/llmchef";
 
 const CopyButton: React.FC<{
   textToCopy: string;
@@ -111,8 +111,8 @@ class ErrorBoundaryComponent extends Component<Props & { t: any }, State> {
 `; // Use markdown line breaks for GitHub
     const codeBlock = forGithub ? "```" : "";
 
-    let report = `## LiteChat Error Report${nl}${nl}`;
-    report += `**Version:** ${LITECHAT_VERSION}${nl}`;
+    let report = `## LLMChef Error Report${nl}${nl}`;
+    report += `**Version:** ${LLMCHEF_VERSION}${nl}`;
     report += `**Timestamp:** ${new Date().toISOString()}${nl}`;
     report += `**User Agent:** ${typeof navigator !== "undefined" ? navigator.userAgent : "N/A"}${nl}${nl}`;
 
@@ -140,7 +140,7 @@ class ErrorBoundaryComponent extends Component<Props & { t: any }, State> {
   private generateAIPrompt(): string {
     const { error, errorInfo } = this.state;
     const { t } = this.props;
-    let prompt = `I encountered an error in a React application (LiteChat v${LITECHAT_VERSION}). Please help me debug it.
+    let prompt = `I encountered an error in a React application (LLMChef v${LLMCHEF_VERSION}). Please help me debug it.
 
 Error Message:
 \`\`\`

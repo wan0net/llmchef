@@ -5,7 +5,7 @@ import { FlowBlockRenderer } from "@/components/LiteChat/common/FlowBlockRendere
 import React from "react";
 
 // Control rule prompt for Flow diagrams
-export const FLOW_CONTROL_PROMPT = `LiteChat supports interactive workflow flow diagrams using the \`flow\` codeblock. These are particularly useful for visualizing workflows, processes, and step-by-step procedures.
+export const FLOW_CONTROL_PROMPT = `LLMChef supports interactive workflow flow diagrams using the \`flow\` codeblock. These are particularly useful for visualizing workflows, processes, and step-by-step procedures.
 These are very fancy and give amazing result, if you need to explain things graphically, this is your favorite block.
 
 **Functionality:**
@@ -157,8 +157,8 @@ Organizational flowchart:
 \`\`\`flow
 {
   "type": "flowchart",
-  "name": "LiteChat Ecosystem",
-  "description": "LiteChat as the central hub connecting AI capabilities",
+  "name": "LLMChef Ecosystem",
+  "description": "LLMChef as the central hub connecting AI capabilities",
   "background": {
     "variant": "dots",
     "color": "#f0f8ff",
@@ -168,7 +168,7 @@ Organizational flowchart:
     {
       "id": "litechat",
       "type": "custom",
-      "label": "<img src=\"https://wan0net.github.io/litechat/icons/128.png\" />",
+      "label": "<img src='/icons/128.png' />",
       "style": {
         "backgroundColor": "#FFF2CC",
         "borderColor": "#FFD700",
@@ -412,4 +412,4 @@ export class FlowBlockRendererModule implements ControlModule {
       this.unregisterRuleCallback = undefined;
     }
   }
-} 
+}

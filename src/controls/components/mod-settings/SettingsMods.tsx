@@ -164,10 +164,10 @@ const SettingsModsComponent: React.FC = () => {
         <AlertTitle>Security Warning</AlertTitle>
         <AlertDescription>
           Running mods from untrusted sources can compromise your security and
-          privacy. Mods execute arbitrary JavaScript code within LiteChat and
+          privacy. Mods execute arbitrary JavaScript code within LLMChef and
           can potentially access sensitive data like API keys stored in the
           browser or interact with external services. Only install mods you
-          trust. LiteChat is not responsible for any damage caused by mods.
+          trust. LLMChef is not responsible for any damage caused by mods.
         </AlertDescription>
       </Alert>
 

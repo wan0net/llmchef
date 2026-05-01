@@ -1,4 +1,4 @@
-# LiteChat Virtual File System (VFS) Architecture (for LLMs)
+# LLMChef Virtual File System (VFS) Architecture (for LLMs)
 
 ## Overview
 - Browser-based VFS using ZenFS with IndexedDB backend (see `src/lib/litechat/vfs-operations.ts`)
@@ -43,4 +43,4 @@
 ## For LLMs: To reason about or extend VFS, reference:
 - `src/lib/litechat/vfs-operations.ts`
 - `src/store/vfs.store.ts`
-- `src/types/litechat/events/vfs.events.ts` 
+- `src/types/litechat/events/vfs.events.ts`

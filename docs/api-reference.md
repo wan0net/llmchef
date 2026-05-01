@@ -1,6 +1,6 @@
 # API Reference
 
-This reference covers LiteChat's core APIs, including store methods, service interfaces, event emitter usage, and modding APIs. These APIs form the foundation for extending and customizing LiteChat.
+This reference covers LLMChef's core APIs, including store methods, service interfaces, event emitter usage, and modding APIs. These APIs form the foundation for extending and customizing LLMChef.
 
 ## Store APIs
 
@@ -41,12 +41,12 @@ interface ConversationStore {
   updateConversation(id: string, updates: Partial<Conversation>): Promise<void>
   deleteConversation(id: string): Promise<void>
   selectConversation(id: string | null): void
-  
+
   loadInteractions(conversationId: string): Promise<void>
   addInteraction(interaction: Omit<Interaction, 'id'>): Promise<string>
   updateInteraction(id: string, updates: Partial<Interaction>): Promise<void>
   deleteInteraction(id: string): Promise<void>
-  
+
   // Utility methods
   getConversationById(id: string): Conversation | undefined
   getInteractionsForConversation(conversationId: string): Interaction[]
@@ -71,7 +71,7 @@ interface ProjectStore {
   updateProject(id: string, updates: Partial<Project>): Promise<void>
   deleteProject(id: string): Promise<void>
   selectProject(id: string | null): void
-  
+
   // Utility methods
   getProjectById(id: string): Project | undefined
   getProjectsByParent(parentId: string | null): Project[]
@@ -101,17 +101,17 @@ interface VfsStore {
   uploadFiles(parentId: string | null, files: FileList): Promise<void>
   deleteNodes(ids: string[]): Promise<void>
   renameNode(id: string, newName: string): Promise<void>
-  
+
   // File operations
   readFile(path: string): Promise<string>
   writeFile(path: string, content: string): Promise<void>
   downloadFile(fileId: string): Promise<{ name: string; blob: Blob } | null>
-  
+
   // Selection
   selectFile(fileId: string): void
   deselectFile(fileId: string): void
   clearSelection(): void
-  
+
   // Utility methods
   findNodeByPath(path: string): VfsNode | undefined
   getNodeChildren(nodeId: string): VfsNode[]
@@ -140,7 +140,7 @@ interface ProviderStore {
   deleteProviderConfig(id: string): Promise<void>
   selectModel(modelId: string | null): void
   fetchModels(providerConfigId: string): Promise<void>
-  
+
   // Utility methods
   getProviderById(id: string): DbProviderConfig | undefined
   getApiKeysForProvider(providerId: string): DbApiKey[]
@@ -165,7 +165,7 @@ interface PromptTemplateStore {
   updatePromptTemplate(id: string, updates: Partial<PromptTemplate>): Promise<void>
   deletePromptTemplate(id: string): Promise<void>
   compilePromptTemplate(templateId: string, formData: PromptFormData): Promise<CompiledPrompt>
-  
+
   // Utility methods
   getTemplateById(id: string): PromptTemplate | undefined
   getTemplatesByTag(tag: string): PromptTemplate[]
@@ -260,8 +260,8 @@ Events follow the pattern: `domain.action[Request]`
 
 ```typescript
 // Request/Response pattern
-eventEmitter.emit('conversation.createRequest', { 
-  conversation: newConversationData 
+eventEmitter.emit('conversation.createRequest', {
+  conversation: newConversationData
 })
 // Listen for the result
 eventEmitter.on('conversation.created', ({ conversation }) => {
@@ -330,8 +330,8 @@ eventEmitter.on('provider.loadingStateChanged', ({ isLoading, error }) => {
 **Prompt Input Text Setting**:
 ```typescript
 // Apply template content to input area
-eventEmitter.emit('prompt.input.set.text.request', { 
-  text: 'Compiled template content here...' 
+eventEmitter.emit('prompt.input.set.text.request', {
+  text: 'Compiled template content here...'
 })
 
 // Listen for input changes
@@ -354,7 +354,7 @@ const conversations = await PersistenceService.loadConversations()
 const conversationId = await PersistenceService.saveConversation(conversation)
 await PersistenceService.deleteConversation(conversationId)
 
-// Project operations  
+// Project operations
 const projects = await PersistenceService.loadProjects()
 const projectId = await PersistenceService.saveProject(project)
 
@@ -428,13 +428,13 @@ const processedPrompt = await ConversationService.processPrompt(
 
 ### LiteChatModApi Interface
 
-The modding API provides controlled access to LiteChat's functionality.
+The modding API provides controlled access to LLMChef's functionality.
 
 ```typescript
 interface LiteChatModApi {
   // Event system access
   eventEmitter: EventEmitter<ModEventPayloadMap>
-  
+
   // Store access (read-only)
   stores: {
     conversation: ConversationStore
@@ -450,17 +450,17 @@ interface LiteChatModApi {
     input: InputStore
     promptState: PromptStateStore
   }
-  
+
   // Control registration
   registerChatControl(control: ChatControl): void
   unregisterChatControl(controlId: string): void
   registerPromptControl(control: PromptControl): void
   unregisterPromptControl(controlId: string): void
-  
+
   // Settings extension
   addSettingsTab(tab: CustomSettingTab): void
   removeSettingsTab(tabId: string): void
-  
+
   // Middleware system
   addMiddleware<T extends ModMiddlewareHookName>(
     hookName: T,
@@ -475,7 +475,7 @@ interface LiteChatModApi {
 // Example mod implementation
 class ExampleMod {
   constructor(private api: LiteChatModApi) {}
-  
+
   async initialize() {
     // Register a chat control
     this.api.registerChatControl({
@@ -484,12 +484,12 @@ class ExampleMod {
       renderer: () => React.createElement('div', null, 'Example Control'),
       show: () => true
     })
-    
+
     // Listen to events
     this.api.eventEmitter.on('conversation.selected', (payload) => {
       console.log('Mod detected conversation selection:', payload.conversationId)
     })
-    
+
     // Add settings tab
     this.api.addSettingsTab({
       id: 'example-settings',
@@ -497,7 +497,7 @@ class ExampleMod {
       component: ExampleSettingsComponent,
       order: 100
     })
-    
+
     // Add middleware
     this.api.addMiddleware('beforeSubmitPrompt', async (payload) => {
       // Modify prompt before submission
@@ -525,7 +525,7 @@ interface ChatControl {
   iconRenderer?(): React.ReactElement | null
   panel?: string // 'left' | 'right' | 'bottom'
   show?(): boolean
-  
+
   // Settings integration
   settingsConfig?: {
     tabId: string
@@ -535,7 +535,7 @@ interface ChatControl {
   }
   settingsRenderer?(): React.ReactElement | null
   onSettingSubmit?(settingsData: any): void | Promise<void>
-  
+
   // AI interaction middleware
   aiInteractionMiddleware?: {
     before?(payload: AIPayload): AIPayload | Promise<AIPayload> | false
@@ -551,15 +551,15 @@ interface PromptControl {
   id: string
   show?(): boolean
   status?(): ChatControlStatus
-  
+
   // UI rendering
   renderer?(): React.ReactNode
   triggerRenderer?(): React.ReactNode
-  
+
   // Data providers
   getParameters?(): Record<string, any> | Promise<Record<string, any> | undefined> | undefined
   getMetadata?(): Record<string, any> | Promise<Record<string, any> | undefined> | undefined
-  
+
   // Lifecycle
   clearOnSubmit?(): void
   onRegister?(): void
@@ -613,8 +613,8 @@ try {
   const result = await someOperation()
   eventEmitter.emit('operation.completed', { result })
 } catch (error) {
-  eventEmitter.emit('operation.failed', { 
-    error: error instanceof Error ? error.message : String(error) 
+  eventEmitter.emit('operation.failed', {
+    error: error instanceof Error ? error.message : String(error)
   })
 }
 ```
@@ -629,11 +629,11 @@ function MyComponent() {
     isLoading: state.isLoading,
     error: state.error
   })))
-  
+
   if (isLoading) return <Skeleton />
   if (error) return <Alert variant="destructive">{error}</Alert>
   if (!data.length) return <EmptyState />
-  
+
   return <ConversationList conversations={data} />
 }
 ```
@@ -664,13 +664,13 @@ useEffect(() => {
   const handler = (payload: EventPayload) => {
     // Handle event
   }
-  
+
   eventEmitter.on('some.event', handler)
-  
+
   return () => {
     eventEmitter.off('some.event', handler)
   }
 }, [])
 ```
 
-This API reference provides the essential interfaces for working with LiteChat's systems, whether you're extending the core application or developing mods. 
+This API reference provides the essential interfaces for working with LLMChef's systems, whether you're extending the core application or developing mods.

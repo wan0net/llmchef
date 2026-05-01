@@ -1,6 +1,6 @@
 # Git Integration
 
-LiteChat provides comprehensive Git integration enabling version control workflows, conversation synchronization, and collaborative development directly within the browser. All Git operations are performed using `isomorphic-git` on the Virtual File System.
+LLMChef provides comprehensive Git integration enabling version control workflows, conversation synchronization, and collaborative development directly within the browser. All Git operations are performed using `isomorphic-git` on the Virtual File System.
 
 ## Architecture Overview
 
@@ -13,7 +13,7 @@ LiteChat provides comprehensive Git integration enabling version control workflo
 
 ### Git Library Integration
 
-LiteChat uses `isomorphic-git` for browser-based Git operations:
+LLMChef uses `isomorphic-git` for browser-based Git operations:
 
 ```typescript
 import git from 'isomorphic-git';
@@ -180,7 +180,7 @@ The Git Tools Module provides AI-accessible Git operations:
 ```typescript
 // git_add tool
 {
-  "name": "git_add", 
+  "name": "git_add",
   "description": "Stage files for commit",
   "parameters": {
     "type": "object",
@@ -203,7 +203,7 @@ The Git Tools Module provides AI-accessible Git operations:
   "name": "git_commit",
   "description": "Create a commit with staged changes",
   "parameters": {
-    "type": "object", 
+    "type": "object",
     "properties": {
       "message": {
         "type": "string",
@@ -232,7 +232,7 @@ The Git Tools Module provides AI-accessible Git operations:
     "type": "object",
     "properties": {
       "remote": {
-        "type": "string", 
+        "type": "string",
         "default": "origin"
       },
       "branch": {
@@ -243,7 +243,7 @@ The Git Tools Module provides AI-accessible Git operations:
   }
 }
 
-// git_pull tool  
+// git_pull tool
 {
   "name": "git_pull",
   "description": "Pull changes from remote repository",
@@ -310,7 +310,7 @@ export const cloneRepositoryOp = async (
   options?: { fsInstance?: typeof fs }
 ): Promise<void> => {
   const fsToUse = options?.fsInstance ?? fs;
-  
+
   await git.clone({
     fs: fsToUse,
     http,
@@ -328,12 +328,12 @@ export const getStatusOp = async (
   options?: { fsInstance?: typeof fs }
 ): Promise<GitFileStatus[]> => {
   const fsToUse = options?.fsInstance ?? fs;
-  
+
   const status = await git.statusMatrix({
     fs: fsToUse,
     dir: repoDir
   });
-  
+
   return status.map(parseFileStatus);
 };
 
@@ -345,14 +345,14 @@ export const commitOp = async (
   options?: { fsInstance?: typeof fs }
 ): Promise<string> => {
   const fsToUse = options?.fsInstance ?? fs;
-  
+
   const sha = await git.commit({
     fs: fsToUse,
     dir: repoDir,
     message,
     author
   });
-  
+
   return sha;
 };
 ```
@@ -415,9 +415,9 @@ interface ProjectSettings {
 ### Status Types
 
 ```typescript
-type SyncStatus = 
+type SyncStatus =
   | "not_synced"     // Never synced
-  | "synced"         // Up to date  
+  | "synced"         // Up to date
   | "pending"        // Sync in progress
   | "conflict"       // Merge conflict
   | "error";         // Sync failed
@@ -440,7 +440,7 @@ When sync conflicts occur:
 2. **User Choice**: Present conflict resolution options
 3. **Resolution Strategies**:
    - Keep local version
-   - Use remote version  
+   - Use remote version
    - Manual merge (show diff)
    - Create branch for local changes
 
@@ -472,7 +472,7 @@ const autoSyncSettings = {
 - Token expired
 - Repository access denied
 
-// Network errors  
+// Network errors
 - No internet connection
 - Repository server unavailable
 - Timeout during operations
@@ -579,7 +579,7 @@ registerSyncHandler(customSyncHandler);
 // Mock Git operations for testing
 const mockGitOps = {
   clone: jest.fn(),
-  commit: jest.fn(), 
+  commit: jest.fn(),
   push: jest.fn(),
   status: jest.fn()
 };
@@ -588,9 +588,9 @@ const mockGitOps = {
 test("conversation sync workflow", async () => {
   const conversation = createTestConversation();
   const repo = createTestRepo();
-  
+
   await syncConversation(conversation, repo);
-  
+
   expect(mockGitOps.commit).toHaveBeenCalledWith(
     expect.objectContaining({
       message: expect.stringContaining(conversation.title)
@@ -606,7 +606,7 @@ test("conversation sync workflow", async () => {
 ```typescript
 {
   "name": "Development Repo",
-  "url": "https://github.com/user/litechat-dev.git",
+  "url": "https://github.com/user/llmchef-dev.git",
   "username": "user",
   "password": "ghp_development_token",
   "autoSync": true,
@@ -618,7 +618,7 @@ test("conversation sync workflow", async () => {
 
 ```typescript
 {
-  "name": "Team Conversations", 
+  "name": "Team Conversations",
   "url": "https://github.com/team/project-conversations.git",
   "username": "bot-user",
   "password": "ghp_team_access_token",
@@ -632,11 +632,11 @@ test("conversation sync workflow", async () => {
 ```typescript
 {
   "name": "Personal Backup",
-  "url": "https://github.com/user/litechat-backup.git", 
+  "url": "https://github.com/user/llmchef-backup.git",
   "username": "user",
   "password": "ghp_backup_token",
   "autoSync": true,
   "syncInterval": 900, // 15 minutes
   "includeMetadata": true
 }
-``` 
+```

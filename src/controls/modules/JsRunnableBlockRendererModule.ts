@@ -10,7 +10,7 @@ import React from "react";
 const assertLocalUrl = (url: string, label: string): void => {
   const parsed = new URL(url, window.location.origin);
   if (parsed.origin !== window.location.origin) {
-    throw new Error(`${label} must be served from the LiteChat origin.`);
+    throw new Error(`${label} must be served from the LLMChef origin.`);
   }
 };
 
@@ -20,10 +20,10 @@ export const JS_RUNNABLE_CONTROL_PROMPT = `# JavaScript Runnable Block Environme
 You have access to a full JavaScript execution environment with the following context:
 
 ## Available Context
-- \`litechat\` — The LiteChat API object with utilities and VFS operations.
+- \`litechat\` — The LLMChef API object with utilities and VFS operations.
 - \`litechat.target\` — **THE DOM ELEMENT ITSELF** - Use direct DOM manipulation for performance and versatility.
 
-## LiteChat API Reference
+## LLMChef API Reference
 You can use the following methods on \`litechat\`:
 
 ### Utilities
@@ -34,7 +34,7 @@ You can use the following methods on \`litechat\`:
 - \`litechat.utils.loadScript(src)\` — Dynamically load a same-origin script via <script src="...">. Returns a promise that resolves when loaded. Tracks loaded scripts for cleanup.
 
 ### Event System
-- \`litechat.emit(eventName, payload)\` — Emit events to the LiteChat system
+- \`litechat.emit(eventName, payload)\` — Emit events to the LLMChef system
 
 ### VFS (File System)
 - \`litechat.getVfsInstance(vfsKey)\` — Get VFS instance ('orphan' is the default)
@@ -284,7 +284,7 @@ createThreeJSScene();
 1. **ALWAYS use \`litechat.target.appendChild()\`, \`litechat.target.replaceChildren()\`, etc.**
 2. **Create elements with \`document.createElement()\`**
 3. **Use Tailwind utility classes via \`className\` for styling**
-4. **Add event listeners directly: \`element.onclick = () => {...}\`**, prevent defaults when target is focused but release them on blur so your output is usable but do not lock LiteChat usage.
+4. **Add event listeners directly: \`element.onclick = () => {...}\`**, prevent defaults when target is focused but release them on blur so your output is usable but do not lock LLMChef usage.
 5. **Avoid innerHTML/outerHTML - use DOM methods for performance**
 6. **Use \`litechat.target.replaceChildren()\` to clear content before adding new content**
 7. **For external libraries, use \`litechat.utils.load...\` method to load your script, module or mapped modules !**

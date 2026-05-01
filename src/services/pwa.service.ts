@@ -72,7 +72,7 @@ export class PWAService {
 
     // Show toast notification
     toast("Update Available", {
-      description: "A new version of LiteChat is available. Click to update.",
+      description: "A new version of LLMChef is available. Click to update.",
       action: {
         label: "Update Now",
         onClick: () => this.acceptUpdate(),
@@ -88,7 +88,7 @@ export class PWAService {
     });
 
     toast.success("App Ready", {
-      description: "LiteChat is now ready to work offline.",
+      description: "LLMChef is now ready to work offline.",
       duration: 5000,
     });
   }

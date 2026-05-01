@@ -1,7 +1,7 @@
-# LiteChat Agent/Task/Shortcut Patterns (for LLMs)
+# LLMChef Agent/Task/Shortcut Patterns (for LLMs)
 
 ## Overview
-LiteChat supports advanced agent, task, and shortcut prompt orchestration using a unified prompt template system. Agents and tasks are first-class prompt templates, with parent/child relationships, follow-ups, and shortcut logic. All orchestration is event-driven and extensible.
+LLMChef supports advanced agent, task, and shortcut prompt orchestration using a unified prompt template system. Agents and tasks are first-class prompt templates, with parent/child relationships, follow-ups, and shortcut logic. All orchestration is event-driven and extensible.
 
 ---
 
@@ -49,4 +49,4 @@ LiteChat supports advanced agent, task, and shortcut prompt orchestration using 
 ## Key Files
 - Store: `src/store/prompt-template.store.ts`
 - UI: `src/controls/components/prompt/PromptLibraryControl.tsx`, `src/controls/components/workflow/WorkflowBuilder.tsx`
-- Types: `src/types/litechat/prompt-template.ts` 
+- Types: `src/types/litechat/prompt-template.ts`

@@ -1,6 +1,6 @@
 # Modding System
 
-LiteChat provides a powerful and secure modding system that allows external extensions to safely interact with the application through a controlled API. The modding system is designed with security and stability as primary concerns.
+LLMChef provides a powerful and secure modding system that allows external extensions to safely interact with the application through a controlled API. The modding system is designed with security and stability as primary concerns.
 
 ## Architecture Overview
 
@@ -27,37 +27,37 @@ interface LiteChatModApi {
   // Metadata
   readonly modId: string;
   readonly modName: string;
-  
+
   // Component Registration
   registerPromptControl(control: ModPromptControl): () => void;
   registerChatControl(control: ModChatControl): () => void;
   registerCanvasControl(control: ModCanvasControl): () => void;
   registerSettingsTab(tab: CustomSettingTab): () => void;
-  
+
   // Tool Registration
   registerTool<T extends z.ZodSchema>(
     name: string,
     tool: Tool<T>,
     implementation: ToolImplementation<T>
   ): () => void;
-  
+
   // Middleware Registration
   registerMiddleware(
     hookName: ModMiddlewareHookName,
     middleware: ModMiddlewareHook
   ): () => void;
-  
+
   // Event System
   on<K extends keyof ModEventPayloadMap>(
     eventName: K,
     handler: (payload: ModEventPayloadMap[K]) => void
   ): () => void;
-  
+
   emit<K extends keyof ModEventPayloadMap>(
     eventName: K,
     payload: ModEventPayloadMap[K]
   ): void;
-  
+
   // Utilities
   getContext(): ModApiContext;
   log(level: 'info' | 'warn' | 'error', message: string, ...args: any[]): void;
@@ -146,8 +146,8 @@ function createMyMod(modApi) {
 }
 
 // Register the mod
-if (typeof window !== 'undefined' && window.LiteChat) {
-  window.LiteChat.registerMod('my-mod', createMyMod);
+if (typeof window !== 'undefined' && window.LLMChef) {
+  window.LLMChef.registerMod('my-mod', createMyMod);
 }
 ```
 
@@ -170,9 +170,9 @@ function createAdvancedMod(modApi) {
       onSettingsChange: (newSettings) => {
         settings = { ...settings, ...newSettings };
         // Persist settings through events
-        modApi.emit('mod.settings.changed', { 
-          modId: modApi.modId, 
-          settings 
+        modApi.emit('mod.settings.changed', {
+          modId: modApi.modId,
+          settings
         });
       }
     }),
@@ -213,7 +213,7 @@ function createAdvancedMod(modApi) {
           conversationId: context.conversationId
         });
       }
-      
+
       // Continue middleware chain
       return next(chunk, context);
     }
@@ -374,7 +374,7 @@ interface ToolContext {
 Intercept and modify data at key points:
 
 ```typescript
-type ModMiddlewareHookName = 
+type ModMiddlewareHookName =
   | 'middleware:prompt:preSubmit'
   | 'middleware:interaction:processChunk'
   | 'middleware:interaction:postComplete'
@@ -387,7 +387,7 @@ modApi.registerMiddleware(
   async (chunk, context, next) => {
     // Custom processing
     const processedChunk = await customProcessing(chunk);
-    
+
     // Continue chain with modified chunk
     return next(processedChunk, context);
   }
@@ -401,7 +401,7 @@ Middleware functions run in sequence based on registration order:
 // Middleware chain execution
 const runMiddleware = async (hookName, initialData, context) => {
   const middlewares = getRegisteredMiddleware(hookName);
-  
+
   let currentData = initialData;
   for (const middleware of middlewares) {
     try {
@@ -411,7 +411,7 @@ const runMiddleware = async (hookName, initialData, context) => {
       // Continue with unmodified data
     }
   }
-  
+
   return currentData;
 };
 ```
@@ -508,7 +508,7 @@ const loadMod = async (dbMod: DbMod) => {
   try {
     const modApi = createModApi(dbMod);
     const cleanup = await executeMod(dbMod.scriptContent, modApi);
-    
+
     return {
       id: dbMod.id,
       name: dbMod.name,
@@ -523,7 +523,7 @@ const loadMod = async (dbMod: DbMod) => {
       name: dbMod.name,
       error
     });
-    
+
     return {
       id: dbMod.id,
       name: dbMod.name,
@@ -570,7 +570,7 @@ const executeMod = (scriptContent: string, modApi: LiteChatModApi) => {
     console: modApi,  // Redirected logging
     // No access to window, document, etc.
   };
-  
+
   // Execute with restricted context
   const modFunction = new Function('modApi', 'React', scriptContent);
   return modFunction(modApi, { createElement: React.createElement });
@@ -586,7 +586,7 @@ function createMyMod(modApi) {
   try {
     // Mod initialization
     const cleanup = setupMod();
-    
+
     return () => {
       try {
         cleanup();
@@ -606,11 +606,11 @@ function createMyMod(modApi) {
 // Always return cleanup functions
 function createMyMod(modApi) {
   const unsubscribers = [];
-  
+
   // Register components and store unsubscribers
   unsubscribers.push(modApi.registerPromptControl(/* ... */));
   unsubscribers.push(modApi.on('some.event', handler));
-  
+
   // Return comprehensive cleanup
   return () => {
     unsubscribers.forEach(unsub => {
@@ -641,7 +641,7 @@ const expensiveComputation = (input) => {
   if (cache.has(input)) {
     return cache.get(input);
   }
-  
+
   const result = doExpensiveWork(input);
   cache.set(input, result);
   return result;
@@ -653,7 +653,7 @@ const expensiveComputation = (input) => {
 // Provide feedback for long operations
 modApi.registerTool('long-operation', schema, async (params, context) => {
   modApi.toast('Processing...', { type: 'info' });
-  
+
   try {
     const result = await longRunningOperation(params);
     modApi.toast('Operation completed successfully!', { type: 'success' });
@@ -679,14 +679,14 @@ modApi.registerTool('long-operation', schema, async (params, context) => {
 // Future API versioning support
 interface ModApiV2 extends LiteChatModApi {
   readonly apiVersion: '2.0';
-  
+
   // New capabilities
   registerModal(modal: ModModalProvider): () => void;
   requestPermission(permission: string): Promise<boolean>;
-  
+
   // Enhanced context
   getEnhancedContext(): EnhancedModApiContext;
 }
 ```
 
-The modding system provides a secure, powerful way to extend LiteChat while maintaining stability and security. By following the controlled API pattern and best practices, developers can create rich extensions that enhance the user experience without compromising the application's integrity. 
+The modding system provides a secure, powerful way to extend LLMChef while maintaining stability and security. By following the controlled API pattern and best practices, developers can create rich extensions that enhance the user experience without compromising the application's integrity.

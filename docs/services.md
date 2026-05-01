@@ -1,10 +1,10 @@
 # Service Layer Architecture
 
-This guide covers LiteChat's service layer, which encapsulates business logic and provides a clean interface between the UI and data layers. Services handle complex operations, coordinate between different parts of the system, and maintain separation of concerns.
+This guide covers LLMChef's service layer, which encapsulates business logic and provides a clean interface between the UI and data layers. Services handle complex operations, coordinate between different parts of the system, and maintain separation of concerns.
 
 ## Architecture Overview
 
-Services in LiteChat follow these principles:
+Services in LLMChef follow these principles:
 - **Single Responsibility**: Each service handles a specific domain area
 - **Event-Driven**: Services communicate through the event system
 - **Stateless**: Services don't maintain state; they read from stores and emit events
@@ -428,8 +428,8 @@ export class ServiceBase {
       return await operation()
     } catch (error) {
       console.error(`${context}:`, error)
-      eventEmitter.emit(errorEvent, { 
-        error: error instanceof Error ? error.message : String(error) 
+      eventEmitter.emit(errorEvent, {
+        error: error instanceof Error ? error.message : String(error)
       })
       return null
     }
@@ -457,26 +457,26 @@ export class AsyncServicePattern {
    */
   static async performAsyncOperation(params: any): Promise<void> {
     // Emit loading start
-    eventEmitter.emit(someEvent.loadingStateChanged, { 
-      isLoading: true, 
-      error: null 
+    eventEmitter.emit(someEvent.loadingStateChanged, {
+      isLoading: true,
+      error: null
     })
 
     try {
       // Perform actual work
       const result = await this.doWork(params)
-      
+
       // Emit success
       eventEmitter.emit(someEvent.operationCompleted, { result })
     } catch (error) {
       // Emit error
-      eventEmitter.emit(someEvent.operationFailed, { 
-        error: error instanceof Error ? error.message : String(error) 
+      eventEmitter.emit(someEvent.operationFailed, {
+        error: error instanceof Error ? error.message : String(error)
       })
     } finally {
       // Always emit loading end
-      eventEmitter.emit(someEvent.loadingStateChanged, { 
-        isLoading: false 
+      eventEmitter.emit(someEvent.loadingStateChanged, {
+        isLoading: false
       })
     }
   }
@@ -491,19 +491,19 @@ export class CoordinatedService {
   static async performComplexOperation(params: ComplexParams): Promise<void> {
     // Step 1: Prepare data
     const processedData = await DataProcessingService.processInput(params.input)
-    
+
     // Step 2: Validate with another service
     const isValid = await ValidationService.validate(processedData)
     if (!isValid) {
       throw new Error('Validation failed')
     }
-    
+
     // Step 3: Persist changes
     const savedId = await PersistenceService.saveData(processedData)
-    
+
     // Step 4: Trigger downstream operations
     eventEmitter.emit(dataEvent.dataCreated, { id: savedId, data: processedData })
-    
+
     // Step 5: Optional cleanup or notifications
     await NotificationService.notifyCompletion(savedId)
   }
@@ -564,7 +564,7 @@ describe('Service Integration', () => {
     })
 
     expect(conversationId).toBeDefined()
-    
+
     // Verify conversation was created
     const conversation = await PersistenceService.loadConversation(conversationId)
     expect(conversation).toBeDefined()
@@ -599,4 +599,4 @@ describe('Service Integration', () => {
 - **Cancellation**: Support operation cancellation for long-running tasks
 - **Resource Management**: Clean up resources properly
 
-This service layer architecture ensures clean separation of concerns, maintainable business logic, and efficient coordination between different parts of the LiteChat application. 
+This service layer architecture ensures clean separation of concerns, maintainable business logic, and efficient coordination between different parts of the LLMChef application.

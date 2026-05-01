@@ -1,6 +1,6 @@
 # Build & Deployment
 
-LiteChat is designed as a static web application with comprehensive build-time configuration options, multiple deployment strategies, and development-friendly setup. This guide covers development setup, build processes, configuration, and deployment options.
+LLMChef is designed as a static web application with comprehensive build-time configuration options, multiple deployment strategies, and development-friendly setup. This guide covers development setup, build processes, configuration, and deployment options.
 
 ## Development Setup
 
@@ -14,8 +14,8 @@ LiteChat is designed as a static web application with comprehensive build-time c
 
 ```bash
 # Clone repository
-git clone https://github.com/wan0net/litechat.git
-cd litechat
+git clone https://github.com/wan0net/llmchef.git
+cd llmchef
 
 # Install dependencies
 npm install
@@ -55,7 +55,7 @@ The development server typically starts on `http://localhost:5173`.
 
 ### Overview
 
-LiteChat supports loading configuration and system prompts at build time using environment variables. This enables:
+LLMChef supports loading configuration and system prompts at build time using environment variables. This enables:
 
 - **Custom System Prompts**: Load default prompts from files
 - **Pre-configured Settings**: Ship with predefined configurations
@@ -92,8 +92,8 @@ VITE_USER_CONFIG_FILE=config.json npm run build
 ```text
 You are a helpful AI assistant specialized in software development.
 
-You provide clear, working code examples and explain best practices. 
-When helping with LiteChat development, you understand the modular 
+You provide clear, working code examples and explain best practices.
+When helping with LLMChef development, you understand the modular
 architecture and event-driven design patterns used in the codebase.
 
 Focus on TypeScript, React, and modern web development practices.
@@ -173,7 +173,7 @@ export default defineConfig({
 #### Development Setup
 ```bash
 # Create development configuration
-echo "You are a development assistant for LiteChat." > dev-prompt.txt
+echo "You are a development assistant for LLMChef." > dev-prompt.txt
 
 cat > dev-config.json << EOF
 {
@@ -212,7 +212,7 @@ cat > team-config.json << EOF
   "providerConfigs": [
     {
       "id": "team-openai",
-      "type": "openai", 
+      "type": "openai",
       "label": "Team OpenAI",
       "enabled": true,
       "enabledModels": ["gpt-4", "gpt-3.5-turbo"]
@@ -244,8 +244,8 @@ cat > demo-config.json << EOF
   "rules": [
     {
       "id": "demo-assistant",
-      "name": "Demo Assistant", 
-      "content": "You are demonstrating LiteChat's capabilities. Showcase features like file attachments, VFS, Git sync, and project organization.",
+      "name": "Demo Assistant",
+      "content": "You are demonstrating LLMChef's capabilities. Showcase features like file attachments, VFS, Git sync, and project organization.",
       "type": "system"
     }
   ],
@@ -373,22 +373,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build
         run: npm run build
         env:
           VITE_SYSTEM_PROMPT_FILE: production-prompt.txt
           VITE_USER_CONFIG_FILE: production-config.json
-      
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
@@ -438,7 +438,7 @@ jobs:
 
 ### Docker Deployment
 
-LiteChat uses a minimal Docker setup based on [lipanski/docker-static-website](https://github.com/lipanski/docker-static-website) for optimal performance and size (~80KB base image).
+LLMChef uses a minimal Docker setup based on [lipanski/docker-static-website](https://github.com/lipanski/docker-static-website) for optimal performance and size (~80KB base image).
 
 #### Dockerfile
 ```dockerfile
@@ -487,23 +487,23 @@ The `bin/builder` script supports automated Docker image creation and publishing
 
 ```bash
 # Build and create Docker image (but don't push)
-bin/builder --release v1.0.0 --docker-repo myuser/litechat --no-publish
+bin/builder --release v1.0.0 --docker-repo myuser/llmchef --no-publish
 
 # Build, create, and push Docker image to Docker Hub
-bin/builder --release v1.0.0 --docker-repo myuser/litechat
+bin/builder --release v1.0.0 --docker-repo myuser/llmchef
 
 # Build with custom configuration and Docker image
-VITE_USER_CONFIG_FILE=prod-config.json bin/builder --release v1.0.0 --docker-repo myuser/litechat
+VITE_USER_CONFIG_FILE=prod-config.json bin/builder --release v1.0.0 --docker-repo myuser/llmchef
 ```
 
 **Builder Docker Options:**
-- `--docker-repo <repo>`: Docker repository (e.g., `myuser/litechat`)
+- `--docker-repo <repo>`: Docker repository (e.g., `myuser/llmchef`)
 - `--release <name>`: Release name used as Docker tag
 - `--no-publish`: Create images locally without pushing to registry
 
 **Docker Tags Created:**
-- `myuser/litechat:v1.0.0` (release-specific tag)
-- `myuser/litechat:latest` (always updated to latest release)
+- `myuser/llmchef:v1.0.0` (release-specific tag)
+- `myuser/llmchef:latest` (always updated to latest release)
 
 #### Docker Compose with MCP Bridge
 
@@ -515,18 +515,18 @@ services:
   litechat:
     build: .
     ports:
-      - "${LITECHAT_PORT:-8080}:3000"
+      - "${LLMCHEF_PORT:-8080}:3000"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
     depends_on:
       - mcp-bridge
-    
+
   # Alternative: Use pre-built image from Docker Hub
   # litechat-hub:
-  #   image: myuser/litechat:latest
+  #   image: myuser/llmchef:latest
   #   ports:
-  #     - "${LITECHAT_PORT:-8080}:3000"
+  #     - "${LLMCHEF_PORT:-8080}:3000"
   #   restart: unless-stopped
   #   depends_on:
   #     - mcp-bridge
@@ -571,7 +571,7 @@ Create a `.env` file for easy configuration:
 
 ```bash
 # .env
-LITECHAT_PORT=8080
+LLMCHEF_PORT=8080
 MCP_BRIDGE_PORT=3001
 MCP_BRIDGE_INTERNAL_PORT=3001
 MCP_BRIDGE_VERBOSE=false
@@ -584,10 +584,10 @@ MCP_BRIDGE_VERBOSE=false
 npm run build
 
 # Build Docker image
-docker build -t litechat .
+docker build -t llmchef .
 
 # Run container (serves on port 3000)
-docker run -d -p 8080:3000 litechat
+docker run -d -p 8080:3000 llmchef
 
 # Or with Docker Compose (includes MCP bridge)
 docker-compose up -d
@@ -599,7 +599,7 @@ For multi-language builds, the builder script creates optimized images for each 
 
 ```bash
 # Build multi-language release with Docker images
-bin/builder --release v1.0.0 --docker-repo myuser/litechat
+bin/builder --release v1.0.0 --docker-repo myuser/llmchef
 
 # Manual language-specific build (example for French)
 cat > dockerfile.fr << EOF
@@ -608,11 +608,11 @@ COPY dist/fr/ .
 COPY docker/httpd.conf .
 EOF
 
-docker build -f dockerfile.fr -t myuser/litechat:v1.0.0-fr .
+docker build -f dockerfile.fr -t myuser/llmchef:v1.0.0-fr .
 rm dockerfile.fr
 
 # Run language-specific container
-docker run -d -p 8080:3000 myuser/litechat:v1.0.0-fr
+docker run -d -p 8080:3000 myuser/llmchef:v1.0.0-fr
 ```
 
 **Benefits of Language-Specific Images:**
@@ -640,7 +640,7 @@ docker run -d -p 8080:3000 myuser/litechat:v1.0.0-fr
 cd dist
 python3 -m http.server 8080
 
-# Python 2.x  
+# Python 2.x
 python -m SimpleHTTPServer 8080
 ```
 
@@ -661,13 +661,13 @@ go run -m http.FileServer http.Dir(".") :8080
 ```bash
 # Using Caddy server
 # Caddyfile
-litechat.example.com {
-    root * /path/to/litechat/dist
+llmchef.example.com {
+    root * /path/to/llmchef/dist
     file_server
-    
+
     # Handle client-side routing
     try_files {path} {path}/ /index.html
-    
+
     # Security headers
     header {
         X-Frame-Options "DENY"
@@ -729,7 +729,7 @@ export default defineConfig({
             if (id.includes('zenfs')) return 'vfs';
             return 'vendor';
           }
-          
+
           // Feature chunks
           if (id.includes('components/settings')) return 'settings';
           if (id.includes('components/vfs')) return 'vfs-ui';
@@ -746,7 +746,7 @@ export default defineConfig({
 #### Service Worker (PWA)
 ```typescript
 // sw.js
-const CACHE_NAME = 'litechat-v1';
+const CACHE_NAME = 'llmchef-v1';
 const urlsToCache = [
   '/',
   '/assets/index.css',
@@ -795,7 +795,7 @@ npm install -g bundlesize
       "maxSize": "500kb"
     },
     {
-      "path": "./dist/assets/index.*.css", 
+      "path": "./dist/assets/index.*.css",
       "maxSize": "50kb"
     }
   ]
@@ -836,7 +836,7 @@ echo ".env.local" >> .gitignore
 
 # Production secrets via deployment platform
 # GitHub Actions: secrets.OPENAI_API_KEY
-# Netlify: site settings environment variables  
+# Netlify: site settings environment variables
 # Vercel: project settings environment variables
 ```
 
@@ -898,4 +898,4 @@ echo $VITE_USER_CONFIG_FILE
 - Optimize imports and dependencies
 - Implement code splitting
 
-This comprehensive deployment guide should help you get LiteChat running in any environment while maintaining security and performance best practices. 
+This comprehensive deployment guide should help you get LLMChef running in any environment while maintaining security and performance best practices.

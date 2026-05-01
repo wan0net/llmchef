@@ -1,8 +1,8 @@
-# LiteChat Utilities, i18n/Locales, and Control Modules (for LLMs)
+# LLMChef Utilities, i18n/Locales, and Control Modules (for LLMs)
 
 ## 1. Utilities & Helpers (`src/lib/litechat/`)
 
-LiteChat's `lib/litechat/` directory contains core utilities and helpers for AI, VFS, workflow, provider, prompt, and event logic. Key files:
+LLMChef's `lib/litechat/` directory contains core utilities and helpers for AI, VFS, workflow, provider, prompt, and event logic. Key files:
 
 - **ai-helpers.ts**: Formatting, context snapshot, prompt turn building, file content filtering, history message building. Used for prompt orchestration and AI context management.
 - **provider-helpers.ts**: Model/provider ID helpers, instantiation of model instances for OpenAI, Google, OpenRouter, Ollama, etc. Used by provider settings, AI orchestration, and prompt compilation.
@@ -27,7 +27,7 @@ LiteChat's `lib/litechat/` directory contains core utilities and helpers for AI,
 
 ## 2. i18n & Locales (`src/i18n/`, `src/locales/`)
 
-LiteChat uses i18next for full localization. Key files:
+LLMChef uses i18next for full localization. Key files:
 
 - **config.ts**: Initializes i18next with language, namespaces, and resources. Loads language from env or defaults to 'en'.
 - **resources.ts**: Imports all JSON translation files for each language and namespace, and exports a `resources` object for i18next.
@@ -79,4 +79,4 @@ Control Modules are the core extension mechanism for UI, block rendering, prompt
 
 ---
 
-This documentation chunk is exhaustive, code-referenced, and suitable for LLMs to reason about, extend, or generate new utilities, i18n/locales, or control modules in LiteChat. 
+This documentation chunk is exhaustive, code-referenced, and suitable for LLMs to reason about, extend, or generate new utilities, i18n/locales, or control modules in LLMChef.

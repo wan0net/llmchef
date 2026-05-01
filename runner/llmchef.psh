@@ -1,14 +1,14 @@
 <#
 .SYNOPSIS
-    Downloads and serves LiteChat web application
+    Downloads and serves LLMChef web application
 .DESCRIPTION
-    This script downloads the latest LiteChat release, extracts it, and serves it using a local web server
+    This script downloads the latest LLMChef release, extracts it, and serves it using a local web server
 .PARAMETER Port
     The port number to serve the application on (default: 3000)
 .PARAMETER AllowExternalConnections
     If specified, allows connections from other devices on the network
 .EXAMPLE
-    .\serve-litechat.ps1 8080 -AllowExternalConnections
+    .\serve-llmchef.ps1 8080 -AllowExternalConnections
 #>
 
 param (
@@ -22,19 +22,19 @@ param (
 
 # Create temp directory
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$TempDir = Join-Path -Path $ScriptDir -ChildPath "litechat-app"
+$TempDir = Join-Path -Path $ScriptDir -ChildPath "llmchef-app"
 
 if (-not (Test-Path -Path $TempDir)) {
     New-Item -ItemType Directory -Path $TempDir | Out-Null
 }
 
 # Download the zip file
-$ZipPath = Join-Path -Path $TempDir -ChildPath "litechat.zip"
-Write-Host "Downloading LiteChat release..."
+$ZipPath = Join-Path -Path $TempDir -ChildPath "llmchef.zip"
+Write-Host "Downloading LLMChef release..."
 
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri "https://litechat.dbuild.dev/release/latest.zip" -OutFile $ZipPath
+    Invoke-WebRequest -Uri "https://wan0net.github.io/llmchef/release/latest.zip" -OutFile $ZipPath
     Write-Host "Download complete. Extracting..."
 
     # Extract the zip file
@@ -51,10 +51,10 @@ try {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LiteChat</title>
+    <title>LLMChef</title>
 </head>
 <body>
-    <h1>LiteChat</h1>
+    <h1>LLMChef</h1>
     <p>The files may not have extracted correctly.</p>
 </body>
 </html>
@@ -68,7 +68,7 @@ try {
     `$listener.Prefixes.Add("http://`$hostAddress:$Port/")
     `$listener.Start()
 
-    Write-Host "LiteChat is running at http://$(if ($AllowExternalConnections) { (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch 'Loopback'} | Select-Object -First 1).IPAddress } else { 'localhost' }):$Port $(if ($AllowExternalConnections) { '(accessible from other devices)' } else { '(local access only)' })"
+    Write-Host "LLMChef is running at http://$(if ($AllowExternalConnections) { (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch 'Loopback'} | Select-Object -First 1).IPAddress } else { 'localhost' }):$Port $(if ($AllowExternalConnections) { '(accessible from other devices)' } else { '(local access only)' })"
 
     `$basePath = "$($TempDir.Replace('\', '\\'))"
 

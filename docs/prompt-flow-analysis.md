@@ -1,8 +1,8 @@
-# LiteChat Prompt Flow Analysis
+# LLMChef Prompt Flow Analysis
 
 ## Overview
 
-This document provides a comprehensive analysis of how prompts flow through the LiteChat system, from user input to AI submission. Understanding this flow is critical for implementing features like text triggers that need to modify prompt data at the right time.
+This document provides a comprehensive analysis of how prompts flow through the LLMChef system, from user input to AI submission. Understanding this flow is critical for implementing features like text triggers that need to modify prompt data at the right time.
 
 ## Complete Flow Sequence
 
@@ -35,19 +35,19 @@ When user presses Enter or clicks submit:
 const handleSubmit = async () => {
   // 1. Get current input value
   const trimmedValue = inputValue.trim();
-  
+
   // 2. Collect parameters from various sources
   const parameters = {
     temperature: promptState.temperature,
     // ... other params
   };
-  
-  // 3. Collect metadata from various sources  
+
+  // 3. Collect metadata from various sources
   const metadata = {
     attachedFiles: attachedFiles,
     // NOTE: enabledTools is NOT set here!
   };
-  
+
   // 4. Create initial turnData
   let turnData: PromptTurnObject = {
     id: nanoid(),
@@ -55,16 +55,16 @@ const handleSubmit = async () => {
     parameters,
     metadata,
   };
-  
+
   // 5. EMIT promptEvent.submitted - TEXT TRIGGERS PROCESS HERE
   emitter.emit(promptEvent.submitted, { turnData });
-  
+
   // 6. Run middleware (PROMPT_TURN_FINALIZE)
   const middlewareResult = await runMiddleware(
     ModMiddlewareHook.PROMPT_TURN_FINALIZE,
     { turnData }
   );
-  
+
   // 7. Submit to ConversationService
   await onSubmit(finalTurnData);
 };
@@ -121,10 +121,10 @@ const middlewareResult = await runMiddleware(
 async submitPrompt(turnData: PromptTurnObject): Promise<void> {
   // 1. Get conversation context
   const conversationId = interactionStoreState.currentConversationId;
-  
+
   // 2. Build conversation history
   const messages = await this.buildConversationMessages(conversationId, turnData);
-  
+
   // 3. Create PromptObject for AI
   const promptObject: PromptObject = {
     system: systemPrompt,
@@ -132,7 +132,7 @@ async submitPrompt(turnData: PromptTurnObject): Promise<void> {
     parameters: turnData.parameters,
     metadata: turnData.metadata, // enabledTools should be here!
   };
-  
+
   // 4. Start interaction
   await InteractionService.startInteraction(promptObject, conversationId, turnData);
 }
@@ -151,7 +151,7 @@ async startInteraction(prompt: PromptObject, conversationId: string, turnData: P
     ModMiddlewareHook.INTERACTION_BEFORE_START,
     { prompt, conversationId }
   );
-  
+
   // 2. RESOLVE TOOLS - This is the key step!
   const enabledTools = prompt.metadata?.enabledTools || [];
   const toolRegistry = useControlRegistryStore.getState().tools;
@@ -159,13 +159,13 @@ async startInteraction(prompt: PromptObject, conversationId: string, turnData: P
     .map(toolId => toolRegistry[toolId])
     .filter(Boolean)
     .map(tool => tool.definition);
-  
+
   // 3. Create final prompt with tools
   const finalPrompt = {
     ...prompt,
     tools: resolvedTools.length > 0 ? resolvedTools : undefined,
   };
-  
+
   // 4. Send to AI
   await AIService.generateCompletion(finalPrompt);
 }
@@ -187,7 +187,7 @@ interface PromptTurnObject {
   };
   metadata: {
     enabledTools?: string[]; // Tool IDs - SET BY TEXT TRIGGERS
-    activeRuleIds?: string[]; // Rule IDs - SET BY TEXT TRIGGERS  
+    activeRuleIds?: string[]; // Rule IDs - SET BY TEXT TRIGGERS
     attachedFiles?: AttachedFile[];
     // ... other metadata
   };
@@ -226,13 +226,13 @@ interface PromptObject {
 // CORRECT - Listen to promptEvent.submitted
 const unregisterPromptListener = modApi.on(promptEvent.submitted, async (payload) => {
   const { turnData } = payload;
-  
+
   // Execute triggers - they will modify turnData directly
   const cleanedContent = await this.parserService.executeTriggersAndCleanText(
     turnData.content,
     { turnData, promptText: turnData.content }
   );
-  
+
   // Update content (remove trigger text)
   turnData.content = cleanedContent;
 });
@@ -245,7 +245,7 @@ private handleToolsActivate = async (args: string[], context: TriggerExecutionCo
   if (!context.turnData.metadata.enabledTools) {
     context.turnData.metadata.enabledTools = [];
   }
-  
+
   args.forEach(toolId => {
     if (!context.turnData.metadata.enabledTools!.includes(toolId)) {
       context.turnData.metadata.enabledTools!.push(toolId);

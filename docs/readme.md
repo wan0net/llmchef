@@ -1,10 +1,10 @@
-# LiteChat Developer Documentation
+# LLMChef Developer Documentation
 
-This documentation provides comprehensive technical guidance for developers working on or extending LiteChat. LiteChat is a modular, extensible, privacy-focused AI chat application built with React, TypeScript, and a sophisticated plugin system.
+This documentation provides comprehensive technical guidance for developers working on or extending LLMChef. LLMChef is a modular, extensible, privacy-focused AI chat application built with React, TypeScript, and a sophisticated plugin system.
 
 ## Architecture Overview
 
-LiteChat follows a modular, event-driven architecture designed for extensibility and maintainability:
+LLMChef follows a modular, event-driven architecture designed for extensibility and maintainability:
 
 - **100% Client-Side**: All data stored locally using IndexedDB
 - **Control Module System**: UI features encapsulated as pluggable modules
@@ -16,7 +16,7 @@ LiteChat follows a modular, event-driven architecture designed for extensibility
 ## Documentation Structure
 
 ### Core Architecture
-- [Control Module System](./control-modules.md) - The backbone of LiteChat's modular UI architecture
+- [Control Module System](./control-modules.md) - The backbone of LLMChef's modular UI architecture
 - [Event System](./event-system.md) - Event-driven communication patterns and implementation
 - [State Management](./state-management.md) - Zustand stores, actions, and data flow
 - [Persistence Layer](./persistence.md) - Database schema, transactions, and data operations
@@ -116,4 +116,4 @@ LiteChat follows a modular, event-driven architecture designed for extensibility
 
 ## Next Steps
 
-Start with the [Control Module System](./control-modules.md) documentation to understand LiteChat's core architecture, then explore specific areas based on your development needs.
+Start with the [Control Module System](./control-modules.md) documentation to understand LLMChef's core architecture, then explore specific areas based on your development needs.

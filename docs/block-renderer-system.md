@@ -1,6 +1,6 @@
 # Block Renderer System
 
-The Block Renderer System provides an extensible way to add custom renderers for different code block languages in LiteChat. This system follows the same architectural patterns as other extensible controls in the application.
+The Block Renderer System provides an extensible way to add custom renderers for different code block languages in LLMChef. This system follows the same architectural patterns as other extensible controls in the application.
 
 ## Overview
 
@@ -222,7 +222,7 @@ Register renderers based on settings or conditions:
 ```typescript
 register(modApi: LiteChatModApi): void {
   const enableAdvancedRendering = this.getAdvancedRenderingSetting();
-  
+
   if (enableAdvancedRendering) {
     this.unregisterCallback = modApi.registerBlockRenderer(advancedRenderer);
   }
@@ -340,4 +340,4 @@ The Universal Block Renderer automatically selects the appropriate registered re
 
 ## Conclusion
 
-The Block Renderer System provides a powerful, extensible foundation for handling diverse code block types in LiteChat. By following the established patterns and best practices, you can create rich, interactive renderers that enhance the user experience while maintaining consistency with the application's architecture. 
+The Block Renderer System provides a powerful, extensible foundation for handling diverse code block types in LLMChef. By following the established patterns and best practices, you can create rich, interactive renderers that enhance the user experience while maintaining consistency with the application's architecture.

@@ -1,7 +1,7 @@
-# LiteChat Prompt System (for LLMs)
+# LLMChef Prompt System (for LLMs)
 
 ## Overview
-The prompt system in LiteChat is a modular, event-driven architecture for managing, compiling, enhancing, and applying prompt templates. It supports advanced prompt engineering, agent/task/shortcut templates, variable injection, and live preview, with full event and store integration.
+The prompt system in LLMChef is a modular, event-driven architecture for managing, compiling, enhancing, and applying prompt templates. It supports advanced prompt engineering, agent/task/shortcut templates, variable injection, and live preview, with full event and store integration.
 
 ---
 
@@ -95,4 +95,4 @@ The prompt system in LiteChat is a modular, event-driven architecture for managi
 - To add new prompt types, extend `PromptTemplateType` and update store/helpers
 - To add new controls, register via a ControlModule and emit/handle prompt events
 - For advanced prompt engineering, leverage variables, rules, tools, and structured output fields
-- For workflow integration, see `llm.workflow-engine.txt` (to be created) 
+- For workflow integration, see `llm.workflow-engine.txt` (to be created)

@@ -5,7 +5,7 @@ import { WorkflowBlockRenderer } from "@/components/LiteChat/common/WorkflowBloc
 import React from "react";
 
 // Control rule prompt for Workflow code blocks
-export const WORKFLOW_CONTROL_PROMPT = `LiteChat supports interactive workflow definitions using the \`workflow\` or \`wf\` codeblock. These allow users to save, edit, and run complex multi-step AI workflows directly from the chat interface.
+export const WORKFLOW_CONTROL_PROMPT = `LLMChef supports interactive workflow definitions using the \`workflow\` or \`wf\` codeblock. These allow users to save, edit, and run complex multi-step AI workflows directly from the chat interface.
 
 **Functionality:**
 - The \`workflow\` block interprets a JSON object that defines a complete WorkflowTemplate

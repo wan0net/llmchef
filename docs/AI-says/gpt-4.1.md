@@ -64,48 +64,48 @@ Absolutely! Here’s a brutally honest, constructive review of your LiteChat pro
 
 ### **Codebase & Architecture**
 
-- **Automate Dependency Hygiene:**  
+- **Automate Dependency Hygiene:**
   Add a CI step to run `depcheck` and warn on unused or missing dependencies.
-- **Fix Config Errors:**  
+- **Fix Config Errors:**
   Clean up `tsconfig` files and ensure all configs are valid JSON.
-- **Testing:**  
+- **Testing:**
   Add unit, integration, and e2e tests. Use something like Playwright or Cypress for UI flows.
-- **Performance:**  
+- **Performance:**
   Profile large workspaces. Add list virtualization (e.g., `react-window`) for conversations, files, etc.
-- **Accessibility:**  
+- **Accessibility:**
   Audit for a11y (keyboard navigation, ARIA, color contrast).
-- **Error Handling:**  
+- **Error Handling:**
   Centralize error reporting and consider user-friendly error modals for all major flows.
 
 ### **Product & Functionality**
 
-- **Mod Marketplace:**  
+- **Mod Marketplace:**
   Build a UI for discovering, installing, and updating mods. This could be a killer feature for the competition.
-- **AI Assistant for Onboarding:**  
+- **AI Assistant for Onboarding:**
   Use your own AI integration to guide new users through features.
-- **Collaboration:**  
+- **Collaboration:**
   Consider real-time collaboration (e.g., shared projects or conversations) via WebRTC or CRDTs.
-- **Mobile Experience:**  
+- **Mobile Experience:**
   Ensure the UI is fully responsive and touch-friendly.
-- **Advanced Prompt Engineering:**  
+- **Advanced Prompt Engineering:**
   Add visual prompt builders, prompt history, and prompt sharing.
-- **Analytics (Opt-in):**  
+- **Analytics (Opt-in):**
   Let users see their usage stats, most used models, etc.
-- **Plugin/Mod Security:**  
+- **Plugin/Mod Security:**
   Add a permission system for mods (e.g., “this mod wants to access your VFS”).
-- **AI Model Marketplace:**  
+- **AI Model Marketplace:**
   Let users discover and add new AI providers/models from a curated list.
-- **Better Import/Export:**  
+- **Better Import/Export:**
   Support more formats, and allow partial exports (e.g., just one project or conversation).
-- **Theming:**  
+- **Theming:**
   Let users share and import custom themes.
 
 ---
 
 ## **Summary Judgment**
 
-**This is a top-tier, ambitious project with a real shot at winning.**  
-Your architecture is more advanced than most open source chat apps. The modularity, event system, and VFS are all rare and impressive.  
+**This is a top-tier, ambitious project with a real shot at winning.**
+Your architecture is more advanced than most open source chat apps. The modularity, event system, and VFS are all rare and impressive.
 However, to *win* a competition, you need to:
 - Polish the rough edges (dependencies, config, onboarding, a11y, performance)
 - Make the advanced features discoverable and delightful

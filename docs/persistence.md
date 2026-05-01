@@ -1,6 +1,6 @@
 # Persistence Layer
 
-LiteChat uses a robust client-side persistence system built on IndexedDB with Dexie.js as the database wrapper. All data is stored locally in the browser, ensuring privacy and offline functionality.
+LLMChef uses a robust client-side persistence system built on IndexedDB with Dexie.js as the database wrapper. All data is stored locally in the browser, ensuring privacy and offline functionality.
 
 ## Database Architecture
 
@@ -8,7 +8,7 @@ LiteChat uses a robust client-side persistence system built on IndexedDB with De
 The database schema is defined in [`src/lib/litechat/db.ts`](../src/lib/litechat/db.ts):
 
 ```typescript
-class LiteChatDatabase extends Dexie {
+class LLMChefDatabase extends Dexie {
   conversations!: Table<Conversation>;
   interactions!: Table<Interaction>;
   projects!: Table<Project>;
@@ -23,7 +23,7 @@ class LiteChatDatabase extends Dexie {
   promptTemplates!: Table<DbPromptTemplate>;
 
   constructor() {
-    super('LiteChatDB');
+    super('LLMChefDB');
     this.version(9).stores({
       conversations: '++id, title, projectId, syncRepoId, createdAt, updatedAt',
       interactions: '++id, conversationId, index, createdAt, startedAt, endedAt, rating',
@@ -54,7 +54,7 @@ class LiteChatDatabase extends Dexie {
   }
 }
 
-export const db = new LiteChatDatabase();
+export const db = new LLMChefDatabase();
 ```
 
 ### Schema Versioning
@@ -198,12 +198,12 @@ addConversation: async (conversation: Partial<Conversation>) => {
     updatedAt: new Date(),
     ...conversation,
   };
-  
+
   // 1. Update local state
   set((state) => {
     state.conversations.push(newConversation);
   });
-  
+
   // 2. Persist to database
   try {
     await PersistenceService.saveConversation(newConversation);
@@ -214,7 +214,7 @@ addConversation: async (conversation: Partial<Conversation>) => {
     });
     throw error;
   }
-  
+
   // 4. Emit success event
   emitter.emit(conversationEvent.conversationAdded, { conversation: newConversation });
 }
@@ -241,7 +241,7 @@ getRegisteredActionHandlers: (): RegisteredActionHandler[] => [
 
 ## Data Import/Export
 
-LiteChat provides robust data import and export capabilities via the `ImportExportService`, accessible through the **Settings → Data Management** tab. This allows you to backup and restore your entire LiteChat configuration or specific data categories.
+LLMChef provides robust data import and export capabilities via the `ImportExportService`, accessible through the **Settings → Data Management** tab. This allows you to backup and restore your entire LLMChef configuration or specific data categories.
 
 ### Full Application Configuration Backup
 
@@ -297,7 +297,7 @@ type FullExportOptions = FullImportOptions;
 
 ### Individual Category Export/Import
 
-For more granular control, you can export and import specific data categories independently. This is useful for sharing a subset of your configurations or for managing specific components of your LiteChat environment.
+For more granular control, you can export and import specific data categories independently. This is useful for sharing a subset of your configurations or for managing specific components of your LLMChef environment.
 
 #### MCP Servers
 
@@ -329,7 +329,7 @@ static async importPromptTemplates(file: File): Promise<void>
 
 #### Agents
 
-Export or import your AI agents along with all their associated tasks. This ensures that your agents are fully functional when imported into another LiteChat instance.
+Export or import your AI agents along with all their associated tasks. This ensures that your agents are fully functional when imported into another LLMChef instance.
 
 ```typescript
 static async exportAgents(): Promise<void>
@@ -375,4 +375,4 @@ static async clearAllData(): Promise<void>
 - In the `Danger Zone` section, click `Clear All Local Data`.
 - Confirm the action twice to proceed. Use with extreme caution.
 
-The persistence layer provides a robust foundation for LiteChat's data management, ensuring reliability, performance, and data integrity while maintaining the privacy-first, client-side architecture. 
+The persistence layer provides a robust foundation for LLMChef's data management, ensuring reliability, performance, and data integrity while maintaining the privacy-first, client-side architecture.

@@ -45,7 +45,7 @@
     "noRulesOrTagsConfigured": "Aucune règle ou tag configuré."
   },
   "sidebar": {
-    "title": "Menu LiteChat",
+    "title": "Menu LLMChef",
     "close": "Fermer le menu",
     "open": "Ouvrir le menu",
     "loading": "Chargement du menu...",
@@ -91,7 +91,7 @@
     "apply": "Appliquer"
   },
   "conversationList": {
-    "title": "LiteChat",
+    "title": "LLMChef",
     "newChat": "Nouveau Chat",
     "newProject": "Nouveau Projet",
     "filterPlaceholder": "Filtrer...",
@@ -106,7 +106,7 @@
     "deleteProjectError": "Échec de la suppression du projet.",
     "confirmDeleteConversation": "Supprimer cette conversation ? Cette action est irréversible.",
     "githubRepo": "Dépôt GitHub",
-    "downloadLiteChat": "Télécharger LiteChat",
+    "downloadLLMChef": "Télécharger LLMChef",
     "loading": "Chargement...",
     "noItemsMatchFilter": "Aucun élément ne correspond à votre filtre.",
     "noItemsYet": "Aucune conversation ou projet pour le moment.",

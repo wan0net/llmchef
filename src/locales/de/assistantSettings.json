@@ -98,7 +98,7 @@
   "mcp": {
     "bridge": {
       "dynamicConfiguration": "Dynamische MCP-Bridge-Konfiguration",
-      "configDescription": "Konfigurieren Sie, wo LiteChat nach dem dynamischen MCP-Bridge-Dienst sucht (erforderlich für stdio://-Server). Starten Sie die Bridge mit: npm run mcp-proxy",
+      "configDescription": "Konfigurieren Sie, wo LLMChef nach dem dynamischen MCP-Bridge-Dienst sucht (erforderlich für stdio://-Server). Starten Sie die Bridge mit: npm run mcp-proxy",
       "location": "Bridge-Speicherort",
       "locationDescription": "Geben Sie an, wo Ihre dynamische MCP-Bridge ausgeführt wird (Standard: localhost:3001)",
       "fullUrl": "Vollständige Bridge-URL (höchste Priorität)",
@@ -112,7 +112,7 @@
       "priorityNote": "Leer lassen für Auto-Erkennung. Für Remote-Bridge verwenden Sie die vollständige URL oder konfigurieren Sie die Host-Bindung.",
       "setupInstructions": "Anweisungen zur Bridge-Einrichtung",
       "instructionsText": "Um stdio MCP-Server zu verwenden, installieren und starten Sie die Bridge:",
-      "startBridge": "Bridge starten (aus dem LiteChat-Projektverzeichnis)",
+      "startBridge": "Bridge starten (aus dem LLMChef-Projektverzeichnis)",
       "customSettings": "Oder mit benutzerdefinierten Einstellungen",
       "saveConfig": "Bridge-Konfiguration speichern",
       "resetConfirm": "Bridge-Konfiguration auf Standard zurücksetzen?"
@@ -121,7 +121,7 @@
       "title": "Verbindungseinstellungen",
       "description": "Konfigurieren Sie das Wiederholungsverhalten und die Timeouts für MCP-Serververbindungen",
       "retryConfiguration": "Wiederholungskonfiguration",
-      "retryDescription": "Wie LiteChat fehlgeschlagene Verbindungen behandelt",
+      "retryDescription": "Wie LLMChef fehlgeschlagene Verbindungen behandelt",
       "retryAttempts": "Wiederholungsversuche",
       "retryAttemptsHelp": "Anzahl der Wiederholungsversuche (0-10)",
       "retryDelay": "Wiederholungsverzögerung (ms)",
@@ -162,7 +162,7 @@
       "description": "Verwalten Sie Ihre Model Context Protocol Server",
       "addButton": "Server hinzufügen",
       "noServers": "Keine MCP-Server",
-      "noServersDescription": "Fügen Sie HTTP-basierte MCP-Server hinzu, um LiteChat um zusätzliche Tools und Funktionen zu erweitern",
+      "noServersDescription": "Fügen Sie HTTP-basierte MCP-Server hinzu, um LLMChef um zusätzliche Tools und Funktionen zu erweitern",
       "addFirstButton": "Ersten Server hinzufügen",
       "nameColumn": "Name",
       "urlColumn": "URL",

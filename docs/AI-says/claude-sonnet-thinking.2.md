@@ -60,7 +60,7 @@ BRUTAL TRUTH: Most users won't care about your beautiful architecture.
 # Create these as build-time configurations:
 ```
 - **"AI Code Assistant" Demo**: Pre-configured with a React project, showing AI editing files directly
-- **"Research Companion" Demo**: Pre-loaded with research papers, showing AI citing sources with file references  
+- **"Research Companion" Demo**: Pre-loaded with research papers, showing AI citing sources with file references
 - **"Documentation Writer" Demo**: Shows AI generating docs while reading actual codebase
 - **"Multi-Model Comparison" Demo**: Same prompt to GPT-4, Claude, and Gemini side-by-side
 
@@ -69,7 +69,7 @@ BRUTAL TRUTH: Most users won't care about your beautiful architecture.
 // Quick implementation idea:
 interface ProjectTemplate {
   id: string
-  name: string  
+  name: string
   description: string
   screenshot: string
   bundledFiles: BundledFile[]
@@ -90,7 +90,7 @@ interface ProjectTemplate {
 ```typescript
 // Add these for immediate user value:
 - "Smart Conversation Import" - paste ChatGPT/Claude conversations
-- "One-Click Code Analysis" - drag folder, instant AI analysis  
+- "One-Click Code Analysis" - drag folder, instant AI analysis
 - "Prompt Library" - curated collection of proven prompts
 - "AI Model Recommender" - suggest best model for task
 ```
@@ -171,7 +171,7 @@ interface ContextDetector {
 // Pre-built conversation starters
 const templates = [
   "Code Review Assistant",
-  "Bug Detective", 
+  "Bug Detective",
   "Feature Planner",
   "Documentation Generator",
   "Test Case Writer"
@@ -196,7 +196,7 @@ interface ShareableConversation {
 // Use different models for different tasks automatically
 interface ModelOrchestrator {
   codeModel: string      // Use Codex for code
-  reasoningModel: string // Use o1 for complex reasoning  
+  reasoningModel: string // Use o1 for complex reasoning
   fastModel: string      // Use 3.5 Turbo for quick responses
 }
 ```
@@ -231,8 +231,8 @@ interface Integration {
 
 ### **Your Winning Narrative:**
 ```
-"LiteChat transforms AI from a conversation tool into a true development 
-partner that understands your entire codebase, respects your privacy, 
+"LiteChat transforms AI from a conversation tool into a true development
+partner that understands your entire codebase, respects your privacy,
 and integrates seamlessly into your workflow."
 ```
 

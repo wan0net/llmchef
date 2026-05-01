@@ -46,7 +46,7 @@
     "noRulesOrTagsConfigured": "Nessuna regola o tag configurato."
   },
   "sidebar": {
-    "title": "Menu LiteChat",
+    "title": "Menu LLMChef",
     "close": "Chiudi menu",
     "open": "Apri menu",
     "loading": "Caricamento menu...",
@@ -92,7 +92,7 @@
     "apply": "Applica"
   },
   "conversationList": {
-    "title": "LiteChat",
+    "title": "LLMChef",
     "newChat": "Nuova Chat",
     "newProject": "Nuovo Progetto",
     "newChatTooltip": "Nuova Chat",
@@ -107,7 +107,7 @@
     "deleteProjectError": "Impossibile eliminare progetto.",
     "confirmDeleteConversation": "Eliminare questa conversazione? Questa azione non può essere annullata.",
     "githubRepo": "Repository GitHub",
-    "downloadLiteChat": "Scarica LiteChat",
+    "downloadLLMChef": "Scarica LLMChef",
     "loading": "Caricamento...",
     "noItemsMatchFilter": "Nessun elemento corrisponde al filtro.",
     "noItemsYet": "Ancora nessuna conversazione o progetto.",

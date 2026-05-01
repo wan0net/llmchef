@@ -1,15 +1,15 @@
-# LiteChat Workflow System
+# LLMChef Workflow System
 
-*The comprehensive guide to LiteChat's advanced workflow automation framework*
+*The comprehensive guide to LLMChef's advanced workflow automation framework*
 
 ## Overview
 
-LiteChat's **Workflow System** is a powerful automation framework that transforms LiteChat from a simple chat interface into a sophisticated AI orchestration platform. It enables users to create, manage, and execute complex multi-step AI workflows with dynamic prompt templating, data transformation, and intelligent step orchestration.
+LLMChef's **Workflow System** is a powerful automation framework that transforms LLMChef from a simple chat interface into a sophisticated AI orchestration platform. It enables users to create, manage, and execute complex multi-step AI workflows with dynamic prompt templating, data transformation, and intelligent step orchestration.
 
 ### Core Philosophy
 
 The workflow system is built on three fundamental principles:
-1. **Privacy-First**: All processing happens client-side, maintaining LiteChat's core privacy commitment
+1. **Privacy-First**: All processing happens client-side, maintaining LLMChef's core privacy commitment
 2. **Event-Driven Architecture**: Robust, loosely-coupled components that communicate through events
 3. **Visual-First Design**: Complex workflows become understandable through visual representation
 
@@ -39,17 +39,17 @@ graph TB
     C --> D[PersistenceService]
     C --> E[InteractionService]
     C --> F[WorkflowStore]
-    
+
     G[WorkflowVisualizer] --> H[React Flow]
     I[WorkflowRawEditor] --> J[CodeEditor]
-    
+
     K[WorkflowStatusDisplay] --> F
     L[HumanInTheLoopControl] --> C
     M[DataCorrectionControl] --> C
-    
+
     N[Event System] --> C
     N --> F
-    
+
     subgraph "Workflow Execution"
         C --> O[Step Creation]
         O --> P[Template Compilation]
@@ -186,10 +186,10 @@ export interface WorkflowStep {
   };
 }
 
-export type WorkflowStepType = 
-  | "prompt" 
-  | "agent-task" 
-  | "human-in-the-loop" 
+export type WorkflowStepType =
+  | "prompt"
+  | "agent-task"
+  | "human-in-the-loop"
   | "transform";
 
 export interface WorkflowRun {
@@ -205,13 +205,13 @@ export interface WorkflowRun {
   completedAt?: string;
 }
 
-export type WorkflowRunStatus = 
-  | "IDLE" 
-  | "RUNNING" 
-  | "PAUSED" 
-  | "COMPLETED" 
-  | "ERROR" 
-  | "STREAMING" 
+export type WorkflowRunStatus =
+  | "IDLE"
+  | "RUNNING"
+  | "PAUSED"
+  | "COMPLETED"
+  | "ERROR"
+  | "STREAMING"
   | "CANCELLED";
 ```
 
@@ -432,10 +432,10 @@ const compiled = await module.compileTemplate(templateId, variables);
 #### 1. Extend Type Definitions
 ```typescript
 // In src/types/litechat/workflow.ts
-export type WorkflowStepType = 
-  | "prompt" 
-  | "agent-task" 
-  | "human-in-the-loop" 
+export type WorkflowStepType =
+  | "prompt"
+  | "agent-task"
+  | "human-in-the-loop"
   | "transform"
   | "your-new-type";
 
@@ -483,7 +483,7 @@ validateTransformQuery(query: string, workflow?: WorkflowTemplate, stepIndex?: n
   if (query.includes('dangerous_operation')) {
     return { isValid: false, error: 'Dangerous operation not allowed' };
   }
-  
+
   return { isValid: true };
 }
 ```
@@ -508,9 +508,9 @@ describe('WorkflowService', () => {
   it('should execute transform step correctly', async () => {
     const run = createMockWorkflowRun();
     const step = createMockTransformStep();
-    
+
     const result = await WorkflowService._executeTransformStep(run, step, 0);
-    
+
     expect(result).toMatchObject({
       transformedField: 'expected_value'
     });
@@ -523,13 +523,13 @@ describe('WorkflowService', () => {
 describe('Workflow Execution', () => {
   it('should complete end-to-end workflow', async () => {
     const template = createTestWorkflow();
-    
+
     // Start workflow
     await triggerWorkflow(template, 'test input');
-    
+
     // Wait for completion
     await waitForWorkflowCompletion();
-    
+
     // Verify results
     expect(getWorkflowOutput()).toMatchSnapshot();
   });
@@ -805,4 +805,4 @@ Loads fresh template data by ID
 
 ---
 
-*This documentation is continuously updated to reflect the latest workflow system capabilities and best practices. For questions or improvements, please refer to the project's issue tracker or development team.* 
+*This documentation is continuously updated to reflect the latest workflow system capabilities and best practices. For questions or improvements, please refer to the project's issue tracker or development team.*

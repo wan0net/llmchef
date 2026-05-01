@@ -14,11 +14,11 @@ describe("redactSecrets", () => {
 
   it("redacts GitHub tokens and credentialed URLs", () => {
     const redacted = redactSecrets(
-      "https://icd:ghp_abcdefghijklmnopqrstuvwxyz123456@github.com/wan0net/litechat.git"
+      "https://icd:ghp_abcdefghijklmnopqrstuvwxyz123456@github.com/wan0net/llmchef.git"
     );
 
     expect(redacted).toBe(
-      "https://icd:[REDACTED]@github.com/wan0net/litechat.git"
+      "https://icd:[REDACTED]@github.com/wan0net/llmchef.git"
     );
   });
 });

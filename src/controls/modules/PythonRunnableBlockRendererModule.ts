@@ -7,16 +7,16 @@ import React from "react";
 // Control rule prompt for Python runnable blocks
 export const PYTHON_RUNNABLE_CONTROL_PROMPT = `# Python Scientific Computing Environment
 
-You have access to an enhanced Pyodide environment with numpy, pandas, matplotlib, and the full LiteChat API.
+You have access to an enhanced Pyodide environment with numpy, pandas, matplotlib, and the full LLMChef API.
 
 ## Available Context
-- \`litechat\` — The LiteChat API object with utilities and VFS operations.
+- \`litechat\` — The LLMChef API object with utilities and VFS operations.
 - \`litechat.target\` — **THE DOM ELEMENT ITSELF** - Use direct DOM manipulation for visualizations, UI output, etc.
 - Scientific Python stack: numpy, pandas, matplotlib, scipy, sklearn, etc.
 - \`js\` module — For DOM and browser interop (e.g., \`
 from js import document\`).
 
-## LiteChat API Reference
+## LLMChef API Reference
 You can use the following methods on \`litechat\`:
 
 ### Utilities
@@ -24,7 +24,7 @@ You can use the following methods on \`litechat\`:
 - \`litechat.utils.toast(type, message)\` — Show toast notifications (type: 'success', 'error', 'info', 'warning')
 
 ### Event System
-- \`litechat.emit(eventName, payload)\` — Emit events to the LiteChat system
+- \`litechat.emit(eventName, payload)\` — Emit events to the LLMChef system
 
 ### VFS (File System)
 - \`litechat.getVfsInstance(vfsKey)\` — Get VFS instance ('orphan' is the default)
@@ -163,7 +163,7 @@ asyncio.run(main())
 5. **Avoid innerHTML/outerHTML - use DOM methods for performance**
 6. **Use \`target.replaceChildren()\` to clear content before adding new content**
 
-You are encouraged to use the full scientific Python stack, the LiteChat API for chat interactions, and DOM interop for visualizations. Focus on workflows that leverage these capabilities.`;
+You are encouraged to use the full scientific Python stack, the LLMChef API for chat interactions, and DOM interop for visualizations. Focus on workflows that leverage these capabilities.`;
 
 export class PythonRunnableBlockRendererModule implements ControlModule {
   readonly id = "core-block-renderer-runnable-python";

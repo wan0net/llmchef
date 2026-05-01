@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# LiteChat Build & Release Script
+# LLMChef Build & Release Script
 # Usage: bin/builder [--release <name>] [--dry-run] [--no-publish]
 
 set -e
@@ -89,11 +89,11 @@ while [[ $# -gt 0 ]]; do
       echo "  --dry-run            Show what would be built without actually building"
       echo "  --clean-only         Only clean build directories and exit"
       echo "  --no-publish         Create release files but don't publish to GitHub"
-      echo "  --docker-repo <repo> Docker repository for image (e.g., 'myuser/litechat')"
+      echo "  --docker-repo <repo> Docker repository for image (e.g., 'myuser/llmchef')"
       echo "  --skip-build         Skip the application build step"
       echo "  --skip-docker        Skip Docker image creation"
       echo "  --skip-github        Skip GitHub release creation"
-      echo "  --build-docker       Force Docker image creation (uses 'litechat' as default repo)"
+      echo "  --build-docker       Force Docker image creation (uses 'llmchef' as default repo)"
       echo "  --gh-pages-dir <path> Deploy build to a GitHub Pages repository path"
       echo "  --version-bump <level> Automatically bump version (patch, minor, major) and use it as release name"
       echo "  -h, --help           Show this help message"
@@ -103,11 +103,11 @@ while [[ $# -gt 0 ]]; do
       echo "  $0 --clean-only                                 # Clean build directories"
       echo "  $0                                              # Build only"
       echo "  $0 --release v1.0.0                            # Build and create GitHub release"
-      echo "  $0 --release v1.0.0 --docker-repo myuser/litechat # Build, release, and push Docker image"
+      echo "  $0 --release v1.0.0 --docker-repo myuser/llmchef # Build, release, and push Docker image"
       echo "  $0 --version-bump patch --build-docker         # Bump patch version, build, and create Docker image"
       echo "  $0 --release v1.0.0 --build-docker             # Build, release, and create Docker images with default repo"
       echo "  $0 --skip-build --build-docker --release v1.0.0 # Skip build, create Docker images from existing build"
-      echo "  $0 --release v1.0.0 --gh-pages-dir ../litechat-gh-pages # Build and deploy to GitHub pages"
+      echo "  $0 --release v1.0.0 --gh-pages-dir ../llmchef-gh-pages # Build and deploy to GitHub pages"
       echo "  $0 --skip-build --skip-github --build-docker   # Only create Docker images"
       exit 0
       ;;
@@ -398,7 +398,7 @@ create_docker_image() {
   
   # Use default repo if --build-docker is specified but no repo provided
   if [[ "$BUILD_DOCKER" == true && -z "$DOCKER_REPO" ]]; then
-    DOCKER_REPO="litechat"
+    DOCKER_REPO="llmchef"
     log_info "Using default Docker repository: $DOCKER_REPO"
   fi
   
@@ -856,7 +856,7 @@ show_summary() {
 
 # Main execution
 main() {
-  echo "🚀 LiteChat Build & Release Script"
+  echo "🚀 LLMChef Build & Release Script"
   echo "=================================="
   
   # Argument validation
@@ -879,7 +879,7 @@ main() {
       log_info "Release will be created locally only (--no-publish)"
     fi
     if [[ "$BUILD_DOCKER" == true || -n "$DOCKER_REPO" ]]; then
-      local docker_repo="${DOCKER_REPO:-litechat}"
+      local docker_repo="${DOCKER_REPO:-llmchef}"
       log_info "Docker image will be created: $docker_repo:$RELEASE_NAME"
     fi
   else

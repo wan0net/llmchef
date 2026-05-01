@@ -1,6 +1,6 @@
-# wan0 LiteChat Workstation Roadmap
+# wan0 LLMChef Workstation Roadmap
 
-This fork turns LiteChat into a browser-local agent workstation for projects,
+This fork turns LLMChef into a browser-local agent workstation for projects,
 repos, skills, generated files, and crea8-backed knowledge.
 
 ## Principles
@@ -37,7 +37,7 @@ Scope:
   - `.litechat/skills/<slug>/skill.json`
   - `README.md`
   - optional `prompts/`, `agents/`, `workflows/`, `rules/`, `tools/`, `examples/`
-- Install skill assets into existing LiteChat primitives where possible:
+- Install skill assets into existing LLMChef primitives where possible:
   prompt templates, agents, workflows, rules, tools, and VFS examples.
   (installed skill entry prompts implemented as prompt context)
 - Add safety review before installation for tools, runnable blocks, mods, or
@@ -84,7 +84,7 @@ Acceptance:
 
 Status: done
 
-Goal: Preview generated or VFS files inside LiteChat safely.
+Goal: Preview generated or VFS files inside LLMChef safely.
 
 Scope:
 
@@ -109,17 +109,17 @@ Acceptance:
 
 - Selecting an HTML file in VFS can show a live preview.
 - Markdown, JSON, images, and code preview correctly.
-- Previewing untrusted HTML cannot access LiteChat app state.
+- Previewing untrusted HTML cannot access LLMChef app state.
 
 ## Feature D: Link42 / crea8 Theme And UI Refactor
 
 Status: planned
 
-Goal: Refactor LiteChat visuals and layout toward the broader link42/crea8 stack.
+Goal: Refactor LLMChef visuals and layout toward the broader link42/crea8 stack.
 
 Scope:
 
-- Audit existing LiteChat theme tokens and components.
+- Audit existing LLMChef theme tokens and components.
 - Introduce a token layer compatible with link42/crea8:
   neutral base, restrained accents, dense operator surfaces, clear borders,
   high legibility, and project-first information hierarchy.
@@ -137,10 +137,10 @@ Acceptance:
 
 Status: in progress
 
-Goal: Integrate crea8 as the persistent wiki/knowledge surface for LiteChat
+Goal: Integrate crea8 as the persistent wiki/knowledge surface for LLMChef
 projects.
 
-Memory principle: crea8 notes are the durable memory source of truth. LiteChat
+Memory principle: crea8 notes are the durable memory source of truth. LLMChef
 should not maintain invisible long-term AI memory. AI-learned durable facts
 become proposed crea8 note updates; user edits to crea8 notes override future AI
 behavior.
@@ -150,8 +150,8 @@ Scope:
 - Study local crea8 data model, editor, persistence, and deployment API.
 - Add a crea8 connector configuration:
   local/static mode first, API mode second.
-- Map LiteChat projects to crea8 spaces/collections.
-- Browse/search crea8 pages from LiteChat.
+- Map LLMChef projects to crea8 spaces/collections.
+- Browse/search crea8 pages from LLMChef.
 - Attach crea8 pages to prompts.
 - Generate or update crea8 pages from chat outputs and VFS files.
 - Add memory proposal flow:
@@ -223,8 +223,8 @@ Acceptance:
 ## Working Notes
 
 - Keep each feature commit-sized and deployable.
-- Use existing LiteChat stores, services, control modules, VFS, Git, prompt
+- Use existing LLMChef stores, services, control modules, VFS, Git, prompt
   templates, agents, workflows, and marketplace concepts before adding new
   systems.
 - Do not enable auto-running imported code, tools, mods, or previews.
-- Keep GitHub Pages deploy working at `/litechat/`.
+- Keep GitHub Pages deploy working at `/llmchef/`.

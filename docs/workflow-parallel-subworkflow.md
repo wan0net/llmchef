@@ -1,6 +1,6 @@
 # Parallel Execution and Sub-Workflow Guide
 
-LiteChat's workflow system now supports advanced execution patterns including **Parallel Execution** and **Sub-Workflows**, enabling sophisticated automation scenarios.
+LLMChef's workflow system now supports advanced execution patterns including **Parallel Execution** and **Sub-Workflows**, enabling sophisticated automation scenarios.
 
 ## Table of Contents
 
@@ -91,7 +91,7 @@ Sub-workflows allow you to execute entire workflows as individual steps, enablin
 ### Input Mapping Sources
 
 - **JSONPath Queries**: `$.initial_step`, `$.outputs[0]`, `$.outputs[1]`, etc.
-- **Static Values**: 
+- **Static Values**:
   - Strings: `"static text"`
   - Numbers: `123`
   - Booleans: `true` or `false`
@@ -158,7 +158,7 @@ Steps:
   1. Document Collection (Prompt)
      - Collects research papers
      - Outputs: { "papers": [...] }
-  
+
   2. Parallel Analysis (Parallel)
      - Array Variable: "$.outputs[0].papers"
      - Parallel Step:
@@ -166,7 +166,7 @@ Steps:
        - Template: "Academic Paper Analyzer"
        - Model: GPT-4
      - Outputs: [analysis1, analysis2, ...]
-  
+
   3. Summary Generation (Prompt)
      - Synthesizes all analyses
      - Input: Previous parallel results
@@ -180,14 +180,14 @@ Steps:
   1. Content Input (Prompt)
      - Receives raw content
      - Outputs: { "content": "...", "type": "blog" }
-  
+
   2. Content Processing (Sub-Workflow)
      - Sub-Workflow: "Blog Content Processor"
      - Input Mapping:
        - content: "$.outputs[0].content"
        - target_audience: "\"general\""
      - Outputs: { "processed_content": "..." }
-  
+
   3. Publication (Tool Call)
      - Publishes processed content
      - Uses output from sub-workflow
@@ -201,7 +201,7 @@ Steps:
   1. Query Preparation (Prompt)
      - Prepares the query
      - Outputs: { "models": ["gpt-4", "claude-3", "gemini-pro"] }
-  
+
   2. Model Racing (Parallel)
      - Array Variable: "$.outputs[0].models"
      - Model Variable: "model_id" (uses array item as model)
@@ -209,7 +209,7 @@ Steps:
        - Type: Custom Prompt
        - Content: "Answer this question: {{query}}"
      - Outputs: [response1, response2, response3]
-  
+
   3. Best Response Selection (Prompt)
      - Evaluates all responses
      - Selects the best one
@@ -376,4 +376,4 @@ interface SubWorkflowStepConfig {
 
 ---
 
-This documentation covers the comprehensive functionality of parallel execution and sub-workflows in LiteChat. For additional support or advanced use cases, refer to the main workflow documentation or community resources.
+This documentation covers the comprehensive functionality of parallel execution and sub-workflows in LLMChef. For additional support or advanced use cases, refer to the main workflow documentation or community resources.

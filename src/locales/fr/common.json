@@ -1,6 +1,6 @@
 {
-  "initializingLiteChat": "Initialisation de LiteChat...",
-  "liteChatMenu": "Menu LiteChat",
+  "initializingLLMChef": "Initialisation de LLMChef...",
+  "liteChatMenu": "Menu LLMChef",
   "closeMenu": "Fermer le menu",
   "openMenu": "Ouvrir le menu",
   "loadingMenu": "Chargement du menu...",
@@ -78,7 +78,7 @@
     "copied": "Copié !",
     "copyLabel": "Copier {label}",
     "title": "Oups ! Quelque chose s'est mal passé.",
-    "description": "LiteChat a rencontré une erreur inattendue. Veuillez essayer de rafraîchir la page. Si le problème persiste, envisagez de signaler le problème. Copiez les détails et collez-les dans le ticket GitHub.",
+    "description": "LLMChef a rencontré une erreur inattendue. Veuillez essayer de rafraîchir la page. Si le problème persiste, envisagez de signaler le problème. Copiez les détails et collez-les dans le ticket GitHub.",
     "unknownError": "Erreur inconnue",
     "refreshButton": "Rafraîchir la page",
     "detailsLabel": "Détails",

@@ -31,7 +31,7 @@
   "loadingTitle": "Chargement de votre configuration...",
   "loadingDescription": "Préparation de votre environnement. Cela ne devrait prendre qu'un instant.",
   "progressTitle": "Progression de la configuration",
-  "progressDescription": "Suivez ces étapes pour débloquer toute la puissance de LiteChat.",
+  "progressDescription": "Suivez ces étapes pour débloquer toute la puissance de LLMChef.",
   "stepsComplete": "étapes terminées",
   "complete": "terminé",
   "orSkipSetup": "Ou ignorez la configuration et explorez",

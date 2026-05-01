@@ -13,7 +13,7 @@ const makeProposal = (
   scope: "project",
   title: "Deployment Notes",
   reason: "The assistant learned deployment details.",
-  proposedContent: "LiteChat deploys through Cloudflare Pages.",
+  proposedContent: "LLMChef deploys through Cloudflare Pages.",
   confidence: 0.8,
   source: {
     conversationId: "conversation-1",

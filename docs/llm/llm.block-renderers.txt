@@ -1,4 +1,4 @@
-# LiteChat Universal Block Renderer System (for LLMs)
+# LLMChef Universal Block Renderer System (for LLMs)
 
 ## Overview
 - Extensible system for rendering code blocks by language/type.
@@ -52,4 +52,4 @@
 - `src/types/litechat/canvas/block-renderer.ts`
 - `src/services/block-renderer.service.ts`
 - `src/components/LiteChat/common/UniversalBlockRenderer.tsx`
-- `src/controls/modules/` (for renderer modules) 
+- `src/controls/modules/` (for renderer modules)

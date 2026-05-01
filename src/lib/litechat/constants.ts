@@ -2,7 +2,7 @@
 export const SYNC_VFS_KEY = "sync_repos";
 
 // Pyodide configuration - configurable via environment variables.
-// Default to a same-origin path so LiteChat does not contact a CDN after the
+// Default to a same-origin path so LLMChef does not contact a CDN after the
 // initial app load. Hosts that need Python should serve Pyodide under /pyodide
 // or provide another same-origin VITE_PYODIDE_CDN_URL.
 // Set VITE_PYODIDE_VERSION to override default version (e.g., "0.28.0")

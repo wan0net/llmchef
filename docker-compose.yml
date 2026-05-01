@@ -1,8 +1,8 @@
 services:
-  litechat:
+  llmchef:
     build: .
     ports:
-      - "${LITECHAT_PORT:-8080}:3000"
+      - "${LLMCHEF_PORT:-8080}:3000"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -10,10 +10,10 @@ services:
       - mcp-bridge
     
   # Alternative: Use pre-built image from Docker Hub
-  # litechat-hub:
-  #   image: myuser/litechat:latest
+  # llmchef-hub:
+  #   image: myuser/llmchef:latest
   #   ports:
-  #     - "${LITECHAT_PORT:-8080}:3000"
+  #     - "${LLMCHEF_PORT:-8080}:3000"
   #   restart: unless-stopped
   #   depends_on:
   #     - mcp-bridge

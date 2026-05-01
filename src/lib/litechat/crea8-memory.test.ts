@@ -8,11 +8,11 @@ import {
 import type { Crea8MemoryNote } from "@/types/litechat/crea8-memory";
 
 describe("crea8-memory", () => {
-  it("parses crea8 markdown notes with LiteChat memory metadata", () => {
+  it("parses crea8 markdown notes with LLMChef memory metadata", () => {
     const note = parseCrea8MarkdownNote(
       `---
 crea8-id: abc123def4
-title: "LiteChat Deployment"
+title: "LLMChef Deployment"
 tags: ["litechat", "deploy"]
 created: "2026-04-30T00:00:00.000Z"
 updated: "2026-04-30T01:00:00.000Z"
@@ -20,17 +20,17 @@ litechat-memory-scope: "project"
 litechat-project-id: "project_1"
 ---
 
-LiteChat deploys at wan0.net/litechat.
+LLMChef deploys at wan0.net/litechat.
 `,
-      "Memory/Projects/LiteChat/Deployment.md"
+      "Memory/Projects/LLMChef/Deployment.md"
     );
 
     expect(note.id).toBe("abc123def4");
-    expect(note.title).toBe("LiteChat Deployment");
+    expect(note.title).toBe("LLMChef Deployment");
     expect(note.scope).toBe("project");
     expect(note.projectId).toBe("project_1");
     expect(note.tags).toEqual(["litechat", "deploy"]);
-    expect(note.content).toBe("LiteChat deploys at wan0.net/litechat.\n");
+    expect(note.content).toBe("LLMChef deploys at wan0.net/litechat.\n");
   });
 
   it("serializes memory notes as crea8-compatible markdown", () => {
@@ -72,7 +72,7 @@ LiteChat deploys at wan0.net/litechat.
       scope: "project",
       title: "Deployment",
       reason: "The assistant learned the deployed URL.",
-      proposedContent: "LiteChat is deployed at wan0.net/litechat.",
+      proposedContent: "LLMChef is deployed at wan0.net/litechat.",
       source: { conversationId: "conv_1", interactionId: "int_1" },
       confidence: 0.9,
     });

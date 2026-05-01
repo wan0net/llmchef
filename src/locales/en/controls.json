@@ -46,7 +46,7 @@
     "noRulesOrTagsConfigured": "No rules or tags configured."
   },
   "sidebar": {
-    "title": "LiteChat Menu",
+    "title": "LLMChef Menu",
     "close": "Close menu",
     "open": "Open menu",
     "loading": "Loading menu...",
@@ -92,7 +92,7 @@
     "apply": "Apply"
   },
   "conversationList": {
-    "title": "LiteChat",
+    "title": "LLMChef",
     "newChat": "New Chat",
     "newProject": "New Project",
     "newChatTooltip": "New Chat",
@@ -107,7 +107,7 @@
     "deleteProjectError": "Failed to delete project.",
     "confirmDeleteConversation": "Delete this conversation? This cannot be undone.",
     "githubRepo": "GitHub Repository",
-    "downloadLiteChat": "Download LiteChat",
+    "downloadLLMChef": "Download LLMChef",
     "loading": "Loading...",
     "noItemsMatchFilter": "No items match your filter.",
     "noItemsYet": "No conversations or projects yet.",

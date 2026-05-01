@@ -9,23 +9,23 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 import socket
 
 # Parse command line arguments
-parser = argparse.ArgumentParser(description='Download and serve LiteChat')
+parser = argparse.ArgumentParser(description='Download and serve LLMChef')
 parser.add_argument('port', nargs='?', type=int, default=3000, help='Port number to serve on')
 parser.add_argument('--host', '-H', action='store_true', help='Allow external connections')
 args = parser.parse_args()
 
 # Create temp directory
-temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'litechat-app')
+temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'llmchef-app')
 os.makedirs(temp_dir, exist_ok=True)
 
 # Change to temp directory
 os.chdir(temp_dir)
 
 # Download the zip file
-print("Downloading LiteChat release...")
-zip_path = os.path.join(temp_dir, 'litechat.zip')
+print("Downloading LLMChef release...")
+zip_path = os.path.join(temp_dir, 'llmchef.zip')
 try:
-    request.urlretrieve('https://litechat.dbuild.dev/release/latest.zip', zip_path)
+    request.urlretrieve('https://wan0net.github.io/llmchef/release/latest.zip', zip_path)
     print("Download complete. Extracting...")
 
     # Extract the zip file
@@ -49,7 +49,7 @@ try:
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
     access_message = f"http://{ip}:{args.port} (accessible from other devices)" if args.host else f"http://localhost:{args.port} (local access only)"
-    print(f"LiteChat is running at {access_message}")
+    print(f"LLMChef is running at {access_message}")
 
     server.serve_forever()
 

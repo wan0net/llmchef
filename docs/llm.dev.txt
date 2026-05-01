@@ -1,8 +1,8 @@
-# LiteChat Developer Guide - LLM Context
+# LLMChef Developer Guide - LLM Context
 
 ## Architecture Overview
 
-LiteChat is a modular, event-driven React application built with TypeScript, featuring a sophisticated plugin system and 100% client-side architecture. The core principle is modularity through Control Modules with event-driven communication.
+LLMChef is a modular, event-driven React application built with TypeScript, featuring a sophisticated plugin system and 100% client-side architecture. The core principle is modularity through Control Modules with event-driven communication.
 
 ### Core Technologies
 - **Frontend**: React 19, TypeScript, Tailwind CSS, shadcn/ui
@@ -30,7 +30,7 @@ LiteChat is a modular, event-driven React application built with TypeScript, fea
 ```
 src/
 ├── components/              # React components
-│   ├── LiteChat/           # Main application components
+│   ├── LLMChef/           # Main application components
 │   │   ├── canvas/         # Chat canvas and interaction display
 │   │   ├── chat/           # Chat controls and UI
 │   │   ├── common/         # Shared components (UniversalBlockRenderer, etc.)
@@ -43,11 +43,11 @@ src/
 │   │   └── example/        # Example modules for reference
 │   └── components/         # Module-specific components
 ├── hooks/                  # React hooks
-│   ├── litechat/          # LiteChat-specific hooks
+│   ├── litechat/          # LLMChef-specific hooks
 │   ├── use-formedible.tsx # TanStack Form abstraction (DO NOT USE react-hook-form)
 │   └── use-prompt-compilation.tsx # Template compilation hook
 ├── lib/                    # Core libraries and utilities
-│   └── litechat/          # Core LiteChat functionality
+│   └── litechat/          # Core LLMChef functionality
 ├── modding/               # Modding system implementation
 ├── services/              # Business logic services
 │   ├── ai.service.ts      # AI integration and streaming
@@ -56,7 +56,7 @@ src/
 │   └── conversation.service.ts # Conversation management
 ├── store/                 # Zustand state stores
 ├── types/                 # TypeScript type definitions
-│   └── litechat/         # LiteChat-specific types
+│   └── litechat/         # LLMChef-specific types
 │       ├── events/        # Event definitions
 │       ├── canvas/        # Canvas and block renderer types
 │       └── middleware/    # Middleware types
@@ -66,7 +66,7 @@ src/
 
 ## Control Module System
 
-The Control Module System is LiteChat's core architectural pattern. Each UI feature is implemented as a `ControlModule` that manages its own state and components.
+The Control Module System is LLMChef's core architectural pattern. Each UI feature is implemented as a `ControlModule` that manages its own state and components.
 
 ### ControlModule Interface
 
@@ -95,7 +95,7 @@ Register settings tabs in the main settings interface:
 ```typescript
 export class GeneralSettingsModule implements ControlModule {
   readonly id = "core-settings-general";
-  
+
   register(modApi: LiteChatModApi): void {
     this.unregisterCallback = modApi.registerSettingsTab({
       id: "general",
@@ -114,7 +114,7 @@ Add UI elements to the prompt input area:
 export class ParameterControlModule implements ControlModule {
   private turnEnabled = false;
   private temperature: number | null = null;
-  
+
   register(modApi: LiteChatModApi): void {
     this.unregisterCallback = modApi.registerPromptControl({
       id: this.id,
@@ -228,12 +228,12 @@ const controlModulesToRegister: ControlModuleConstructor[] = [
 
 ## Universal Block Renderer System
 
-LiteChat features an extensible Block Renderer System that allows custom rendering of code blocks based on language.
+LLMChef features an extensible Block Renderer System that allows custom rendering of code blocks based on language.
 
 ### Core Components
 
 1. **BlockRenderer Interface**: Defines how to render specific languages
-2. **BlockRendererService**: Manages renderer selection and execution  
+2. **BlockRendererService**: Manages renderer selection and execution
 3. **UniversalBlockRenderer**: Main component that routes to appropriate renderers
 4. **Control Modules**: Register language-specific renderers
 
@@ -278,7 +278,7 @@ interface BlockRendererContext {
 ```typescript
 export class CustomRendererModule implements ControlModule {
   readonly id = "my-custom-renderer";
-  
+
   register(modApi: LiteChatModApi): void {
     const customRenderer: BlockRenderer = {
       id: this.id,
@@ -300,7 +300,7 @@ export class CustomRendererModule implements ControlModule {
 
 ## Event System Architecture
 
-LiteChat uses a sophisticated event-driven architecture for component communication.
+LLMChef uses a sophisticated event-driven architecture for component communication.
 
 ### Event Emitter
 Central event bus using mitt:
@@ -309,7 +309,7 @@ Central event bus using mitt:
 import mitt, { type Emitter, type EventType } from "mitt";
 import type { ModEventPayloadMap } from "@/types/litechat/modding";
 
-export const emitter: Emitter<ModEventPayloadMap & Record<EventType, any>> = 
+export const emitter: Emitter<ModEventPayloadMap & Record<EventType, any>> =
   mitt<ModEventPayloadMap & Record<EventType, any>>();
 ```
 
@@ -362,7 +362,7 @@ export const settingsEvent = {
 All events are strongly typed through `ModEventPayloadMap`:
 
 ```typescript
-export interface ModEventPayloadMap extends 
+export interface ModEventPayloadMap extends
   SettingsEventPayloads,
   ProviderEventPayloads,
   ConversationEventPayloads,
@@ -386,7 +386,7 @@ interface SettingsEventPayloads {
 
 ## State Management with Zustand
 
-LiteChat uses Zustand for state management with domain-specific stores.
+LLMChef uses Zustand for state management with domain-specific stores.
 
 ### Store Structure Pattern
 
@@ -397,21 +397,21 @@ export const useExampleStore = create(
     data: [],
     loading: false,
     error: null,
-    
+
     // Action methods
     loadData: async () => {
       set((state) => {
         state.loading = true;
         state.error = null;
       });
-      
+
       try {
         const data = await SomeService.loadData();
         set((state) => {
           state.data = data;
           state.loading = false;
         });
-        
+
         // Emit change event
         emitter.emit(exampleEvent.dataLoaded, { data });
       } catch (error) {
@@ -419,11 +419,11 @@ export const useExampleStore = create(
           state.error = error.message;
           state.loading = false;
         });
-        
+
         emitter.emit(exampleEvent.loadFailed, { error: error.message });
       }
     },
-    
+
     // Event integration
     getRegisteredActionHandlers: (): RegisteredActionHandler[] => {
       const actions = get();
@@ -499,7 +499,7 @@ export const useExampleStore = create(
 - Prompt controls, canvas controls, chat controls
 - Control rules from modules (separate from user rules)
 
-#### RulesStore (`src/store/rules.store.ts`)  
+#### RulesStore (`src/store/rules.store.ts`)
 - User-defined rules and tags
 - Rule-tag associations
 - Always-on rule management
@@ -534,7 +534,7 @@ export class EventActionCoordinatorService {
 
 ## Virtual File System Architecture
 
-LiteChat implements a browser-based Virtual File System using ZenFS with IndexedDB backend.
+LLMChef implements a browser-based Virtual File System using ZenFS with IndexedDB backend.
 
 ### VFS Context Switching
 
@@ -585,13 +585,13 @@ interface VfsState {
 
 ## AI Integration Architecture
 
-LiteChat provides comprehensive AI integration through the Vercel AI SDK with support for multiple providers and advanced features.
+LLMChef provides comprehensive AI integration through the Vercel AI SDK with support for multiple providers and advanced features.
 
 ### Provider Support
 
 Supported AI providers:
 - **OpenAI**: GPT models with function calling, vision, reasoning, structured output
-- **Google Gemini**: Gemini Pro with multimodal capabilities  
+- **Google Gemini**: Gemini Pro with multimodal capabilities
 - **Anthropic Claude**: Via OpenAI-compatible interface with reasoning support
 - **OpenRouter**: Access to 100+ models
 - **Local Providers**: Ollama, LMStudio, OpenAI-compatible APIs
@@ -606,7 +606,7 @@ export class AIService {
     callbacks: StreamingCallbacks
   ): Promise<void> {
     const model = await createModelFromConfig(payload.modelConfig);
-    
+
     const result = await streamText({
       model,
       messages: payload.messages,
@@ -703,7 +703,7 @@ appendInteractionResponseChunk: (id: string, chunk: string) => {
 
 ## MCP (Model Context Protocol) Integration
 
-LiteChat provides comprehensive MCP integration with multiple transport protocols and flexible deployment options.
+LLMChef provides comprehensive MCP integration with multiple transport protocols and flexible deployment options.
 
 ### Supported Transport Protocols
 
@@ -713,7 +713,7 @@ LiteChat provides comprehensive MCP integration with multiple transport protocol
    - Single endpoint design with better error handling
 
 2. **Stdio Transport** - Local/Remote Servers
-   - Via LiteChat MCP Bridge service
+   - Via LLMChef MCP Bridge service
    - Supports local and remote bridge deployments
    - Process management and secure proxy functionality
 
@@ -728,7 +728,7 @@ The MCP Bridge supports flexible deployment scenarios:
 ```typescript
 interface McpBridgeConfig {
   url?: string;        // Full URL: http://192.168.1.100:3001
-  host?: string;       // Host only: 192.168.1.100  
+  host?: string;       // Host only: 192.168.1.100
   port?: number;       // Port only: 3001
 }
 
@@ -766,7 +766,7 @@ this.unregisterCallback = modApi.registerTool(
 
 ## Git Integration
 
-LiteChat provides browser-based Git operations using isomorphic-git with comprehensive sync capabilities.
+LLMChef provides browser-based Git operations using isomorphic-git with comprehensive sync capabilities.
 
 ### Git Operations (`src/lib/litechat/vfs-git-operations.ts`)
 
@@ -797,7 +797,7 @@ export const commitOp = async (
     dir: "/",
     message,
     author: {
-      name: options?.author?.name ?? "LiteChat User",
+      name: options?.author?.name ?? "LLMChef User",
       email: options?.author?.email ?? "user@litechat.local",
     },
   });
@@ -837,7 +837,7 @@ export class GitToolsModule implements ControlModule {
 
 ## Form System Architecture
 
-LiteChat uses TanStack Form exclusively with a strict abstraction layer.
+LLMChef uses TanStack Form exclusively with a strict abstraction layer.
 
 ### Form Hook Pattern
 
@@ -850,7 +850,7 @@ import { useFormedible } from "@/hooks/use-formedible";
 const MyComponent = () => {
   const form = useFormedible({
     defaultValues: { name: "", email: "" },
-    validators: { 
+    validators: {
       onChange: z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -864,7 +864,7 @@ const MyComponent = () => {
   return (
     <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}>
       <form.Field name="name" children={(field) => (
-        <Input 
+        <Input
           value={field.state.value}
           onChange={(e) => field.handleChange(e.target.value)}
           onBlur={field.handleBlur}
@@ -889,8 +889,8 @@ const form = useForm({
   validators: { onChange: settingsSchema },
   onSubmit: async ({ value }) => {
     // Use events, not direct store calls
-    emitter.emit(settingsEvent.setAutoTitleEnabledRequest, { 
-      enabled: value.autoTitleEnabled 
+    emitter.emit(settingsEvent.setAutoTitleEnabledRequest, {
+      enabled: value.autoTitleEnabled
     });
   },
 });
@@ -906,7 +906,7 @@ useEffect(() => {
 
 ## Modding System
 
-LiteChat provides a secure modding system allowing external extensions while maintaining system integrity.
+LLMChef provides a secure modding system allowing external extensions while maintaining system integrity.
 
 ### LiteChatModApi Interface
 
@@ -916,35 +916,35 @@ Controlled API for mod interactions:
 interface LiteChatModApi {
   readonly modId: string;
   readonly modName: string;
-  
+
   // Component Registration
   registerPromptControl(control: ModPromptControl): () => void;
   registerChatControl(control: ModChatControl): () => void;
   registerCanvasControl(control: ModCanvasControl): () => void;
   registerSettingsTab(tab: CustomSettingTab): () => void;
   registerBlockRenderer(renderer: BlockRenderer): () => void;
-  
+
   // Tool Registration
   registerTool<T extends z.ZodSchema>(
     name: string,
     tool: Tool<T>,
     implementation: ToolImplementation<T>
   ): () => void;
-  
+
   // Rule Registration (Control Rules)
   registerRule(rule: ModControlRule): () => void;
-  
+
   // Event System
   on<K extends keyof ModEventPayloadMap>(
     eventName: K,
     handler: (payload: ModEventPayloadMap[K]) => void
   ): () => void;
-  
+
   emit<K extends keyof ModEventPayloadMap>(
     eventName: K,
     payload: ModEventPayloadMap[K]
   ): void;
-  
+
   // Context and Utilities
   getContext(): ModApiContext;
   getContextSnapshot(): ModApiContextSnapshot;
@@ -991,34 +991,34 @@ function createMyMod(modApi: LiteChatModApi) {
 export class MyControlModule implements ControlModule {
   readonly id = "my-module";
   readonly dependencies = ["some-dependency"]; // Optional dependencies
-  
+
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
   private modApiRef: LiteChatModApi | null = null;
-  
+
   async initialize(modApi: LiteChatModApi): Promise<void> {
     this.modApiRef = modApi;
-    
+
     // Subscribe to events for state management
     const unsubscribe = modApi.on(someEvent.changed, (payload) => {
       this.handleStateChange(payload);
     });
     this.eventUnsubscribers.push(unsubscribe);
   }
-  
+
   register(modApi: LiteChatModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;
     }
-    
+
     this.unregisterCallback = modApi.registerPromptControl({
       id: this.id,
       triggerRenderer: () => React.createElement(MyComponent, { module: this }),
       getMetadata: () => ({ moduleEnabled: true }),
     });
   }
-  
+
   destroy(): void {
     this.eventUnsubscribers.forEach((unsub) => unsub());
     this.eventUnsubscribers = [];
@@ -1062,7 +1062,7 @@ export interface MyDomainEventPayloads {
 3. **Update ModEventPayloadMap**:
 ```typescript
 // src/types/litechat/modding.ts
-export interface ModEventPayloadMap extends 
+export interface ModEventPayloadMap extends
   // ... existing payloads
   MyDomainEventPayloads
 {}
@@ -1077,15 +1077,15 @@ export const useMyStore = create(
     // State
     data: [],
     loading: false,
-    
+
     // Actions
     loadData: async () => {
       set((state) => { state.loading = true; });
       try {
         const data = await MyService.loadData();
-        set((state) => { 
-          state.data = data; 
-          state.loading = false; 
+        set((state) => {
+          state.data = data;
+          state.loading = false;
         });
         emitter.emit(myDomainEvent.dataChanged, { data });
       } catch (error) {
@@ -1093,7 +1093,7 @@ export const useMyStore = create(
         console.error('Load failed:', error);
       }
     },
-    
+
     // Event integration
     getRegisteredActionHandlers: () => [
       {
@@ -1119,7 +1119,7 @@ const storesWithActionHandlers = [
 
 1. **Separation of Concerns**: Each module/service handles one domain
 2. **Event-Driven**: Use events for communication, not direct calls
-3. **Type Safety**: All interfaces and events strongly typed  
+3. **Type Safety**: All interfaces and events strongly typed
 4. **Immutable Updates**: Use Immer for safe state mutations
 5. **Error Boundaries**: Graceful error handling and recovery
 6. **Clean Dependencies**: Explicit dependencies, avoid circular imports
@@ -1206,7 +1206,7 @@ await VfsWorker.writeFile(path, content);
 await GitWorker.commitChanges(message);
 
 // Never run these on main thread
-// ❌ fs.writeFileSync(path, content); 
+// ❌ fs.writeFileSync(path, content);
 ```
 
 ### Race Condition Management
@@ -1245,4 +1245,4 @@ const compiled = await compileTemplate(template, {
 });
 ```
 
-This comprehensive developer guide covers LiteChat's architecture, codebase organization, and development patterns. Use this context to understand how to work with and extend LiteChat effectively. 
+This comprehensive developer guide covers LLMChef's architecture, codebase organization, and development patterns. Use this context to understand how to work with and extend LLMChef effectively.

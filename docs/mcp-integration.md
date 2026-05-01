@@ -1,6 +1,6 @@
 # MCP (Model Context Protocol) Integration
 
-LiteChat supports HTTP-based MCP (Model Context Protocol) servers, allowing you to extend the AI assistant with additional tools and capabilities from external services.
+LLMChef supports HTTP-based MCP (Model Context Protocol) servers, allowing you to extend the AI assistant with additional tools and capabilities from external services.
 
 ## What is MCP?
 
@@ -10,13 +10,13 @@ MCP (Model Context Protocol) is an open standard that enables secure connections
 
 - **Standardized Protocol**: Works with any MCP-compliant server
 - **Secure Access**: Controlled access to external tools and data
-- **Extensible**: Add custom tools without modifying LiteChat core
+- **Extensible**: Add custom tools without modifying LLMChef core
 - **Real-time**: Tools are available during AI conversations
 - **Industry Adoption**: Supported by major companies (Cloudflare, Stripe, OpenAI, etc.)
 
 ## Supported MCP Servers
 
-LiteChat supports **multiple MCP server types** with comprehensive transport protocols:
+LLMChef supports **multiple MCP server types** with comprehensive transport protocols:
 
 ### 1. Streamable HTTP Transport (MCP 2025-03-26) - Primary
 - **Latest MCP specification** with single endpoint design
@@ -26,7 +26,7 @@ LiteChat supports **multiple MCP server types** with comprehensive transport pro
 - **Better error handling** and backwards compatibility
 
 ### 2. Stdio Transport - Local Servers
-- **Local MCP servers** via LiteChat MCP Bridge service
+- **Local MCP servers** via LLMChef MCP Bridge service
 - **File system access** and local tool integration
 - **Process management** through secure bridge proxy
 - **High performance** local communication
@@ -40,7 +40,7 @@ LiteChat supports **multiple MCP server types** with comprehensive transport pro
 This allows connection to:
 - **Latest MCP servers** using Streamable HTTP protocol
 - **Local MCP servers** using stdio transport via bridge
-- **Legacy MCP servers** using deprecated SSE transport  
+- **Legacy MCP servers** using deprecated SSE transport
 - **Public MCP API endpoints**
 - **Self-hosted MCP servers**
 - **Cloud-based MCP services**
@@ -90,7 +90,7 @@ Configure retry behavior and timeouts in the MCP settings:
 
 ### Transport Priority
 
-LiteChat automatically determines transport type based on the server URL and attempts connections in the following priority:
+LLMChef automatically determines transport type based on the server URL and attempts connections in the following priority:
 
 #### For HTTP/HTTPS URLs:
 1. **Streamable HTTP Transport (2025-03-26)** - Latest MCP specification
@@ -105,19 +105,19 @@ LiteChat automatically determines transport type based on the server URL and att
 
 #### For Stdio URLs (`stdio://`):
 1. **Stdio Transport via Bridge** - Local server support
-   - Requires LiteChat MCP Bridge service running on localhost:3001
+   - Requires LLMChef MCP Bridge service running on localhost:3001
    - Spawns and manages local MCP server processes
    - Provides access to local filesystem and system tools
 
 This ensures compatibility with modern, legacy, and local MCP servers while prioritizing the latest protocol features.
 
-## LiteChat MCP Bridge Setup
+## LLMChef MCP Bridge Setup
 
-To use stdio MCP servers, you need to install and run the LiteChat MCP Bridge service:
+To use stdio MCP servers, you need to install and run the LLMChef MCP Bridge service:
 
 ### Installation
 ```bash
-# run from LiteChat project
+# run from LLMChef project
 node bin/mcp-bridge.js
 ```
 
@@ -141,7 +141,7 @@ node bin/mcp-bridge.js --help
 - **Security Isolation**: Runs MCP servers in isolated processes with controlled access
 - **Protocol Translation**: Converts HTTP requests to stdio MCP communication
 - **Session Management**: Handles multiple concurrent MCP server instances
-- **Port Auto-Detection**: LiteChat automatically detects the bridge on common ports
+- **Port Auto-Detection**: LLMChef automatically detects the bridge on common ports
 - **Error Handling**: Provides robust error handling and logging
 
 ### Configuration Options
@@ -152,8 +152,8 @@ node bin/mcp-bridge.js --help
 - **Allowed Origins**: Browser origin allowlist via `MCP_BRIDGE_ALLOWED_ORIGINS` (defaults to local dev origins and this fork's GitHub Pages origin)
 - **Allowed Commands**: Command allowlist via `MCP_BRIDGE_ALLOWED_COMMANDS` (default: npx,node,python,python3)
 
-#### LiteChat Bridge Configuration
-Configure where LiteChat looks for the bridge service:
+#### LLMChef Bridge Configuration
+Configure where LLMChef looks for the bridge service:
 
 **Option 1: Full URL** (highest priority)
 ```json
@@ -177,7 +177,7 @@ Configure where LiteChat looks for the bridge service:
 ```
 
 **Option 3: Auto-Detection** (fallback)
-- LiteChat scans localhost ports: 3001, 8080, 3000, 8000
+- LLMChef scans localhost ports: 3001, 8080, 3000, 8000
 - Uses HTTP by default (specify full URL for HTTPS)
 
 #### Remote Bridge Examples
@@ -222,7 +222,7 @@ For servers requiring authentication, add headers in JSON format:
 
 ### Graceful Connection Handling
 
-LiteChat implements robust connection handling:
+LLMChef implements robust connection handling:
 
 - **Automatic Retries**: Failed connections are retried with exponential backoff
 - **Timeout Protection**: Connections that hang are terminated after the configured timeout
@@ -250,7 +250,7 @@ Users receive informative notifications about:
 
 ### How MCP Tools Work
 
-1. **Discovery**: LiteChat connects to enabled MCP servers and discovers available tools
+1. **Discovery**: LLMChef connects to enabled MCP servers and discovers available tools
 2. **Registration**: Tools are registered with prefixed names (`mcp_{server_id}_{tool_name}`)
 3. **Availability**: Tools become available in the AI assistant's tool selector
 4. **Execution**: During conversations, the AI can call MCP tools as needed
@@ -260,7 +260,7 @@ Users receive informative notifications about:
 
 MCP tools are prefixed to avoid conflicts:
 - Original tool: `search_database`
-- LiteChat tool: `mcp_myserver_search_database`
+- LLMChef tool: `mcp_myserver_search_database`
 
 ### Tool Capabilities
 
@@ -371,7 +371,7 @@ modApi.on('mcp.tool.before.execution', (payload) => {
 // Monitor tool performance
 modApi.on('mcp.tool.after.call', (payload) => {
   console.log(`Tool ${payload.toolName} executed in ${payload.duration}ms`);
-  
+
   if (payload.duration > 5000) {
     modApi.toast('warning', `Slow tool execution: ${payload.toolName}`);
   }
@@ -394,7 +394,7 @@ React to new tools becoming available:
 // Auto-configure tools when discovered
 modApi.on('mcp.tool.discovered', (payload) => {
   console.log(`New tool discovered: ${payload.toolName} from ${payload.serverName}`);
-  
+
   // Auto-configure specific tools
   if (payload.toolName === 'code_formatter') {
     modApi.emit('mcp.configure.tool', {
@@ -468,7 +468,7 @@ For complex authentication or custom requirements:
 {
   "Authorization": "Bearer token",
   "X-API-Key": "key",
-  "X-User-Agent": "LiteChat/1.0",
+  "X-User-Agent": "LLMChef/1.0",
   "X-Custom-Context": "value"
 }
 ```
@@ -478,7 +478,7 @@ For complex authentication or custom requirements:
 For development with local MCP servers:
 
 1. **Local Server**: Run MCP server on localhost
-2. **CORS Configuration**: Ensure server allows CORS from LiteChat
+2. **CORS Configuration**: Ensure server allows CORS from LLMChef
 3. **Development URL**: Use `http://localhost:port/mcp` format
 4. **Testing**: Use browser developer tools to debug connections
 
@@ -586,7 +586,7 @@ The MCP integration is designed to be extensible. Contributions welcome for:
 - [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
 
-### LiteChat Resources
+### LLMChef Resources
 
 - [Settings Configuration Guide](settings.md)
 - [Tool System Documentation](tools.md)
@@ -595,4 +595,4 @@ The MCP integration is designed to be extensible. Contributions welcome for:
 
 ---
 
-For additional support or questions about MCP integration, please refer to the LiteChat documentation or open an issue on the project repository. 
+For additional support or questions about MCP integration, please refer to the LLMChef documentation or open an issue on the project repository.

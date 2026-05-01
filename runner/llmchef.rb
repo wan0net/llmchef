@@ -18,14 +18,14 @@ options[:port] = ARGV[0].to_i if ARGV[0] && ARGV[0].to_i > 0
 
 # Create temp directory
 script_dir = File.dirname(File.expand_path(__FILE__))
-temp_dir = File.join(script_dir, 'litechat-app')
+temp_dir = File.join(script_dir, 'llmchef-app')
 FileUtils.mkdir_p(temp_dir)
 
 # Download the zip file
-zip_path = File.join(temp_dir, 'litechat.zip')
-puts "Downloading LiteChat release..."
+zip_path = File.join(temp_dir, 'llmchef.zip')
+puts "Downloading LLMChef release..."
 begin
-  URI.open('https://litechat.dbuild.dev/release/latest.zip') do |zip_file|
+  URI.open('https://wan0net.github.io/llmchef/release/latest.zip') do |zip_file|
     File.open(zip_path, 'wb') do |file|
       file.write(zip_file.read)
     end
@@ -75,7 +75,7 @@ begin
   hostname = Socket.gethostname
   ip = Socket.ip_address_list.find { |addr| addr.ipv4? && !addr.ipv4_loopback? }.ip_address rescue 'localhost'
   access_message = options[:host] ? "http://#{ip}:#{options[:port]} (accessible from other devices)" : "http://localhost:#{options[:port]} (local access only)"
-  puts "LiteChat is running at #{access_message}"
+  puts "LLMChef is running at #{access_message}"
 
   # Handle shutdown
   trap('INT') { server.shutdown }

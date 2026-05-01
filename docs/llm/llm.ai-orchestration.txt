@@ -1,7 +1,7 @@
-# LiteChat AI Orchestration & Conversation Engine (for LLMs)
+# LLMChef AI Orchestration & Conversation Engine (for LLMs)
 
 ## Overview
-LiteChat's AI engine is a modular, event-driven orchestration of:
+LLMChef's AI engine is a modular, event-driven orchestration of:
 - Prompt compilation, enhancement, and template logic
 - Conversation and interaction management (streaming, parent-child, race, error handling)
 - Multi-step workflow execution (tools, agents, HITL, parallel, sub-workflow)
@@ -70,4 +70,4 @@ LiteChat's AI engine is a modular, event-driven orchestration of:
 - `src/services/websearch.service.ts`
 - `src/services/block-renderer.service.ts`
 - All event domains in `src/types/litechat/events/`
-- All relevant stores in `src/store/` 
+- All relevant stores in `src/store/`

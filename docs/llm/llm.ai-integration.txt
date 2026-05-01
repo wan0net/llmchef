@@ -1,4 +1,4 @@
-# LiteChat AI Integration Architecture (for LLMs)
+# LLMChef AI Integration Architecture (for LLMs)
 
 ## Overview
 - AI integration is handled via the Vercel AI SDK (see `ai` package imports)
@@ -45,4 +45,4 @@
 - `src/store/provider.store.ts`
 - `src/services/model-fetcher.ts`
 - `src/services/ai-image-generation.service.ts`
-- `src/types/litechat/provider.ts` (for model/provider types) 
+- `src/types/litechat/provider.ts` (for model/provider types)

@@ -98,7 +98,7 @@
   "mcp": {
     "bridge": {
       "dynamicConfiguration": "Configuración Dinámica del Puente MCP",
-      "configDescription": "Configure dónde LiteChat busca el servicio dinámico del puente MCP (requerido para servidores stdio://). Inicie el puente con: npm run mcp-proxy",
+      "configDescription": "Configure dónde LLMChef busca el servicio dinámico del puente MCP (requerido para servidores stdio://). Inicie el puente con: npm run mcp-proxy",
       "location": "Ubicación del Puente",
       "locationDescription": "Especifique dónde se está ejecutando su puente MCP dinámico (predeterminado: localhost:3001)",
       "fullUrl": "URL Completa del Puente (máxima prioridad)",
@@ -112,7 +112,7 @@
       "priorityNote": "Deje en blanco para autodetección. Para puentes remotos, use la URL completa o configure el enlace del host.",
       "setupInstructions": "Instrucciones de Configuración del Puente",
       "instructionsText": "Para usar servidores MCP stdio, instale y ejecute el puente:",
-      "startBridge": "Iniciar el puente (desde el directorio del proyecto LiteChat)",
+      "startBridge": "Iniciar el puente (desde el directorio del proyecto LLMChef)",
       "customSettings": "O con configuración personalizada",
       "saveConfig": "Guardar Configuración del Puente",
       "resetConfirm": "¿Restablecer la configuración del puente a los valores predeterminados?"
@@ -121,7 +121,7 @@
       "title": "Configuración de Conexión",
       "description": "Configure el comportamiento de reintentos y los tiempos de espera para las conexiones del servidor MCP",
       "retryConfiguration": "Configuración de Reintentos",
-      "retryDescription": "Cómo LiteChat maneja las conexiones fallidas",
+      "retryDescription": "Cómo LLMChef maneja las conexiones fallidas",
       "retryAttempts": "Intentos de Reintento",
       "retryAttemptsHelp": "Número de intentos de reintento (0-10)",
       "retryDelay": "Retraso de Reintento (ms)",
@@ -162,7 +162,7 @@
       "description": "Administre sus servidores de Protocolo de Contexto de Modelo",
       "addButton": "Agregar Servidor",
       "noServers": "No hay Servidores MCP",
-      "noServersDescription": "Agregue servidores MCP basados en HTTP para extender LiteChat con herramientas y capacidades adicionales",
+      "noServersDescription": "Agregue servidores MCP basados en HTTP para extender LLMChef con herramientas y capacidades adicionales",
       "addFirstButton": "Agregar Su Primer Servidor",
       "nameColumn": "Nombre",
       "urlColumn": "URL",

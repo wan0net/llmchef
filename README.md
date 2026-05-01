@@ -1,8 +1,8 @@
-# LiteChat
+# LLMChef
 
-This repository is the `wan0net/litechat` fork of LiteChat. The upstream project lives at `DimitriGilbert/LiteChat`; fork-specific docs and release links in this repository point to the `wan0net` GitHub repo and GitHub Pages deployment.
+This repository is the `wan0net/llmchef` fork of LiteChat. The upstream project lives at `DimitriGilbert/LiteChat`; fork-specific docs and release links in this repository point to the `wan0net` GitHub repo and GitHub Pages deployment.
 
-**LiteChat** is a modular, extensible, and privacy-focused AI chat application designed for power users, developers, and teams. It supports multiple AI providers, advanced prompt engineering, project-based organization, and powerful developer features like virtual file systems, Git integration, and a comprehensive modding system.
+**LLMChef** is a modular, extensible, and privacy-focused AI chat application designed for power users, developers, and teams. It supports multiple AI providers, advanced prompt engineering, project-based organization, and powerful developer features like virtual file systems, Git integration, and a comprehensive modding system.
 
 ## ✨ Key Features
 
@@ -69,9 +69,9 @@ This repository is the `wan0net/litechat` fork of LiteChat. The upstream project
 - **Build-Time Configuration**: Ship with pre-configured setups for teams/demos
 - **Custom Themes**: Full visual customization with CSS variables
 
-## 🌐 Try LiteChat
+## 🌐 Try LLMChef
 
-**Public Version**: [https://wan0net.github.io/litechat](https://wan0net.github.io/litechat) (hosted on GitHub Pages)
+**Public Version**: [https://wan0net.github.io/llmchef](https://wan0net.github.io/llmchef) (hosted on GitHub Pages)
 
 ## 📚 Documentation
 
@@ -105,9 +105,9 @@ For comprehensive documentation, see the [`docs/`](./docs/) directory:
 
 ```bash
 # Download and extract the latest release
-curl -L https://wan0net.github.io/litechat/release/latest.zip -o litechat.zip
-unzip litechat.zip -d litechat
-cd litechat
+curl -L https://wan0net.github.io/llmchef/release/latest.zip -o llmchef.zip
+unzip llmchef.zip -d llmchef
+cd llmchef
 
 # Start a local server (choose one)
 python3 -m http.server 8080              # Python
@@ -121,8 +121,8 @@ php -S localhost:8080                    # PHP
 
 ```bash
 # Clone and setup
-git clone https://github.com/wan0net/litechat.git
-cd litechat
+git clone https://github.com/wan0net/llmchef.git
+cd llmchef
 npm install
 
 # Start development server
@@ -139,7 +139,7 @@ npm run build
 
 ### Docker
 
-LiteChat uses a minimal Docker setup based on [lipanski/docker-static-website](https://github.com/lipanski/docker-static-website) (~80KB image) with BusyBox httpd for optimal performance and size.
+LLMChef uses a minimal Docker setup based on [lipanski/docker-static-website](https://github.com/lipanski/docker-static-website) (~80KB image) with BusyBox httpd for optimal performance and size.
 
 #### Manual Docker Build
 
@@ -148,10 +148,10 @@ LiteChat uses a minimal Docker setup based on [lipanski/docker-static-website](h
 npm run build
 
 # Build Docker image
-docker build -t litechat .
+docker build -t llmchef .
 
 # Run container (serves on port 3000)
-docker run -d -p 8080:3000 litechat
+docker run -d -p 8080:3000 llmchef
 
 # Or use Docker Compose (includes MCP bridge service)
 docker-compose up -d
@@ -163,7 +163,7 @@ The included `docker-compose.yml` provides a complete setup with MCP bridge:
 
 ```yaml
 # Environment variables (create .env file)
-LITECHAT_PORT=8080
+LLMCHEF_PORT=8080
 MCP_BRIDGE_PORT=3001
 MCP_BRIDGE_VERBOSE=false
 MCP_BRIDGE_ALLOWED_ORIGINS=https://wan0net.github.io,http://localhost:5173
@@ -176,16 +176,16 @@ docker-compose up -d
 docker-compose ps
 
 # View logs
-docker-compose logs -f litechat
+docker-compose logs -f llmchef
 docker-compose logs -f mcp-bridge
 ```
 
 **Services included:**
-- **litechat**: Main application (port configurable via `LITECHAT_PORT`)
+- **llmchef**: Main application (port configurable via `LLMCHEF_PORT`)
 - **mcp-bridge**: MCP bridge service (port configurable via `MCP_BRIDGE_PORT`)
 
 **Environment Variables:**
-- `LITECHAT_PORT`: External port for LiteChat (default: 8080)
+- `LLMCHEF_PORT`: External port for LLMChef (default: 8080)
 - `MCP_BRIDGE_PORT`: External port for MCP bridge (default: 3001)
 - `MCP_BRIDGE_INTERNAL_PORT`: Internal container port (default: 3001)
 - `MCP_BRIDGE_VERBOSE`: Enable verbose logging (default: false)
@@ -198,32 +198,32 @@ The builder script supports automatic Docker image creation and publishing:
 
 ```bash
 # Build and create Docker image (but don't push)
-bin/builder --release v1.0.0 --docker-repo myuser/litechat --no-publish
+bin/builder --release v1.0.0 --docker-repo myuser/llmchef --no-publish
 
 # Build, create, and push Docker image to Docker Hub
-bin/builder --release v1.0.0 --docker-repo myuser/litechat
+bin/builder --release v1.0.0 --docker-repo myuser/llmchef
 
 # Build multiple language versions with Docker (creates language-specific images)
-bin/builder --release v1.0.0 --docker-repo myuser/litechat
+bin/builder --release v1.0.0 --docker-repo myuser/llmchef
 ```
 
 **Builder Options:**
-- `--docker-repo <repo>`: Docker repository (e.g., `myuser/litechat`)
+- `--docker-repo <repo>`: Docker repository (e.g., `myuser/llmchef`)
 - `--release <name>`: Release name used as Docker tag
 - `--no-publish`: Create images locally without pushing to registry
 
 **Docker Tags Created:**
 
 *Single Language Build:*
-- `myuser/litechat:v1.0.0` (release-specific tag)
-- `myuser/litechat:latest` (always updated to latest release)
+- `myuser/llmchef:v1.0.0` (release-specific tag)
+- `myuser/llmchef:latest` (always updated to latest release)
 
 *Multi-Language Build:*
-- `myuser/litechat:v1.0.0` (default language: en)
-- `myuser/litechat:latest` (always points to default)
-- `myuser/litechat:v1.0.0-fr` (French version)
-- `myuser/litechat:v1.0.0-de` (German version)
-- `myuser/litechat:v1.0.0-es` (Spanish version)
+- `myuser/llmchef:v1.0.0` (default language: en)
+- `myuser/llmchef:latest` (always points to default)
+- `myuser/llmchef:v1.0.0-fr` (French version)
+- `myuser/llmchef:v1.0.0-de` (German version)
+- `myuser/llmchef:v1.0.0-es` (Spanish version)
 - etc. (one for each detected language)
 
 #### Docker Configuration
@@ -236,18 +236,18 @@ The image uses BusyBox httpd with SPA (Single Page Application) routing configur
 
 ### CORS
 
-If using local models (Ollama, LMStudio, etc.) or custom API endpoints, you might need to configure CORS on your AI backend server. LiteChat makes direct requests from the browser.
+If using local models (Ollama, LMStudio, etc.) or custom API endpoints, you might need to configure CORS on your AI backend server. LLMChef makes direct requests from the browser.
 
 - **Ollama:** Start Ollama with `OLLAMA_ORIGIN='*'` (or a more specific origin like `http://localhost:8080`) environment variable. Example: `OLLAMA_ORIGIN='*' ollama serve`.
 - **OpenAI-Compatible APIs (e.g., LMStudio):** Check your server's documentation for enabling CORS headers.
 
-**No server-side CORS is needed for LiteChat's internal VFS operations** as they happen entirely in the browser via IndexedDB.
+**No server-side CORS is needed for LLMChef's internal VFS operations** as they happen entirely in the browser via IndexedDB.
 
-Gemini says no, for now. And if you are trying [from the web](https://wan0net.github.io/litechat) on https, well, you can't talk to http endpoints... (so probably no local providers...)
+Gemini says no, for now. And if you are trying [from the web](https://wan0net.github.io/llmchef) on https, well, you can't talk to http endpoints... (so probably no local providers...)
 
 ## Architecture Overview
 
-LiteChat follows a modular, event-driven architecture designed for extensibility and maintainability:
+LLMChef follows a modular, event-driven architecture designed for extensibility and maintainability:
 
 - **100% Client-Side**: All data stored locally using IndexedDB
 - **Control Module System**: UI features encapsulated as pluggable modules
@@ -269,7 +269,7 @@ LiteChat follows a modular, event-driven architecture designed for extensibility
 - **Linting & Formatting**: ESLint and Prettier are used
 - **Testing**: Vitest for unit/integration tests
 - **Contributions**: Pull Requests and GitHub Issues are welcome!
-- **Architecture**: See [Control Module System](./docs/control-modules.md) documentation to understand LiteChat's core architecture
+- **Architecture**: See [Control Module System](./docs/control-modules.md) documentation to understand LLMChef's core architecture
 
 For detailed development setup, contribution guidelines, and architectural information, see the [documentation](./docs/).
 
@@ -301,4 +301,4 @@ MIT License. See [LICENSE](LICENSE) file for details.
 
 ---
 
-**LiteChat** is an open-source project. Feedback, bug reports, and contributions are highly encouraged!
+**LLMChef** is an open-source project. Feedback, bug reports, and contributions are highly encouraged!

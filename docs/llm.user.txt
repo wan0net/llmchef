@@ -1,8 +1,8 @@
-# LiteChat User Guide - LLM Context
+# LLMChef User Guide - LLM Context
 
-## What is LiteChat?
+## What is LLMChef?
 
-LiteChat is a modular, extensible, privacy-focused AI chat application designed for power users, developers, and teams. It runs 100% client-side in your browser with all data stored locally using IndexedDB - no server dependencies required.
+LLMChef is a modular, extensible, privacy-focused AI chat application designed for power users, developers, and teams. It runs 100% client-side in your browser with all data stored locally using IndexedDB - no server dependencies required.
 
 ## Key Features & Capabilities
 
@@ -40,7 +40,7 @@ LiteChat is a modular, extensible, privacy-focused AI chat application designed 
 ## Basic Usage
 
 ### Getting Started
-1. **Access LiteChat**: Visit https://wan0net.github.io/litechat or host locally
+1. **Access LLMChef**: Visit https://wan0net.github.io/llmchef or host locally
 2. **Configure Providers**: Go to Settings → Providers to add API keys
 3. **Select Model**: Choose from available models in the dropdown
 4. **Start Chatting**: Type messages in the prompt area
@@ -189,7 +189,7 @@ Each project can override global settings:
 
 ### API Keys
 - Stored locally in browser IndexedDB
-- Never transmitted to LiteChat servers (no servers exist)
+- Never transmitted to LLMChef servers (no servers exist)
 - Clear browser data to remove keys
 
 ### Private Repositories
@@ -212,4 +212,4 @@ Each project can override global settings:
 ### Community
 - Project is open source and welcomes contributions
 - Feature requests and bug reports appreciated
-- Check existing documentation before asking questions 
+- Check existing documentation before asking questions

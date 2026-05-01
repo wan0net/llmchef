@@ -1,6 +1,6 @@
 # AI Integration
 
-LiteChat provides comprehensive AI integration supporting multiple providers, streaming responses, tool execution, and advanced features like reasoning and image generation. The system is designed for extensibility and robust error handling.
+LLMChef provides comprehensive AI integration supporting multiple providers, streaming responses, tool execution, and advanced features like reasoning and image generation. The system is designed for extensibility and robust error handling.
 
 ## Architecture Overview
 
@@ -13,14 +13,14 @@ LiteChat provides comprehensive AI integration supporting multiple providers, st
 
 ### AI SDK Integration
 
-LiteChat uses the Vercel AI SDK (`ai` package) for unified provider access:
+LLMChef uses the Vercel AI SDK (`ai` package) for unified provider access:
 
 ```typescript
 import { streamText, type LanguageModelV1 } from "ai";
 
 // Providers are instantiated through provider-specific factories
 const model = openai("gpt-4"); // OpenAI
-const model = anthropic("claude-3-opus"); // Anthropic  
+const model = anthropic("claude-3-opus"); // Anthropic
 const model = google("gemini-pro"); // Google
 ```
 
@@ -78,7 +78,7 @@ interface DbProviderConfig {
 
 interface DbApiKey {
   id: string;
-  providerId: string; 
+  providerId: string;
   keyValue: string;
   label?: string;
   createdAt: Date;
@@ -88,9 +88,9 @@ interface DbApiKey {
 ### Provider Types
 
 ```typescript
-type ProviderType = 
+type ProviderType =
   | "openai"
-  | "google" 
+  | "google"
   | "openrouter"
   | "ollama"
   | "openai-compatible";
@@ -214,7 +214,7 @@ modApi.registerTool("file_read", {
 - `vfs_delete_file` - Delete files/directories
 - `vfs_move_file` - Move/rename files
 
-#### Git Tools (`GitToolsModule`)  
+#### Git Tools (`GitToolsModule`)
 - `git_status` - Check repository status
 - `git_add` - Stage files
 - `git_commit` - Create commits
@@ -313,7 +313,7 @@ const promptMetadata = {
 ```typescript
 // Common provider error scenarios
 - Invalid API key
-- Rate limiting  
+- Rate limiting
 - Model not available
 - Network connectivity
 - Malformed requests
@@ -337,10 +337,10 @@ try {
   const result = await toolImplementation(params, context);
   return { success: true, result };
 } catch (error) {
-  return { 
-    success: false, 
+  return {
+    success: false,
     error: error.message,
-    recoverable: true 
+    recoverable: true
   };
 }
 ```
@@ -459,7 +459,7 @@ const config = {
 const configs = [
   {
     type: "openai",
-    label: "Production OpenAI", 
+    label: "Production OpenAI",
     enabled: true,
     enabledModels: ["gpt-4", "gpt-3.5-turbo"]
   },
@@ -471,4 +471,4 @@ const configs = [
     enabledModels: ["claude-3-opus"]
   }
 ];
-``` 
+```

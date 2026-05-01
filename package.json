@@ -1,12 +1,12 @@
 {
-  "name": "litechat",
+  "name": "llmchef",
   "private": true,
   "version": "0.2.9-beta",
   "type": "module",
-  "homepage": "https://wan0net.github.io/litechat",
+  "homepage": "https://wan0net.github.io/llmchef",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wan0net/litechat.git"
+    "url": "https://github.com/wan0net/llmchef.git"
   },
   "scripts": {
     "dev": "vite --host",
@@ -22,8 +22,8 @@
     "deploy": "gh-pages -d dist --no-history --dotfiles --remove \".proompts/**/*\"",
     "to2web": "npm run build && bin/releaser && npm run deploy",
     "mcp-proxy": "node bin/mcp-bridge.js",
-    "serve": "npm run build && npx http-server dist --port ${LITECHAT_PORT:=5173}",
-    "update": "git pull ${LITECHAT_ORIGIN:=origin} ${LITECHAT_BRANCH:=main} && npm install && npm run serve"
+    "serve": "npm run build && npx http-server dist --port ${LLMCHEF_PORT:=5173}",
+    "update": "git pull ${LLMCHEF_ORIGIN:=origin} ${LLMCHEF_BRANCH:=main} && npm install && npm run serve"
   },
   "overrides": {
     "elliptic": "^6.6.1",

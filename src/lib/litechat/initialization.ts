@@ -313,7 +313,7 @@ export async function performFullInitialization(
   moduleConstructors: ControlModuleConstructor[],
   coreModApi: LiteChatModApi
 ): Promise<ControlModule[]> {
-  console.log("[Init] LiteChat Full Initialization START");
+  console.log("[Init] LLMChef Full Initialization START");
   // emitter.emit(appEvent.initializationPhaseStarted, { phase: "full" }); // Event does not exist, removing
 
   // Initialize core services event handlers early
@@ -353,9 +353,9 @@ export async function performFullInitialization(
     await loadAndProcessMods(stores, coreModApi);
     initializeCoreUiStates(stores, coreModApi);
     emitter.emit(appEvent.initializationPhaseCompleted, { phase: "all" });
-    console.log("LiteChat: Full initialization sequence COMPLETE.");
+    console.log("LLMChef: Full initialization sequence COMPLETE.");
   } catch (error) {
-    console.error("LiteChat: Full initialization sequence FAILED:", error);
+    console.error("LLMChef: Full initialization sequence FAILED:", error);
     toast.error(
       `Initialization sequence failed: ${
         error instanceof Error ? error.message : String(error)

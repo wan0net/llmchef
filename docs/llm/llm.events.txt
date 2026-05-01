@@ -1,4 +1,4 @@
-# LiteChat Event System (for LLMs)
+# LLMChef Event System (for LLMs)
 
 ## Event Emitter
 - Central event bus using mitt (see `src/lib/litechat/event-emitter.ts`)
@@ -38,4 +38,4 @@
 ## For LLMs: To reason about or extend the event system, reference:
 - `src/lib/litechat/event-emitter.ts`
 - `src/types/litechat/modding.ts` (for ModEventPayloadMap)
-- `src/types/litechat/events/` (for all event domains) 
+- `src/types/litechat/events/` (for all event domains)

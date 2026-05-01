@@ -25,7 +25,7 @@ const makeNote = (
 ): Crea8MemoryNote => ({
   id: "note-1",
   title: "Deployment Notes",
-  content: "LiteChat deploys through Cloudflare Pages for project alpha.",
+  content: "LLMChef deploys through Cloudflare Pages for project alpha.",
   scope: "project",
   tags: ["deploy", "cloudflare"],
   projectId: "project-alpha",

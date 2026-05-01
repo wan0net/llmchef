@@ -1,6 +1,6 @@
 # Runnable Code Blocks - Granular Control System
 
-LiteChat's runnable JavaScript and Python blocks now implement a flexible, extensible control system that follows the "control rule" pattern for maximum granularity and future extensibility.
+LLMChef's runnable JavaScript and Python blocks now implement a flexible, extensible control system that follows the "control rule" pattern for maximum granularity and future extensibility.
 
 ## Granular Control Architecture
 
@@ -9,7 +9,7 @@ The new system replaces hardcoded settings with a flexible configuration approac
 ### Key Features
 
 - **Per-Block Type Configuration**: Enable/disable each block type individually (JavaScript, Python, future types)
-- **Individual Security Settings**: Configure security validation per block type 
+- **Individual Security Settings**: Configure security validation per block type
 - **Off by Default**: Advanced feature that requires explicit activation
 - **Future-Extensible**: No hardcoding - new block types can be added without code changes
 - **Advanced Settings Integration**: Only visible when advanced settings are enabled
@@ -44,9 +44,9 @@ When code is executed in runnable blocks, a `litechat` object is available globa
 ```javascript
 // Available in both JavaScript and Python blocks
 litechat = {
-  // ModApi access for full LiteChat integration
+  // ModApi access for full LLMChef integration
   modApi: LiteChatModApi,
-  
+
   // Context snapshot for current state
   context: {
     selectedConversationId: string | null,
@@ -54,13 +54,13 @@ litechat = {
     theme: string,
     // ... other context properties
   },
-  
+
   // VFS access for file operations
   vfs: {
     getInstance: (vfsKey: string) => Promise<fs>,
     getCurrentVfsKey: () => string
   },
-  
+
   // Utilities for common operations
   utils: {
     log: (level, ...args) => void,
@@ -69,7 +69,7 @@ litechat = {
     emit: (eventName, payload) => void,
     on: (eventName, callback) => function
   },
-  
+
   // Preview management for graphical output
   preview: {
     createTarget: (id?) => {
@@ -147,7 +147,7 @@ The security system provides granular, AI-powered code analysis:
 The system is designed for backward compatibility:
 
 1. **Phase 1**: Advanced settings visibility (✅ Complete)
-2. **Phase 2**: Security system integration (✅ Complete) 
+2. **Phase 2**: Security system integration (✅ Complete)
 3. **Phase 3**: Full granular configuration (🚧 In Progress)
 4. **Phase 4**: Additional language support (🔮 Future)
 
@@ -173,7 +173,7 @@ setRunnableBlocksGlobalSecurityModelId("anthropic/claude-3-5-sonnet-20241022");
 setRunnableBlocksGlobalSecurityPrompt(`
 Analyze this code for security risks. Rate 0-100:
 - 0-30: Safe operations
-- 31-60: Moderate risk  
+- 31-60: Moderate risk
 - 61-90: High risk
 - 91-100: Dangerous
 
@@ -330,7 +330,7 @@ preview.render(f"""
 - Language-specific security policies
 - Custom execution environments per language
 
-### Maintainability  
+### Maintainability
 - Clean separation of concerns
 - Event-driven architecture
 - Consistent with existing control patterns
@@ -346,4 +346,4 @@ preview.render(f"""
 - Progressive confirmation system
 - Configurable security models and prompts
 
-This system provides a solid foundation for future expansion while maintaining the clean, modular architecture that LiteChat is known for. 
+This system provides a solid foundation for future expansion while maintaining the clean, modular architecture that LLMChef is known for.

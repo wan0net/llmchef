@@ -2606,7 +2606,7 @@ ${variables
         .join("\n")}
 
 IMPORTANT: Provide the actual values, not schema definitions with "type" and "description" fields.
-IMPORTANT: Keep your response as they would be in normal condition you can use all of LiteChat capabilities, do not shorten or simplify the response but make sure to provide a valid json output.`;
+IMPORTANT: Keep your response as they would be in normal condition you can use all of LLMChef capabilities, do not shorten or simplify the response but make sure to provide a valid json output.`;
 
     return { schema, specification };
   },

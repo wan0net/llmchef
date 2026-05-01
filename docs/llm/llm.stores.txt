@@ -1,7 +1,7 @@
-# LiteChat Store Architecture (for LLMs)
+# LLMChef Store Architecture (for LLMs)
 
 ## Overview
-LiteChat uses Zustand stores for all major state domains, but is architected for a future move toward event-driven and service-based state management. All stores expose state, actions, and event integration via `getRegisteredActionHandlers`. LLMs should prefer event/service patterns over direct store access when possible.
+LLMChef uses Zustand stores for all major state domains, but is architected for a future move toward event-driven and service-based state management. All stores expose state, actions, and event integration via `getRegisteredActionHandlers`. LLMs should prefer event/service patterns over direct store access when possible.
 
 ---
 
@@ -97,4 +97,4 @@ LiteChat uses Zustand stores for all major state domains, but is architected for
 - `llm.architecture.txt` for event/action wiring and initialization
 - `llm.persistence.txt` for database schema and persistence
 - `llm.external-tools.txt` for sync/marketplace tool orchestration
-- All store files in `src/store/` for up-to-date state/actions/events 
+- All store files in `src/store/` for up-to-date state/actions/events

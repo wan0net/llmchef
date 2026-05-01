@@ -1,12 +1,12 @@
 # Canvas Features
 
-The LiteChat canvas provides advanced features for code display, file management, diagram rendering, and interaction controls. These features enhance the developer experience and provide practical tools for working with AI-generated content.
+The LLMChef canvas provides advanced features for code display, file management, diagram rendering, and interaction controls. These features enhance the developer experience and provide practical tools for working with AI-generated content.
 
 ## Code Block Enhancements
 
 ### Filepath Support
 
-LiteChat supports specifying filepaths in code blocks using the `language:filepath` syntax, enabling better organization and providing download functionality.
+LLMChef supports specifying filepaths in code blocks using the `language:filepath` syntax, enabling better organization and providing download functionality.
 
 #### Syntax
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 ````markdown
 ```yaml:config/app.yaml
 app:
-  name: "LiteChat"
+  name: "LLMChef"
   version: "1.0.0"
   debug: false
 
@@ -115,7 +115,7 @@ const codeBlocksWithFilepaths = useMemo(() => {
 const zip = new JSZip();
 codeBlocksWithFilepaths.forEach(({ filepath, code }) => {
   const normalizedPath = filepath.replace(/^[\/\\]+/, '').replace(/\\/g, '/');
-  
+
   // Create parent directories
   const pathParts = normalizedPath.split('/');
   if (pathParts.length > 1) {
@@ -124,14 +124,14 @@ codeBlocksWithFilepaths.forEach(({ filepath, code }) => {
       zip.folder(dirPath);
     }
   }
-  
+
   zip.file(normalizedPath, code);
 });
 ```
 
 ## Mermaid Diagram Support
 
-LiteChat provides built-in support for rendering Mermaid diagrams using the `mermaid` language identifier in code blocks.
+LLMChef provides built-in support for rendering Mermaid diagrams using the `mermaid` language identifier in code blocks.
 
 ### Syntax
 
@@ -161,13 +161,13 @@ graph TD
 ```mermaid
 sequenceDiagram
     participant User
-    participant LiteChat
+    participant LLMChef
     participant AI
-    
-    User->>LiteChat: Send message
-    LiteChat->>AI: API request
-    AI-->>LiteChat: Stream response
-    LiteChat-->>User: Display response
+
+    User->>LLMChef: Send message
+    LLMChef->>AI: API request
+    AI-->>LLMChef: Stream response
+    LLMChef-->>User: Display response
 ```
 
 #### Class Diagrams
@@ -179,13 +179,13 @@ classDiagram
         +register(modApi)
         +destroy(modApi)
     }
-    
+
     class PromptControl {
         +component: React.Component
         +getMetadata()
         +clearOnSubmit()
     }
-    
+
     ControlModule --> PromptControl
 ```
 
@@ -207,19 +207,19 @@ erDiagram
     CONVERSATION ||--o{ INTERACTION : contains
     INTERACTION ||--o{ TOOL_CALL : may_have
     PROJECT ||--o{ CONVERSATION : organizes
-    
+
     USER {
         string id
         string preferences
     }
-    
+
     CONVERSATION {
         string id
         string title
         string projectId
         datetime createdAt
     }
-    
+
     INTERACTION {
         string id
         string conversationId
@@ -234,7 +234,7 @@ erDiagram
 - **Real-time Rendering**: Diagrams render as content streams
 - **Folding Support**: Collapse/expand diagrams like code blocks
 - **Error Handling**: Graceful fallback for invalid syntax
-- **Theme Awareness**: Adapts to LiteChat's current theme
+- **Theme Awareness**: Adapts to LLMChef's current theme
 - **Copy Support**: Can copy diagram source code
 
 ### Implementation
@@ -306,7 +306,7 @@ The canvas provides extensible controls for interacting with messages and conten
 
 **Interaction Controls**: Appear in message headers
 - Copy message content
-- Regenerate response  
+- Regenerate response
 - Rate interaction
 - ZIP download (for code-heavy responses)
 
@@ -390,14 +390,14 @@ const streamProcessor = {
   onChunk: (chunk: string) => {
     // Append to buffer
     buffer += chunk;
-    
+
     // Parse incremental markdown
     const parsed = parseMarkdownIncremental(buffer);
-    
+
     // Update UI with new content
     updateStreamingContent(parsed);
   },
-  
+
   onComplete: () => {
     // Final processing
     const finalContent = parseMarkdownFinal(buffer);
@@ -491,7 +491,7 @@ const streamProcessor = {
    handleAction(): void {
      // Perform action
      this.performAction();
-     
+
      // Update UI
      this.notifyComponentUpdate?.();
    }
@@ -544,9 +544,9 @@ test('ZIP download creates correct structure', () => {
     { filepath: 'src/index.ts', code: 'console.log("hello");' },
     { filepath: 'src/utils/helper.ts', code: 'export const helper = () => {};' }
   ];
-  
+
   const zip = createZipFromCodeBlocks(codeBlocks);
-  
+
   expect(zip.files['src/index.ts']).toBeDefined();
   expect(zip.files['src/utils/helper.ts']).toBeDefined();
 });
@@ -559,11 +559,11 @@ test('Mermaid diagram renders correctly', async () => {
   const { getByTestId } = render(
     <MermaidBlockRenderer content={content} id="test" />
   );
-  
+
   await waitFor(() => {
     expect(getByTestId('mermaid-svg')).toBeInTheDocument();
   });
 });
 ```
 
-This comprehensive canvas features documentation covers all the advanced content handling and interaction capabilities that make LiteChat a powerful development tool. 
+This comprehensive canvas features documentation covers all the advanced content handling and interaction capabilities that make LLMChef a powerful development tool.

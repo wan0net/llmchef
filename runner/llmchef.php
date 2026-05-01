@@ -24,12 +24,12 @@ $hostAll = getOption($args, '--host') || getOption($args, '-h');
 
 // Create temp directory
 $scriptDir = dirname(__FILE__);
-$tempDir = $scriptDir . '/litechat-app';
+$tempDir = $scriptDir . '/llmchef-app';
 safeMkdir($tempDir);
 
 // Download the zip file
-$zipPath = $tempDir . '/litechat.zip';
-echo "Downloading LiteChat release...\n";
+$zipPath = $tempDir . '/llmchef.zip';
+echo "Downloading LLMChef release...\n";
 
 // Create a stream context to handle redirects
 $context = stream_context_create([
@@ -38,9 +38,9 @@ $context = stream_context_create([
     ]
 ]);
 
-$zipContent = file_get_contents('https://litechat.dbuild.dev/release/latest.zip', false, $context);
+$zipContent = file_get_contents('https://wan0net.github.io/llmchef/release/latest.zip', false, $context);
 if ($zipContent === false) {
-    echo "Error downloading LiteChat.\n";
+    echo "Error downloading LLMChef.\n";
     exit(1);
 }
 
@@ -63,7 +63,7 @@ if ($zip->open($zipPath) === TRUE) {
         "http://" . gethostbyname(gethostname()) . ":{$port} (accessible from other devices)" :
         "http://localhost:{$port} (local access only)";
 
-    echo "LiteChat is running at {$accessUrl}\n";
+    echo "LLMChef is running at {$accessUrl}\n";
 
     // Create router script for SPA
     $routerPath = $tempDir . '/router.php';

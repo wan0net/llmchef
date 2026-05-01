@@ -125,7 +125,7 @@ export class WebSearchService {
 
       // Only add auth header in development mode
       if (import.meta.env.MODE === 'development') {
-        headers['X-LiteChat-Auth'] = 'LiteChat is G.O.A.T.';
+        headers['X-LLMChef-Auth'] = 'LLMChef is G.O.A.T.';
       }
 
       const response = await fetch(`${markdownServiceUrl}?url=${encodeURIComponent(url)}`, {

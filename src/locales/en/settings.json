@@ -181,7 +181,7 @@
       "sync": "Sync"
     },
     "title": "Configuration Sync",
-    "description": "Automatically sync your LiteChat configuration with Git repositories",
+    "description": "Automatically sync your LLMChef configuration with Git repositories",
     "enabled": {
       "label": "Enable Configuration Sync",
       "description": "Enable automatic synchronization of your settings and data with Git repositories"

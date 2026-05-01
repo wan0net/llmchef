@@ -2,12 +2,12 @@
 
 Date: 2026-05-01
 
-Scope: wan0 LiteChat fork, especially workstation features: skills, repo import,
+Scope: wan0 LLMChef fork, especially workstation features: skills, repo import,
 VFS real-folder sync, generated file previews, console UI, and crea8 wiki/memory
 integration.
 
 Overall status: in progress. The 2026-05-01 outbound-network pass found and
-removed several bundled non-LLM service defaults from the `wan0net/litechat`
+removed several bundled non-LLM service defaults from the `wan0net/llmchef`
 fork.
 
 Recent hardening shipped:
@@ -22,7 +22,7 @@ Recent hardening shipped:
 - Imported skill package paths now reject absolute paths, backslashes, empty
   segments, `.` segments, `..`, and duplicates.
 - Web search, page extraction, and marketplace loading no longer ship with
-  default LiteChat service endpoints. They stay inert until the user configures
+  default LLMChef service endpoints. They stay inert until the user configures
   their own service/source.
 - The local MCP bridge now rejects unapproved browser origins and unapproved
   stdio commands before spawning local processes.
@@ -83,7 +83,7 @@ Result:
 - Low reduced from 7 to 6.
 - Critical remains 0.
 - `ai` was pinned to `^5.0.52`, the minimum patched version from the audit
-  advisory that still preserves LiteChat's MCP build compatibility.
+  advisory that still preserves LLMChef's MCP build compatibility.
 
 Remaining issues after pass 1:
 
@@ -142,7 +142,7 @@ Remaining dependency findings:
 | Area | Severity | Path | Status | Notes |
 | --- | --- | --- | --- | --- |
 | Node crypto polyfills | Low | `vite-plugin-node-polyfills -> node-stdlib-browser -> crypto-browserify -> elliptic` | Accepted for now | npm suggests downgrading `vite-plugin-node-polyfills` to `0.2.0`, which is a breaking force fix. Prefer removing/reducing browser node polyfills instead. |
-| Mermaid UUID usage | Moderate | `mermaid-isomorphic -> mermaid -> uuid` | Accepted for now | npm reports no fix available. Risk appears limited unless LiteChat passes attacker-controlled buffers into UUID v3/v5/v6 paths through Mermaid. |
+| Mermaid UUID usage | Moderate | `mermaid-isomorphic -> mermaid -> uuid` | Accepted for now | npm reports no fix available. Risk appears limited unless LLMChef passes attacker-controlled buffers into UUID v3/v5/v6 paths through Mermaid. |
 
 ## Runtime Attack Surface
 
@@ -227,9 +227,9 @@ Sink inventory:
 
 Files:
 
-- `src/lib/litechat/skill-package.ts`
-- `src/lib/litechat/skill-install-review.ts`
-- `src/lib/litechat/skill-vfs-import.ts`
+- `src/lib/llmchef/skill-package.ts`
+- `src/lib/llmchef/skill-install-review.ts`
+- `src/lib/llmchef/skill-vfs-import.ts`
 - `src/controls/components/skill-settings/SettingsSkills.tsx`
 
 Current guardrails:
@@ -252,7 +252,7 @@ Remaining work:
 
 Files:
 
-- `src/lib/litechat/real-fs-sync.ts`
+- `src/lib/llmchef/real-fs-sync.ts`
 
 Current guardrails:
 
@@ -273,7 +273,7 @@ Remaining work:
 
 Files:
 
-- `src/lib/litechat/crea8-memory.ts`
+- `src/lib/llmchef/crea8-memory.ts`
 - `src/store/crea8-memory.store.ts`
 
 Current guardrails:
@@ -297,7 +297,7 @@ Remaining work:
 
 Files:
 
-- `src/lib/litechat/vfs-git-operations.ts`
+- `src/lib/llmchef/vfs-git-operations.ts`
 - `src/services/sync.service.ts`
 - `src/services/config-sync.service.ts`
 - `src/store/conversation.store.ts`
@@ -392,7 +392,7 @@ Risk:
 Required guardrails:
 
 - Continue remediating PWA build dependencies.
-- Confirm `/litechat/` scope is correct.
+- Confirm `/llmchef/` scope is correct.
 - Document cache-clearing steps for security-sensitive upgrades.
 
 ### crea8 Wiki Integration
@@ -421,7 +421,7 @@ Required guardrails:
 - [ ] Add service-worker cache guidance after security upgrades.
 - [x] Remove bundled non-LLM helper-service defaults.
 - [x] Restrict local MCP bridge origins and commands.
-- [x] Update fork/repository links for `wan0net/litechat`.
+- [x] Update fork/repository links for `wan0net/llmchef`.
 
 ## Verification Commands
 

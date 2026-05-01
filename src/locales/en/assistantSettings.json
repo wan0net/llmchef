@@ -98,7 +98,7 @@
   "mcp": {
     "bridge": {
       "dynamicConfiguration": "Dynamic MCP Bridge Configuration",
-      "configDescription": "Configure where LiteChat looks for the dynamic MCP bridge service (required for stdio:// servers). Start the bridge with: npm run mcp-proxy",
+      "configDescription": "Configure where LLMChef looks for the dynamic MCP bridge service (required for stdio:// servers). Start the bridge with: npm run mcp-proxy",
       "location": "Bridge Location",
       "locationDescription": "Specify where your dynamic MCP bridge is running (default: localhost:3001)",
       "fullUrl": "Full Bridge URL (highest priority)",
@@ -112,7 +112,7 @@
       "priorityNote": "Leave empty for auto-detection. For remote bridge, use full URL or configure host binding.",
       "setupInstructions": "Bridge Setup Instructions",
       "instructionsText": "To use stdio MCP servers, install and run the bridge:",
-      "startBridge": "Start the bridge (from LiteChat project directory)",
+      "startBridge": "Start the bridge (from LLMChef project directory)",
       "customSettings": "Or with custom settings",
       "saveConfig": "Save Bridge Config",
       "resetConfirm": "Reset bridge configuration to defaults?"
@@ -121,7 +121,7 @@
       "title": "Connection Settings",
       "description": "Configure retry behavior and timeouts for MCP server connections",
       "retryConfiguration": "Retry Configuration",
-      "retryDescription": "How LiteChat handles failed connections",
+      "retryDescription": "How LLMChef handles failed connections",
       "retryAttempts": "Retry Attempts",
       "retryAttemptsHelp": "Number of retry attempts (0-10)",
       "retryDelay": "Retry Delay (ms)",
@@ -162,7 +162,7 @@
       "description": "Manage your Model Context Protocol servers",
       "addButton": "Add Server",
       "noServers": "No MCP Servers",
-      "noServersDescription": "Add HTTP-based MCP servers to extend LiteChat with additional tools and capabilities",
+      "noServersDescription": "Add HTTP-based MCP servers to extend LLMChef with additional tools and capabilities",
       "addFirstButton": "Add Your First Server",
       "nameColumn": "Name",
       "urlColumn": "URL",

@@ -1,6 +1,6 @@
 # Virtual File System (VFS)
 
-LiteChat implements a browser-based Virtual File System using ZenFS with IndexedDB backend, providing full filesystem functionality without server dependencies. The VFS enables project-specific file storage, Git integration, and seamless file operations entirely within the browser.
+LLMChef implements a browser-based Virtual File System using ZenFS with IndexedDB backend, providing full filesystem functionality without server dependencies. The VFS enables project-specific file storage, Git integration, and seamless file operations entirely within the browser.
 
 ## Architecture Overview
 
@@ -28,7 +28,7 @@ export const initializeFsOp = async (vfsKey: string): Promise<typeof fs | null> 
 The VFS operates with different contexts based on the `vfsKey`:
 
 - **Project VFS**: `vfsKey = projectId` - Project-specific filesystem
-- **Orphan VFS**: `vfsKey = "orphan"` - Shared filesystem for conversations without projects  
+- **Orphan VFS**: `vfsKey = "orphan"` - Shared filesystem for conversations without projects
 - **Sync VFS**: `vfsKey = "sync_repos"` - Dedicated filesystem for Git repositories
 
 ## VFS Store Architecture
@@ -81,7 +81,7 @@ type VfsNode = VfsFile | VfsDirectory;
 ## Context Switching
 
 ### Automatic Context Management
-The main LiteChat component manages VFS context switching based on UI state:
+The main LLMChef component manages VFS context switching based on UI state:
 
 ```typescript
 // In LiteChat.tsx - Context switching logic
@@ -135,7 +135,7 @@ export const listFilesOp = async (
 ): Promise<FileSystemEntry[]> => {
   const fsToUse = options?.fsInstance ?? fs;
   const files = await fsToUse.promises.readdir(path, { withFileTypes: true });
-  
+
   return files.map(file => ({
     name: file.name,
     path: joinPath(path, file.name),
@@ -156,13 +156,13 @@ export const writeFileOp = async (
 ): Promise<void> => {
   const fsToUse = options?.fsInstance ?? fs;
   const normalized = normalizePath(path);
-  
+
   // Ensure parent directory exists
   const parentDir = dirname(normalized);
   if (parentDir !== "/") {
     await createDirectoryRecursive(parentDir, options);
   }
-  
+
   await fsToUse.promises.writeFile(normalized, new Uint8Array(content));
   emitter.emit(vfsEvent.fileWritten, { path: normalized });
 };
@@ -187,7 +187,7 @@ export const deleteItemOp = async (
 ): Promise<void> => {
   const fsToUse = options?.fsInstance ?? fs;
   const normalized = normalizePath(path);
-  
+
   if (recursive) {
     await fsToUse.promises.rm(normalized, { recursive: true, force: true });
   } else {
@@ -198,7 +198,7 @@ export const deleteItemOp = async (
       await fsToUse.promises.unlink(normalized);
     }
   }
-  
+
   emitter.emit(vfsEvent.fileDeleted, { path: normalized });
 };
 ```
@@ -216,10 +216,10 @@ uploadFiles: async (parentId: string | null, files: FileList) => {
   try {
     const parentNode = parentId ? nodes[parentId] : nodes[rootId || ""];
     const parentPath = parentNode ? parentNode.path : "/";
-    
+
     // Upload all files
     await VfsOps.uploadFilesOp(Array.from(files), parentPath, { fsInstance });
-    
+
     // Refresh directory listing
     await get().fetchNodes(parentId);
   } catch (error) {
@@ -254,7 +254,7 @@ createDirectory: async (parentId: string | null, name: string) => {
       createdAt: Date.now(),
       lastModified: Date.now(),
     };
-    
+
     get()._addNodes([newNode]);
   } catch (error) {
     console.error("Failed to create directory:", error);
@@ -287,7 +287,7 @@ export class VfsControlModule implements ControlModule {
       modApi.registerPromptControl({
         id: this.id,
         status: () => this.getControlStatus(),
-        triggerRenderer: () => 
+        triggerRenderer: () =>
           React.createElement(VfsControlTrigger, { module: this }),
         getMetadata: () => this.getSelectedFilesMetadata(),
         clearOnSubmit: () => this.clearSelection(),
@@ -345,7 +345,7 @@ export const gitInitOp = async (
 export const gitCloneOp = async (
   url: string,
   repoPath: string,
-  options?: { 
+  options?: {
     fsInstance?: typeof fs;
     username?: string;
     password?: string;
@@ -389,19 +389,19 @@ Conversation sync uses the VFS for Git repositories:
 const syncConversationLogic = async (conversationId: string) => {
   // 1. Switch to sync VFS context
   const syncFs = await VfsStore.getState().initializeVFS("sync_repos", { force: true });
-  
+
   // 2. Ensure repository exists
   const repoPath = `/repo_${syncRepo.id}`;
   await VfsOps.createDirectoryOp(repoPath, { fsInstance: syncFs });
-  
+
   // 3. Export conversation data
   const conversationData = await PersistenceService.exportConversationData(conversationId);
   const jsonContent = JSON.stringify(conversationData, null, 2);
-  
+
   // 4. Write to VFS
   const filePath = `${repoPath}/conversation_${conversationId}.json`;
   await VfsOps.writeFileOp(filePath, new TextEncoder().encode(jsonContent), { fsInstance: syncFs });
-  
+
   // 5. Git operations
   await VfsOps.gitAddOp(repoPath, ".", { fsInstance: syncFs });
   await VfsOps.gitCommitOp(repoPath, `Update conversation ${conversationId}`, author, { fsInstance: syncFs });
@@ -420,7 +420,7 @@ export const uploadFilesOp = async (
   options?: { fsInstance?: typeof fs }
 ): Promise<void> => {
   const fsToUse = options?.fsInstance ?? fs;
-  
+
   for (const file of files) {
     const filePath = joinPath(targetPath, file.name);
     const content = await file.arrayBuffer();
@@ -460,10 +460,10 @@ export const exportDirectoryAsZip = async (
 ): Promise<Blob> => {
   const fsToUse = options?.fsInstance ?? fs;
   const zip = new JSZip();
-  
+
   const addToZip = async (currentPath: string, zipFolder: JSZip) => {
     const entries = await listFilesOp(currentPath, { fsInstance: fsToUse });
-    
+
     for (const entry of entries) {
       if (entry.isDirectory) {
         const folder = zipFolder.folder(entry.name);
@@ -474,7 +474,7 @@ export const exportDirectoryAsZip = async (
       }
     }
   };
-  
+
   await addToZip(dirPath, zip);
   return await zip.generateAsync({ type: "blob" });
 };
@@ -488,10 +488,10 @@ export const importZipToDirectory = async (
   const fsToUse = options?.fsInstance ?? fs;
   const zip = new JSZip();
   const zipContent = await zip.loadAsync(zipFile);
-  
+
   for (const [relativePath, zipEntry] of Object.entries(zipContent.files)) {
     const fullPath = joinPath(targetPath, relativePath);
-    
+
     if (zipEntry.dir) {
       await createDirectoryOp(fullPath, { fsInstance: fsToUse });
     } else {
@@ -520,10 +520,10 @@ fetchNodes: async (parentId: string | null = null) => {
   try {
     const parentNode = parentId ? nodes[parentId] : nodes[rootId || ""];
     const pathToFetch = parentNode ? parentNode.path : "/";
-    
+
     // Fetch only the requested directory
     const fetchedEntries = await VfsOps.listFilesOp(pathToFetch, { fsInstance });
-    
+
     // Efficiently update only changed nodes
     updateNodesFromEntries(fetchedEntries, parentId);
   } finally {
@@ -542,19 +542,19 @@ export const listFilesOpCached = async (
   options?: { fsInstance?: typeof fs; useCache?: boolean }
 ): Promise<FileSystemEntry[]> => {
   const cacheKey = `${options?.fsInstance ? 'custom' : 'default'}:${path}`;
-  
+
   if (options?.useCache && pathCache.has(cacheKey)) {
     return pathCache.get(cacheKey)!;
   }
-  
+
   const result = await listFilesOp(path, options);
-  
+
   if (options?.useCache) {
     pathCache.set(cacheKey, result);
     // Auto-expire cache after 30 seconds
     setTimeout(() => pathCache.delete(cacheKey), 30000);
   }
-  
+
   return result;
 };
 ```
@@ -566,7 +566,7 @@ export const listFilesOpCached = async (
 // Fallback when VFS is unavailable
 const useVfsOrFallback = () => {
   const { enableVfs, fs: fsInstance, error } = useVfsStore();
-  
+
   if (!enableVfs || !fsInstance || error) {
     // Fall back to regular file input
     return {
@@ -575,7 +575,7 @@ const useVfsOrFallback = () => {
       message: error || "VFS temporarily unavailable"
     };
   }
-  
+
   return {
     uploadEnabled: true,
     directUploadOnly: false,
@@ -589,11 +589,11 @@ const useVfsOrFallback = () => {
 // Reset stuck initialization
 resetStuckInitialization: () => {
   console.warn("[VfsStore] Force resetting stuck initialization state");
-  set({ 
-    initializingKey: null, 
-    loading: false, 
+  set({
+    initializingKey: null,
+    loading: false,
     operationLoading: false,
-    error: null 
+    error: null
   });
 },
 
@@ -601,7 +601,7 @@ resetStuckInitialization: () => {
 retryFailedOperation: async (operation: () => Promise<void>) => {
   const maxRetries = 3;
   let attempts = 0;
-  
+
   while (attempts < maxRetries) {
     try {
       await operation();
@@ -618,4 +618,4 @@ retryFailedOperation: async (operation: () => Promise<void>) => {
 }
 ```
 
-The VFS system provides a powerful, browser-based filesystem that enables LiteChat's advanced file management, Git integration, and project organization features while maintaining the privacy-first, client-side architecture.
+The VFS system provides a powerful, browser-based filesystem that enables LLMChef's advanced file management, Git integration, and project organization features while maintaining the privacy-first, client-side architecture.

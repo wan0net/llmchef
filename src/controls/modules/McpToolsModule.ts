@@ -284,7 +284,7 @@ export class McpToolsModule implements ControlModule {
       
       if (error instanceof Error) {
         if (error.message.includes('Bridge service not healthy') || error.message.includes('stdio bridge connection failed')) {
-          enhancedError = new Error(`Stdio MCP server requires LiteChat MCP Bridge. Please install and start the bridge service: npm install -g litechat-mcp-bridge && litechat-mcp-bridge`);
+          enhancedError = new Error(`Stdio MCP server requires LLMChef MCP Bridge. Please install and start the bridge service: npm install -g llmchef-mcp-bridge && llmchef-mcp-bridge`);
         } else if (error.message.includes('fetch')) {
           enhancedError = new Error(`Network error: Unable to reach MCP server at ${server.url}. Please check if the server is running and accessible.`);
         } else if (error.message.includes('timeout')) {
@@ -502,7 +502,7 @@ export class McpToolsModule implements ControlModule {
                 tools: {},
               },
               clientInfo: {
-                name: 'LiteChat',
+                name: 'LLMChef',
                 version: '1.0.0',
               },
             },
@@ -677,14 +677,14 @@ export class McpToolsModule implements ControlModule {
     // Update the existing clientInfo with the tools
     clientInfo.tools = tools;
     
-    // Register MCP tools with LiteChat control registry so they show up in UI tool selector
+    // Register MCP tools with LLMChef control registry so they show up in UI tool selector
     if (this.modApi) {
       Object.entries(tools).forEach(([toolName, tool]) => {
         const prefixedToolName = `mcp_${server.name}_${toolName}`;
         
 
         
-        // Tool definition for LiteChat registry
+        // Tool definition for LLMChef registry
         const mcpTool = tool as any; // MCP tool from bridge
         
         // Convert JSON schema to Zod schema
@@ -775,7 +775,7 @@ export class McpToolsModule implements ControlModule {
           }
         };
         
-        // Register with LiteChat control registry (shows in UI tool selector)
+        // Register with LLMChef control registry (shows in UI tool selector)
         const unregisterTool = this.modApi!.registerTool(
           prefixedToolName,
           toolDefinition,

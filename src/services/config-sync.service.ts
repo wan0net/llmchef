@@ -25,7 +25,7 @@ export interface ConfigData {
 }
 
 /**
- * Service for syncing LiteChat configuration with Git repositories
+ * Service for syncing LLMChef configuration with Git repositories
  */
 export class ConfigSyncService {
   private static instance: ConfigSyncService;
@@ -257,7 +257,7 @@ export class ConfigSyncService {
     // Commit and push
     await VfsOps.gitCommitOp(
       repoDir,
-      `Sync LiteChat configuration (${configData.exportedAt})`,
+      `Sync LLMChef configuration (${configData.exportedAt})`,
       { fsInstance }
     );
     await VfsOps.gitPushOp(repoDir, branchToUse, credentials, { fsInstance });

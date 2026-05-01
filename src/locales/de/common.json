@@ -1,6 +1,6 @@
 {
-  "initializingLiteChat": "LiteChat wird initialisiert...",
-  "liteChatMenu": "LiteChat Menü",
+  "initializingLLMChef": "LLMChef wird initialisiert...",
+  "liteChatMenu": "LLMChef Menü",
   "closeMenu": "Menü schließen",
   "openMenu": "Menü öffnen",
   "loadingMenu": "Menü wird geladen...",
@@ -78,7 +78,7 @@
     "copied": "Kopiert!",
     "copyLabel": "{label} kopieren",
     "title": "Ups! Etwas ist schief gelaufen.",
-    "description": "LiteChat hat einen unerwarteten Fehler festgestellt. Bitte aktualisieren Sie die Seite. Wenn das Problem weiterhin besteht, erwägen Sie, das Problem zu melden. Kopieren Sie die Details und fügen Sie sie in das GitHub-Problem ein.",
+    "description": "LLMChef hat einen unerwarteten Fehler festgestellt. Bitte aktualisieren Sie die Seite. Wenn das Problem weiterhin besteht, erwägen Sie, das Problem zu melden. Kopieren Sie die Details und fügen Sie sie in das GitHub-Problem ein.",
     "unknownError": "Unbekannter Fehler",
     "refreshButton": "Seite aktualisieren",
     "detailsLabel": "Details",

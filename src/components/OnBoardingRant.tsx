@@ -29,7 +29,7 @@ export const OnBoardingRant: React.FC = () => {
 
   const wordHighlights = [
     {
-      word: "LiteChat",
+      word: "LLMChef",
       color:
         "bg-gradient-to-tr from-lime-500 via-amber-400 to-red-600 bg-clip-text text-transparent",
     },
@@ -111,8 +111,8 @@ export const OnBoardingRant: React.FC = () => {
 
   const rantTexts = [
     "Oh, hey?! Hi there!! How are you doing!?",
-    "Nice of you to pop by to checkout LiteChat!",
-    "What'd you mean you don't know what LiteChat is? Oh Boy hey, you in for a treat!",
+    "Nice of you to pop by to checkout LLMChef!",
+    "What'd you mean you don't know what LLMChef is? Oh Boy hey, you in for a treat!",
     "To start with, it's an(other) AI chat app (yes...shocker, right ?) and it's Open Source ! ",
     "But, it is also an extensible library, so you can go on and create your own, AI chat app! With your own functionnalities !",
     "(are AI chat apps the new JS frameworks?)",

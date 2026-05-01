@@ -1,6 +1,6 @@
 # Control Module System
 
-The Control Module System is the architectural backbone of LiteChat, providing a modular, extensible framework for UI features. Each UI feature is encapsulated as a `ControlModule` that manages its own state, components, and lifecycle.
+The Control Module System is the architectural backbone of LLMChef, providing a modular, extensible framework for UI features. Each UI feature is encapsulated as a `ControlModule` that manages its own state, components, and lifecycle.
 
 ## Core Concepts
 
@@ -53,7 +53,7 @@ Each module's `initialize(modApi)` method is called in dependency order:
 // Example from AutoTitleControlModule
 async initialize(modApi: LiteChatModApi): Promise<void> {
   this.modApiRef = modApi;
-  
+
   // Subscribe to events
   this.eventUnsubscribers.push(
     modApi.on(settingsEvent.autoTitlePromptChanged, () => {
@@ -106,7 +106,7 @@ Handle application configuration through settings tabs.
 ```typescript
 export class GeneralSettingsModule implements ControlModule {
   readonly id = "core-settings-general";
-  
+
   register(modApi: LiteChatModApi): void {
     this.unregisterCallback = modApi.registerSettingsTab({
       id: "general",
@@ -133,7 +133,7 @@ export class AutoTitleControlModule implements ControlModule {
       order: 20,
     });
   }
-  
+
   // Prompt controls can contribute metadata
   getMetadata(): Record<string, any> {
     return {
@@ -161,7 +161,7 @@ export class PromptLibraryControlModule implements ControlModule {
 
   public applyTemplate = async (templateId: string, formData: PromptFormData): Promise<void> => {
     const compiled = await this.compileTemplate(templateId, formData);
-    
+
     // Emit event to set the input text
     this.modApiRef?.emit(promptEvent.setInputTextRequest, { text: compiled.content });
   };
@@ -281,16 +281,16 @@ Modules manage their own state and expose getters/setters for UI components:
 export class ParameterControlModule implements ControlModule {
   private turnEnabled = false;
   private temperature: number | null = null;
-  
+
   // Getters for UI components
   getTurnEnabled(): boolean {
     return this.turnEnabled;
   }
-  
+
   getTemperature(): number | null {
     return this.temperature;
   }
-  
+
   // Setters that trigger updates
   setTurnEnabled(enabled: boolean): void {
     this.turnEnabled = enabled;
@@ -308,12 +308,12 @@ export const ParameterControlTrigger: React.FC<{
   module: ParameterControlModule;
 }> = ({ module }) => {
   const [, forceUpdate] = useReducer(x => x + 1, 0);
-  
+
   useEffect(() => {
     module.setNotifyCallback(forceUpdate);
     return () => module.setNotifyCallback(null);
   }, [module]);
-  
+
   const enabled = module.getTurnEnabled();
   // ... rest of component
 };
@@ -339,17 +339,17 @@ const controlModulesToRegister: ControlModuleConstructor[] = [
   UrlParameterControlModule,
   GeneralSettingsModule,
   ThemeSettingsControlModule,
-  
+
   // Provider and model management
   ProviderSettingsModule,
   GlobalModelSelectorModule,
-  
+
   // Prompt controls (order affects UI appearance)
   AutoTitleControlModule,
   UsageDisplayControlModule,
   FileControlModule,
   SystemPromptControlModule,
-  
+
   // Canvas controls
   CopyActionControlModule,
   RegenerateActionControlModule,
@@ -373,7 +373,7 @@ Modules can declare dependencies on other modules:
 export class DependentModule implements ControlModule {
   readonly id = "dependent-module";
   readonly dependencies = ["core-settings-general", "core-provider-settings"];
-  
+
   async initialize(modApi: LiteChatModApi): Promise<void> {
     // This module initializes after its dependencies
   }
@@ -428,7 +428,7 @@ destroy(): void {
   // Unsubscribe from events
   this.eventUnsubscribers.forEach(unsub => unsub());
   this.eventUnsubscribers = [];
-  
+
   // Unregister UI components
   if (this.unregisterCallback) {
     this.unregisterCallback();
@@ -480,7 +480,7 @@ export class MyFeatureModule implements ControlModule {
   destroy(): void {
     // Cleanup
   }
-  
+
   // Module-specific methods
   setNotifyCallback(callback: (() => void) | null): void {
     this.notifyComponentUpdate = callback;
@@ -555,4 +555,4 @@ modApi.on("myFeature.stateChanged", (payload) => {
 });
 ```
 
-The Control Module System provides a powerful, flexible foundation for building modular UI features in LiteChat. By following the established patterns and lifecycle, developers can create cohesive, maintainable features that integrate seamlessly with the application's architecture. 
+The Control Module System provides a powerful, flexible foundation for building modular UI features in LLMChef. By following the established patterns and lifecycle, developers can create cohesive, maintainable features that integrate seamlessly with the application's architecture.

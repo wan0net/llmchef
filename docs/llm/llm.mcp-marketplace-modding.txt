@@ -1,7 +1,7 @@
-# LiteChat MCP, Marketplace, and Modding (for LLMs)
+# LLMChef MCP, Marketplace, and Modding (for LLMs)
 
 ## Overview
-LiteChat supports dynamic tool loading, marketplace integration, and full modding via the Model Context Protocol (MCP), marketplace APIs, and a modular mod API. All are event-driven, extensible, and support runtime tool registration.
+LLMChef supports dynamic tool loading, marketplace integration, and full modding via the Model Context Protocol (MCP), marketplace APIs, and a modular mod API. All are event-driven, extensible, and support runtime tool registration.
 
 ---
 
@@ -48,4 +48,4 @@ LiteChat supports dynamic tool loading, marketplace integration, and full moddin
 ## Key Files
 - MCP: `src/controls/modules/McpToolsModule.ts`, `src/store/mcp.store.ts`
 - Marketplace: `src/services/persistence.service.ts`, `src/lib/litechat/db.ts`
-- Modding: `src/modding/api-factory.ts` 
+- Modding: `src/modding/api-factory.ts`

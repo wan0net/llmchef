@@ -1,14 +1,14 @@
-# LiteChat MCP Bridge Specification
+# LLMChef MCP Bridge Specification
 
 ## Overview
 
-The LiteChat MCP Bridge is a lightweight local service that enables browser-based LiteChat to connect to stdio MCP servers. Since browsers cannot directly spawn processes or access local file systems, the bridge acts as a secure proxy between LiteChat and local MCP server processes.
+The LLMChef MCP Bridge is a lightweight local service that enables browser-based LLMChef to connect to stdio MCP servers. Since browsers cannot directly spawn processes or access local file systems, the bridge acts as a secure proxy between LLMChef and local MCP server processes.
 
 ## Architecture
 
 ```
 ┌─────────────┐    HTTP/JSON     ┌─────────────┐    stdio     ┌─────────────┐
-│   LiteChat  │ ←──────────────→ │ MCP Bridge  │ ←──────────→ │ MCP Server  │
+│   LLMChef  │ ←──────────────→ │ MCP Bridge  │ ←──────────→ │ MCP Server  │
 │  (Browser)  │                  │ (localhost) │              │  (Process)  │
 └─────────────┘                  └─────────────┘              └─────────────┘
 ```
@@ -44,7 +44,7 @@ Content-Type: application/json
 {
   "protocolVersion": "2025-03-26",
   "capabilities": { "tools": {} },
-  "clientInfo": { "name": "LiteChat", "version": "1.0.0" }
+  "clientInfo": { "name": "LLMChef", "version": "1.0.0" }
 }
 ```
 **Response**: MCP initialize response
@@ -56,7 +56,7 @@ Content-Type: application/json
 
 {
   "jsonrpc": "2.0",
-  "method": "initialized", 
+  "method": "initialized",
   "params": {}
 }
 ```
@@ -177,10 +177,10 @@ app.post('/mcp/:sessionId/message', async (req, res) => {
   if (!session) {
     return res.status(404).json({ error: 'Session not found' });
   }
-  
+
   // Send to stdio
   session.process.stdin.write(JSON.stringify(req.body) + '\n');
-  
+
   // Wait for response
   const response = await session.waitForResponse(req.body.id);
   res.json(response);
@@ -204,10 +204,10 @@ function cleanupSession(sessionId) {
 
 ### NPM Package Structure
 ```
-litechat-mcp-bridge/
+llmchef-mcp-bridge/
 ├── package.json
 ├── bin/
-│   └── litechat-mcp-bridge
+│   └── llmchef-mcp-bridge
 ├── src/
 │   ├── index.js
 │   ├── server.js
@@ -219,13 +219,13 @@ litechat-mcp-bridge/
 ### CLI Interface
 ```bash
 # Basic usage
-litechat-mcp-bridge
+llmchef-mcp-bridge
 
 # With options
-litechat-mcp-bridge --port 3001 --verbose
+llmchef-mcp-bridge --port 3001 --verbose
 
 # Show help
-litechat-mcp-bridge --help
+llmchef-mcp-bridge --help
 ```
 
 ## Testing
@@ -253,8 +253,8 @@ curl -X POST http://localhost:3001/mcp/start \
 ### MCP Compatibility
 - **Protocol Version**: 2025-03-26 (latest)
 - **Fallback Support**: 2024-11-05 (previous)
-- **Transport**: stdio only (HTTP/SSE handled directly by LiteChat)
+- **Transport**: stdio only (HTTP/SSE handled directly by LLMChef)
 
 ## License
 
-MIT License - See LICENSE file for details. 
+MIT License - See LICENSE file for details.

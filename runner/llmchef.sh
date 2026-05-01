@@ -13,23 +13,23 @@ fi
 
 # Create temp directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-TEMP_DIR="$SCRIPT_DIR/litechat-app"
+TEMP_DIR="$SCRIPT_DIR/llmchef-app"
 mkdir -p "$TEMP_DIR"
 
 # Download the zip file
-ZIP_PATH="$TEMP_DIR/litechat.zip"
-echo "Downloading LiteChat release..."
+ZIP_PATH="$TEMP_DIR/llmchef.zip"
+echo "Downloading LLMChef release..."
 if command -v curl &> /dev/null; then
-  curl -L https://litechat.dbuild.dev/release/latest.zip -o "$ZIP_PATH"
+  curl -L https://wan0net.github.io/llmchef/release/latest.zip -o "$ZIP_PATH"
 elif command -v wget &> /dev/null; then
-  wget https://litechat.dbuild.dev/release/latest.zip -O "$ZIP_PATH"
+  wget https://wan0net.github.io/llmchef/release/latest.zip -O "$ZIP_PATH"
 else
   echo "Error: Neither curl nor wget is installed. Please install one of them."
   exit 1
 fi
 
 if [ $? -ne 0 ]; then
-  echo "Error downloading LiteChat."
+  echo "Error downloading LLMChef."
   rm -f "$ZIP_PATH"
   exit 1
 fi
@@ -60,7 +60,7 @@ cd "$TEMP_DIR"
 # Create index.html if it doesn't exist (failsafe)
 if [ ! -f "index.html" ]; then
   echo "Warning: index.html not found. Creating a placeholder..."
-  echo "<html><body><h1>LiteChat</h1><p>The files may not have extracted correctly.</p></body></html>" > index.html
+  echo "<html><body><h1>LLMChef</h1><p>The files may not have extracted correctly.</p></body></html>" > index.html
 fi
 
 # Determine which web server to use
@@ -85,11 +85,11 @@ EOF
   if [ "$HOST_FLAG" = true ]; then
     HOST_IP="0.0.0.0"
     SERVER_URL="http://$(hostname -I | awk '{print $1}'):$PORT"
-    echo "LiteChat is running at $SERVER_URL (accessible from other devices)"
+    echo "LLMChef is running at $SERVER_URL (accessible from other devices)"
     python3 -c "import socketserver, http.server; import server; handler = server.SPAHandler; httpd = socketserver.TCPServer(('0.0.0.0', $PORT), handler); httpd.serve_forever()"
   else
     HOST_IP="localhost"
-    echo "LiteChat is running at http://localhost:$PORT (local access only)"
+    echo "LLMChef is running at http://localhost:$PORT (local access only)"
     python3 -c "import socketserver, http.server; import server; handler = server.SPAHandler; httpd = socketserver.TCPServer(('localhost', $PORT), handler); httpd.serve_forever()"
   fi
 
@@ -114,11 +114,11 @@ EOF
   if [ "$HOST_FLAG" = true ]; then
     HOST_IP="0.0.0.0"
     SERVER_URL="http://$(hostname -I | awk '{print $1}'):$PORT"
-    echo "LiteChat is running at $SERVER_URL (accessible from other devices)"
+    echo "LLMChef is running at $SERVER_URL (accessible from other devices)"
     python -c "import SocketServer, SimpleHTTPServer; import server; handler = server.SPAHandler; httpd = SocketServer.TCPServer(('0.0.0.0', $PORT), handler); httpd.serve_forever()"
   else
     HOST_IP="localhost"
-    echo "LiteChat is running at http://localhost:$PORT (local access only)"
+    echo "LLMChef is running at http://localhost:$PORT (local access only)"
     python -c "import SocketServer, SimpleHTTPServer; import server; handler = server.SPAHandler; httpd = SocketServer.TCPServer(('localhost', $PORT), handler); httpd.serve_forever()"
   fi
 
@@ -140,11 +140,11 @@ EOF
   if [ "$HOST_FLAG" = true ]; then
     HOST_IP="0.0.0.0"
     SERVER_URL="http://$(hostname -I | awk '{print $1}'):$PORT"
-    echo "LiteChat is running at $SERVER_URL (accessible from other devices)"
+    echo "LLMChef is running at $SERVER_URL (accessible from other devices)"
     php -S 0.0.0.0:$PORT router.php
   else
     HOST_IP="localhost"
-    echo "LiteChat is running at http://localhost:$PORT (local access only)"
+    echo "LLMChef is running at http://localhost:$PORT (local access only)"
     php -S localhost:$PORT router.php
   fi
 
@@ -155,11 +155,11 @@ elif command -v npx &> /dev/null; then
   if [ "$HOST_FLAG" = true ]; then
     HOST_IP="0.0.0.0"
     SERVER_URL="http://$(hostname -I | awk '{print $1}'):$PORT"
-    echo "LiteChat is running at $SERVER_URL (accessible from other devices)"
+    echo "LLMChef is running at $SERVER_URL (accessible from other devices)"
     npx http-server -p $PORT -a 0.0.0.0 --spa
   else
     HOST_IP="localhost"
-    echo "LiteChat is running at http://localhost:$PORT (local access only)"
+    echo "LLMChef is running at http://localhost:$PORT (local access only)"
     npx http-server -p $PORT -a localhost --spa
   fi
 

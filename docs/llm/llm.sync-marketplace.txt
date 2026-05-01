@@ -1,7 +1,7 @@
-# LiteChat Sync & Marketplace Architecture (for LLMs)
+# LLMChef Sync & Marketplace Architecture (for LLMs)
 
 ## Overview
-LiteChat implements robust, event-driven sync and marketplace logic for distributed, collaborative workflows. Sync is deeply integrated with conversations, projects, VFS, and the marketplace, and is extensible for future distributed/remote scenarios.
+LLMChef implements robust, event-driven sync and marketplace logic for distributed, collaborative workflows. Sync is deeply integrated with conversations, projects, VFS, and the marketplace, and is extensible for future distributed/remote scenarios.
 
 ---
 
@@ -45,4 +45,4 @@ LiteChat implements robust, event-driven sync and marketplace logic for distribu
 **See also:**
 - `llm.stores.txt` for store-level sync integration
 - `llm.architecture.txt` for initialization and event wiring
-- All sync services in `src/services/` for up-to-date logic 
+- All sync services in `src/services/` for up-to-date logic

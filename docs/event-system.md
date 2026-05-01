@@ -1,6 +1,6 @@
 # Event System
 
-LiteChat uses a sophisticated event-driven architecture for decoupled communication between components, modules, and services. This system is built on the `mitt` event emitter and provides type-safe, predictable interaction patterns throughout the application.
+LLMChef uses a sophisticated event-driven architecture for decoupled communication between components, modules, and services. This system is built on the `mitt` event emitter and provides type-safe, predictable interaction patterns throughout the application.
 
 ## Core Concepts
 
@@ -11,7 +11,7 @@ The central event bus is defined in [`src/lib/litechat/event-emitter.ts`](../src
 import mitt, { type Emitter, type EventType } from "mitt";
 import type { ModEventPayloadMap } from "@/types/litechat/modding";
 
-export const emitter: Emitter<ModEventPayloadMap & Record<EventType, any>> = 
+export const emitter: Emitter<ModEventPayloadMap & Record<EventType, any>> =
   mitt<ModEventPayloadMap & Record<EventType, any>>();
 ```
 
@@ -20,7 +20,7 @@ All events are strongly typed through the `ModEventPayloadMap` interface, which 
 
 ```typescript
 // From src/types/litechat/modding.ts
-export interface ModEventPayloadMap extends 
+export interface ModEventPayloadMap extends
   SettingsEventPayloads,
   ProviderEventPayloads,
   ConversationEventPayloads,
@@ -35,10 +35,10 @@ export interface ModEventPayloadMap extends
 ## Event Patterns
 
 ### Request/Response Pattern
-LiteChat uses a consistent request/response pattern for state modifications:
+LLMChef uses a consistent request/response pattern for state modifications:
 
 1. **Request Event**: Component emits a request to change state
-2. **State Change**: Store processes the request and updates state  
+2. **State Change**: Store processes the request and updates state
 3. **Change Event**: Store emits notification of the state change
 
 ```typescript
@@ -72,7 +72,7 @@ export const conversationEvent = {
 };
 ```
 
-#### Action Request Events  
+#### Action Request Events
 Request that an action be performed:
 
 ```typescript
@@ -107,8 +107,8 @@ export const settingsEvent = {
   loaded: "settings.loaded",
   themeChanged: "settings.theme.changed",
   temperatureChanged: "settings.temperature.changed",
-  
-  // Action Request Events  
+
+  // Action Request Events
   loadSettingsRequest: "settings.load.settings.request",
   setThemeRequest: "settings.set.theme.request",
   setTemperatureRequest: "settings.set.temperature.request",
@@ -122,16 +122,16 @@ export interface SettingsEventPayloads {
 }
 ```
 
-### Conversation Events  
+### Conversation Events
 [`src/types/litechat/events/conversation.events.ts`](../src/types/litechat/events/conversation.events.ts)
 
 ```typescript
 export const conversationEvent = {
   // State Change Events
-  selectedItemChanged: "conversation.selected.item.changed", 
+  selectedItemChanged: "conversation.selected.item.changed",
   conversationAdded: "conversation.added",
   conversationUpdated: "conversation.updated",
-  
+
   // Action Request Events
   selectItemRequest: "conversation.select.item.request",
   addConversationRequest: "conversation.add.conversation.request",
@@ -146,9 +146,9 @@ export const conversationEvent = {
 export const vfsEvent = {
   // State Change Events
   vfsKeyChanged: "vfs.key.changed",
-  nodesUpdated: "vfs.nodes.updated", 
+  nodesUpdated: "vfs.nodes.updated",
   fsInstanceChanged: "vfs.instance.changed",
-  
+
   // Action Request Events
   setVfsKeyRequest: "vfs.set.vfs.key.request",
   createDirectoryRequest: "vfs.create.directory.request",
@@ -163,16 +163,16 @@ export const vfsEvent = {
 export const promptEvent = {
   // State Change Events
   initialized: "prompt.state.initialized",
-  inputTextStateChanged: "prompt.state.input.text.changed", 
+  inputTextStateChanged: "prompt.state.input.text.changed",
   parameterChanged: "prompt.state.parameter.changed",
   submitted: "prompt.state.submitted",
-  
+
   // Action Request Events
   setInputTextRequest: "prompt.input.set.text.request",
   setModelIdRequest: "prompt.state.set.model.id.request",
   setTemperatureRequest: "prompt.state.set.temperature.request",
   setMaxTokensRequest: "prompt.state.set.max.tokens.request",
-  
+
   // Input Events (for direct input area interaction)
   inputChanged: "prompt.inputChanged",
 } as const;
@@ -193,7 +193,7 @@ The `setInputTextRequest` event demonstrates a powerful pattern for control modu
 // From PromptLibraryControlModule
 public applyTemplate = async (templateId: string, formData: PromptFormData): Promise<void> => {
   const compiled = await this.compileTemplate(templateId, formData);
-  
+
   // Emit event to set the input text - demonstrates event-driven UI interaction
   this.modApiRef?.emit(promptEvent.setInputTextRequest, { text: compiled.content });
 };
@@ -227,7 +227,7 @@ export class EventActionCoordinatorService {
   public static initialize(): void {
     const storesWithActionHandlers = [
       useSettingsStore,
-      useProviderStore, 
+      useProviderStore,
       useConversationStore,
       useInteractionStore,
       useProjectStore,
@@ -258,7 +258,7 @@ getRegisteredActionHandlers: (): RegisteredActionHandler[] => {
       storeId: "conversationStore",
     },
     {
-      eventName: conversationEvent.selectItemRequest, 
+      eventName: conversationEvent.selectItemRequest,
       handler: (payload) => actions.selectItem(payload.id, payload.type),
       storeId: "conversationStore",
     },
@@ -279,8 +279,8 @@ const handleThemeChange = (theme: string) => {
 };
 
 // Control Module
-this.modApiRef?.emit(settingsEvent.setTemperatureRequest, { 
-  temperature: newValue 
+this.modApiRef?.emit(settingsEvent.setTemperatureRequest, {
+  temperature: newValue
 });
 ```
 
@@ -295,7 +295,7 @@ async initialize(modApi: LiteChatModApi): Promise<void> {
       this.handleThemeChange(payload.theme);
       this.notifyComponentUpdate?.();
     }),
-    
+
     modApi.on(conversationEvent.selectedItemChanged, (payload) => {
       this.handleSelectionChange(payload.itemId, payload.itemType);
     })
@@ -322,11 +322,11 @@ function useEventListener<K extends keyof ModEventPayloadMap>(
 // Usage in component
 function MyComponent() {
   const [theme, setTheme] = useState("light");
-  
+
   useEventListener(settingsEvent.themeChanged, (payload) => {
     setTheme(payload.theme);
   });
-  
+
   return <div className={`theme-${theme}`}>...</div>;
 }
 ```
@@ -340,10 +340,10 @@ setTheme: (theme: string) => {
   set((state) => {
     state.theme = theme;
   });
-  
+
   // Emit change event
   emitter.emit(settingsEvent.themeChanged, { theme });
-  
+
   // Persist change
   PersistenceService.saveSetting("theme", theme);
 }
@@ -390,7 +390,7 @@ useEventListener(settingsEvent.themeChanged, (payload) => {
 
 ```typescript
 // Flow diagram:
-ConversationList → selectItemRequest 
+ConversationList → selectItemRequest
                 → ConversationStore.selectItem()
                 → selectedItemChanged
                 → setCurrentConversationIdRequest
@@ -436,9 +436,9 @@ export const featureEvent = {
   // State changes use past tense
   dataLoaded: "feature.data.loaded",
   itemSelected: "feature.item.selected",
-  
+
   // Requests use "Request" suffix
-  loadDataRequest: "feature.load.data.request", 
+  loadDataRequest: "feature.load.data.request",
   selectItemRequest: "feature.select.item.request",
 };
 
@@ -471,7 +471,7 @@ Design payloads to be self-contained:
 ```typescript
 // Good: Complete information
 export interface GoodPayloads {
-  [event.conversationSelected]: { 
+  [event.conversationSelected]: {
     conversationId: string;
     previousConversationId: string | null;
     timestamp: number;
@@ -498,11 +498,11 @@ export const settingsEvent = {
 // Avoid: Too granular
 export const tooGranularEvent = {
   themeColorChanged: "settings.theme.color.changed",
-  themeFontChanged: "settings.theme.font.changed", 
+  themeFontChanged: "settings.theme.font.changed",
   // Theme is one concept, don't split unnecessarily
 };
 
-// Avoid: Too broad  
+// Avoid: Too broad
 export const tooBroadEvent = {
   anythingChanged: "settings.anything.changed", // Too vague
 };
@@ -518,9 +518,9 @@ emitter.on(myEvent.dataRequest, async (payload) => {
     const data = await fetchData(payload.filters);
     emitter.emit(myEvent.dataLoaded, { data });
   } catch (error) {
-    emitter.emit(myEvent.dataLoadFailed, { 
-      error: error.message, 
-      filters: payload.filters 
+    emitter.emit(myEvent.dataLoadFailed, {
+      error: error.message,
+      filters: payload.filters
     });
   }
 });
@@ -554,7 +554,7 @@ export const myFeatureEvent = {
   // State change events
   dataLoaded: "myFeature.data.loaded",
   itemSelected: "myFeature.item.selected",
-  
+
   // Action request events
   loadDataRequest: "myFeature.load.data.request",
   selectItemRequest: "myFeature.select.item.request",
@@ -573,7 +573,7 @@ Add to the main event payload map:
 
 ```typescript
 // src/types/litechat/modding.ts
-export interface ModEventPayloadMap extends 
+export interface ModEventPayloadMap extends
   SettingsEventPayloads,
   ConversationEventPayloads,
   MyFeatureEventPayloads, // Add your events
@@ -600,10 +600,10 @@ Use events in components and modules:
 // Emit request
 emitter.emit(myFeatureEvent.loadDataRequest, { force: true });
 
-// Listen for changes  
+// Listen for changes
 modApi.on(myFeatureEvent.dataLoaded, (payload) => {
   this.handleDataLoad(payload.data);
 });
 ```
 
-The event system provides the foundation for LiteChat's modular, decoupled architecture. By following these patterns and best practices, you can build robust, maintainable features that integrate seamlessly with the existing codebase. 
+The event system provides the foundation for LLMChef's modular, decoupled architecture. By following these patterns and best practices, you can build robust, maintainable features that integrate seamlessly with the existing codebase.

@@ -1,6 +1,6 @@
 {
-  "name": "LiteChat",
-  "short_name": "LiteChat",
+  "name": "LLMChef",
+  "short_name": "LLMChef",
   "description": "Your private, customizable, high-performance AI chat interface.",
   "start_url": "/",
   "display": "standalone",

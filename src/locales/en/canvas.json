@@ -118,7 +118,7 @@
     "zipDownloadFailed": "Failed to create ZIP file"
   },
   "emptyStateSetup": {
-    "welcomeTitle": "Welcome to LiteChat",
+    "welcomeTitle": "Welcome to LLMChef",
     "setupProgress": "Setup Progress: {{progress}}%",
     "stepsCompleted": "Steps completed: {{completed}} of {{total}}",
     "configurationIssue": "Configuration issue detected. Please review provider settings.",

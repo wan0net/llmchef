@@ -237,7 +237,7 @@ export async function fetchModelsForProvider(
           url = "https://openrouter.ai/api/v1/models";
           headers["HTTP-Referer"] =
             globalThis.location?.origin || "http://localhost:3000";
-          headers["X-Title"] = "LiteChat";
+          headers["X-Title"] = "LLMChef";
           break;
         case "ollama":
           const ollamaBase =

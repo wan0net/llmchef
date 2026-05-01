@@ -246,7 +246,7 @@ export function instantiateModelInstance(
           apiKey,
           extraBody: { include_reasoning: true },
           headers: {
-            'X-Title': 'LiteChat',
+            'X-Title': 'LLMChef',
           },
         })(modelId);
       case "ollama":

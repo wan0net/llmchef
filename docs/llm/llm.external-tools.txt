@@ -1,7 +1,7 @@
-# LiteChat Web Search & External Tools (for LLMs)
+# LLMChef Web Search & External Tools (for LLMs)
 
 ## Overview
-LiteChat integrates web search, file system, block rendering, AI image generation, and Model Context Protocol (MCP) tools into a unified, event-driven tool orchestration system. All tools are modular, extensible, and event-integrated.
+LLMChef integrates web search, file system, block rendering, AI image generation, and Model Context Protocol (MCP) tools into a unified, event-driven tool orchestration system. All tools are modular, extensible, and event-integrated.
 
 ---
 
@@ -79,4 +79,4 @@ LiteChat integrates web search, file system, block rendering, AI image generatio
 - Block Renderer: `src/services/block-renderer.service.ts`
 - Image Generation: `src/services/ai-image-generation.service.ts`
 - VFS Tools: `src/controls/modules/VfsToolsModule.ts`
-- MCP Tools: `src/controls/modules/McpToolsModule.ts` 
+- MCP Tools: `src/controls/modules/McpToolsModule.ts`

@@ -19,7 +19,7 @@ npm run build:all          # Build all language versions
 npm run deploy             # Deploy to GitHub Pages (gh-pages -d dist)
 npm run to2web             # Build, release, and deploy to web
 npm run mcp-proxy          # Start MCP bridge service (node bin/mcp-bridge.js)
-npm run serve              # Build and serve with http-server on LITECHAT_PORT (default: 5173)
+npm run serve              # Build and serve with http-server on LLMCHEF_PORT (default: 5173)
 npm run update             # Git pull, npm install, and serve (respects LITECHAT_ORIGIN and LITECHAT_BRANCH)
 ```
 
@@ -30,8 +30,8 @@ npm run update             # Git pull, npm install, and serve (respects LITECHAT
 
 ```bash
 # Manual build
-npm run build && docker build -t litechat .
-docker run -d -p 8080:3000 litechat
+npm run build && docker build -t llmchef .
+docker run -d -p 8080:3000 llmchef
 
 # Docker Compose (includes MCP bridge)
 docker-compose up -d

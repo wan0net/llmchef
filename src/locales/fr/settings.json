@@ -183,7 +183,7 @@
       "sync": "Synchronisation"
     },
     "title": "Synchronisation de Configuration",
-    "description": "Synchronisez automatiquement votre configuration LiteChat avec des dépôts Git",
+    "description": "Synchronisez automatiquement votre configuration LLMChef avec des dépôts Git",
     "enabled": {
       "label": "Activer la Synchronisation de Configuration",
       "description": "Activer la synchronisation automatique de vos paramètres et données avec des dépôts Git"

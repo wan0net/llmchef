@@ -1,7 +1,7 @@
-name: LiteChat
+name: LLMChef
 version: 1.0.0 (Assumed - update as needed)
-description: LiteChat is a privacy-focused, highly customizable AI chat interface that runs entirely in the user's browser. It allows users to connect to various AI models (like OpenAI, Google Gemini, Ollama, OpenRouter, and other compatible APIs) directly, keeping conversations and API keys stored locally. Key features include a modular component system, event-driven architecture for extensibility via mods, integrated file management (VFS) with Git support, conversation synchronization via Git, and detailed control over AI parameters. The core philosophy emphasizes user control, privacy, performance, and flexibility.
-authoritative_source_url: https://github.com/wan0net/litechat
+description: LLMChef is a privacy-focused, highly customizable AI chat interface that runs entirely in the user's browser. It allows users to connect to various AI models (like OpenAI, Google Gemini, Ollama, OpenRouter, and other compatible APIs) directly, keeping conversations and API keys stored locally. Key features include a modular component system, event-driven architecture for extensibility via mods, integrated file management (VFS) with Git support, conversation synchronization via Git, and detailed control over AI parameters. The core philosophy emphasizes user control, privacy, performance, and flexibility.
+authoritative_source_url: https://github.com/wan0net/llmchef
 capabilities:
   - Conversational AI Interaction: Send prompts, receive streaming text responses.
   - Multi-Provider Support: Connect to OpenAI, Google Gemini, Ollama, OpenRouter, and other OpenAI-compatible APIs. Configure multiple providers simultaneously.

@@ -1,13 +1,13 @@
-# LiteChat Persistence & Recovery (for LLMs)
+# LLMChef Persistence & Recovery (for LLMs)
 
 ## Overview
-LiteChat uses a browser-based Dexie.js (IndexedDB) database for all persistence: conversations, interactions, projects, prompt templates, workflows, rules, tags, marketplace, and settings. All CRUD, export/import, and recovery logic is centralized in `PersistenceService`.
+LLMChef uses a browser-based Dexie.js (IndexedDB) database for all persistence: conversations, interactions, projects, prompt templates, workflows, rules, tags, marketplace, and settings. All CRUD, export/import, and recovery logic is centralized in `PersistenceService`.
 
 ---
 
 ## Database Schema
 - **File**: `src/lib/litechat/db.ts`
-- **Database**: `LiteChatDatabase` (Dexie v12)
+- **Database**: `LLMChefDatabase` (Dexie v12)
 - **Tables**:
   - `conversations`, `interactions`, `mods`, `appState`, `providerConfigs`, `apiKeys`, `syncRepos`, `projects`, `rules`, `tags`, `tagRuleLinks`, `promptTemplates`, `workflows`, `marketplaceSources`, `marketplaceIndexes`, `installedMarketplaceItems`
 - **Schema versioning**: Explicit version upgrades for migrations
@@ -75,4 +75,4 @@ LiteChat uses a browser-based Dexie.js (IndexedDB) database for all persistence:
 ## Key Files
 - Schema: `src/lib/litechat/db.ts`
 - Service: `src/services/persistence.service.ts`
-- Types: `src/types/litechat/` 
+- Types: `src/types/litechat/`

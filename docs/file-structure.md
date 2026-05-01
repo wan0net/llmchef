@@ -1,6 +1,6 @@
 # File Structure Reference
 
-This document provides a comprehensive reference for LiteChat's project organization, helping developers understand where to find specific functionality and how the codebase is structured.
+This document provides a comprehensive reference for LLMChef's project organization, helping developers understand where to find specific functionality and how the codebase is structured.
 
 ## Project Root
 
@@ -44,7 +44,7 @@ src/
 
 ```
 src/components/
-├── LiteChat/                   # Main application components
+├── LLMChef/                   # Main application components
 │   ├── LiteChat.tsx           # Primary orchestrator component
 │   ├── canvas/                # Conversation display area
 │   │   ├── ChatCanvas.tsx     # Main conversation container
@@ -170,7 +170,7 @@ src/services/
 
 ```
 src/lib/
-├── litechat/                  # Core LiteChat utilities
+├── litechat/                  # Core LLMChef utilities
 │   ├── initialization.ts     # App startup and module initialization
 │   ├── event-emitter.ts      # Central event bus
 │   ├── db.ts                 # Dexie database schema
@@ -188,7 +188,7 @@ src/lib/
 
 ```
 src/types/
-├── litechat/                  # LiteChat-specific types
+├── litechat/                  # LLMChef-specific types
 │   ├── events/                # Event definitions
 │   │   ├── app.events.ts      # Application lifecycle events
 │   │   ├── conversation.events.ts # Conversation events
@@ -310,4 +310,4 @@ import type { Conversation } from '@/types/litechat/chat';
 - **Services**: Business logic separated from UI concerns
 - **Types**: Mirror the directory structure for easy navigation
 
-This file structure supports LiteChat's modular architecture while maintaining clear separation of concerns and making the codebase navigable for developers. 
+This file structure supports LLMChef's modular architecture while maintaining clear separation of concerns and making the codebase navigable for developers.

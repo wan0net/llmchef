@@ -1,7 +1,7 @@
-# LiteChat Testing, Debugging, and Extension Patterns (for LLMs)
+# LLMChef Testing, Debugging, and Extension Patterns (for LLMs)
 
 ## Overview
-LiteChat is designed for robust, event-driven testing and debugging. All major flows (prompt, workflow, tool, mod, MCP) are testable via events, stores, and modular extension points. Error handling and debugging are first-class, with clear extension hooks for LLMs.
+LLMChef is designed for robust, event-driven testing and debugging. All major flows (prompt, workflow, tool, mod, MCP) are testable via events, stores, and modular extension points. Error handling and debugging are first-class, with clear extension hooks for LLMs.
 
 ---
 
@@ -49,4 +49,4 @@ LiteChat is designed for robust, event-driven testing and debugging. All major f
 - Events: `src/types/litechat/events/`
 - Stores: `src/store/`
 - Modding: `src/modding/api-factory.ts`
-- UI: `src/controls/components/workflow/WorkflowRawEditor.tsx`, `src/hooks/use-formedible.tsx` 
+- UI: `src/controls/components/workflow/WorkflowRawEditor.tsx`, `src/hooks/use-formedible.tsx`

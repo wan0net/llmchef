@@ -1,12 +1,12 @@
 # UI Component Development Guide
 
-This guide covers LiteChat's UI component architecture, patterns, and development practices. LiteChat uses React with TypeScript, shadcn/ui components, and Tailwind CSS for styling.
+This guide covers LLMChef's UI component architecture, patterns, and development practices. LLMChef uses React with TypeScript, shadcn/ui components, and Tailwind CSS for styling.
 
 ## Component Architecture
 
 ### UI Component Library
 
-LiteChat uses **shadcn/ui** as its foundational component library, providing:
+LLMChef uses **shadcn/ui** as its foundational component library, providing:
 
 - **Consistent Design System**: Based on Radix UI primitives with Tailwind CSS styling
 - **Accessibility**: Built-in ARIA attributes and keyboard navigation
@@ -50,7 +50,7 @@ src/components/
 │   ├── badge.tsx               # Status badges
 │   ├── alert.tsx               # Alert notifications
 │   └── ...                     # Other UI primitives
-├── LiteChat/                    # Application-specific components
+├── LLMChef/                    # Application-specific components
 │   ├── canvas/                 # Canvas and interaction area
 │   ├── chat/                   # Chat interface components
 │   ├── common/                 # Shared components
@@ -501,7 +501,7 @@ export const Variants = {
 }
 ```
 
-## Integration with LiteChat Architecture
+## Integration with LLMChef Architecture
 
 ### 1. Control Module Components
 
@@ -572,7 +572,7 @@ export const PromptLibraryControl: React.FC<PromptLibraryControlProps> = ({ modu
 
   const handleFormSubmit = async (formData: PromptFormData) => {
     if (!selectedTemplate) return;
-    
+
     try {
       await module.applyTemplate(selectedTemplate.id, formData);
       setIsModalOpen(false);
@@ -599,12 +599,12 @@ export const PromptLibraryControl: React.FC<PromptLibraryControlProps> = ({ modu
 Browse and filter available templates.
 
 ```typescript
-function PromptTemplateSelector({ 
-  templates, 
-  onSelect 
-}: { 
-  templates: PromptTemplate[]; 
-  onSelect: (template: PromptTemplate) => void; 
+function PromptTemplateSelector({
+  templates,
+  onSelect
+}: {
+  templates: PromptTemplate[];
+  onSelect: (template: PromptTemplate) => void;
 }) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -647,20 +647,20 @@ function PromptTemplateSelector({
 Dynamic form generation based on template variables.
 
 ```typescript
-function PromptTemplateForm({ 
-  template, 
-  onSubmit, 
-  onBack 
-}: { 
-  template: PromptTemplate; 
-  onSubmit: (data: PromptFormData) => void; 
-  onBack: () => void; 
+function PromptTemplateForm({
+  template,
+  onSubmit,
+  onBack
+}: {
+  template: PromptTemplate;
+  onSubmit: (data: PromptFormData) => void;
+  onBack: () => void;
 }) {
   // Create field configs from template variables
   const fieldConfigs = template.variables.map(variable => ({
     name: variable.name,
-    type: variable.type === "boolean" ? "switch" : 
-          variable.type === "number" ? "number" : 
+    type: variable.type === "boolean" ? "switch" :
+          variable.type === "number" ? "number" :
           variable.type === "array" ? "textarea" : "text",
     label: variable.name,
     placeholder: variable.default || `Enter ${variable.name}`,
@@ -699,4 +699,4 @@ function PromptTemplateForm({
 - **Template Preview**: Shows the template structure before variable input
 - **Responsive Design**: Adapts to different screen sizes with appropriate modal sizing
 
-This component development guide ensures consistency, maintainability, and integration with LiteChat's broader architecture while leveraging modern React and TypeScript patterns. 
+This component development guide ensures consistency, maintainability, and integration with LLMChef's broader architecture while leveraging modern React and TypeScript patterns.

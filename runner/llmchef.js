@@ -12,17 +12,17 @@ const port = args[0] || 3000;
 const hostAllInterfaces = args.includes("--host") || args.includes("-h");
 
 // Create temp directory if it doesn't exist
-const tempDir = path.join(__dirname, "litechat-app");
+const tempDir = path.join(__dirname, "llmchef-app");
 if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
 
-console.log("Downloading LiteChat release...");
-const zipPath = path.join(tempDir, "litechat.zip");
+console.log("Downloading LLMChef release...");
+const zipPath = path.join(tempDir, "llmchef.zip");
 const file = fs.createWriteStream(zipPath);
 
 https
-  .get("https://litechat.dbuild.dev/release/latest.zip", (response) => {
+  .get("https://wan0net.github.io/llmchef/release/latest.zip", (response) => {
     response.pipe(file);
     file.on("finish", () => {
       file.close();
@@ -59,12 +59,12 @@ https
             ? `http://${require("os").hostname()}:${port} (accessible from other devices)`
             : `http://localhost:${port} (local access only)`;
 
-          console.log(`LiteChat is running at ${accessUrl}`);
+          console.log(`LLMChef is running at ${accessUrl}`);
         });
       });
     });
   })
   .on("error", (err) => {
     fs.unlinkSync(zipPath);
-    console.error("Error downloading LiteChat:", err);
+    console.error("Error downloading LLMChef:", err);
   });

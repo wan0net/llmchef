@@ -298,7 +298,7 @@ This document provides practical, ready-to-use examples of workflows utilizing p
 ## Usage Tips for Examples
 
 ### Getting Started
-1. **Copy the JSON configurations** into LiteChat's workflow builder
+1. **Copy the JSON configurations** into LLMChef's workflow builder
 2. **Customize the prompts** for your specific use case
 3. **Test with small datasets** first
 4. **Monitor performance** and adjust as needed
@@ -321,4 +321,4 @@ This document provides practical, ready-to-use examples of workflows utilizing p
 - **Version control**: Save different versions for testing
 - **Quality gates**: Include validation steps in your workflows
 
-These examples demonstrate the power and flexibility of LiteChat's parallel execution and sub-workflow capabilities. Adapt them to your specific needs and use cases!
+These examples demonstrate the power and flexibility of LLMChef's parallel execution and sub-workflow capabilities. Adapt them to your specific needs and use cases!

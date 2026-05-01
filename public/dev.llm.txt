@@ -1,7 +1,7 @@
-name: LiteChat
+name: LLMChef
 version: 0.0.1
-description: This document provides comprehensive development context for LiteChat, a modular, event-driven, client-side AI chat component library built with React, TypeScript, Zustand, Dexie, and Vite. The architecture prioritizes component independence, centralized state with decoupled logic, event-driven communication (mitt), control-based functionality encapsulation, middleware pipelines, and robust client-side persistence via IndexedDB. Key features include multi-provider AI support, project-based conversation organization, an integrated Virtual File System (VFS) with isomorphic-git support, conversation synchronization via Git, and a powerful modding API.
-authoritative_source_url: https://github.com/wan0net/litechat
+description: This document provides comprehensive development context for LLMChef, a modular, event-driven, client-side AI chat component library built with React, TypeScript, Zustand, Dexie, and Vite. The architecture prioritizes component independence, centralized state with decoupled logic, event-driven communication (mitt), control-based functionality encapsulation, middleware pipelines, and robust client-side persistence via IndexedDB. Key features include multi-provider AI support, project-based conversation organization, an integrated Virtual File System (VFS) with isomorphic-git support, conversation synchronization via Git, and a powerful modding API.
+authoritative_source_url: https://github.com/wan0net/llmchef
 
 
 ## Core Concepts & Patterns
@@ -28,7 +28,7 @@ src/
 ├── main.tsx                # Application entry point, renders App
 ├── index.css               # Global styles, Tailwind directives, theme variables
 ├── components/
-│   ├── LiteChat/           # Core LiteChat components
+│   ├── LLMChef/           # Core LLMChef components
 │   │   ├── LiteChat.tsx    # Main orchestrator component
 │   │   ├── canvas/         # Components for displaying conversation history
 │   │   │   ├── ChatCanvas.tsx
@@ -43,7 +43,7 @@ src/
 │   │   │       ├── conversation-list/ # Sub-components for ConversationList
 │   │   │       ├── Settings.tsx         # Settings button/modal trigger registration
 │   │   │       └── SidebarToggleControl.tsx # Sidebar collapse control registration
-│   │   ├── common/         # Shared UI components used across LiteChat
+│   │   ├── common/         # Shared UI components used across LLMChef
 │   │   │   ├── CodeBlockRenderer.tsx
 │   │   │   ├── FilePreviewRenderer.tsx
 │   │   │   └── StopButton.tsx
@@ -75,7 +75,7 @@ src/
 │   │       ├── SettingsDataManagement.tsx
 │   │       └── SettingsMods.tsx
 │   └── ui/                 # Base shadcn/ui components (button, input, etc.)
-├── hooks/litechat/         # Custom hooks specific to LiteChat features
+├── hooks/litechat/         # Custom hooks specific to LLMChef features
 │   ├── useConversationListControl.tsx # Registers the core conversation list
 │   └── useItemEditing.tsx             # Hook for inline editing in lists
 ├── lib/litechat/           # Core library code, utilities, non-React logic
@@ -123,7 +123,7 @@ prompt_submission_flow:
   3. Data Collection: `PromptWrapper` reads `inputValue`, calls `getParameters`/`getMetadata` on active `PromptControls` (registered in `ControlRegistryStore`), reads basic file info from `InputStore`.
   4. Turn Object Creation: `PromptTurnObject` created (text, params, metadata + file content from `InputStore`).
   5. Prompt Middleware: `runMiddleware('middleware:prompt:turnFinalize', { turnData })` executes relevant middleware from `ControlRegistryStore`.
-  6. Orchestration: `LiteChat.handlePromptSubmit` receives final `PromptTurnObject`.
+  6. Orchestration: `LLMChef.handlePromptSubmit` receives final `PromptTurnObject`.
      - Checks/creates conversation (`ConversationStore.addConversation`).
      - Sets current conversation in `InteractionStore`.
      - Builds history `CoreMessage[]` from `InteractionStore.interactions`.
@@ -196,7 +196,7 @@ UIStateStore (`src/store/ui.store.ts`):
   - State: `isChatControlPanelOpen`, `isPromptControlPanelOpen`, `isSidebarCollapsed`, `globalLoading`, `globalError`, `focusInputOnNextRender`.
   - Purpose: Manages transient UI state like modal visibility, loading indicators, errors, sidebar state, and input focus control.
   - Key Actions: `toggle*`, `setGlobalLoading`, `setGlobalError`, `setFocusInputFlag`.
-  - Interactions: Used by various components (`SettingsControl`, `SidebarToggleControl`, `LiteChat`, `InputArea`) to control UI visibility and behavior.
+  - Interactions: Used by various components (`SettingsControl`, `SidebarToggleControl`, `LLMChef`, `InputArea`) to control UI visibility and behavior.
 
 VfsStore (`src/store/vfs.store.ts`):
   - State: `nodes`, `childrenMap`, `rootId`, `currentParentId`, `selectedFileIds`, `loading`, `operationLoading`, `error`, `fs` (ZenFS instance), `enableVfs`, `isVfsEnabledForItem`, `vfsKey`, `configuredVfsKey`.

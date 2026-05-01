@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * LiteChat Dynamic MCP Bridge
+ * LLMChef Dynamic MCP Bridge
  * 
  * SINGLE PORT, MULTI SERVER, SPEC COMPLIANT, FULLY DYNAMIC
  * 
@@ -53,7 +53,7 @@ for (let i = 0; i < args.length; i++) {
       break;
     case '--help':
       console.log(`
-LiteChat Dynamic MCP Bridge
+LLMChef Dynamic MCP Bridge
 
 Usage: node mcp-bridge.js [options]
 
@@ -216,7 +216,7 @@ class McpServer {
         sampling: {}
       },
       clientInfo: {
-        name: 'litechat-mcp-bridge',
+        name: 'llmchef-mcp-bridge',
         version: '1.0.0'
       }
     });
@@ -603,7 +603,7 @@ const server = http.createServer(async (req, res) => {
 
 // Start server
 server.listen(config.port, config.host, () => {
-  console.log(`✅ LiteChat Dynamic MCP Bridge running on ${config.host}:${config.port}`);
+  console.log(`✅ LLMChef Dynamic MCP Bridge running on ${config.host}:${config.port}`);
   console.log(`🔄 Dynamic server creation mode - no config files needed`);
   console.log(`📋 Health check: http://${config.host}:${config.port}/health`);
   console.log(`📊 Active servers: http://${config.host}:${config.port}/servers`);

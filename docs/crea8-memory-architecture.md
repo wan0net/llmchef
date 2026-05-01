@@ -1,12 +1,12 @@
 # crea8 Memory Architecture
 
-LiteChat should not grow a hidden durable memory store. Durable memory belongs in
+LLMChef should not grow a hidden durable memory store. Durable memory belongs in
 crea8 notes, where the user and AI can both inspect, edit, correct, link, and
 version the same source of truth.
 
 ## Model
 
-- LiteChat is the workbench: chat, agents, tools, VFS, previews, repo work.
+- LLMChef is the workbench: chat, agents, tools, VFS, previews, repo work.
 - crea8 is the memory layer: project notes, user preferences, decisions, work
   logs, wiki pages, and reusable knowledge.
 - The AI may propose memory updates, but the persisted truth is a crea8 note.
@@ -17,7 +17,7 @@ version the same source of truth.
 | Class | Purpose | Example |
 | --- | --- | --- |
 | `user` | Stable user preferences and conventions | "Prefer dense link42 operator UI." |
-| `project` | Project facts and current state | "LiteChat deploys at wan0.net/litechat." |
+| `project` | Project facts and current state | "LLMChef deploys at wan0.net/litechat." |
 | `decision` | Explicit decisions and rationale | "Use crea8 notes as memory source of truth." |
 | `work-log` | Completed work and audit trail | "Added VFS real-folder sync in commit fa63d67." |
 | `skill` | Knowledge owned by or generated through a skill | "Security audit skill checklist." |
@@ -30,11 +30,11 @@ Default: AI writes are proposals.
 Flow:
 
 1. Chat, tool, skill, or user identifies durable knowledge.
-2. LiteChat creates a `MemoryProposal` with target scope, reason, confidence,
+2. LLMChef creates a `MemoryProposal` with target scope, reason, confidence,
    proposed markdown, source conversation, and source interaction.
 3. User accepts, edits, rejects, or pins for later.
 4. Accepted proposals write or update a crea8 note.
-5. The note id is recorded back into LiteChat for traceability.
+5. The note id is recorded back into LLMChef for traceability.
 
 Later trusted modes may allow auto-writing low-risk pages, such as work logs,
 but preferences, project facts, decisions, and security notes should remain
@@ -62,7 +62,7 @@ The connector should support multiple backends through one contract:
 - `indexeddb`: current standalone crea8 BlockSuite IndexedDB workspace.
 - `api`: future deployed crea8 API.
 
-The LiteChat memory layer should not care which backend stores the note, as long
+The LLMChef memory layer should not care which backend stores the note, as long
 as the connector can search, read, create, and update notes.
 
 ## Note Layout
@@ -75,7 +75,7 @@ Memory/
     Preferences.md
     Conventions.md
   Projects/
-    LiteChat/
+    LLMChef/
       Overview.md
       Decisions.md
       Work Log.md
@@ -115,7 +115,7 @@ This gives the user a way to answer: "Why does the AI remember this?"
 ## Initial Implementation Slices
 
 1. Add memory note/proposal types and markdown/frontmatter helpers.
-2. Add local proposal store in LiteChat.
+2. Add local proposal store in LLMChef.
 3. Add "Propose memory update" action from assistant messages.
 4. Add crea8 markdown-workspace connector for VFS folders.
 5. Add manual attach/search of crea8 notes into prompt context.

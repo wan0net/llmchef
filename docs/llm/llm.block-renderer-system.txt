@@ -1,7 +1,7 @@
-# LiteChat Block Renderer System (for LLMs)
+# LLMChef Block Renderer System (for LLMs)
 
 ## Overview
-The Block Renderer System in LiteChat is a modular, extensible architecture for rendering code blocks, diagrams, forms, workflows, and interactive/runnable content. It supports language-specific renderers, priority-based selection, and seamless integration with the event and control module systems.
+The Block Renderer System in LLMChef is a modular, extensible architecture for rendering code blocks, diagrams, forms, workflows, and interactive/runnable content. It supports language-specific renderers, priority-based selection, and seamless integration with the event and control module systems.
 
 ---
 
@@ -81,4 +81,4 @@ The Block Renderer System in LiteChat is a modular, extensible architecture for 
 - Universal: `src/components/LiteChat/common/UniversalBlockRenderer.tsx`
 - Modules: `src/controls/modules/` (all *BlockRendererModule.ts)
 - Example: `src/controls/modules/example/ExampleBlockRendererModule.ts`
-- Usage: `src/components/LiteChat/canvas/StreamingContentView.tsx` 
+- Usage: `src/components/LiteChat/canvas/StreamingContentView.tsx`

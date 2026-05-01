@@ -128,8 +128,8 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', 'icons/*.png', 'manifest.json'],
       manifest: {
-        name: 'LiteChat',
-        short_name: 'LiteChat',
+        name: 'LLMChef',
+        short_name: 'LLMChef',
         description: 'Your private, customizable, high-performance AI chat interface.',
         theme_color: '#4fd1c5',
         background_color: '#1a2a3a',

@@ -1,4 +1,4 @@
-# LiteChat Control Module System (for LLMs)
+# LLMChef Control Module System (for LLMs)
 
 ## Core Interfaces & Types
 - **ControlModule interface**: `src/types/litechat/control.ts`
@@ -91,4 +91,4 @@ export class MermaidBlockRendererModule implements ControlModule {
 - `src/types/litechat/control.ts`
 - `src/types/litechat/modding.ts`
 - `src/controls/modules/` (for module examples)
-- `src/App.tsx` (for registration order) 
+- `src/App.tsx` (for registration order)

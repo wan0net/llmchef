@@ -1,6 +1,6 @@
 # Docker Documentation
 
-LiteChat provides comprehensive Docker support with minimal container sizes, MCP bridge integration, and language-specific image builds.
+LLMChef provides comprehensive Docker support with minimal container sizes, MCP bridge integration, and language-specific image builds.
 
 ## Quick Start
 
@@ -11,8 +11,8 @@ LiteChat provides comprehensive Docker support with minimal container sizes, MCP
 npm run build
 
 # Build and run Docker container
-docker build -t litechat .
-docker run -d -p 8080:3000 litechat
+docker build -t llmchef .
+docker run -d -p 8080:3000 llmchef
 
 # Access at http://localhost:8080
 ```
@@ -20,7 +20,7 @@ docker run -d -p 8080:3000 litechat
 ### Docker Compose (Recommended)
 
 ```bash
-# Start all services (LiteChat + MCP Bridge)
+# Start all services (LLMChef + MCP Bridge)
 docker-compose up -d
 
 # View logs
@@ -32,7 +32,7 @@ docker-compose down
 
 ## Services
 
-### LiteChat Service
+### LLMChef Service
 
 The main application runs on a minimal BusyBox httpd server (~80KB base image).
 
@@ -42,7 +42,7 @@ The main application runs on a minimal BusyBox httpd server (~80KB base image).
 - Minimal resource usage
 - Fast startup time
 
-**Default Port:** 3000 (configurable via `LITECHAT_PORT`)
+**Default Port:** 3000 (configurable via `LLMCHEF_PORT`)
 
 ### MCP Bridge Service
 
@@ -63,10 +63,10 @@ Provides MCP (Model Context Protocol) server integration for AI tools.
 Create a `.env` file for easy configuration:
 
 ```bash
-# LiteChat configuration
-LITECHAT_PORT=8080
+# LLMChef configuration
+LLMCHEF_PORT=8080
 
-# MCP Bridge configuration  
+# MCP Bridge configuration
 MCP_BRIDGE_PORT=3001
 MCP_BRIDGE_INTERNAL_PORT=3001
 MCP_BRIDGE_VERBOSE=false
@@ -76,7 +76,7 @@ MCP_BRIDGE_VERBOSE=false
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LITECHAT_PORT` | 8080 | External port for LiteChat |
+| `LLMCHEF_PORT` | 8080 | External port for LLMChef |
 | `MCP_BRIDGE_PORT` | 3001 | External port for MCP bridge |
 | `MCP_BRIDGE_INTERNAL_PORT` | 3001 | Internal container port for MCP bridge |
 | `MCP_BRIDGE_VERBOSE` | false | Enable verbose logging for MCP bridge |
@@ -91,14 +91,14 @@ For multi-language applications, the builder script creates optimized images for
 
 ```bash
 # Create images for all detected languages
-bin/builder --release v1.0.0 --docker-repo myuser/litechat
+bin/builder --release v1.0.0 --docker-repo myuser/llmchef
 
 # Images created:
-# - myuser/litechat:v1.0.0 (default language)
-# - myuser/litechat:latest (points to default)
-# - myuser/litechat:v1.0.0-fr (French)
-# - myuser/litechat:v1.0.0-de (German)
-# - myuser/litechat:v1.0.0-es (Spanish)
+# - myuser/llmchef:v1.0.0 (default language)
+# - myuser/llmchef:latest (points to default)
+# - myuser/llmchef:v1.0.0-fr (French)
+# - myuser/llmchef:v1.0.0-de (German)
+# - myuser/llmchef:v1.0.0-es (Spanish)
 # etc.
 ```
 
@@ -112,14 +112,14 @@ COPY dist/fr/ .
 COPY docker/httpd.conf .
 EOF
 
-docker build -f dockerfile.fr -t myuser/litechat:v1.0.0-fr .
+docker build -f dockerfile.fr -t myuser/llmchef:v1.0.0-fr .
 rm dockerfile.fr
 ```
 
 ### Benefits
 
 - **Smaller Size**: Only contains files for one language
-- **Faster Startup**: Reduced file system overhead  
+- **Faster Startup**: Reduced file system overhead
 - **Clean URLs**: No language prefixes needed
 - **Regional Deployment**: Deploy specific languages to regional CDNs
 
@@ -132,8 +132,8 @@ version: '3.8'
 
 services:
   # Use specific language image
-  litechat-fr:
-    image: myuser/litechat:v1.0.0-fr
+  llmchef-fr:
+    image: myuser/llmchef:v1.0.0-fr
     ports:
       - "8080:3000"
     restart: unless-stopped
@@ -163,14 +163,14 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - litechat-fr
+      - llmchef-fr
       - mcp-bridge
 ```
 
 ### Health Checks
 
 ```bash
-# Check LiteChat health
+# Check LLMChef health
 curl http://localhost:8080
 
 # Check MCP Bridge health
@@ -187,7 +187,7 @@ docker-compose ps
 version: '3.8'
 
 services:
-  litechat-dev:
+  llmchef-dev:
     build: .
     ports:
       - "8080:3000"
@@ -216,7 +216,7 @@ docker-compose ps
 **Port conflicts:**
 ```bash
 # Change ports in .env file
-echo "LITECHAT_PORT=8081" >> .env
+echo "LLMCHEF_PORT=8081" >> .env
 echo "MCP_BRIDGE_PORT=3002" >> .env
 
 # Restart services
@@ -273,7 +273,7 @@ services:
 
 ```bash
 # Use specific image tags (not latest)
-image: myuser/litechat:v1.0.0
+image: myuser/llmchef:v1.0.0
 
 # Enable read-only filesystem
 read_only: true
@@ -291,17 +291,17 @@ user: "1000:1000"
 ```yaml
 # Create isolated network
 networks:
-  litechat-network:
+  llmchef-network:
     driver: bridge
 
 services:
   litechat:
     networks:
-      - litechat-network
-  
+      - llmchef-network
+
   mcp-bridge:
     networks:
-      - litechat-network
+      - llmchef-network
 ```
 
 ### Environment Security
@@ -315,4 +315,4 @@ secrets:
   - api_key
 ```
 
-This Docker setup provides a complete, production-ready deployment solution for LiteChat with comprehensive MCP integration and multi-language support. 
+This Docker setup provides a complete, production-ready deployment solution for LLMChef with comprehensive MCP integration and multi-language support.

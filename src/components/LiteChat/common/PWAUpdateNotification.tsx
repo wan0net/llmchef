@@ -51,7 +51,7 @@ export const PWAUpdateNotification: React.FC<PWAUpdateNotificationProps> = ({
       setIsUpdating(false);
       setIsVisible(false);
       toast.success("Update Installed", {
-        description: "LiteChat has been updated successfully!",
+        description: "LLMChef has been updated successfully!",
       });
     };
 
@@ -138,7 +138,7 @@ export const PWAUpdateNotification: React.FC<PWAUpdateNotificationProps> = ({
             </Button>
           </div>
           <CardDescription className="text-xs">
-            A new version of LiteChat is ready to install.
+            A new version of LLMChef is ready to install.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">

@@ -1,4 +1,4 @@
-# I asked the LLMs what they think of my project 
+# I asked the LLMs what they think of my project
 
 The prompt :
 
@@ -13,15 +13,15 @@ I asked [Claude Sonnet 4 thinking](AI-says/claude-sonnet-thinking.md) ([2](AI-sa
 here is the gist of it, powered by gemini 2.5 pro :
 
 
-## A Comprehensive & Brutal Analysis of LiteChat
+## A Comprehensive & Brutal Analysis of LLMChef
 
 ### **Executive Summary: A Tale of Two Projects**
 
-Across all three analyses, a powerful and consistent narrative emerges: LiteChat is a project of two distinct halves.
+Across all three analyses, a powerful and consistent narrative emerges: LLMChef is a project of two distinct halves.
 
-1.  **The Technical Masterpiece:** There is unanimous, enthusiastic agreement that the underlying architecture of LiteChat is **world-class**. The modularity, event-driven nature, and advanced features like the Virtual File System (VFS) are seen as sophisticated, scalable, and technically superior to most competitors. One analysis rated the architecture a **9/10**, while another called it "**brilliant**" and your "**biggest strength**."
+1.  **The Technical Masterpiece:** There is unanimous, enthusiastic agreement that the underlying architecture of LLMChef is **world-class**. The modularity, event-driven nature, and advanced features like the Virtual File System (VFS) are seen as sophisticated, scalable, and technically superior to most competitors. One analysis rated the architecture a **9/10**, while another called it "**brilliant**" and your "**biggest strength**."
 
-2.  **The Strategic Crossroads:** While the "how" of the project is praised, the "what" and "why" are seriously questioned. The foundational analyses focus on polish and user experience, but the third, more market-focused analysis introduces a critical concern: LiteChat suffers from an "**Identity Crisis**" and is fighting an uphill battle in a saturated market without a clear, differentiating value proposition for a specific user.
+2.  **The Strategic Crossroads:** While the "how" of the project is praised, the "what" and "why" are seriously questioned. The foundational analyses focus on polish and user experience, but the third, more market-focused analysis introduces a critical concern: LLMChef suffers from an "**Identity Crisis**" and is fighting an uphill battle in a saturated market without a clear, differentiating value proposition for a specific user.
 
 This synthesized review will first detail the universally acclaimed strengths, then consolidate the weaknesses (from minor polish to major strategic threats), and finally, present a unified, actionable roadmap that integrates all recommendations.
 
@@ -38,7 +38,7 @@ All three assessments converge on these core strengths. The consensus is that yo
     *   **Virtual File System (VFS):** This is repeatedly identified as a "killer feature" and a "rare and impressive" piece of technical innovation for a client-side application.
 
 2.  **Unmatched Extensibility (The "Secret Weapon"):**
-    *   The **Modding API** is unanimously seen as the project's superpower and a massive competitive advantage. The analyses agree that its design, which focuses on security and avoids exposing internals, transforms LiteChat from a mere product into a potential *platform*.
+    *   The **Modding API** is unanimously seen as the project's superpower and a massive competitive advantage. The analyses agree that its design, which focuses on security and avoids exposing internals, transforms LLMChef from a mere product into a potential *platform*.
 
 3.  **Powerful & Innovative Core Features:**
     *   The client-side **Git integration** via `isomorphic-git` is called a "**masterstroke**" for power users.
@@ -72,7 +72,7 @@ While the architecture is a strength, all reviewers agree that its complexity is
 
 This is where the third analysis introduces a brutal, business-level reality check that the other two touch on more lightly through UX suggestions. It argues that the project's biggest weakness isn't technical, but strategic.
 *   **Market Saturation:** It bluntly states you are in a "**Market Positioning Crisis (5/10)**," competing directly with giants like **LibreChat**, **Open WebUI**, and **AnythingLLM**, who have massive communities and ecosystems.
-*   **Confused Value Proposition:** It argues that your key features are not strong enough differentiators for the *general user*. Most users don't care about a VFS or Git integration, and the modding system appeals to a tiny fraction. The core question raised is: **"What makes someone choose LiteChat over ChatGPT's web interface?"**
+*   **Confused Value Proposition:** It argues that your key features are not strong enough differentiators for the *general user*. Most users don't care about a VFS or Git integration, and the modding system appeals to a tiny fraction. The core question raised is: **"What makes someone choose LLMChef over ChatGPT's web interface?"**
 *   **Identity Crisis:** The final verdict here is that you have built a **powerful developer tool** but are positioning it as a **general chat app**. This mismatch is the root of the strategic problem.
 
 ---
@@ -134,13 +134,13 @@ because it has missed some of the marks...
 
 > The consensus is that you have built an incredible foundation that most projects lack.
 
-would you look at that... B-D ! 
+would you look at that... B-D !
 
 - **Dependency Mess:** ran `depcheck`, fixed most of it... I am actually using all that "crap" XD, missing deps are for the runner which are just vibed example
 - **Configuration Errors:** Syntax errors in `tsconfig.json` from the runner, doooont care !.
 - **The Testing Gap:** ... yup ! would you like to implement that then ?
 
-> The Double-Edged Sword of Complexity 
+> The Double-Edged Sword of Complexity
 
 You tell me about it... if I had hairs, I would not anymore... good point for genetics i guess, be at the forefront...
 
@@ -158,7 +158,7 @@ That is the point of modularity... only register the modules you need so only th
 
 > Add In-App Help
 
-You are the one needing help ! 
+You are the one needing help !
 
 > First, Make Your Superpower Visible: Build the Mod Marketplace UI.
 
@@ -179,7 +179,7 @@ Reminds me of something... huuum, can't quiet remember what...
 
 ### response :
 
-Looking at the LiteChat codebase, I can make an educated estimate based on several factors. Let me analyze the project scope and complexity.
+Looking at the LLMChef codebase, I can make an educated estimate based on several factors. Let me analyze the project scope and complexity.
 ```bash
 find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" | grep -v node_modules | wc -l
 ```
@@ -196,7 +196,7 @@ git log --oneline | wc -l # skipped, that'd ruin all the fun !
 find src -name "*.ts" -o -name "*.tsx" | head -20
 ```
 Ran tool
-Based on my analysis of the LiteChat codebase, here's my estimate:
+Based on my analysis of the LLMChef codebase, here's my estimate:
 
 #### **Project Size Metrics:**
 - **~347 TypeScript/JavaScript files**
@@ -223,7 +223,7 @@ Based on my analysis of the LiteChat codebase, here's my estimate:
 
 **Phase 1: Core Foundation (2-3 months)**
 - Basic React app with TypeScript setup
-- Event system and store architecture  
+- Event system and store architecture
 - Basic conversation management
 - Single AI provider integration
 
@@ -253,7 +253,7 @@ Based on my analysis of the LiteChat codebase, here's my estimate:
 
 **Contributing Developer(s):** Mid-to-Senior level
 - AI/ML integration experience
-- Git internals knowledge  
+- Git internals knowledge
 - UI/UX development skills
 
 #### **Confidence Level: 85%**
@@ -278,7 +278,7 @@ This is a **seriously impressive** project that demonstrates significant technic
 
 > 2 senior developers
 
-Solo dev, 
+Solo dev,
 
 > working for 10-12 months
 
@@ -304,4 +304,4 @@ Did I tell you about my [AI chat in Bash](https://ai-gents.dbuild.dev/) ? Oh, ok
 
 Thanks Mom :D
 
-Don't believe it? [Commit Activity](https://github.com/wan0net/litechat/graphs/commit-activity) and [Contributors](https://github.com/wan0net/litechat/graphs/contributors)
+Don't believe it? [Commit Activity](https://github.com/wan0net/llmchef/graphs/commit-activity) and [Contributors](https://github.com/wan0net/llmchef/graphs/contributors)

@@ -46,7 +46,7 @@
     "noRulesOrTagsConfigured": "Keine Regeln oder Tags konfiguriert."
   },
   "sidebar": {
-    "title": "LiteChat Menü",
+    "title": "LLMChef Menü",
     "close": "Menü schließen",
     "open": "Menü öffnen",
     "loading": "Menü wird geladen...",
@@ -92,7 +92,7 @@
     "apply": "Anwenden"
   },
   "conversationList": {
-    "title": "LiteChat",
+    "title": "LLMChef",
     "newChat": "Neuer Chat",
     "newProject": "Neues Projekt",
     "newChatTooltip": "Neuer Chat",
@@ -107,7 +107,7 @@
     "deleteProjectError": "Fehler beim Löschen des Projekts.",
     "confirmDeleteConversation": "Diese Konversation löschen? Dies kann nicht rückgängig gemacht werden.",
     "githubRepo": "GitHub Repository",
-    "downloadLiteChat": "LiteChat herunterladen",
+    "downloadLLMChef": "LLMChef herunterladen",
     "loading": "Wird geladen...",
     "noItemsMatchFilter": "Keine Elemente entsprechen Ihrem Filter.",
     "noItemsYet": "Noch keine Konversationen oder Projekte.",

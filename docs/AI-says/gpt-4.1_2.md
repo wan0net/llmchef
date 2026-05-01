@@ -104,4 +104,4 @@ LiteChat is an ambitious, highly modular, and technically sophisticated client-s
 ---
 
 ## Final Thoughts
-LiteChat is a technical powerhouse with a unique architecture and a clear vision for extensibility. To win a competition, double down on onboarding, collaboration, and "wow" features that make the technical strengths obvious and delightful to all users—not just power users. The foundation is world-class; now make it irresistible. 
+LiteChat is a technical powerhouse with a unique architecture and a clear vision for extensibility. To win a competition, double down on onboarding, collaboration, and "wow" features that make the technical strengths obvious and delightful to all users—not just power users. The foundation is world-class; now make it irresistible.

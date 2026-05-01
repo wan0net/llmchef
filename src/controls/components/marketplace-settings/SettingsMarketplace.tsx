@@ -52,7 +52,7 @@ const SettingsMarketplaceComponent: React.FC = () => {
             {t('marketplace.title', 'Marketplace')}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {t('marketplace.description', 'Discover and install LiteChat components from various sources')}
+            {t('marketplace.description', 'Discover and install LLMChef components from various sources')}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -82,7 +82,7 @@ const SettingsMarketplaceComponent: React.FC = () => {
             {t('marketplace.sources.title', 'Marketplace Sources')}
           </CardTitle>
           <CardDescription>
-            {t('marketplace.sources.description', 'Add marketplace URLs to discover and install LiteChat components')}
+            {t('marketplace.sources.description', 'Add marketplace URLs to discover and install LLMChef components')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

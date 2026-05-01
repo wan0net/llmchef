@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to package LiteChat distribution files into release archives
+# Script to package LLMChef distribution files into release archives
 # Creates both latest.zip and version-specific archives
 # Usage: ./package-release.sh
 
@@ -39,7 +39,7 @@ if [ -z "$VERSION" ] || [ "$VERSION" == "null" ]; then
     exit 1
 fi
 
-echo "Packaging LiteChat v${VERSION}..."
+echo "Packaging LLMChef v${VERSION}..."
 
 # Create temp directory for packaging
 TEMP_DIR=$(mktemp -d)
@@ -56,23 +56,23 @@ rm -rf "$TEMP_DIR/icons/1024.png";
 # Create the release zip file
 echo "Creating ZIP archive..."
 cd "$TEMP_DIR";
-zip -r "../litechat-latest.zip" ./* -q
+zip -r "../llmchef-latest.zip" ./* -q
 cd - > /dev/null
 
 # Copy the zip files to public/release/
 echo "Copying ZIP archives to public/release/..."
-rm "public/release/latest.zip"
-cp "$TEMP_DIR/../litechat-latest.zip" "public/release/latest.zip"
-rm "public/release/litechat-${VERSION}.zip"
-cp "public/release/latest.zip" "public/release/litechat-${VERSION}.zip"
+rm -f "public/release/latest.zip"
+cp "$TEMP_DIR/../llmchef-latest.zip" "public/release/latest.zip"
+rm -f "public/release/llmchef-${VERSION}.zip"
+cp "public/release/latest.zip" "public/release/llmchef-${VERSION}.zip"
 
-rm "$TEMP_DIR/../litechat-latest.zip"
+rm "$TEMP_DIR/../llmchef-latest.zip"
 
 # Output file sizes
 LATEST_SIZE=$(du -h "public/release/latest.zip" | cut -f1)
-VERSION_SIZE=$(du -h "public/release/litechat-${VERSION}.zip" | cut -f1)
+VERSION_SIZE=$(du -h "public/release/llmchef-${VERSION}.zip" | cut -f1)
 
 echo "✅ Release packaging complete!"
 echo "📦 Created: public/release/latest.zip (${LATEST_SIZE})"
-echo "📦 Created: public/release/litechat-${VERSION}.zip (${VERSION_SIZE})"
+echo "📦 Created: public/release/llmchef-${VERSION}.zip (${VERSION_SIZE})"
 echo "📋 Version: ${VERSION}"
