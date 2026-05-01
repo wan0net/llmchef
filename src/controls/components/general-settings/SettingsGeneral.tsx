@@ -35,8 +35,8 @@ const SettingsGeneralComponent: React.FC = () => {
     textTriggerEndDelimiter: z.string().min(1),
     
     // Service URLs
-    corsProxyUrl: z.string().url(t('generalSettings.validation.invalidUrl', 'Please enter a valid URL')),
-    markdownServiceUrl: z.string().url(t('generalSettings.validation.invalidUrl', 'Please enter a valid URL')),
+    corsProxyUrl: z.string().trim().url(t('generalSettings.validation.invalidUrl', 'Please enter a valid URL')).or(z.literal("")),
+    markdownServiceUrl: z.string().trim().url(t('generalSettings.validation.invalidUrl', 'Please enter a valid URL')).or(z.literal("")),
   });
 
   const storeSetters = useSettingsStore(
@@ -101,8 +101,8 @@ const SettingsGeneralComponent: React.FC = () => {
       textTriggerEndDelimiter: storeValues.textTriggerEndDelimiter ?? ";",
       
       // Service URL Defaults
-      corsProxyUrl: storeValues.corsProxyUrl ?? "https://cors.litechat.dev/",
-      markdownServiceUrl: storeValues.markdownServiceUrl ?? "https://markdown.litechat.dev/",
+      corsProxyUrl: storeValues.corsProxyUrl ?? "",
+      markdownServiceUrl: storeValues.markdownServiceUrl ?? "",
     },
     validators: {
       onChangeAsync: settingsSchema,
@@ -149,8 +149,8 @@ const SettingsGeneralComponent: React.FC = () => {
       textTriggerEndDelimiter: storeValues.textTriggerEndDelimiter ?? ";",
       
       // Service URL Reset Values
-      corsProxyUrl: storeValues.corsProxyUrl ?? "https://cors.litechat.dev/",
-      markdownServiceUrl: storeValues.markdownServiceUrl ?? "https://markdown.litechat.dev/",
+      corsProxyUrl: storeValues.corsProxyUrl ?? "",
+      markdownServiceUrl: storeValues.markdownServiceUrl ?? "",
     });
   }, [
     storeValues.enableStreamingMarkdown,
@@ -383,7 +383,7 @@ const SettingsGeneralComponent: React.FC = () => {
               name="corsProxyUrl"
               label="CORS Proxy URL"
               type="url"
-              placeholder="https://cors.litechat.dev/"
+              placeholder="https://your-cors-proxy.example/"
             />
             
             <TextField
@@ -391,11 +391,11 @@ const SettingsGeneralComponent: React.FC = () => {
               name="markdownServiceUrl"
               label="Markdown Service URL"
               type="url"
-              placeholder="https://markdown.litechat.dev/"
+              placeholder="https://your-markdown-service.example/"
             />
             
             <p className="text-sm text-muted-foreground">
-              Configure proxy services for cross-origin requests and markdown parsing.
+              Optional. Web search and page extraction stay disabled until you configure your own services.
             </p>
           </div>
         )}

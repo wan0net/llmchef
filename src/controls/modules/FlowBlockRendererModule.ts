@@ -168,7 +168,7 @@ Organizational flowchart:
     {
       "id": "litechat",
       "type": "custom",
-      "label": "<img src=\"https://litechat.dbuild.dev/icons/128.png\" />",
+      "label": "<img src=\"https://wan0net.github.io/litechat/icons/128.png\" />",
       "style": {
         "backgroundColor": "#FFF2CC",
         "borderColor": "#FFD700",

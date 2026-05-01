@@ -76,13 +76,6 @@ interface MarketplaceActions {
 }
 
 const DEFAULT_MARKETPLACE_SOURCES: MarketplaceSource[] = [
-  {
-    id: "official-litechat",
-    name: "Official LiteChat Marketplace",
-    url: "https://litechat.dev/marketplace/index.json",
-    enabled: true,
-    createdAt: new Date(),
-  },
 ];
 
 export const useMarketplaceStore = create(

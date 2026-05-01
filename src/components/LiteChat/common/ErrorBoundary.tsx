@@ -19,7 +19,7 @@ interface State {
 }
 
 const LITECHAT_VERSION = "0.1.0-dev";
-const GITHUB_REPO_URL = "https://github.com/DimitriGilbert/LiteChat";
+const GITHUB_REPO_URL = "https://github.com/wan0net/litechat";
 
 const CopyButton: React.FC<{
   textToCopy: string;

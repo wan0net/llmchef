@@ -28,6 +28,8 @@ services:
       - MCP_BRIDGE_PORT=${MCP_BRIDGE_INTERNAL_PORT:-3001}
       - MCP_BRIDGE_HOST=0.0.0.0
       - MCP_BRIDGE_VERBOSE=${MCP_BRIDGE_VERBOSE:-false}
+      - MCP_BRIDGE_ALLOWED_ORIGINS=${MCP_BRIDGE_ALLOWED_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080,https://wan0net.github.io}
+      - MCP_BRIDGE_ALLOWED_COMMANDS=${MCP_BRIDGE_ALLOWED_COMMANDS:-npx,node,python,python3}
     volumes:
       - ./bin/mcp-bridge.js:/app/bin/mcp-bridge.js:ro
     restart: unless-stopped

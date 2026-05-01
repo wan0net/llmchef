@@ -29,8 +29,11 @@ const builtInProviders = {
     query: string,
     options: any = {}
   ): Promise<LocationSearchResult[]> => {
-    const endpoint =
-      options.endpoint || "https://nominatim.openstreetmap.org/search";
+    const endpoint = options.endpoint;
+    if (!endpoint) {
+      console.warn("Location search skipped: no endpoint configured.");
+      return [];
+    }
     const params = new URLSearchParams({
       q: query,
       format: "json",
@@ -78,8 +81,11 @@ const builtInProviders = {
     lng: number,
     options: any = {}
   ): Promise<LocationValue> => {
-    const endpoint =
-      options.endpoint || "https://nominatim.openstreetmap.org/reverse";
+    const endpoint = options.endpoint;
+    if (!endpoint) {
+      console.warn("Reverse geocoding skipped: no endpoint configured.");
+      return { lat, lng, address: `${lat}, ${lng}` };
+    }
     const params = new URLSearchParams({
       lat: String(lat),
       lon: String(lng),

@@ -279,8 +279,8 @@ const DEFAULT_CONFIG_SYNC_LAST_SYNCED_AT = null;
 const DEFAULT_CONFIG_SYNC_INTERVAL = 3600000; // 1 hour
 
 // Service URLs
-const DEFAULT_CORS_PROXY_URL = "https://cors.litechat.dev/";
-const DEFAULT_MARKDOWN_SERVICE_URL = "https://markdown.litechat.dev/";
+const DEFAULT_CORS_PROXY_URL = "";
+const DEFAULT_MARKDOWN_SERVICE_URL = "";
 
 // Add a static array of all SettingsState keys for robust, type-safe enumeration
 export const SETTINGS_KEYS: (keyof SettingsState)[] = [

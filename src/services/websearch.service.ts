@@ -18,11 +18,11 @@ export class WebSearchService {
   private static readonly DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
   
   private static getCorsProxyUrl(): string {
-    return useSettingsStore.getState().corsProxyUrl;
+    return useSettingsStore.getState().corsProxyUrl.trim();
   }
   
   private static getMarkdownServiceUrl(): string {
-    return useSettingsStore.getState().markdownServiceUrl;
+    return useSettingsStore.getState().markdownServiceUrl.trim();
   }
   
   private static cache = new Map<string, CachedSearchResult>();
@@ -118,13 +118,17 @@ export class WebSearchService {
       const headers: Record<string, string> = {
         'User-Agent': this.DEFAULT_USER_AGENT,
       };
+      const markdownServiceUrl = this.getMarkdownServiceUrl();
+      if (!markdownServiceUrl) {
+        throw new Error('No markdown extraction service configured.');
+      }
 
       // Only add auth header in development mode
       if (import.meta.env.MODE === 'development') {
         headers['X-LiteChat-Auth'] = 'LiteChat is G.O.A.T.';
       }
 
-      const response = await fetch(`${this.getMarkdownServiceUrl()}?url=${encodeURIComponent(url)}`, {
+      const response = await fetch(`${markdownServiceUrl}?url=${encodeURIComponent(url)}`, {
         method: 'GET',
         headers,
       });
@@ -261,6 +265,9 @@ export class WebSearchService {
   private static async performDuckDuckGoSearch(query: string, options: WebSearchOptions): Promise<SearchResult[]> {
     const params = new URLSearchParams({ q: query });
     const corsProxy = this.getCorsProxyUrl();
+    if (!corsProxy) {
+      throw new Error('No CORS proxy configured for web search.');
+    }
     const targetUrl = `https://duckduckgo.com/html?${params}`;
     const response = await fetch(`${corsProxy}${encodeURIComponent(targetUrl)}`, {
       headers: {
@@ -280,6 +287,9 @@ export class WebSearchService {
     // First get HTML page to extract vqd token
     const params = new URLSearchParams({ q: query });
     const corsProxy = this.getCorsProxyUrl();
+    if (!corsProxy) {
+      throw new Error('No CORS proxy configured for image search.');
+    }
     const targetUrl = `https://duckduckgo.com/html?${params}`;
     const html = await fetch(`${corsProxy}${encodeURIComponent(targetUrl)}`, {
       headers: {

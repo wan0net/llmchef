@@ -14,7 +14,7 @@ LiteChat is designed as a static web application with comprehensive build-time c
 
 ```bash
 # Clone repository
-git clone https://github.com/user/litechat.git
+git clone https://github.com/wan0net/litechat.git
 cd litechat
 
 # Install dependencies

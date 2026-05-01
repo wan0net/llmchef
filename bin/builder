@@ -107,7 +107,7 @@ while [[ $# -gt 0 ]]; do
       echo "  $0 --version-bump patch --build-docker         # Bump patch version, build, and create Docker image"
       echo "  $0 --release v1.0.0 --build-docker             # Build, release, and create Docker images with default repo"
       echo "  $0 --skip-build --build-docker --release v1.0.0 # Skip build, create Docker images from existing build"
-      echo "  $0 --release v1.0.0 --gh-pages-dir ../litechat.dev # Build and deploy to GitHub pages"
+      echo "  $0 --release v1.0.0 --gh-pages-dir ../litechat-gh-pages # Build and deploy to GitHub pages"
       echo "  $0 --skip-build --skip-github --build-docker   # Only create Docker images"
       exit 0
       ;;

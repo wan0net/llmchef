@@ -80,6 +80,8 @@ MCP_BRIDGE_VERBOSE=false
 | `MCP_BRIDGE_PORT` | 3001 | External port for MCP bridge |
 | `MCP_BRIDGE_INTERNAL_PORT` | 3001 | Internal container port for MCP bridge |
 | `MCP_BRIDGE_VERBOSE` | false | Enable verbose logging for MCP bridge |
+| `MCP_BRIDGE_ALLOWED_ORIGINS` | local dev + fork Pages origin | Browser origins allowed to call the bridge |
+| `MCP_BRIDGE_ALLOWED_COMMANDS` | npx,node,python,python3 | Commands the bridge may spawn for stdio MCP servers |
 
 ## Language-Specific Images
 
@@ -147,6 +149,8 @@ services:
       - MCP_BRIDGE_PORT=3001
       - MCP_BRIDGE_HOST=0.0.0.0
       - MCP_BRIDGE_VERBOSE=true
+      - MCP_BRIDGE_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,https://wan0net.github.io
+      - MCP_BRIDGE_ALLOWED_COMMANDS=npx,node,python,python3
     volumes:
       - ./bin/mcp-bridge.js:/app/bin/mcp-bridge.js:ro
     restart: unless-stopped

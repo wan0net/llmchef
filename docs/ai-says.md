@@ -304,4 +304,4 @@ Did I tell you about my [AI chat in Bash](https://ai-gents.dbuild.dev/) ? Oh, ok
 
 Thanks Mom :D
 
-Don't believe it? [Commit Activity](https://github.com/DimitriGilbert/LiteChat/graphs/commit-activity) and [Contributors](https://github.com/DimitriGilbert/LiteChat/graphs/contributors)
+Don't believe it? [Commit Activity](https://github.com/wan0net/litechat/graphs/commit-activity) and [Contributors](https://github.com/wan0net/litechat/graphs/contributors)

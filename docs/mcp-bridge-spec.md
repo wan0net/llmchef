@@ -86,7 +86,7 @@ POST /mcp/{sessionId}/close
 
 ### Network Security
 - **Localhost Only**: Bridge binds only to 127.0.0.1, not 0.0.0.0
-- **CORS Headers**: Appropriate CORS headers for browser communication
+- **CORS Origin Allowlist**: The bridge only allows configured origins, local development origins, or requests with no browser `Origin` header.
 - **Request Validation**: All requests validated before processing
 
 ### Process Security
@@ -121,10 +121,11 @@ POST /mcp/{sessionId}/close
 ```
 
 ### Environment Variables
-- `BRIDGE_PORT`: Service port (default: 3001)
-- `BRIDGE_HOST`: Bind address (default: 127.0.0.1)
-- `BRIDGE_VERBOSE`: Enable verbose logging
-- `BRIDGE_ALLOWED_COMMANDS`: Comma-separated list of allowed commands
+- `MCP_BRIDGE_PORT`: Service port (default: 3001)
+- `MCP_BRIDGE_HOST`: Bind address (default: 127.0.0.1)
+- `MCP_BRIDGE_VERBOSE`: Enable verbose logging
+- `MCP_BRIDGE_ALLOWED_ORIGINS`: Comma-separated browser origin allowlist
+- `MCP_BRIDGE_ALLOWED_COMMANDS`: Comma-separated list of allowed commands
 
 ## Error Handling
 

@@ -456,7 +456,7 @@ export const ConversationListControlComponent: React.FC<
         <div className="flex items-center space-x-2">
           <h3 className="text-sm font-semibold">{t('conversationList.title', 'LiteChat')}</h3>
           <Lnk
-            href="https://github.com/DimitriGilbert/LiteChat"
+            href="https://github.com/wan0net/litechat"
             target="_blank"
             rel="noopener noreferrer"
             aria-label={t('conversationList.githubRepo')}

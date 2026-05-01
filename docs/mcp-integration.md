@@ -149,9 +149,8 @@ node bin/mcp-bridge.js --help
 #### Bridge Service Configuration
 - **Port**: Configurable via `--port` or `MCP_BRIDGE_PORT` (default: 3001)
 - **Host**: Configurable via `--host` or `MCP_BRIDGE_HOST` (default: 127.0.0.1)
-- **Max Processes**: Limit concurrent MCP servers via `--max-processes` (default: 10)
-- **Process Timeout**: Auto-cleanup idle processes via `--timeout` (default: 300000ms)
-- **Allowed Commands**: Security allowlist via `--allowed-commands` (default: npx,node,python,python3)
+- **Allowed Origins**: Browser origin allowlist via `MCP_BRIDGE_ALLOWED_ORIGINS` (defaults to local dev origins and this fork's GitHub Pages origin)
+- **Allowed Commands**: Command allowlist via `MCP_BRIDGE_ALLOWED_COMMANDS` (default: npx,node,python,python3)
 
 #### LiteChat Bridge Configuration
 Configure where LiteChat looks for the bridge service:

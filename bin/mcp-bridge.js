@@ -25,6 +25,14 @@ const config = {
   port: parseInt(process.env.MCP_BRIDGE_PORT) || 3001,
   host: process.env.MCP_BRIDGE_HOST || '127.0.0.1',
   verbose: process.env.MCP_BRIDGE_VERBOSE === 'true' || false,
+  allowedOrigins: (process.env.MCP_BRIDGE_ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173,https://wan0net.github.io')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean),
+  allowedCommands: (process.env.MCP_BRIDGE_ALLOWED_COMMANDS || 'npx,node,python,python3')
+    .split(',')
+    .map(command => command.trim())
+    .filter(Boolean),
 };
 
 // Parse command line arguments
@@ -94,6 +102,9 @@ function parseServerConfig(url) {
   
   if (!command) {
     throw new Error('Missing required parameter: command');
+  }
+  if (!config.allowedCommands.includes(command)) {
+    throw new Error(`Command is not allowed: ${command}`);
   }
   
   const args = argsStr ? argsStr.split(',').map(arg => arg.trim()).filter(arg => arg) : [];
@@ -395,6 +406,32 @@ function sendError(res, statusCode, message) {
   sendJson(res, statusCode, { error: message });
 }
 
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (config.allowedOrigins.includes('*')) return true;
+  if (config.allowedOrigins.includes(origin)) return true;
+  try {
+    const parsed = new URL(origin);
+    return parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
+function applyCors(req, res) {
+  const origin = req.headers.origin;
+  if (!isAllowedOrigin(origin)) {
+    return false;
+  }
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  return true;
+}
+
 async function handleHealth(req, res) {
   sendJson(res, 200, { 
     status: 'ok', 
@@ -440,8 +477,6 @@ async function handleServerRequest(req, res, serverName) {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
       });
 
       // Parse JSON body
@@ -533,10 +568,10 @@ const server = http.createServer(async (req, res) => {
   
   log(`${req.method} ${req.url}`);
   
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (!applyCors(req, res)) {
+    sendError(res, 403, 'Origin is not allowed by MCP_BRIDGE_ALLOWED_ORIGINS');
+    return;
+  }
   
   if (req.method === 'OPTIONS') {
     res.writeHead(200);

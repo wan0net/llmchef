@@ -1,5 +1,7 @@
 # LiteChat
 
+This repository is the `wan0net/litechat` fork of LiteChat. The upstream project lives at `DimitriGilbert/LiteChat`; fork-specific docs and release links in this repository point to the `wan0net` GitHub repo and GitHub Pages deployment.
+
 **LiteChat** is a modular, extensible, and privacy-focused AI chat application designed for power users, developers, and teams. It supports multiple AI providers, advanced prompt engineering, project-based organization, and powerful developer features like virtual file systems, Git integration, and a comprehensive modding system.
 
 ## ✨ Key Features
@@ -8,6 +10,7 @@
 - **100% Client-Side**: All data stored locally in your browser using IndexedDB
 - **No Server Dependencies**: Core functionality requires no backend services
 - **Full Data Control**: Export/import your entire configuration or specific data types (conversations, projects, settings, API keys, providers, rules, tags, mods, sync repos, MCP servers, prompt templates, and agents).
+- **No bundled outbound services**: Web search, page extraction, marketplaces, MCP servers, mods, and Git remotes are opt-in and only contact endpoints you configure.
 
 ### 🤖 **Multi-Provider AI Support**
 - **OpenRouter**: Access to 300+ models through unified API
@@ -68,7 +71,7 @@
 
 ## 🌐 Try LiteChat
 
-**Public Version**: [https://litechat.dbuild.dev](https://litechat.dbuild.dev) (hosted on GitHub Pages)
+**Public Version**: [https://wan0net.github.io/litechat](https://wan0net.github.io/litechat) (hosted on GitHub Pages)
 
 ## 📚 Documentation
 
@@ -102,7 +105,7 @@ For comprehensive documentation, see the [`docs/`](./docs/) directory:
 
 ```bash
 # Download and extract the latest release
-curl -L https://litechat.dbuild.dev/release/latest.zip -o litechat.zip
+curl -L https://wan0net.github.io/litechat/release/latest.zip -o litechat.zip
 unzip litechat.zip -d litechat
 cd litechat
 
@@ -118,7 +121,7 @@ php -S localhost:8080                    # PHP
 
 ```bash
 # Clone and setup
-git clone https://github.com/user/litechat.git
+git clone https://github.com/wan0net/litechat.git
 cd litechat
 npm install
 
@@ -163,6 +166,8 @@ The included `docker-compose.yml` provides a complete setup with MCP bridge:
 LITECHAT_PORT=8080
 MCP_BRIDGE_PORT=3001
 MCP_BRIDGE_VERBOSE=false
+MCP_BRIDGE_ALLOWED_ORIGINS=https://wan0net.github.io,http://localhost:5173
+MCP_BRIDGE_ALLOWED_COMMANDS=npx,node,python,python3
 
 # Start services
 docker-compose up -d
@@ -184,6 +189,8 @@ docker-compose logs -f mcp-bridge
 - `MCP_BRIDGE_PORT`: External port for MCP bridge (default: 3001)
 - `MCP_BRIDGE_INTERNAL_PORT`: Internal container port (default: 3001)
 - `MCP_BRIDGE_VERBOSE`: Enable verbose logging (default: false)
+- `MCP_BRIDGE_ALLOWED_ORIGINS`: Comma-separated browser origins allowed to call the bridge
+- `MCP_BRIDGE_ALLOWED_COMMANDS`: Comma-separated commands the bridge may spawn for stdio MCP servers
 
 #### Automated Build with Builder Script
 
@@ -236,7 +243,7 @@ If using local models (Ollama, LMStudio, etc.) or custom API endpoints, you migh
 
 **No server-side CORS is needed for LiteChat's internal VFS operations** as they happen entirely in the browser via IndexedDB.
 
-Gemini says no, for now. And if you are trying [from the web](https://litechat.dbuild.dev) on https, well, you can't talk to http endpoints... (so probably no local providers...)
+Gemini says no, for now. And if you are trying [from the web](https://wan0net.github.io/litechat) on https, well, you can't talk to http endpoints... (so probably no local providers...)
 
 ## Architecture Overview
 

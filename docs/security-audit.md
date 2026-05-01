@@ -6,7 +6,9 @@ Scope: wan0 LiteChat fork, especially workstation features: skills, repo import,
 VFS real-folder sync, generated file previews, console UI, and crea8 wiki/memory
 integration.
 
-Overall status: in progress.
+Overall status: in progress. The 2026-05-01 outbound-network pass found and
+removed several bundled non-LLM service defaults from the `wan0net/litechat`
+fork.
 
 Recent hardening shipped:
 
@@ -19,6 +21,14 @@ Recent hardening shipped:
   executable, or sensitive packages.
 - Imported skill package paths now reject absolute paths, backslashes, empty
   segments, `.` segments, `..`, and duplicates.
+- Web search, page extraction, and marketplace loading no longer ship with
+  default LiteChat service endpoints. They stay inert until the user configures
+  their own service/source.
+- The local MCP bridge now rejects unapproved browser origins and unapproved
+  stdio commands before spawning local processes.
+- Formedible location lookup no longer defaults to OpenStreetMap/Nominatim; a
+  location endpoint must be supplied explicitly by the form config.
+- Race result export no longer fetches Tailwind from a public CDN in dev mode.
 
 ## Current Dependency Baseline
 
@@ -323,6 +333,38 @@ Required guardrails:
 - Do not expose keys to previews, skills, mods, or wiki publishing by default.
 - Add redaction for diagnostics and audit reports.
 
+### Outbound Network Surfaces
+
+Current intentional outbound paths:
+
+- Selected LLM/image provider calls created from configured provider type and
+  API key.
+- Model-list fetches for configured providers.
+- User-configured OpenAI-compatible/Ollama base URLs.
+- User-configured web-search CORS proxy and markdown extraction service.
+- User-configured marketplace sources and package URLs.
+- User-configured MCP HTTP/SSE endpoints and stdio bridge URL.
+- User-configured Git remotes.
+- User-triggered downloads of generated image URLs returned by the selected
+  image provider.
+
+Current guardrails:
+
+- No default CORS proxy or markdown extraction service is bundled.
+- No default marketplace source is bundled.
+- The local MCP bridge has `MCP_BRIDGE_ALLOWED_ORIGINS` and
+  `MCP_BRIDGE_ALLOWED_COMMANDS` allowlists.
+- Location lookup has no third-party default endpoint.
+- Export helpers use local CSS/fallback CSS instead of a CDN.
+
+Remaining work:
+
+- Add a central outbound-request registry/helper so future features cannot add
+  silent third-party calls.
+- Consider a visible "network surfaces" settings page that lists every
+  configured provider, marketplace, MCP server, Git remote, proxy, and
+  extraction service.
+
 ### Service Worker / PWA
 
 Files:
@@ -365,6 +407,9 @@ Required guardrails:
 - [ ] Add redaction helper for diagnostics involving API keys or Git tokens.
 - [x] Add install review UI for imported skills/mods/tools.
 - [ ] Add service-worker cache guidance after security upgrades.
+- [x] Remove bundled non-LLM helper-service defaults.
+- [x] Restrict local MCP bridge origins and commands.
+- [x] Update fork/repository links for `wan0net/litechat`.
 
 ## Verification Commands
 
