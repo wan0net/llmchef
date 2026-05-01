@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import DOMPurify from "dompurify";
 import {
   CodeSecurityService,
   type CodeSecurityResult,
@@ -441,7 +442,9 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
       const setInnerHTMLFn = quickjsVm.newFunction("__setInnerHTML", (id: any, value: any) => {
         const node = nodeMap.get(quickjsVm.dump(id));
         if (node && node instanceof Element) {
-          node.innerHTML = quickjsVm.dump(value);
+          node.innerHTML = DOMPurify.sanitize(quickjsVm.dump(value), {
+            USE_PROFILES: { html: true },
+          });
         }
         return quickjsVm.undefined;
       });

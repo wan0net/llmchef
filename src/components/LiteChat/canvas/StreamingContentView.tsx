@@ -15,7 +15,6 @@ import { type ToolCallPart, type ToolResultPart } from "ai";
 import { useControlRegistryStore } from "@/store/control.store";
 import type { CanvasControl, CanvasControlRenderContext } from "@/types/litechat/canvas/control";
 import { useInteractionStore } from "@/store/interaction.store";
-import MarkdownIt from "markdown-it";
 
 interface StreamingContentViewProps {
   interactionId: string;
@@ -164,8 +163,8 @@ export const StreamingContentView: React.FC<StreamingContentViewProps> = ({
       {/* Render markdown/code blocks */}
       {enableStreamingMarkdown 
         ? renderedMarkdownElements 
-        : markdownContent 
-          ? <div className="markdown-content" dangerouslySetInnerHTML={{ __html: new MarkdownIt().render(markdownContent) }} />
+        : markdownContent
+          ? <div className="markdown-content whitespace-pre-wrap">{markdownContent}</div>
           : null
       }
     </div>

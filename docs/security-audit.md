@@ -216,11 +216,12 @@ Sink inventory:
 | File | Source | Sanitizer status | Risk | Next action |
 | --- | --- | --- | --- | --- |
 | `src/components/LiteChat/common/FlowBlockRenderer.tsx` | Flow node labels with embedded image/SVG markup | Uses `DOMPurify.sanitize` with a narrow tag/attribute allowlist | Medium | Add regression tests for blocked event handlers, scripts, and external references. |
-| `src/components/LiteChat/common/MermaidBlockRenderer.tsx` | Mermaid-generated SVG | Mermaid output is injected directly | Medium | Sanitize SVG output or render in an isolated preview frame before treating diagrams from untrusted prompts as safe. |
+| `src/components/LiteChat/common/MermaidBlockRenderer.tsx` | Mermaid-generated SVG | Sanitizes Mermaid SVG output with DOMPurify SVG profiles before insertion | Low | Keep regression coverage around script/event-handler payloads if diagram rendering changes. |
 | `src/components/ui/chart.tsx` | Local chart CSS variables | App-generated CSS string from chart config | Low | Validate chart color values if chart config can ever come from model/file input. |
-| `src/components/LiteChat/canvas/interaction/AssistantResponse.tsx` | Parsed assistant markdown HTML | Parser output is injected directly | High | Centralize markdown rendering through a sanitizer before DOM insertion. |
-| `src/components/LiteChat/canvas/UserPromptDisplay.tsx` | Parsed user markdown HTML | Parser output is injected directly | Medium | Use the same sanitizer as assistant markdown; user content can include pasted untrusted text/files. |
-| `src/components/LiteChat/canvas/StreamingContentView.tsx` | Parsed streaming markdown and fallback `MarkdownIt().render` | Parser output is injected directly | High | Remove raw fallback or sanitize rendered markdown before insertion. |
+| `src/components/LiteChat/canvas/interaction/AssistantResponse.tsx` | Parsed assistant markdown HTML | Parser output is sanitized by `parseMarkdownContent`; auto-loading media tags are forbidden | Low | Keep markdown sanitizer tests for scripts, event handlers, link attributes, and external media tags. |
+| `src/components/LiteChat/canvas/UserPromptDisplay.tsx` | Parsed user markdown HTML | Parser output is sanitized by `parseMarkdownContent`; auto-loading media tags are forbidden | Low | Keep markdown sanitizer tests for pasted/file-sourced content. |
+| `src/components/LiteChat/canvas/StreamingContentView.tsx` | Parsed streaming markdown and disabled-streaming fallback | Parser output is sanitized; disabled-streaming fallback now renders plaintext | Low | Keep fallback plaintext unless a sanitizer is applied at the fallback renderer. |
+| `src/components/LiteChat/common/JsRunnableBlockRenderer.tsx` | QuickJS preview `innerHTML` bridge | Sanitizes assigned HTML with DOMPurify before inserting into the app DOM | Medium | Runnable JS remains user-approved code execution; keep local DOM bridge APIs minimal. |
 
 ### Skills And Imported Packages
 
@@ -402,7 +403,7 @@ Required guardrails:
 - [x] Re-run `npm audit --json` and update this file.
 - [x] Add skill manifest and permission model before repo-imported skills.
 - [x] Add sandboxed VFS previewer for HTML instead of direct DOM render.
-- [ ] Audit all `dangerouslySetInnerHTML` sinks and document sanitizer status.
+- [x] Audit all `dangerouslySetInnerHTML` sinks and document sanitizer status.
 - [ ] Add dry-run/write summary for real-folder sync.
 - [ ] Add redaction helper for diagnostics involving API keys or Git tokens.
 - [x] Add install review UI for imported skills/mods/tools.

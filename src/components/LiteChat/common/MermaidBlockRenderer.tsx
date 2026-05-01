@@ -16,6 +16,7 @@ import type { CanvasControlRenderContext } from "@/types/litechat/canvas/control
 import { AlertCircleIcon, Loader2Icon, DownloadIcon, CodeIcon, ImageIcon } from "lucide-react";
 import { CodeBlockRenderer } from "./CodeBlockRenderer";
 import { toast } from "sonner";
+import DOMPurify from "dompurify";
 
 interface MermaidBlockRendererProps {
   code: string;
@@ -100,7 +101,11 @@ const MermaidBlockRendererComponent: React.FC<MermaidBlockRendererProps> = ({
       const results = await renderer([code]);
       
       if (results.length > 0 && results[0].status === "fulfilled") {
-        setSvgContent(results[0].value.svg);
+        setSvgContent(
+          DOMPurify.sanitize(results[0].value.svg, {
+            USE_PROFILES: { svg: true, svgFilters: true },
+          })
+        );
       } else if (results.length > 0 && results[0].status === "rejected") {
         const reason = results[0].reason;
         setError(reason?.message || t('mermaidBlock.renderError'));
@@ -290,4 +295,4 @@ const MermaidBlockRendererComponent: React.FC<MermaidBlockRendererProps> = ({
   );
 };
 
-export const MermaidBlockRenderer = memo(MermaidBlockRendererComponent); 
+export const MermaidBlockRenderer = memo(MermaidBlockRendererComponent);
