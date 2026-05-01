@@ -30,7 +30,7 @@ Scope:
   metadata. (implemented)
 - Add local skill persistence in IndexedDB. (implemented)
 - Add skill manager UI for create, edit, duplicate, delete, import, export, and
-  install.
+  install. (create, delete, import, export, and install implemented)
 - Support importing skill packages from VFS folders.
 - Support importing skill packages from Git repos cloned into VFS.
 - Define package format:

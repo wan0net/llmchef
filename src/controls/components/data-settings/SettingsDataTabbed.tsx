@@ -5,6 +5,7 @@ import { TabbedLayout } from "@/components/LiteChat/common/TabbedLayout";
 import { SettingsDataManagement } from "./SettingsDataManagement";
 import { SettingsConfigSync } from "../config-sync-settings/SettingsConfigSync";
 import { SettingsCrea8Memory } from "./SettingsCrea8Memory";
+import { SettingsSkills } from "../skill-settings/SettingsSkills";
 
 const SettingsDataTabbedComponent: React.FC = () => {
   const { t } = useTranslation('settings');
@@ -27,6 +28,12 @@ const SettingsDataTabbedComponent: React.FC = () => {
       label: "crea8 Memory",
       content: <SettingsCrea8Memory />,
       order: 3,
+    },
+    {
+      value: "skills",
+      label: "Skills",
+      content: <SettingsSkills />,
+      order: 4,
     },
   ];
 
