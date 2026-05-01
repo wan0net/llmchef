@@ -6,12 +6,20 @@ import { type LiteChatModApi } from "@/types/litechat/modding";
 import { uiEvent, UiEventPayloads } from "@/types/litechat/events/ui.events";
 import { vfsEvent } from "@/types/litechat/events/vfs.events";
 import { VfsTriggerButton } from "@/controls/components/vfs/VfsTriggerButton";
-import { VfsModalPanel } from "@/controls/components/vfs/VfsModalPanel";
+import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { useVfsStore } from "@/store/vfs.store";
 import { useConversationStore } from "@/store/conversation.store";
 import { useControlRegistryStore } from "@/store/control.store";
 import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
 import { nanoid } from "nanoid";
+
+const VfsModalPanel = createLazyControlComponent<any>(
+  () =>
+    import("@/controls/components/vfs/VfsModalPanel").then((module) => ({
+      default: module.VfsModalPanel,
+    })),
+  "Loading files...",
+);
 
 export class VfsControlModule implements ControlModule {
   readonly id = "core-vfs";
@@ -215,10 +223,10 @@ export class VfsControlModule implements ControlModule {
     }
   };
 
-  private handleVfsOpen = async (_args: string[], _context: TriggerExecutionContext) => {
+  private handleVfsOpen = async () => {
     // Open the VFS modal - this is a UI action, no turnData modification needed
-    this.modApiRef?.emit(uiEvent.openModalRequest, { 
-      modalId: this.modalId 
+    this.modApiRef?.emit(uiEvent.openModalRequest, {
+      modalId: this.modalId
     });
   };
 

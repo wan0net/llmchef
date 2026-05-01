@@ -2,15 +2,21 @@
 
 import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
-import { SettingsMarketplace } from "@/controls/components/marketplace-settings/SettingsMarketplace";
+import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import i18next from 'i18next';
 import type { ControlModuleConstructor } from '@/types/litechat/control';
+
+const SettingsMarketplace = createLazySettingTab(() =>
+  import("@/controls/components/marketplace-settings/SettingsMarketplace").then((module) => ({
+    default: module.SettingsMarketplace,
+  }))
+);
 
 export class MarketplaceSettingsModule implements ControlModule {
   readonly id = "core-settings-marketplace";
   private unregisterCallback: (() => void) | null = null;
 
-  async initialize(_modApi: LiteChatModApi): Promise<void> {
+  async initialize(): Promise<void> {
     // console.log(`[${this.id}] Initialized.`);
   }
 

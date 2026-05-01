@@ -9,7 +9,7 @@ import { uiEvent } from "@/types/litechat/events/ui.events";
 import { syncEvent } from "@/types/litechat/events/sync.events";
 import { settingsEvent } from "@/types/litechat/events/settings.events";
 import { GitSyncControlTrigger } from "@/controls/components/git-sync/GitSyncControlTrigger";
-import { SettingsGit } from "@/controls/components/git-settings/SettingsGit";
+import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import { useConversationStore } from "@/store/conversation.store";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useSettingsStore } from "@/store/settings.store";
@@ -17,6 +17,12 @@ import type { SyncRepo, SyncStatus } from "@/types/litechat/sync";
 import type { SidebarItemType } from "@/types/litechat/chat";
 import { BulkSyncService } from "@/services/bulk-sync.service";
 import i18next from "i18next";
+
+const SettingsGit = createLazySettingTab(() =>
+  import("@/controls/components/git-settings/SettingsGit").then((module) => ({
+    default: module.SettingsGit,
+  }))
+);
 
 export class GitSyncControlModule implements ControlModule {
   readonly id = "core-git-sync";

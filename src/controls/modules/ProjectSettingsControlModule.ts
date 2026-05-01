@@ -3,10 +3,18 @@
 import React from "react";
 import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
-import { ProjectSettingsModal } from "@/controls/components/project-settings/ProjectSettingsModal";
+import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { uiEvent } from "@/types/litechat/events/ui.events";
 import { rulesEvent } from "@/types/litechat/events/rules.events";
 import type { DbRule, DbTag, DbTagRuleLink } from "@/types/litechat/rules";
+
+const ProjectSettingsModal = createLazyControlComponent<any>(
+  () =>
+    import("@/controls/components/project-settings/ProjectSettingsModal").then((module) => ({
+      default: module.ProjectSettingsModal,
+    })),
+  "Loading project settings...",
+);
 
 export class ProjectSettingsControlModule implements ControlModule {
   readonly id = "core-project-settings";

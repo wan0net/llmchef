@@ -5,7 +5,15 @@ import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
 import { uiEvent } from "@/types/litechat/events/ui.events";
 import { SettingsTriggerComponent } from "@/controls/components/settings/SettingsTriggerComponent";
-import { SettingsModal } from "@/controls/components/settings/SettingsModal";
+import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
+
+const SettingsModal = createLazyControlComponent<any>(
+  () =>
+    import("@/controls/components/settings/SettingsModal").then((module) => ({
+      default: module.SettingsModal,
+    })),
+  "Loading settings...",
+);
 
 export class SettingsControlModule implements ControlModule {
   readonly id = "core-settings-trigger";

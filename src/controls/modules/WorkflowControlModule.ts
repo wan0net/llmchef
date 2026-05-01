@@ -2,7 +2,7 @@ import React from "react";
 import { type ControlModule } from "@/types/litechat/control";
 import { type LiteChatModApi } from "@/types/litechat/modding";
 import { workflowEvent } from "@/types/litechat/events/workflow.events";
-import { WorkflowBuilder } from "@/controls/components/workflow/WorkflowBuilder";
+import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 
 import type { WorkflowTemplate } from "@/types/litechat/workflow";
 import { useInteractionStore } from "@/store/interaction.store";
@@ -17,6 +17,14 @@ import { toast } from "sonner";
 import { emitter } from "@/lib/litechat/event-emitter";
 import { useControlRegistryStore } from "@/store/control.store";
 import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+
+const WorkflowBuilder = createLazyControlComponent<any>(
+  () =>
+    import("@/controls/components/workflow/WorkflowBuilder").then((module) => ({
+      default: module.WorkflowBuilder,
+    })),
+  "Loading workflows...",
+);
 
 export class WorkflowControlModule implements ControlModule {
   readonly id = "core-workflow-control";
@@ -220,7 +228,7 @@ export class WorkflowControlModule implements ControlModule {
     }
     
     // Check for invalid characters or patterns
-    const invalidChars = /[^a-zA-Z0-9_.$\[\]]/;
+    const invalidChars = /[^a-zA-Z0-9_.$[\]]/;
     if (invalidChars.test(query.replace(/\[(\d+)\]/g, ''))) {
       return { isValid: false, error: 'Invalid characters in query' };
     }
@@ -459,4 +467,4 @@ export class WorkflowControlModule implements ControlModule {
   getIsStreaming(): boolean {
     return useInteractionStore.getState().streamingInteractionIds.length > 0;
   }
-} 
+}
