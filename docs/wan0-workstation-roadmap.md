@@ -39,6 +39,7 @@ Scope:
   - optional `prompts/`, `agents/`, `workflows/`, `rules/`, `tools/`, `examples/`
 - Install skill assets into existing LiteChat primitives where possible:
   prompt templates, agents, workflows, rules, tools, and VFS examples.
+  (installed skill entry prompts implemented as prompt context)
 - Add safety review before installation for tools, runnable blocks, mods, or
   prompt instructions that request broad authority.
 
@@ -47,7 +48,8 @@ Acceptance:
 - A user can create a skill locally.
 - A user can export and re-import the same skill without data loss.
 - A user can import a repo-hosted skill package from VFS.
-- Installed skills are visible and usable from prompt/agent workflows.
+- Installed skills are visible and usable from prompt/agent workflows. (prompt
+  context implemented)
 
 ## Feature B: Console Workbench UI
 

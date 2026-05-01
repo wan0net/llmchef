@@ -307,6 +307,17 @@ ${userContent}`;
 `)}`;
     }
 
+    const skillPromptContext = originalTurnData.metadata?.skillPromptContext as
+      | string
+      | undefined;
+    if (skillPromptContext?.trim()) {
+      baseSystemPrompt = baseSystemPrompt
+        ? `${baseSystemPrompt}
+
+${skillPromptContext}`
+        : skillPromptContext;
+    }
+
     const finalParameters = cleanPromptParameters({
       temperature: promptState.temperature,
       max_tokens: promptState.maxTokens,

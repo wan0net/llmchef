@@ -189,6 +189,17 @@ ${userContent}`;
 `)}`;
     }
 
+    const skillPromptContext = combinedMetadata?.skillPromptContext as
+      | string
+      | undefined;
+    if (skillPromptContext?.trim()) {
+      baseSystemPrompt = baseSystemPrompt
+        ? `${baseSystemPrompt}
+
+${skillPromptContext}`
+        : skillPromptContext;
+    }
+
     const crea8MemoryRefs = turnData.metadata?.crea8MemoryRefs ?? [];
     let resolvedCrea8MemoryRefs: Crea8MemoryNoteRef[] = [];
     let failedCrea8MemoryRefs: Crea8MemoryNoteRef[] = [];
