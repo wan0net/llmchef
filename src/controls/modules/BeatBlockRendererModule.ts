@@ -271,7 +271,7 @@ note("c3 eb3 g3 bb3").palindrome()
 setcps(1)
 
 samples({
-  'kalimba': { c5:'https://cdn.freesound.org/previews/536/536549_11935698-lq.mp3' }
+  'kalimba': { c5:'/samples/kalimba-c5.mp3' }
 })
 const scales = "<C:major C:mixolydian F:lydian [F:minor Db:major]>"
 
@@ -655,4 +655,4 @@ export class BeatBlockRendererModule implements ControlModule {
       console.error(`[${this.id}] Error during cleanup:`, error);
     }
   }
-} 
+}

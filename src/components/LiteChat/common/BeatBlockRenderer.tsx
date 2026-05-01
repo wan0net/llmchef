@@ -60,7 +60,7 @@ class GlobalStrudelManager {
 
   async ensureStrudelLoaded(): Promise<void> {
     // If already loaded, return immediately
-    if (window.strudelLoaded && document.querySelector('script[src*="@strudel/embed"]')) {
+    if (window.strudelLoaded && customElements.get('strudel-repl')) {
       return;
     }
 
@@ -78,20 +78,9 @@ class GlobalStrudelManager {
 
   private async loadStrudel(): Promise<void> {
     try {
-      // Check if script already exists
-      if (!document.querySelector('script[src*="@strudel/embed"]')) {
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@strudel/embed@latest';
-        script.type = 'module';
-        
-        await new Promise((resolve, reject) => {
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-
-        // Wait a bit for the custom element to be defined
-        // Wait for the custom element to be defined
+      if (!customElements.get('strudel-repl')) {
+        throw new Error('Strudel embed must be bundled locally before rendering beat blocks.');
+      } else {
         await customElements.whenDefined('strudel-repl');
       }
 
@@ -396,4 +385,4 @@ const BeatBlockRendererComponent: React.FC<BeatBlockRendererProps> = ({
   );
 };
 
-export const BeatBlockRenderer = memo(BeatBlockRendererComponent); 
+export const BeatBlockRenderer = memo(BeatBlockRendererComponent);

@@ -1,3 +1,5 @@
+import { PYODIDE_VERSION_URL } from "@/lib/litechat/constants";
+
 // Global pyodide instance for reuse
 let pyodidePromise: Promise<any> | null = null;
 
@@ -14,17 +16,16 @@ export const CodeExecutionService = {
   },
 
   /**
-   * Load Pyodide from CDN
+   * Load Pyodide from the configured same-origin runtime path.
    */
   async loadPyodide(): Promise<any> {
     try {
-      // Load pyodide dynamically from CDN
       if (typeof window === 'undefined') {
         throw new Error('Pyodide only available in browser environment');
       }
 
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
+      script.src = PYODIDE_VERSION_URL;
       document.head.appendChild(script);
       
       // Wait for script to load
@@ -35,7 +36,7 @@ export const CodeExecutionService = {
       
       // @ts-ignore - Global pyodide from script
       const pyodide = await window.loadPyodide({
-        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
+        indexURL: PYODIDE_VERSION_URL.replace(/\/pyodide\.js$/, '/'),
       });
       
       return pyodide;
@@ -189,4 +190,4 @@ available_packages = list(sys.modules.keys())
       throw new Error(`Failed to install Python package: ${packageName}`);
     }
   },
-}; 
+};

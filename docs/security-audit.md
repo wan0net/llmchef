@@ -332,7 +332,7 @@ Required guardrails:
 
 - Keep API key export opt-in and warning-heavy.
 - Do not expose keys to previews, skills, mods, or wiki publishing by default.
-- Add redaction for diagnostics and audit reports.
+- Redact diagnostics and audit reports before copying or logging them.
 
 ### Outbound Network Surfaces
 
@@ -357,6 +357,17 @@ Current guardrails:
   `MCP_BRIDGE_ALLOWED_COMMANDS` allowlists.
 - Location lookup has no third-party default endpoint.
 - Export helpers use local CSS/fallback CSS instead of a CDN.
+- Prism code themes no longer default to CDN stylesheets; custom code themes
+  must be same-origin paths.
+- Pyodide defaults to a same-origin `/pyodide` runtime path instead of a CDN.
+- Formedible location maps are off by default and no longer load Leaflet or map
+  tiles from public CDNs.
+- Beat/Strudel rendering requires a locally bundled `strudel-repl` element
+  instead of loading an embed script from a CDN.
+- Runnable JavaScript `loadModule`, `loadModules`, import maps, and
+  `loadScript` now reject cross-origin URLs.
+- Race result exports do not embed `simple-datatables` from a CDN; table
+  enhancement is a local optional extra.
 
 Remaining work:
 
@@ -405,7 +416,7 @@ Required guardrails:
 - [x] Add sandboxed VFS previewer for HTML instead of direct DOM render.
 - [x] Audit all `dangerouslySetInnerHTML` sinks and document sanitizer status.
 - [ ] Add dry-run/write summary for real-folder sync.
-- [ ] Add redaction helper for diagnostics involving API keys or Git tokens.
+- [x] Add redaction helper for diagnostics involving API keys or Git tokens.
 - [x] Add install review UI for imported skills/mods/tools.
 - [ ] Add service-worker cache guidance after security upgrades.
 - [x] Remove bundled non-LLM helper-service defaults.

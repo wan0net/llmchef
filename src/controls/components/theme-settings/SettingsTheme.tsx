@@ -65,155 +65,10 @@ const ColorInput: React.FC<{
   );
 };
 
-// List of Prism themes (remains the same)
 const PRISM_THEMES = [
   {
-    label: "Default Light",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-material-light.min.css",
-  },
-  // {
-  //   name: "Default Dark",
-  //   url: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css",
-  // },
-  {
-    label: "A11y Dark",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-a11y-dark.min.css",
-  },
-  {
-    label: "Atom Dark",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-atom-dark.min.css",
-  },
-  {
-    label: "Atelier Sulphurpool Light",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-base16-ateliersulphurpool.light.min.css",
-  },
-  {
-    label: "CB",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-cb.min.css",
-  },
-  {
-    label: "Coldark Cold",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-coldark-cold.min.css",
-  },
-  {
-    label: "Coldark Dark",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-coldark-dark.min.css",
-  },
-  {
-    label: "Coy (No Shadow)",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-coy-without-shadows.min.css",
-  },
-  {
-    label: "Darcula",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-darcula.min.css",
-  },
-  {
-    label: "Dracula",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-dracula.min.css",
-  },
-  {
-    label: "Duotone Dark",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-duotone-dark.min.css",
-  },
-  {
-    label: "Duotone Earth",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-duotone-earth.min.css",
-  },
-  {
-    label: "Duotone Forest",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-duotone-forest.min.css",
-  },
-  {
-    label: "Duotone Light",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-duotone-light.min.css",
-  },
-  {
-    label: "Duotone Sea",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-duotone-sea.min.css",
-  },
-  {
-    label: "Duotone Space",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-duotone-space.min.css",
-  },
-  {
-    label: "GH Colors",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-ghcolors.min.css",
-  },
-  {
-    label: "Gruvbox Dark",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-gruvbox-dark.min.css",
-  },
-  {
-    label: "Gruvbox Light",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-gruvbox-light.min.css",
-  },
-  {
-    label: "Holi",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-holi-theme.min.css",
-  },
-  {
-    label: "Hopscotch",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-hopscotch.min.css",
-  },
-  {
-    label: "Lucario",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-lucario.min.css",
-  },
-  {
-    label: "Material Dark",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-material-dark.min.css",
-  },
-  {
-    label: "Material Oceanic",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-material-oceanic.min.css",
-  },
-  {
-    label: "Night Owl",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-night-owl.min.css",
-  },
-  {
-    label: "Nord",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-nord.min.css",
-  },
-  {
-    label: "One Dark",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-one-dark.min.css",
-  },
-  {
-    label: "One Light",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-one-light.min.css",
-  },
-  {
-    label: "Pojoaque",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-pojoaque.min.css",
-  },
-  {
-    label: "Shades of Purple",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-shades-of-purple.min.css",
-  },
-  {
-    label: "Solarized Dark Atom",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-solarized-dark-atom.min.css",
-  },
-  {
-    label: "Synthwave '84",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-synthwave84.min.css",
-  },
-  {
-    label: "VS",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vs.min.css",
-  },
-  {
-    label: "VSC Dark Plus",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css",
-  },
-  {
-    label: "Xonokai",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-xonokai.min.css",
-  },
-  {
-    label: "Z-Touch",
-    value: "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-z-touch.min.css",
+    label: "Default local theme",
+    value: "",
   },
 ];
 
@@ -460,14 +315,14 @@ const SettingsThemeComponent: React.FC = () => {
           <TextField
             form={form}
             name="prismThemeUrl"
-            label="Or paste custom theme URL here..."
-            placeholder="Or paste custom theme URL here..."
-            type="url"
+            label="Local stylesheet path"
+            placeholder="/themes/prism.css"
+            type="text"
             className="mt-1"
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Select a preset theme or paste a URL to a PrismJS CSS file. Leave
-            blank or select 'Default' to use themes matching light/dark mode.
+            Use a same-origin stylesheet path. External theme URLs are ignored
+            so code highlighting stays local after the app loads.
           </p>
         </SettingsSection>
       )}

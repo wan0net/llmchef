@@ -635,8 +635,6 @@ export class RaceResultExportService {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiteChat Race Results</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" type="text/css">
-    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" type="text/javascript"></script>
     <style>
         /* DataTable theming */
         .dataTable-table {
@@ -765,11 +763,12 @@ export class RaceResultExportService {
                         dataTable = null;
                     }
                     
-                    if (!table || !simpleDatatables?.DataTable) {
+                    const dataTables = window.simpleDatatables;
+                    if (!table || !dataTables?.DataTable) {
                         return;
                     }
                     
-                    dataTable = new simpleDatatables.DataTable(table, {
+                    dataTable = new dataTables.DataTable(table, {
                         searchable: true,
                         sortable: true,
                         perPage: 25,

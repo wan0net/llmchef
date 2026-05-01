@@ -1,15 +1,19 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useSettingsStore } from "@/store/settings.store";
-import { useShallow } from "zustand/react/shallow";
 
 const PRISM_THEME_LINK_ID = "prism-theme-link";
 const DEFAULT_LIGHT_THEME_LINK_ID = "prism-default-light-theme-link";
 const DEFAULT_DARK_THEME_LINK_ID = "prism-default-dark-theme-link";
 
-const DEFAULT_LIGHT_THEME_URL =
-  "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-material-light.min.css";
-const DEFAULT_DARK_THEME_URL =
-  "https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css";
+const isLocalStylesheetUrl = (url: string): boolean => {
+  if (!url.trim()) return false;
+  try {
+    const parsed = new URL(url, window.location.origin);
+    return parsed.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+};
 
 // Helper to ensure link exists and set attributes
 const ensureLinkElement = (id: string): HTMLLinkElement => {
@@ -24,30 +28,7 @@ const ensureLinkElement = (id: string): HTMLLinkElement => {
 };
 
 export const PrismThemeLoader: React.FC = () => {
-  const { prismThemeUrl, theme: appTheme } = useSettingsStore(
-    useShallow((state) => ({
-      prismThemeUrl: state.prismThemeUrl,
-      theme: state.theme,
-    })),
-  );
-
-  const systemTheme = useMemo(() => {
-    if (typeof window === "undefined") return "light";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  }, []);
-
-  // Determine the current theme mode (dark or light)
-  const currentThemeMode = useMemo(() => {
-    const effectiveTheme = appTheme === "system" ? systemTheme : appTheme;
-    // Check if theme is dark: either "dark", "TijuDark", or any theme ending with "Dark"
-    return effectiveTheme === "dark" || 
-           effectiveTheme === "TijuDark" || 
-           (typeof effectiveTheme === "string" && effectiveTheme.endsWith("Dark"))
-      ? "dark"
-      : "light";
-  }, [appTheme, systemTheme]);
+  const prismThemeUrl = useSettingsStore((state) => state.prismThemeUrl);
 
   useEffect(() => {
     // Only run in browser environment
@@ -63,28 +44,16 @@ export const PrismThemeLoader: React.FC = () => {
     darkLink.disabled = true;
     customLink.disabled = true;
 
-    // Set appropriate URLs
-    lightLink.href = DEFAULT_LIGHT_THEME_URL;
-    darkLink.href = DEFAULT_DARK_THEME_URL;
-
-    // Determine which link should be enabled
-    if (prismThemeUrl) {
-      // Custom theme takes precedence
+    if (prismThemeUrl && isLocalStylesheetUrl(prismThemeUrl)) {
       customLink.href = prismThemeUrl;
       customLink.disabled = false;
-    } else {
-      if (currentThemeMode === "dark") {
-        darkLink.disabled = false;
-      } else {
-        lightLink.disabled = false;
-      }
     }
 
     // Clean up function
     return () => {
       // No cleanup needed for link elements as they persist
     };
-  }, [prismThemeUrl, currentThemeMode]);
+  }, [prismThemeUrl]);
 
   return null;
 };

@@ -9,6 +9,7 @@ import { nanoid } from "nanoid";
 import type { Interaction } from "@/types/litechat/interaction";
 import type { PromptTurnObject } from "@/types/litechat/prompt";
 import { interpolateColor } from "@/lib/utils";
+import { redactSecrets } from "@/lib/litechat/redaction";
 
 export interface CodeSecurityResult {
   score: number;
@@ -141,7 +142,7 @@ export class CodeSecurityService {
         }
         score = parsedScore;
       } catch (err) {
-        console.error("Failed to parse AI response for security score:", err, "Raw response:", result);
+        console.error("Failed to parse AI response for security score:", err, "Raw response:", redactSecrets(result));
         throw new Error(`AI response was not a valid score. ${err instanceof Error ? err.message : ""}`);
       }
       
@@ -174,7 +175,7 @@ export class CodeSecurityService {
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error("Code security validation error:", error);
+      console.error("Code security validation error:", redactSecrets(error));
 
       if (interaction) {
         const finalInteraction: Interaction = {
@@ -201,4 +202,4 @@ export class CodeSecurityService {
       };
     }
   }
-} 
+}

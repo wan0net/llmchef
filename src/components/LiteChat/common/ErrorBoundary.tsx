@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CopyIcon, CodeIcon, CheckIcon } from "lucide-react";
 import { toast } from "sonner";
 import LCErrorIcon from "./icons/LCError";
+import { redactSecrets } from "@/lib/litechat/redaction";
 
 interface Props {
   children: ReactNode;
@@ -73,7 +74,7 @@ class ErrorBoundaryComponent extends Component<Props & { t: any }, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo);
+    console.error("Uncaught error:", redactSecrets(error), redactSecrets(errorInfo));
     this.setState({ errorInfo });
   }
 
@@ -92,8 +93,9 @@ class ErrorBoundaryComponent extends Component<Props & { t: any }, State> {
       }
     }
 
-    title += error?.message.substring(0, 70) ?? t('errorBoundary.unknownError');
-    if (error && error.message.length > 70) {
+    const message = redactSecrets(error?.message ?? t('errorBoundary.unknownError'));
+    title += message.substring(0, 70);
+    if (message.length > 70) {
       title += "...";
     }
     return title;
@@ -115,17 +117,17 @@ class ErrorBoundaryComponent extends Component<Props & { t: any }, State> {
     report += `**User Agent:** ${typeof navigator !== "undefined" ? navigator.userAgent : "N/A"}${nl}${nl}`;
 
     if (error) {
-      report += `**Error Message:**${nl}${codeBlock}${nl}${error.message}${nl}${codeBlock}${nl}${nl}`;
+      report += `**Error Message:**${nl}${codeBlock}${nl}${redactSecrets(error.message)}${nl}${codeBlock}${nl}${nl}`;
     } else {
       report += `**Error Message:** ${t('errorBoundary.unknownError')}${nl}${nl}`;
     }
 
     if (errorInfo?.componentStack) {
-      report += `**Component Stack:**${nl}${codeBlock}text${nl}${errorInfo.componentStack.trim()}${nl}${codeBlock}${nl}${nl}`;
+      report += `**Component Stack:**${nl}${codeBlock}text${nl}${redactSecrets(errorInfo.componentStack.trim())}${nl}${codeBlock}${nl}${nl}`;
     }
 
     if (error?.stack) {
-      report += `**Error Stack Trace:**${nl}${codeBlock}text${nl}${error.stack.trim()}${nl}${codeBlock}${nl}${nl}`;
+      report += `**Error Stack Trace:**${nl}${codeBlock}text${nl}${redactSecrets(error.stack.trim())}${nl}${codeBlock}${nl}${nl}`;
     }
 
     report += `**Steps to Reproduce (Please Describe):**${nl}1. ...${nl}2. ...${nl}${nl}`;
@@ -157,7 +159,7 @@ ${error?.stack?.trim() ?? "Not available"}
 
 Based on this information, what are the likely causes and potential solutions? Focus on React-specific issues if the component stack is present.`;
 
-    return prompt;
+    return redactSecrets(prompt);
   }
 
   private handleReportOnGitHub = async () => {
@@ -196,7 +198,7 @@ Based on this information, what are the likely causes and potential solutions? F
               {t('errorBoundary.description')}
             </p>
             <pre className="text-left text-xs bg-destructive/10 border border-destructive/30 rounded p-3 max-h-32 overflow-auto mb-4 font-mono text-destructive/80">
-              {this.state.error?.message ?? t('errorBoundary.unknownError')}
+              {redactSecrets(this.state.error?.message ?? t('errorBoundary.unknownError'))}
             </pre>
             <div className="flex flex-wrap justify-center gap-2">
               <Button

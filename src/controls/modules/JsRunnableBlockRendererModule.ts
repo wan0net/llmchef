@@ -7,6 +7,13 @@ import type {
 import { JsRunnableBlockRenderer } from "@/components/LiteChat/common/JsRunnableBlockRenderer";
 import React from "react";
 
+const assertLocalUrl = (url: string, label: string): void => {
+  const parsed = new URL(url, window.location.origin);
+  if (parsed.origin !== window.location.origin) {
+    throw new Error(`${label} must be served from the LiteChat origin.`);
+  }
+};
+
 // Control rule prompt for JavaScript runnable blocks
 export const JS_RUNNABLE_CONTROL_PROMPT = `# JavaScript Runnable Block Environment
 
@@ -22,9 +29,9 @@ You can use the following methods on \`litechat\`:
 ### Utilities
 - \`litechat.utils.log(level, ...args)\` — Log messages that will be captured in the console output (level: 'info', 'warn', 'error')
 - \`litechat.utils.toast(type, message)\` — Show toast notifications (type: 'success', 'error', 'info', 'warning')
-- \`litechat.utils.loadModule(url, name, globalKey?, importMap?)\` — Dynamically import an ES module with optional import map support
+- \`litechat.utils.loadModule(url, name, globalKey?, importMap?)\` — Dynamically import a same-origin ES module with optional import map support
 - \`litechat.utils.loadModules(moduleConfigs)\` — Load multiple ES modules with dependency and import map support
-- \`litechat.utils.loadScript(src)\` — Dynamically load a script via <script src="...">. Returns a promise that resolves when loaded. Tracks loaded scripts for cleanup.
+- \`litechat.utils.loadScript(src)\` — Dynamically load a same-origin script via <script src="...">. Returns a promise that resolves when loaded. Tracks loaded scripts for cleanup.
 
 ### Event System
 - \`litechat.emit(eventName, payload)\` — Emit events to the LiteChat system
@@ -102,7 +109,7 @@ litechat.utils.log('info', 'Complex DOM structure created');
 // Example 1: Loading a simple module
 try {
     const lodash = await litechat.utils.loadModule(
-        'https://cdn.jsdelivr.net/npm/lodash@4.17.21/+esm', 
+        '/vendor/lodash/lodash.esm.js',
         'lodash'
     );
     
@@ -121,8 +128,8 @@ try {
 async function loadMultipleModules() {
     try {
         const [d3, moment] = await Promise.all([
-            litechat.utils.loadModule('https://cdn.jsdelivr.net/npm/d3@7/+esm', 'D3'),
-            litechat.utils.loadModule('https://cdn.jsdelivr.net/npm/moment@2.29.4/+esm', 'moment')
+            litechat.utils.loadModule('/vendor/d3/d3.esm.js', 'D3'),
+            litechat.utils.loadModule('/vendor/moment/moment.esm.js', 'moment')
         ]);
         
         litechat.utils.log('info', 'Both modules loaded successfully');
@@ -147,16 +154,16 @@ async function createThreeJSScene() {
         // Load the modules with proper import map configuration
         const modules = await litechat.utils.loadModules([
             {
-                url: 'https://unpkg.com/three@0.170.0/build/three.module.js',
+                url: '/vendor/three/three.module.js',
                 name: 'THREE',
                 globalKey: 'THREE',
                 importMap: {
-                    "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
-                    "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+                    "three": "/vendor/three/three.module.js",
+                    "three/addons/": "/vendor/three/examples/jsm/"
                 }
             },
             {
-                url: 'https://unpkg.com/three@0.170.0/examples/jsm/controls/OrbitControls.js',
+                url: '/vendor/three/examples/jsm/controls/OrbitControls.js',
                 name: 'OrbitControls',
                 globalKey: 'OrbitControls',
                 dependencies: ['THREE']
@@ -396,6 +403,10 @@ export class JsRunnableBlockRendererModule implements ControlModule {
           importMap?: Record<string, string>
         ) => {
           const key = globalKey || moduleName;
+          assertLocalUrl(moduleUrl, "Module URL");
+          Object.values(importMap || {}).forEach((url) =>
+            assertLocalUrl(url, "Import map URL")
+          );
           // Check if already loaded
           if ((window as any)[key]) {
             return (window as any)[key];
@@ -508,6 +519,10 @@ export class JsRunnableBlockRendererModule implements ControlModule {
             // Load the module
             loadPromises[key] = (async () => {
               try {
+                assertLocalUrl(config.url, "Module URL");
+                Object.values(config.importMap || {}).forEach((url) =>
+                  assertLocalUrl(url, "Import map URL")
+                );
                 const module = await import(config.url);
                 (window as any)[key] = module;
                 loadedModules[key] = module;
@@ -543,6 +558,12 @@ export class JsRunnableBlockRendererModule implements ControlModule {
         
         loadScript: async (src: string) => {
           return new Promise<void>((resolve, reject) => {
+            try {
+              assertLocalUrl(src, "Script URL");
+            } catch (error) {
+              reject(error);
+              return;
+            }
             // Check if already loaded
             if ([...document.scripts].some(s => s.src === src)) {
               resolve();
@@ -551,6 +572,7 @@ export class JsRunnableBlockRendererModule implements ControlModule {
             const script = document.createElement('script');
             script.src = src;
             script.async = true;
+            script.dataset.litechatRunnableScript = "true";
             script.onload = () => resolve();
             script.onerror = (e) => {
               const errorMessage = e instanceof Error ? e.message : String(e);

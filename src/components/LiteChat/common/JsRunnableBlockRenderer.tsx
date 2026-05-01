@@ -639,6 +639,13 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
     <script type="module">
         const target = document.getElementById('litechat-target');
         const logs = [];
+
+        const assertLocalResource = (url, label) => {
+            const parsed = new URL(url, window.location.origin);
+            if (parsed.origin !== window.location.origin) {
+                throw new Error(label + ' must be served from the LiteChat origin.');
+            }
+        };
         
         // Minimal LiteChat API for iframe mode
         window.litechat = {
@@ -668,6 +675,8 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
                 },
                 loadModule: async (moduleUrl, moduleName, globalKey, importMap) => {
                     const key = globalKey || moduleName;
+                    assertLocalResource(moduleUrl, 'Module URL');
+                    Object.values(importMap || {}).forEach(url => assertLocalResource(url, 'Import map URL'));
                     if (window[key]) return window[key];
                     
                     try {
@@ -707,6 +716,12 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
                 },
                 loadScript: async (src) => {
                     return new Promise((resolve, reject) => {
+                        try {
+                            assertLocalResource(src, 'Script URL');
+                        } catch (error) {
+                            reject(error);
+                            return;
+                        }
                         if ([...document.scripts].some(s => s.src === src)) {
                             resolve();
                             return;
@@ -1013,7 +1028,7 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
     // Try to clean up any loaded modules (best effort)
     try {
       // Remove any script tags that might have been added
-      const scripts = document.querySelectorAll('script[src*="unpkg.com"], script[src*="jsdelivr.net"], script[src*="cdnjs.cloudflare.com"]');
+      const scripts = document.querySelectorAll('script[data-litechat-runnable-script="true"]');
       scripts.forEach(script => {
         if (script.parentNode) {
           script.parentNode.removeChild(script);
@@ -1072,9 +1087,18 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
         const litechatTarget = document.getElementById('litechat-target');
         const capturedLogs = [];
 
+        const assertLocalResource = (url, label) => {
+            const parsed = new URL(url, window.location.origin);
+            if (parsed.origin !== window.location.origin) {
+                throw new Error(label + ' must be served from the LiteChat origin.');
+            }
+        };
+
         // Enhanced module loading with import map support
         async function loadModule(moduleUrl, moduleName, globalKey, importMap) {
             const key = globalKey || moduleName;
+            assertLocalResource(moduleUrl, 'Module URL');
+            Object.values(importMap || {}).forEach(url => assertLocalResource(url, 'Import map URL'));
             // Check if already loaded
             if (window[key]) {
                 return window[key];
@@ -1125,7 +1149,9 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
             // 1. Merge all import maps from module configs
             const globalImportMap = {};
             moduleConfigs.forEach(config => {
+                assertLocalResource(config.url, 'Module URL');
                 if (config.importMap) {
+                    Object.values(config.importMap).forEach(url => assertLocalResource(url, 'Import map URL'));
                     Object.assign(globalImportMap, config.importMap);
                 }
             });
@@ -1185,6 +1211,12 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
         // Load script function
         async function loadScript(src) {
             return new Promise((resolve, reject) => {
+                try {
+                    assertLocalResource(src, 'Script URL');
+                } catch (error) {
+                    reject(error);
+                    return;
+                }
                 // Check if already loaded
                 if ([...document.scripts].some(s => s.src === src)) {
                     resolve();

@@ -149,19 +149,6 @@ const defaultMapRenderer = (params: {
     tap: !readonly,
   });
 
-  // Default tile layer - OpenStreetMap
-  const osmTileLayer = (window as any).L.tileLayer(
-    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-    {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19,
-    }
-  );
-
-  // Add default tile layer
-  osmTileLayer.addTo(leafletMap);
-
   // Current marker
   let currentMarker: any = null;
 
@@ -288,30 +275,13 @@ const formatCoordinates = (
   }
 };
 
-// Built-in tile providers configuration
+// Built-in tile providers are intentionally empty by default: remote map tiles
+// leak approximate user activity. Apps can provide local tiles through
+// locationConfig.mapRenderCallback if they need a map.
 const TILE_PROVIDERS = {
-  openstreetmap: {
-    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19,
-  },
-  cartodb: {
-    url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png",
-    attribution:
-      '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    maxZoom: 19,
-  },
-  stamen: {
-    url: "https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png",
-    attribution:
-      'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 18,
-  },
-  satellite: {
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    attribution:
-      "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+  local: {
+    url: "",
+    attribution: "",
     maxZoom: 19,
   },
 };
@@ -319,26 +289,12 @@ const TILE_PROVIDERS = {
 // Constants - prevent re-creation
 const DEFAULT_LOCATION = { lat: 51.5074, lng: -0.1278 };
 
-// Load Leaflet CSS and JS dynamically
 const loadLeaflet = () => {
   if (typeof (window as any).L !== "undefined") {
     return Promise.resolve();
   }
 
-  return new Promise<void>((resolve, reject) => {
-    // Load CSS
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-    document.head.appendChild(link);
-
-    // Load JS
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Leaflet"));
-    document.head.appendChild(script);
-  });
+  return Promise.reject(new Error("Leaflet must be provided locally before rendering maps."));
 };
 
 interface LocationPickerFieldProps extends BaseFieldProps {
@@ -363,8 +319,8 @@ export const LocationPickerField: React.FC<LocationPickerFieldProps> = ({
   const enableSearch = config.enableSearch !== false;
   const enableGeolocation = config.enableGeolocation !== false;
   const enableManualEntry = config.enableManualEntry !== false;
-  const showMap = config.showMap !== false;
-  const mapProvider = config.mapProvider || "openstreetmap";
+  const showMap = config.showMap === true;
+  const mapProvider = config.mapProvider || "local";
   const searchCallback = config.searchCallback;
   const reverseGeocodeCallback = config.reverseGeocodeCallback;
   const mapRenderCallback = config.mapRenderCallback;
@@ -514,9 +470,9 @@ export const LocationPickerField: React.FC<LocationPickerFieldProps> = ({
     mapInstanceRef.current = mapInstance;
 
     // Apply tile provider if not default
-    if (mapProvider !== "openstreetmap") {
+    if (mapProvider !== "local") {
       const tileConfig = TILE_PROVIDERS[mapProvider as keyof typeof TILE_PROVIDERS];
-      if (tileConfig && 'switchTileLayer' in mapInstance) {
+      if (tileConfig?.url && 'switchTileLayer' in mapInstance) {
         (mapInstance as any).switchTileLayer(tileConfig);
       }
     }
