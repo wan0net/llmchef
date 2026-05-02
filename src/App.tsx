@@ -1,185 +1,12 @@
-// src/App.tsx
-// FULL FILE
-import { useEffect, useState } from "react";
-import { LLMChef } from "@/components/LLMChef/LLMChef";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { LandingPage } from "@/components/LandingPage";
-import { PrismThemeLoader } from "@/components/LLMChef/common/PrismThemeLoader";
-import { ThemeManager } from "@/components/LLMChef/common/ThemeManager";
 import { ErrorBoundary } from "@/components/LLMChef/common/ErrorBoundary";
-import type { ControlModuleConstructor } from "@/types/llmchef/control";
 
-// Import ALL Control Module classes
-import { ConversationListControlModule } from "@/controls/modules/ConversationListControlModule";
-import { SettingsControlModule } from "@/controls/modules/SettingsControlModule";
-import { SidebarToggleControlModule } from "@/controls/modules/SidebarToggleControlModule";
-import { ParameterControlModule } from "@/controls/modules/ParameterControlModule";
-import { FileControlModule } from "@/controls/modules/FileControlModule";
-import { VfsControlModule } from "@/controls/modules/VfsControlModule";
-import { GitSyncControlModule } from "@/controls/modules/GitSyncControlModule";
-import { ManualSyncSidebarControlModule } from "@/controls/modules/ManualSyncSidebarControlModule";
-import { VfsToolsModule } from "@/controls/modules/VfsToolsModule";
-import { GitToolsModule } from "@/controls/modules/GitToolsModule";
-import { McpToolsModule } from "@/controls/modules/McpToolsModule";
-import { ToolSelectorControlModule } from "@/controls/modules/ToolSelectorControlModule";
-import { TextTriggerControlModule } from "@/controls/modules/TextTriggerControlModule";
-import { ProjectSettingsControlModule } from "@/controls/modules/ProjectSettingsControlModule";
-import { PWAControlModule } from "@/controls/modules/PWAControlModule";
-import { GlobalModelSelectorModule } from "@/controls/modules/GlobalModelSelectorModule";
-import { SystemPromptControlModule } from "@/controls/modules/SystemPromptControlModule";
-import { StructuredOutputControlModule } from "@/controls/modules/StructuredOutputControlModule";
-import { UsageDisplayControlModule } from "@/controls/modules/UsageDisplayControlModule";
-import { UsageDashboardModule } from "@/controls/modules/UsageDashboardModule";
-import { ReasoningControlModule } from "@/controls/modules/ReasoningControlModule";
-import { WebSearchControlModule } from "@/controls/modules/WebSearchControlModule";
-import { WorkflowWebSearchControlModule } from "@/controls/modules/WorkflowWebSearchControlModule";
-import { WebSearchToolsModule } from "@/controls/modules/WebSearchToolsModule";
-import { RulesControlModule } from "@/controls/modules/RulesControlModule";
-import { AutoTitleControlModule } from "@/controls/modules/AutoTitleControlModule";
-import { UrlParameterControlModule } from "@/controls/modules/UrlParameterControlModule";
-import { ImageGenerationControlModule } from "@/controls/modules/ImageGenerationControlModule";
-import { RacePromptControlModule } from "@/controls/modules/RacePromptControlModule";
-import { ImprovePromptControlModule } from "@/controls/modules/ImprovePromptControlModule";
-import { PromptLibraryControlModule } from "@/controls/modules/PromptLibraryControlModule";
-import { AgentControlModule } from "@/controls/modules/AgentControlModule";
-import { WorkflowControlModule } from "@/controls/modules/WorkflowControlModule";
-import { WorkflowDisplayModule } from "@/controls/modules/WorkflowDisplayModule";
-import { OpenRouterProviderControlModule } from "@/controls/modules/OpenRouterProviderControlModule";
-import { Crea8MemoryControlModule } from "@/controls/modules/Crea8MemoryControlModule";
-import { SkillsPromptControlModule } from "@/controls/modules/SkillsPromptControlModule";
-
-
-// Import new/updated Settings Modules
-import { GeneralSettingsModule } from "@/controls/modules/GeneralSettingsModule";
-import { NetworkLedgerSettingsModule } from "@/controls/modules/NetworkLedgerSettingsModule";
-import { ThemeSettingsControlModule } from "@/controls/modules/ThemeSettingsControlModule";
-import { ProviderSettingsModule } from "@/controls/modules/ProviderSettingsModule";
-import { AssistantSettingsModule } from "@/controls/modules/AssistantSettingsModule";
-import { RunnableBlocksSettingsModule } from "@/controls/modules/RunnableBlocksSettingsModule";
-import { DataSettingsModule } from "@/controls/modules/DataSettingsModule";
-import { ModSettingsModule } from "@/controls/modules/ModSettingsModule";
-// import { MarketplaceSettingsModule } from "@/controls/modules/MarketplaceSettingsModule";
-
-// Import canvas action control modules
-import { CopyActionControlModule } from "@/controls/modules/canvas/CopyActionControlModule";
-import { RegenerateActionControlModule } from "@/controls/modules/canvas/RegenerateActionControlModule";
-import { RaceResultExportControlModule } from "@/controls/modules/canvas/RaceResultExportControlModule";
-import { RegenerateWithModelActionControlModule } from "@/controls/modules/canvas/RegenerateWithModelActionControlModule";
-import { ForkActionControlModule } from "@/controls/modules/canvas/ForkActionControlModule";
-import { ForkWithModelActionControlModule } from "@/controls/modules/canvas/ForkWithModelActionControlModule";
-import { ForkCompactActionControlModule } from "@/controls/modules/canvas/ForkCompactActionControlModule";
-import { RatingActionControlModule } from "@/controls/modules/canvas/RatingActionControlModule";
-import { EditResponseControlModule } from "@/controls/modules/canvas/EditResponseControlModule";
-import { EditCodeBlockControlModule } from "@/controls/modules/canvas/EditCodeBlockControlModule";
-import { PromoteInteractionControlModule } from "@/controls/modules/canvas/PromoteInteractionControlModule";
-import { Crea8MemoryProposalActionControlModule } from "@/controls/modules/canvas/Crea8MemoryProposalActionControlModule";
-import { TableOfContentsControlModule } from "@/controls/modules/canvas/TableOfContentsControlModule";
-// import { ExampleCanvasControlModule } from "@/controls/modules/example";
-import { FoldInteractionControlModule } from "@/controls/modules/canvas/interaction/FoldInteractionControlModule";
-import { ZipDownloadControlModule } from "@/controls/modules/canvas/interaction/ZipDownloadControlModule";
-import { CopyCodeBlockControlModule } from "@/controls/modules/canvas/codeblock/CopyCodeBlockControlModule";
-import { FoldCodeBlockControlModule } from "@/controls/modules/canvas/codeblock/FoldCodeBlockControlModule";
-import { DownloadCodeBlockControlModule } from "@/controls/modules/canvas/codeblock/DownloadCodeBlockControlModule";
-import { SaveCodeBlockToVfsControlModule } from "@/controls/modules/canvas/codeblock/SaveCodeBlockToVfsControlModule";
-import { UniversalRepairEnhanceControlModule } from "@/controls/modules/canvas/codeblock/RepairEnhanceCodeBlockControlModule";
-import { ToolCallStepControlModule } from "@/controls/modules/canvas/tool/ToolCallStepControlModule";
-import { QuoteSelectionControlModule } from "@/controls/modules/canvas/QuoteSelectionControlModule";
-import { ExplainSelectionControlModule } from "@/controls/modules/canvas/ExplainSelectionControlModule";
-
-// Import block renderer modules
-import { CodeBlockRendererModule } from "@/controls/modules/CodeBlockRendererModule";
-import { MermaidBlockRendererModule } from "@/controls/modules/MermaidBlockRendererModule";
-import { FlowBlockRendererModule } from "@/controls/modules/FlowBlockRendererModule";
-import { FormedibleBlockRendererModule } from "@/controls/modules/FormedibleBlockRendererModule";
-import { ChartBlockRendererModule } from "@/controls/modules/ChartBlockRendererModule";
-import { JsRunnableBlockRendererModule } from "@/controls/modules/JsRunnableBlockRendererModule";
-import { PythonRunnableBlockRendererModule } from "@/controls/modules/PythonRunnableBlockRendererModule";
-import { BeatBlockRendererModule } from "@/controls/modules/BeatBlockRendererModule";
-import { WorkflowBlockRendererModule } from "@/controls/modules/WorkflowBlockRendererModule";
-
-// Define the application's specific control module registration order HERE
-const controlModulesToRegister: ControlModuleConstructor[] = [
-  UrlParameterControlModule,
-  PWAControlModule,
-  GeneralSettingsModule,
-  NetworkLedgerSettingsModule,
-  ThemeSettingsControlModule,
-  ProviderSettingsModule,
-  AssistantSettingsModule,
-  RunnableBlocksSettingsModule,
-  DataSettingsModule,
-  ModSettingsModule,
-  // MarketplaceSettingsModule,
-  ConversationListControlModule,
-  SidebarToggleControlModule,
-  SettingsControlModule,
-  ProjectSettingsControlModule,
-  GlobalModelSelectorModule,
-  AutoTitleControlModule,
-  UsageDisplayControlModule,
-  UsageDashboardModule,
-  ReasoningControlModule,
-  WebSearchControlModule,
-  WorkflowWebSearchControlModule,
-  ImageGenerationControlModule,
-  FileControlModule,
-  Crea8MemoryControlModule,
-  SkillsPromptControlModule,
-  VfsControlModule,
-  RulesControlModule,
-  OpenRouterProviderControlModule,
-  SystemPromptControlModule,
-  ToolSelectorControlModule,
-  ParameterControlModule,
-  StructuredOutputControlModule,
-  RacePromptControlModule,
-  ImprovePromptControlModule,
-  PromptLibraryControlModule,
-  AgentControlModule,
-  WorkflowControlModule,
-  WorkflowDisplayModule,
-  GitSyncControlModule,
-  ManualSyncSidebarControlModule,
-  VfsToolsModule,
-  GitToolsModule,
-  WebSearchToolsModule,
-  McpToolsModule,
-  // Block Renderers (should be registered early)
-  CodeBlockRendererModule,
-  MermaidBlockRendererModule,
-  FlowBlockRendererModule,
-  FormedibleBlockRendererModule,
-  ChartBlockRendererModule,
-  JsRunnableBlockRendererModule,
-  PythonRunnableBlockRendererModule,
-  BeatBlockRendererModule,
-  WorkflowBlockRendererModule,
-  // Canvas Action Controls
-  CopyActionControlModule, // For InteractionCard header
-  FoldInteractionControlModule, // For InteractionCard header
-  ZipDownloadControlModule, // For InteractionCard header
-  TableOfContentsControlModule, // For InteractionCard header
-  PromoteInteractionControlModule, // For InteractionCard header
-  Crea8MemoryProposalActionControlModule, // For InteractionCard header
-  RegenerateActionControlModule, // For InteractionCard footer
-  RaceResultExportControlModule, // For race interaction footer
-  RegenerateWithModelActionControlModule, // For InteractionCard footer
-  ForkActionControlModule, // For InteractionCard footer
-  ForkWithModelActionControlModule, // For InteractionCard footer
-  ForkCompactActionControlModule, // For InteractionCard footer
-  EditResponseControlModule, // For InteractionCard footer
-  RatingActionControlModule, // For InteractionCard footer
-  CopyCodeBlockControlModule, // For CodeBlockRenderer header
-  FoldCodeBlockControlModule, // For CodeBlockRenderer header
-  DownloadCodeBlockControlModule, // For CodeBlockRenderer header
-  SaveCodeBlockToVfsControlModule, // For CodeBlockRenderer header
-  UniversalRepairEnhanceControlModule, // For ALL block types (universal repair/enhance)
-  EditCodeBlockControlModule, // For CodeBlockRenderer header
-  // ExampleCanvasControlModule,
-  ToolCallStepControlModule,
-  QuoteSelectionControlModule, // For text selection controls
-  ExplainSelectionControlModule, // For text selection controls
-  TextTriggerControlModule,
-];
+const LLMChefApp = lazy(() =>
+  import("@/components/LLMChef/LLMChefApp").then((module) => ({
+    default: module.LLMChefApp,
+  })),
+);
 
 function shouldRenderAppRoute() {
   return (
@@ -211,14 +38,17 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ThemeManager />
-      <PrismThemeLoader />
-      <div className="h-screen bg-background text-foreground flex flex-col">
-        <main className="flex-grow overflow-hidden">
-          <LLMChef controls={controlModulesToRegister} />
-        </main>
-      </div>
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+            <div className="text-sm text-muted-foreground">Loading LLMChef...</div>
+          </div>
+        }
+      >
+        <LLMChefApp />
+      </Suspense>
     </ErrorBoundary>
   );
 }
+
 export default App;

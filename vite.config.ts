@@ -89,8 +89,16 @@ const vendorChunkGroups: { name: string; match: string[] }[] = [
     match: ['/node_modules/@codemirror/', '/node_modules/@uiw/', '/node_modules/prismjs/'],
   },
   {
-    name: 'vendor-diagrams',
-    match: ['/node_modules/mermaid/', '/node_modules/cytoscape/', '/node_modules/katex/'],
+    name: 'vendor-mermaid',
+    match: ['/node_modules/mermaid/'],
+  },
+  {
+    name: 'vendor-flow',
+    match: ['/node_modules/@xyflow/', '/node_modules/d3-hierarchy/'],
+  },
+  {
+    name: 'vendor-charts',
+    match: ['/node_modules/recharts/', '/node_modules/d3-', '/node_modules/victory-vendor/'],
   },
   {
     name: 'vendor-ui',
