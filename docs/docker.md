@@ -81,7 +81,9 @@ MCP_BRIDGE_VERBOSE=false
 | `MCP_BRIDGE_INTERNAL_PORT` | 3001 | Internal container port for MCP bridge |
 | `MCP_BRIDGE_VERBOSE` | false | Enable verbose logging for MCP bridge |
 | `MCP_BRIDGE_ALLOWED_ORIGINS` | local dev + fork Pages origin | Browser origins allowed to call the bridge |
-| `MCP_BRIDGE_ALLOWED_COMMANDS` | npx,node,python,python3 | Commands the bridge may spawn for stdio MCP servers |
+| `MCP_BRIDGE_TOKEN` | generated per process | Token LLMChef must send to use local stdio profiles |
+| `MCP_BRIDGE_SERVERS` | `{}` | JSON object of named stdio server profiles |
+| `MCP_BRIDGE_ALLOWED_COMMANDS` | npx,node,python,python3 | Commands allowed inside named stdio profiles |
 
 ## Language-Specific Images
 
@@ -150,6 +152,8 @@ services:
       - MCP_BRIDGE_HOST=0.0.0.0
       - MCP_BRIDGE_VERBOSE=true
       - MCP_BRIDGE_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,https://wan0net.github.io
+      - MCP_BRIDGE_TOKEN=change-this-local-token
+      - MCP_BRIDGE_SERVERS={"myfs":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","."]}}
       - MCP_BRIDGE_ALLOWED_COMMANDS=npx,node,python,python3
     volumes:
       - ./bin/mcp-bridge.js:/app/bin/mcp-bridge.js:ro

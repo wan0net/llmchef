@@ -707,8 +707,8 @@ LLMChef provides comprehensive MCP integration with multiple transport protocols
 
 ### Supported Transport Protocols
 
-1. **Streamable HTTP (MCP 2025-03-26)** - Primary
-   - Latest MCP specification with enhanced features
+1. **Streamable HTTP (MCP 2025-11-25)** - Primary
+   - Current MCP specification with enhanced features
    - Session management and security improvements
    - Single endpoint design with better error handling
 

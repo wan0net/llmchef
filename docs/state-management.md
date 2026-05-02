@@ -222,7 +222,7 @@ interface VfsState {
 
 **Context Switching**:
 ```typescript
-// Switch VFS context (project-specific or orphan)
+// Switch VFS context (shared app VFS, scoped by project folder path)
 setVfsKey: (key: string | null) => void;
 
 // Initialize filesystem for specific context

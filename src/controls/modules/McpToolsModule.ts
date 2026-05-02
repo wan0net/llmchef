@@ -26,6 +26,8 @@ interface RetryConfig {
   timeout: number;
 }
 
+const MCP_PROTOCOL_VERSION = "2025-11-25";
+
 export class McpToolsModule implements ControlModule {
   readonly id = "core-mcp-tools";
   private unregisterCallbacks: (() => void)[] = [];
@@ -304,7 +306,7 @@ export class McpToolsModule implements ControlModule {
   }
 
   /**
-   * Attempt connection using the new Streamable HTTP transport (MCP 2025-03-26)
+   * Attempt connection using Streamable HTTP transport (MCP 2025-11-25)
    */
   private async connectWithStreamableHttp(server: McpServerConfig): Promise<any> {
 
@@ -345,6 +347,57 @@ export class McpToolsModule implements ControlModule {
     return 'http://localhost:3001';
   }
 
+  private getBridgeHeaders(server: McpServerConfig): Record<string, string> {
+    const { bridgeConfig } = useMcpStore.getState();
+    return {
+      'Content-Type': 'application/json',
+      ...(bridgeConfig.token ? { 'X-MCP-Bridge-Token': bridgeConfig.token } : {}),
+      ...server.headers,
+    };
+  }
+
+  private getMcpHttpHeaders(
+    server: McpServerConfig,
+    sessionId?: string | null,
+    protocolVersion?: string,
+  ): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json, text/event-stream',
+      ...(sessionId ? { 'MCP-Session-Id': sessionId } : {}),
+      ...(protocolVersion ? { 'MCP-Protocol-Version': protocolVersion } : {}),
+      ...server.headers,
+    };
+  }
+
+  private parseSseMessages(text: string): any[] {
+    return text
+      .split(/\r?\n\r?\n/)
+      .map((eventBlock) =>
+        eventBlock
+          .split(/\r?\n/)
+          .filter((line) => line.startsWith("data:"))
+          .map((line) => line.slice(5).trimStart())
+          .join("\n")
+      )
+      .filter(Boolean)
+      .map((data) => JSON.parse(data));
+  }
+
+  private async readMcpHttpMessages(response: Response): Promise<any[]> {
+    if (response.status === 202 || !response.body) return [];
+    const contentType = response.headers.get('Content-Type') || '';
+
+    if (contentType.includes('text/event-stream')) {
+      const text = await response.text();
+      return this.parseSseMessages(text);
+    }
+
+    const text = await response.text();
+    if (!text.trim()) return [];
+    return [JSON.parse(text)];
+  }
+
   /**
    * Connect directly to bridge and get tools - NO AI SDK BULLSHIT!
    */
@@ -356,32 +409,31 @@ export class McpToolsModule implements ControlModule {
       throw new Error('Not a stdio server configuration');
     }
 
-    // Parse stdio URL to get command and args: stdio://command?args=arg1,arg2,arg3
+    // Parse stdio URL. Preferred form is stdio://profile-name, where the
+    // bridge owns the command and args in MCP_BRIDGE_SERVERS.
     const stdioUrl = new URL(server.url);
-    const command = stdioUrl.hostname || stdioUrl.pathname.replace('//', '');
+    const profileName = stdioUrl.hostname || stdioUrl.pathname.replace(/^\/+/, '');
     const argsParam = stdioUrl.searchParams.get('args') || '';
 
-    // Validate command is provided
-    if (!command) {
-      throw new Error('stdio:// URL must specify a command (e.g., stdio://npx?args=-y,@modelcontextprotocol/server-filesystem,.)');
+    if (!profileName) {
+      throw new Error('stdio:// URL must specify a bridge profile (e.g., stdio://myfs).');
     }
 
     // Get the configured bridge URL
     const bridgeUrl = await this.getBridgeUrl();
 
-    // Create a unique server name based on command and args for the bridge
-    const serverName = `${command}-${Date.now()}`;
-
     try {
-      // Build the dynamic server endpoint with command and args as query parameters
+      // Build the profile-backed server endpoint. Legacy command/args mode only
+      // works when the bridge explicitly enables MCP_BRIDGE_ALLOW_DYNAMIC=true.
       const params = new URLSearchParams();
-      params.set('command', command);
       if (argsParam) {
+        params.set('command', profileName);
         params.set('args', argsParam);
       }
+      const query = params.toString();
 
       const serverEndpoint = assertAllowedOutboundUrl(
-        `${bridgeUrl}/servers/${serverName}/mcp?${params.toString()}`,
+        `${bridgeUrl}/servers/${encodeURIComponent(profileName)}/mcp${query ? `?${query}` : ''}`,
         `mcp:stdio-bridge:${server.name}`,
       );
 
@@ -391,10 +443,7 @@ export class McpToolsModule implements ControlModule {
       // The bridge will create the server automatically on the first request
       const toolsResponse = await fetch(serverEndpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...server.headers || {},
-        },
+        headers: this.getBridgeHeaders(server),
         body: JSON.stringify({
           jsonrpc: '2.0',
           id: 1,
@@ -427,10 +476,7 @@ export class McpToolsModule implements ControlModule {
 
           const response = await fetch(serverEndpoint, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...server.headers || {},
-            },
+            headers: this.getBridgeHeaders(server),
             body: JSON.stringify({
               jsonrpc: '2.0',
               id: uniqueId,
@@ -456,7 +502,7 @@ export class McpToolsModule implements ControlModule {
       };
 
     } catch (error) {
-      throw new Error(`Bridge connection failed: ${error instanceof Error ? error.message : error}. Ensure bridge is running with: npm run mcp-proxy. Command: ${command}, Args: ${argsParam || 'none'}`);
+      throw new Error(`Bridge connection failed: ${error instanceof Error ? error.message : error}. Ensure bridge is running with a matching MCP_BRIDGE_SERVERS profile and bridge token. Profile: ${profileName}`);
     }
   }
 
@@ -481,6 +527,9 @@ export class McpToolsModule implements ControlModule {
   private createStreamableHttpTransport(server: McpServerConfig): any {
     let sessionId: string | null = null;
     let isConnected = false;
+    let protocolVersion = MCP_PROTOCOL_VERSION;
+    const getMcpHttpHeaders = this.getMcpHttpHeaders.bind(this);
+    const readMcpHttpMessages = this.readMcpHttpMessages.bind(this);
 
     return {
       async start(): Promise<void> {
@@ -490,20 +539,16 @@ export class McpToolsModule implements ControlModule {
         const serverUrl = assertAllowedOutboundUrl(server.url, `mcp:init:${server.name}`);
         const initResponse = await fetch(serverUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json, text/event-stream',
-            'Origin': window.location.origin, // Required for security
-            ...server.headers,
-          },
+          headers: getMcpHttpHeaders(server),
           body: JSON.stringify({
             jsonrpc: '2.0',
             id: `init_${Date.now()}`,
             method: 'initialize',
             params: {
-              protocolVersion: '2025-03-26',
+              protocolVersion: MCP_PROTOCOL_VERSION,
               capabilities: {
                 tools: {},
+                roots: { listChanged: true },
               },
               clientInfo: {
                 name: 'LLMChef',
@@ -520,22 +565,21 @@ export class McpToolsModule implements ControlModule {
         // Extract session ID from response headers if provided
         sessionId = initResponse.headers.get('Mcp-Session-Id');
 
-        const initResult = await initResponse.json();
+        const initMessages = await readMcpHttpMessages(initResponse);
+        const initResult = initMessages[initMessages.length - 1];
 
+        if (!initResult) {
+          throw new Error("MCP Initialize Error: server returned no initialize result");
+        }
         if (initResult.error) {
           throw new Error(`MCP Initialize Error: ${initResult.error.message}`);
         }
+        protocolVersion = initResult.result?.protocolVersion || MCP_PROTOCOL_VERSION;
 
         // Send InitializedNotification
         const initializedResponse = await fetch(serverUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Origin': window.location.origin,
-            ...(sessionId && { 'Mcp-Session-Id': sessionId }),
-            ...server.headers,
-          },
+          headers: getMcpHttpHeaders(server, sessionId, protocolVersion),
           body: JSON.stringify({
             jsonrpc: '2.0',
             method: 'initialized',
@@ -546,8 +590,9 @@ export class McpToolsModule implements ControlModule {
         if (!initializedResponse.ok) {
           throw new Error(`Failed to send initialized notification: ${initializedResponse.status}`);
         }
+        await readMcpHttpMessages(initializedResponse);
 
-                  isConnected = true;
+        isConnected = true;
       },
 
       async send(message: any): Promise<void> {
@@ -558,13 +603,7 @@ export class McpToolsModule implements ControlModule {
         const serverUrl = assertAllowedOutboundUrl(server.url, `mcp:message:${server.name}`);
         const response = await fetch(serverUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json, text/event-stream',
-            'Origin': window.location.origin,
-            ...(sessionId && { 'Mcp-Session-Id': sessionId }),
-            ...server.headers,
-          },
+          headers: getMcpHttpHeaders(server, sessionId, protocolVersion),
           body: JSON.stringify(message),
         });
 
@@ -578,22 +617,8 @@ export class McpToolsModule implements ControlModule {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        // Handle different response types based on Content-Type
-        const contentType = response.headers.get('Content-Type') || '';
-
-        if (contentType.includes('text/event-stream')) {
-          // Handle SSE stream response
-          const reader = response.body?.getReader();
-          if (reader) {
-            // Process SSE events
-            // This would need full SSE parsing implementation
-
-          }
-        } else if (contentType.includes('application/json')) {
-          // Handle single JSON response
-          const result = await response.json();
-          this.onmessage?.(result);
-        }
+        const messages = await readMcpHttpMessages(response);
+        messages.forEach((result) => this.onmessage?.(result));
       },
 
       async close(): Promise<void> {
@@ -603,11 +628,7 @@ export class McpToolsModule implements ControlModule {
             const serverUrl = assertAllowedOutboundUrl(server.url, `mcp:close:${server.name}`);
             await fetch(serverUrl, {
               method: 'DELETE',
-              headers: {
-                'Origin': window.location.origin,
-                'Mcp-Session-Id': sessionId,
-                ...server.headers,
-              },
+              headers: getMcpHttpHeaders(server, sessionId, protocolVersion),
             });
           } catch (error) {
             console.debug(`[${this.id}] MCP session close request failed:`, error);

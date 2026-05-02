@@ -21,51 +21,26 @@ GET /health
 ```
 **Response**: `200 OK` with service status
 
-### Start MCP Server
+### List Active Servers
 ```http
-POST /mcp/start
-Content-Type: application/json
-
-{
-  "serverId": "unique-server-id",
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path"],
-  "cwd": "/working/directory",
-  "headers": {}
-}
+GET /servers
+X-MCP-Bridge-Token: <token>
 ```
-**Response**: `200 OK` with `{ "sessionId": "session-uuid" }`
+**Response**: `200 OK` with active profile-backed server state
 
-### Initialize MCP Connection
-```http
-POST /mcp/{sessionId}/initialize
-Content-Type: application/json
+### Send MCP Message to a Profile
+Bridge profiles are configured through `MCP_BRIDGE_SERVERS`. For example:
 
-{
-  "protocolVersion": "2025-03-26",
-  "capabilities": { "tools": {} },
-  "clientInfo": { "name": "LLMChef", "version": "1.0.0" }
-}
+```bash
+MCP_BRIDGE_TOKEN=secret \
+MCP_BRIDGE_SERVERS='{"myfs":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","."]}}' \
+node bin/mcp-bridge.js
 ```
-**Response**: MCP initialize response
 
-### Send Initialized Notification
 ```http
-POST /mcp/{sessionId}/initialized
+POST /servers/myfs/mcp
 Content-Type: application/json
-
-{
-  "jsonrpc": "2.0",
-  "method": "initialized",
-  "params": {}
-}
-```
-**Response**: `200 OK`
-
-### Send MCP Message
-```http
-POST /mcp/{sessionId}/message
-Content-Type: application/json
+X-MCP-Bridge-Token: secret
 
 {
   "jsonrpc": "2.0",
@@ -76,24 +51,28 @@ Content-Type: application/json
 ```
 **Response**: MCP response from stdio server
 
-### Close Session
+### SSE Compatibility Endpoint
 ```http
-POST /mcp/{sessionId}/close
+POST /servers/myfs/sse
+Content-Type: application/json
+X-MCP-Bridge-Token: secret
 ```
-**Response**: `200 OK`
+**Response**: `text/event-stream` containing one MCP JSON-RPC response event
 
 ## Security Considerations
 
 ### Network Security
 - **Localhost Only**: Bridge binds only to 127.0.0.1, not 0.0.0.0
 - **CORS Origin Allowlist**: The bridge only allows configured origins, local development origins, or requests with no browser `Origin` header.
+- **Bridge Token**: `/servers` endpoints require `Authorization: Bearer <token>` or `X-MCP-Bridge-Token`.
 - **Request Validation**: All requests validated before processing
 
 ### Process Security
 - **Sandboxing**: MCP servers run in isolated child processes
 - **Resource Limits**: CPU and memory limits on spawned processes
 - **Path Validation**: Working directory and file path validation
-- **Command Restrictions**: Optional allowlist of permitted commands
+- **Named Profiles**: Commands and arguments come from `MCP_BRIDGE_SERVERS`; legacy URL-supplied commands require `MCP_BRIDGE_ALLOW_DYNAMIC=true`.
+- **Command Restrictions**: Allowlist of permitted commands
 
 ### Session Management
 - **Session Isolation**: Each MCP server gets unique session ID
@@ -125,7 +104,10 @@ POST /mcp/{sessionId}/close
 - `MCP_BRIDGE_HOST`: Bind address (default: 127.0.0.1)
 - `MCP_BRIDGE_VERBOSE`: Enable verbose logging
 - `MCP_BRIDGE_ALLOWED_ORIGINS`: Comma-separated browser origin allowlist
-- `MCP_BRIDGE_ALLOWED_COMMANDS`: Comma-separated list of allowed commands
+- `MCP_BRIDGE_TOKEN`: Required token for protected bridge endpoints; generated at startup if omitted
+- `MCP_BRIDGE_SERVERS`: JSON object of named stdio server profiles
+- `MCP_BRIDGE_ALLOWED_COMMANDS`: Comma-separated list of commands allowed in profiles
+- `MCP_BRIDGE_ALLOW_DYNAMIC`: Set to `true` to temporarily allow legacy URL-supplied command/args mode
 
 ## Error Handling
 
@@ -237,10 +219,14 @@ curl http://localhost:3001/health
 
 ### MCP Server Test
 ```bash
-# Start filesystem server
-curl -X POST http://localhost:3001/mcp/start \
+MCP_BRIDGE_TOKEN=secret \
+MCP_BRIDGE_SERVERS='{"myfs":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","."]}}' \
+node bin/mcp-bridge.js
+
+curl -X POST http://localhost:3001/servers/myfs/mcp \
   -H "Content-Type: application/json" \
-  -d '{"serverId":"test","command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","."]}'
+  -H "X-MCP-Bridge-Token: secret" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
 
 ## Compatibility
@@ -251,8 +237,7 @@ curl -X POST http://localhost:3001/mcp/start \
 - **Linux**: Ubuntu 18.04+ / equivalent with Node.js 18+
 
 ### MCP Compatibility
-- **Protocol Version**: 2025-03-26 (latest)
-- **Fallback Support**: 2024-11-05 (previous)
+- **Protocol Version**: 2025-11-25
 - **Transport**: stdio only (HTTP/SSE handled directly by LLMChef)
 
 ## License

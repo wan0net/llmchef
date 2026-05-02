@@ -18,8 +18,8 @@ MCP (Model Context Protocol) is an open standard that enables secure connections
 
 LLMChef supports **multiple MCP server types** with comprehensive transport protocols:
 
-### 1. Streamable HTTP Transport (MCP 2025-03-26) - Primary
-- **Latest MCP specification** with single endpoint design
+### 1. Streamable HTTP Transport (MCP 2025-11-25) - Primary
+- **Current MCP specification** with single endpoint design
 - **Session management** with `Mcp-Session-Id` headers
 - **Enhanced security** with Origin header validation
 - **Improved resumability** with event IDs and connection recovery
@@ -63,22 +63,22 @@ This allows connection to:
 
 #### Stdio (Local/Remote) Servers
 - **Name**: Display name for the server
-- **URL**: Stdio command URL (e.g., `stdio://npx?args=-y,@modelcontextprotocol/server-filesystem,/path/to/directory`)
+- **URL**: Stdio bridge profile URL (e.g., `stdio://myfs`)
 - **Description**: Optional description
-- **Headers**: Not applicable for stdio servers
+- **Headers**: Optional request headers; bridge authentication normally uses the Bridge Token setting
 - **Enabled**: Toggle to enable/disable the server
 
-> **Bridge Location**: Configure bridge location in MCP settings to use remote bridges on VMs, containers, or other hosts.
+> **Bridge Location**: Configure bridge location and token in MCP settings to use local bridges on your machine, VM, or container.
 
 > **Backup & Restore**: MCP server configurations are included in [Full Configuration Backups](./persistence.md#full-application-configuration-backup) and can be managed individually via [Data Management Settings](./persistence.md#individual-category-exportimport).
 
 #### Stdio URL Format
-For stdio servers, use the format: `stdio://command?args=arg1,arg2&cwd=/working/directory`
+For stdio servers, define a named bridge profile in `MCP_BRIDGE_SERVERS`, then use the format: `stdio://profile-name`.
 
 Examples:
-- `stdio://npx?args=-y,@modelcontextprotocol/server-filesystem,/Users/username/Documents`
-- `stdio://python?args=/path/to/my-mcp-server.py&cwd=/home/user`
-- `stdio://node?args=server.js,--port,3000`
+- Bridge env: `MCP_BRIDGE_SERVERS='{"myfs":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/Users/username/Documents"]}}'`
+- LLMChef server URL: `stdio://myfs`
+- Legacy `stdio://command?args=...` URLs only work when the bridge is explicitly started with `MCP_BRIDGE_ALLOW_DYNAMIC=true`.
 
 ### Connection Settings
 
@@ -93,7 +93,7 @@ Configure retry behavior and timeouts in the MCP settings:
 LLMChef automatically determines transport type based on the server URL and attempts connections in the following priority:
 
 #### For HTTP/HTTPS URLs:
-1. **Streamable HTTP Transport (2025-03-26)** - Latest MCP specification
+1. **Streamable HTTP Transport (2025-11-25)** - Current MCP specification
    - Single endpoint with POST/GET support
    - Session management and enhanced security
    - Better error handling and resumability
@@ -150,7 +150,9 @@ node bin/mcp-bridge.js --help
 - **Port**: Configurable via `--port` or `MCP_BRIDGE_PORT` (default: 3001)
 - **Host**: Configurable via `--host` or `MCP_BRIDGE_HOST` (default: 127.0.0.1)
 - **Allowed Origins**: Browser origin allowlist via `MCP_BRIDGE_ALLOWED_ORIGINS` (defaults to local dev origins and this fork's GitHub Pages origin)
-- **Allowed Commands**: Command allowlist via `MCP_BRIDGE_ALLOWED_COMMANDS` (default: npx,node,python,python3)
+- **Bridge Token**: Required for `/servers` requests via `MCP_BRIDGE_TOKEN`; when omitted the bridge prints a generated session token
+- **Server Profiles**: Named stdio server profiles via `MCP_BRIDGE_SERVERS`
+- **Allowed Commands**: Command allowlist for named profiles via `MCP_BRIDGE_ALLOWED_COMMANDS` (default: npx,node,python,python3)
 
 #### LLMChef Bridge Configuration
 Configure where LLMChef looks for the bridge service:
@@ -216,7 +218,7 @@ For servers requiring authentication, add headers in JSON format:
 }
 ```
 
-> **Security Note**: When using Streamable HTTP transport, the `Origin` header is automatically set to `window.location.origin` for security validation and should not be manually configured. This follows the MCP 2025-03-26 specification security requirements.
+> **Security Note**: When using Streamable HTTP transport, browsers set the `Origin` header automatically for server-side validation. LLMChef also sends the negotiated `MCP-Protocol-Version` header on subsequent requests.
 
 ## Error Handling & Reliability
 

@@ -105,6 +105,9 @@
       "fullUrlDescription": "Vollständige URL, unter der die dynamische MCP-Bridge ausgeführt wird",
       "hostPort": "Oder Host + Port konfigurieren",
       "hostPortDescription": "Host und Port (verwendet standardmäßig HTTP)",
+      "token": "Bridge-Token",
+      "tokenPlaceholder": "Von bin/mcp-bridge.js ausgegebenes Token",
+      "tokenDescription": "Erforderlich für stdio-Bridge-Anfragen. Die Bridge gibt beim Start ein generiertes Token aus, sofern MCP_BRIDGE_TOKEN nicht gesetzt ist.",
       "detectionPriority": "Bridge-Erkennungspriorität:",
       "priority1": "Vollständige URL (falls oben angegeben)",
       "priority2": "Host + Port Kombination (falls oben angegeben)",
@@ -142,8 +145,8 @@
       "nameLabel": "Servername",
       "namePlaceholder": "Mein MCP-Server",
       "urlLabel": "Server-URL",
-      "urlPlaceholder": "https://api.example.com/mcp or stdio://npx?args=-y,@modelcontextprotocol/server-filesystem,.",
-      "urlHelp": "HTTP/HTTPS-URLs für Remote-Server oder stdio://command?args=arg1,arg2 für dynamische Bridge-Server",
+      "urlPlaceholder": "https://api.example.com/mcp or stdio://myfs",
+      "urlHelp": "HTTP/HTTPS-URLs für Remote-Server oder stdio://profile-name für lokale Bridge-Profile",
       "descriptionLabel": "Beschreibung (Optional)",
       "descriptionPlaceholder": "Kurze Beschreibung des Zwecks dieses Servers",
       "headersLabel": "Authentifizierungs-Header (Optional)",
@@ -271,4 +274,4 @@
     "editTemplate": "Bearbeiten: {{name}}",
     "deleteConfirmation": "Sind Sie sicher, dass Sie diese Vorlage löschen möchten?"
   }
-} 
+}

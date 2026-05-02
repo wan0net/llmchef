@@ -105,6 +105,9 @@
       "fullUrlDescription": "URL completa donde se está ejecutando el puente MCP dinámico",
       "hostPort": "O configurar Host + Puerto",
       "hostPortDescription": "Host y puerto (usa HTTP por defecto)",
+      "token": "Token del puente",
+      "tokenPlaceholder": "Token impreso por bin/mcp-bridge.js",
+      "tokenDescription": "Requerido para solicitudes stdio del puente. El puente imprime un token generado al iniciar salvo que MCP_BRIDGE_TOKEN esté definido.",
       "detectionPriority": "Prioridad de Detección del Puente:",
       "priority1": "URL Completa (si se especifica arriba)",
       "priority2": "Combinación Host + Puerto (si se especifica arriba)",
@@ -142,8 +145,8 @@
       "nameLabel": "Nombre del Servidor",
       "namePlaceholder": "Mi Servidor MCP",
       "urlLabel": "URL del Servidor",
-      "urlPlaceholder": "https://api.example.com/mcp or stdio://npx?args=-y,@modelcontextprotocol/server-filesystem,.",
-      "urlHelp": "URLs HTTP/HTTPS para servidores remotos, o stdio://command?args=arg1,arg2 para servidores de puente dinámicos",
+      "urlPlaceholder": "https://api.example.com/mcp or stdio://myfs",
+      "urlHelp": "URLs HTTP/HTTPS para servidores remotos, o stdio://profile-name para perfiles locales del puente",
       "descriptionLabel": "Descripción (Opcional)",
       "descriptionPlaceholder": "Breve descripción del propósito de este servidor",
       "headersLabel": "Encabezados de Autenticación (Opcional)",
@@ -271,4 +274,4 @@
     "editTemplate": "Editar: {{name}}",
     "deleteConfirmation": "¿Está seguro de que desea eliminar esta plantilla?"
   }
-} 
+}

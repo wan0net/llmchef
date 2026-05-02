@@ -76,12 +76,14 @@ function BridgeConfigurationTab() {
       url: bridgeConfig.url || "",
       host: bridgeConfig.host || "",
       port: bridgeConfig.port || undefined,
+      token: bridgeConfig.token || "",
     },
     onSubmit: async ({ value }) => {
       setBridgeConfig({
         url: value.url || undefined,
         host: value.host || undefined,
         port: value.port,
+        token: value.token || undefined,
       });
     },
   });
@@ -92,6 +94,7 @@ function BridgeConfigurationTab() {
       url: bridgeConfig.url || "",
       host: bridgeConfig.host || "",
       port: bridgeConfig.port || undefined,
+      token: bridgeConfig.token || "",
     });
   }, [bridgeConfig, form]);
 
@@ -184,6 +187,25 @@ function BridgeConfigurationTab() {
               </p>
             </div>
           </div>
+          <form.Field name="token">
+            {(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>{t('mcp.bridge.token')}</Label>
+                <Input
+                  id={field.name}
+                  type="password"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                  placeholder={t('mcp.bridge.tokenPlaceholder')}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('mcp.bridge.tokenDescription')}
+                </p>
+                <FieldMetaMessages field={field} />
+              </div>
+            )}
+          </form.Field>
           
           <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
             <p className="font-medium mb-1">{t('mcp.bridge.detectionPriority')}</p>
@@ -208,10 +230,10 @@ function BridgeConfigurationTab() {
             <p className="font-medium">{t('mcp.bridge.instructionsText')}</p>
             <div className="bg-muted p-3 rounded font-mono text-xs">
               <p># {t('mcp.bridge.startBridge')}</p>
-              <p>node bin/mcp-bridge.js</p>
+              <p>{'MCP_BRIDGE_TOKEN=secret MCP_BRIDGE_SERVERS=\'{"myfs":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","."]}}\' node bin/mcp-bridge.js'}</p>
               <p></p>
               <p># {t('mcp.bridge.customSettings')}</p>
-              <p>node bin/mcp-bridge.js --host 0.0.0.0 --port 3001</p>
+              <p>MCP_BRIDGE_TOKEN=secret node bin/mcp-bridge.js --host 127.0.0.1 --port 3001</p>
             </div>
           </div>
         </CardContent>

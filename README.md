@@ -178,6 +178,8 @@ The included `docker-compose.yml` provides a complete setup with MCP bridge:
 # Environment variables (create .env file)
 LLMCHEF_PORT=8080
 MCP_BRIDGE_PORT=3001
+MCP_BRIDGE_TOKEN=change-this-local-token
+MCP_BRIDGE_SERVERS={"myfs":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","."]}}
 MCP_BRIDGE_VERBOSE=false
 MCP_BRIDGE_ALLOWED_ORIGINS=https://wan0net.github.io,http://localhost:5173
 MCP_BRIDGE_ALLOWED_COMMANDS=npx,node,python,python3
@@ -203,7 +205,9 @@ docker-compose logs -f mcp-bridge
 - `MCP_BRIDGE_INTERNAL_PORT`: Internal container port (default: 3001)
 - `MCP_BRIDGE_VERBOSE`: Enable verbose logging (default: false)
 - `MCP_BRIDGE_ALLOWED_ORIGINS`: Comma-separated browser origins allowed to call the bridge
-- `MCP_BRIDGE_ALLOWED_COMMANDS`: Comma-separated commands the bridge may spawn for stdio MCP servers
+- `MCP_BRIDGE_TOKEN`: Token LLMChef must send to use local stdio profiles
+- `MCP_BRIDGE_SERVERS`: JSON object of named stdio server profiles; use `stdio://profile-name` in LLMChef
+- `MCP_BRIDGE_ALLOWED_COMMANDS`: Comma-separated commands allowed inside named profiles
 
 #### Automated Build with Builder Script
 

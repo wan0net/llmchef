@@ -18,6 +18,7 @@ export interface McpBridgeConfig {
   url?: string;        // Full URL: http://192.168.1.100:3001
   host?: string;       // Host only: 192.168.1.100
   port?: number;       // Port only: 3001
+  token?: string;      // Token printed by the local bridge
 }
 
 export interface McpServerStatus {
@@ -455,4 +456,4 @@ export const useMcpStore = create(
       return servers;
     },
   }))
-); 
+);

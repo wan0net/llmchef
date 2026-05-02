@@ -21,6 +21,7 @@ import type {
   ActionHandler,
 } from "@/types/llmchef/control";
 import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+import { useVfsStore } from "./vfs.store";
 
 const getProjectFolderName = (name: string, id: string) =>
   `${name
@@ -30,18 +31,16 @@ const getProjectFolderName = (name: string, id: string) =>
     .replace(/^-+|-+$/g, "") || "project"}-${id.substring(0, 4)}`;
 
 const ensureProjectFolder = async (path: string) => {
-  const fsInstance = await VfsOps.initializeFsOp(APP_VFS_KEY);
-  if (!fsInstance) {
-    throw new Error("Failed to initialize the LLMChef VFS.");
-  }
+  const fsInstance = await useVfsStore
+    .getState()
+    .initializeVFS(APP_VFS_KEY, { force: true });
   await VfsOps.createDirectoryOp(path, { fsInstance });
 };
 
 const renameProjectFolder = async (oldPath: string, newPath: string) => {
-  const fsInstance = await VfsOps.initializeFsOp(APP_VFS_KEY);
-  if (!fsInstance) {
-    throw new Error("Failed to initialize the LLMChef VFS.");
-  }
+  const fsInstance = await useVfsStore
+    .getState()
+    .initializeVFS(APP_VFS_KEY, { force: true });
   const parentPath = normalizePath(newPath.split("/").slice(0, -1).join("/") || "/");
   await VfsOps.createDirectoryOp(parentPath, { fsInstance });
   try {
@@ -63,10 +62,9 @@ const renameProjectFolder = async (oldPath: string, newPath: string) => {
 };
 
 const deleteProjectFolder = async (path: string) => {
-  const fsInstance = await VfsOps.initializeFsOp(APP_VFS_KEY);
-  if (!fsInstance) {
-    throw new Error("Failed to initialize the LLMChef VFS.");
-  }
+  const fsInstance = await useVfsStore
+    .getState()
+    .initializeVFS(APP_VFS_KEY, { force: true });
   await VfsOps.rmdirRecursive(path, { fsInstance });
 };
 
@@ -185,6 +183,25 @@ export const useProjectStore = create(
         console.warn(`ProjectStore: Project ${id} not found for update.`);
         return;
       }
+      if (updates.parentId === id) {
+        throw new Error("A project cannot be moved inside itself.");
+      }
+      const descendantIds = new Set<string>();
+      const collectDescendants = (projectId: string) => {
+        get()
+          .projects.filter((p) => p.parentId === projectId)
+          .forEach((child) => {
+            descendantIds.add(child.id);
+            collectDescendants(child.id);
+          });
+      };
+      collectDescendants(id);
+      if (updates.parentId && descendantIds.has(updates.parentId)) {
+        throw new Error("A project cannot be moved inside one of its subprojects.");
+      }
+      if (updates.parentId && !get().getProjectById(updates.parentId)) {
+        throw new Error("Cannot move project into a missing parent project.");
+      }
 
       const updatedProjectData: Project = {
         ...originalProject,
@@ -204,10 +221,12 @@ export const useProjectStore = create(
         );
       }
 
+      let folderMoved = false;
       try {
         const projectsToSave = [updatedProjectData];
         if (updatedProjectData.path !== originalProject.path) {
           await renameProjectFolder(originalProject.path, updatedProjectData.path);
+          folderMoved = true;
           const oldPrefix = `${originalProject.path}/`;
           const childProjects = get().projects.filter((p) =>
             p.path.startsWith(oldPrefix)
@@ -245,6 +264,16 @@ export const useProjectStore = create(
         });
       } catch (e) {
         console.error("ProjectStore: Error updating project", e);
+        if (folderMoved) {
+          try {
+            await renameProjectFolder(updatedProjectData.path, originalProject.path);
+          } catch (rollbackError) {
+            console.error(
+              "ProjectStore: Failed to roll back project folder rename",
+              rollbackError
+            );
+          }
+        }
         set({ error: "Failed to save project update" });
         throw e;
       }
