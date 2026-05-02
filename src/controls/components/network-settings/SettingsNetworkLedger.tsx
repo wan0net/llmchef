@@ -14,6 +14,7 @@ import { useModStore } from "@/store/mod.store";
 import { useProviderStore } from "@/store/provider.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 
 const emptySnapshot: ReturnType<typeof getOutboundRequestLog> = [];
 
@@ -72,19 +73,25 @@ const SettingsNetworkLedgerComponent: React.FC = () => {
     () => emptySnapshot,
   );
   const providerConfigs = useProviderStore((state) => state.dbProviderConfigs);
-  const mcpState = useMcpStore((state) => ({
-    servers: state.servers,
-    packageRuntimeRegistryUrl: state.packageRuntimeRegistryUrl,
-    packageRuntimeInstalls: state.packageRuntimeInstalls,
-  }));
-  const settings = useSettingsStore((state) => ({
-    corsProxyUrl: state.corsProxyUrl,
-    markdownServiceUrl: state.markdownServiceUrl,
-  }));
-  const marketplaceState = useMarketplaceStore((state) => ({
-    marketplaceSources: state.marketplaceSources,
-    marketplaceIndexes: state.marketplaceIndexes,
-  }));
+  const mcpState = useMcpStore(
+    useShallow((state) => ({
+      servers: state.servers,
+      packageRuntimeRegistryUrl: state.packageRuntimeRegistryUrl,
+      packageRuntimeInstalls: state.packageRuntimeInstalls,
+    })),
+  );
+  const settings = useSettingsStore(
+    useShallow((state) => ({
+      corsProxyUrl: state.corsProxyUrl,
+      markdownServiceUrl: state.markdownServiceUrl,
+    })),
+  );
+  const marketplaceState = useMarketplaceStore(
+    useShallow((state) => ({
+      marketplaceSources: state.marketplaceSources,
+      marketplaceIndexes: state.marketplaceIndexes,
+    })),
+  );
   const modSources = useModStore((state) => state.dbMods);
   const syncRepos = useConversationStore((state) => state.syncRepos);
 
