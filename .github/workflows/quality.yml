@@ -39,6 +39,9 @@ jobs:
         env:
           LLMCHEF_LINT_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || format('{0}^', github.sha) }}
 
+      - name: Lint repository
+        run: npm run lint:all
+
       - name: Test
         run: npm test -- --run
 
@@ -47,4 +50,3 @@ jobs:
 
       - name: Build
         run: npm run build
-

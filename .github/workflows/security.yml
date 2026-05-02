@@ -46,7 +46,7 @@ jobs:
           elif [[ "$EVENT_NAME" == "push" && -n "$BEFORE_SHA" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
             semgrep scan --config auto --error --baseline-commit "$BEFORE_SHA"
           else
-            semgrep scan --config auto
+            semgrep scan --config auto --error
           fi
 
   trivy:

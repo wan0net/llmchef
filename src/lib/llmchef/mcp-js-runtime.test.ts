@@ -7,6 +7,7 @@ import {
   parseJsonRpcLines,
   resolveEsmImportSpecifier,
   rewriteEsmImports,
+  verifyMcpModuleLock,
 } from "./mcp-js-runtime";
 
 describe("mcp-js-runtime", () => {
@@ -61,5 +62,16 @@ describe("mcp-js-runtime", () => {
     expect(parseJsonRpcLines("log line\n{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"tools\":[{\"name\":\"read\"}]}}\n")).toEqual([
       { jsonrpc: "2.0", id: 2, result: { tools: [{ name: "read" }] } },
     ]);
+  });
+
+  it("rejects cached modules that do not match the package lock", async () => {
+    const code = "export const tool = 'safe';";
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
+    const expectedHash = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+
+    await expect(verifyMcpModuleLock("https://esm.sh/pkg", code, expectedHash)).resolves.toBeUndefined();
+    await expect(verifyMcpModuleLock("https://esm.sh/pkg", `${code}\n`, expectedHash)).rejects.toThrow(
+      "Installed MCP module lock mismatch",
+    );
   });
 });

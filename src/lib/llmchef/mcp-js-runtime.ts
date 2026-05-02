@@ -31,6 +31,11 @@ export interface McpJsRuntimeSession {
   dispose: () => void;
 }
 
+interface McpJsRuntimeWorkerHandle {
+  worker: Worker;
+  dispose: () => void;
+}
+
 interface ModuleRecord {
   url: string;
   code: string;
@@ -96,6 +101,20 @@ export const rewriteEsmImports = (
   return rewritten;
 };
 
+export const verifyMcpModuleLock = async (
+  url: string,
+  code: string,
+  expectedHash: string | undefined,
+): Promise<void> => {
+  if (!expectedHash) {
+    throw new Error(`Installed MCP module is missing a lock hash: ${url}`);
+  }
+  const actualHash = await sha256Hex(code);
+  if (actualHash !== expectedHash) {
+    throw new Error(`Installed MCP module lock mismatch for ${url}. Reinstall the package before running it.`);
+  }
+};
+
 export const installMcpJsRuntimePackage = async (
   options: McpJsRuntimeInstallOptions,
 ): Promise<McpPackageRuntimeInstall> => {
@@ -152,7 +171,7 @@ export const smokeTestMcpJsRuntimePackage = async (
   const manifestBytes = await readFileOp(`${install.vfsRoot}/manifest.json`, { fsInstance, silent: true });
   const manifest = JSON.parse(new TextDecoder().decode(manifestBytes)) as McpPackageRuntimeInstall;
   const moduleGraph = await readInstalledModuleGraph(manifest);
-  const worker = await createMcpJsRuntimeWorker(manifest, moduleGraph);
+  const runtime = await createMcpJsRuntimeWorker(manifest, moduleGraph);
   const messages: string[] = [];
 
   try {
@@ -161,7 +180,7 @@ export const smokeTestMcpJsRuntimePackage = async (
         resolve({ ok: false, messages: [...messages, "Worker timed out while importing package."] });
       }, timeoutMs);
 
-      worker.onmessage = (event: MessageEvent<{ type: string; message?: string }>) => {
+      runtime.worker.onmessage = (event: MessageEvent<{ type: string; message?: string }>) => {
         if (event.data?.message) messages.push(event.data.message);
         if (event.data?.type === "ready") {
           window.clearTimeout(timeout);
@@ -173,13 +192,13 @@ export const smokeTestMcpJsRuntimePackage = async (
         }
       };
 
-      worker.onerror = (event) => {
+      runtime.worker.onerror = (event) => {
         window.clearTimeout(timeout);
         resolve({ ok: false, messages: [...messages, event.message] });
       };
     });
   } finally {
-    worker.terminate();
+    runtime.dispose();
   }
 };
 
@@ -190,11 +209,11 @@ export const startMcpJsRuntimeSession = async (
   const manifestBytes = await readFileOp(`${install.vfsRoot}/manifest.json`, { fsInstance, silent: true });
   const manifest = JSON.parse(new TextDecoder().decode(manifestBytes)) as McpPackageRuntimeInstall;
   const moduleGraph = await readInstalledModuleGraph(manifest);
-  const worker = await createMcpJsRuntimeWorker(manifest, moduleGraph);
+  const runtime = await createMcpJsRuntimeWorker(manifest, moduleGraph);
   return {
-    worker,
-    sendLine: (line: string) => worker.postMessage({ type: "stdin", chunk: `${line.replace(/\n$/, "")}\n` }),
-    dispose: () => worker.terminate(),
+    worker: runtime.worker,
+    sendLine: (line: string) => runtime.worker.postMessage({ type: "stdin", chunk: `${line.replace(/\n$/, "")}\n` }),
+    dispose: runtime.dispose,
   };
 };
 
@@ -343,10 +362,13 @@ const readInstalledModuleGraph = async (
     ? manifest.moduleUrls
     : await readModuleUrlsFromManifestRoot(manifest.vfsRoot);
   const modules = new Map<string, string>();
+  const expectedHashes = manifest.moduleHashes ?? {};
 
   for (const url of moduleUrls) {
     const moduleBytes = await readFileOp(modulePathForUrl(manifest.vfsRoot, url), { fsInstance, silent: true });
-    modules.set(url, new TextDecoder().decode(moduleBytes));
+    const code = new TextDecoder().decode(moduleBytes);
+    await verifyMcpModuleLock(url, code, expectedHashes[url]);
+    modules.set(url, code);
   }
   return modules;
 };
@@ -354,7 +376,7 @@ const readInstalledModuleGraph = async (
 const createMcpJsRuntimeWorker = async (
   install: McpPackageRuntimeInstall,
   modules: Map<string, string>,
-): Promise<Worker> => {
+): Promise<McpJsRuntimeWorkerHandle> => {
   await init;
   const blobUrls = new Map<string, string>();
   const visiting = new Set<string>();
@@ -390,7 +412,17 @@ const createMcpJsRuntimeWorker = async (
     const bootstrapUrl = URL.createObjectURL(new Blob([bootstrap], { type: "text/javascript" }));
     const worker = new Worker(bootstrapUrl, { type: "module", name: `llmchef-mcp-${install.packageName}` });
     URL.revokeObjectURL(bootstrapUrl);
-    return worker;
+    let disposed = false;
+    return {
+      worker,
+      dispose: () => {
+        if (disposed) return;
+        disposed = true;
+        worker.terminate();
+        for (const blobUrl of blobUrls.values()) URL.revokeObjectURL(blobUrl);
+        blobUrls.clear();
+      },
+    };
   } catch (error) {
     for (const blobUrl of blobUrls.values()) URL.revokeObjectURL(blobUrl);
     throw error;
