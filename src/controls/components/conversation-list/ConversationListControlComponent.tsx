@@ -500,7 +500,7 @@ export const ConversationListControlComponent: React.FC<
     <div className="p-2 border-r border-[--border] bg-card text-card-foreground h-full flex flex-col">
       <div className="flex justify-between items-center mb-2 flex-shrink-0 px-1">
         <div className="flex items-center space-x-2">
-          <h3 className="text-sm font-semibold tracking-[-0.02em]">{t('conversationList.title', 'Link42 Chat')}</h3>
+          <h3 className="text-sm font-semibold tracking-[-0.02em]">{t('conversationList.title', 'LLMChef')}</h3>
           <Lnk
             href="https://github.com/wan0net/llmchef"
             target="_blank"

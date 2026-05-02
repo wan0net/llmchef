@@ -79,6 +79,7 @@ cd - > /dev/null
 # Copy the zip files to public/release/
 echo "Copying ZIP archives to public/release/..."
 rm -f "public/release/latest.zip"
+rm -f public/release/litechat-*.zip public/release/litechat-nightly.zip
 cp "$TEMP_DIR/../llmchef-latest.zip" "public/release/latest.zip"
 rm -f "public/release/llmchef-${VERSION}.zip"
 cp "public/release/latest.zip" "public/release/llmchef-${VERSION}.zip"

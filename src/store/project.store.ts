@@ -293,17 +293,31 @@ export const useProjectStore = create(
       findDescendants(id);
 
       try {
-        await deleteProjectFolder(projectToDelete.path);
+        let folderDeleteError: unknown = null;
         await PersistenceService.deleteProject(id); // This handles recursive DB deletion
+        try {
+          await deleteProjectFolder(projectToDelete.path);
+        } catch (error) {
+          folderDeleteError = error;
+          console.warn(
+            `ProjectStore: Project ${id} was deleted from the database, but its VFS folder could not be removed.`,
+            error
+          );
+        }
         set((state) => ({
           projects: state.projects.filter(
             (p) => !projectsToDeleteIds.has(p.id)
           ),
         }));
-        // Emit an event to notify ConversationStore to unlink conversations
-        // This is a temporary solution. Ideally, ConversationStore would listen to project.deleted.
+        // Reload conversations so any cleared project links are reflected in state.
         emitter.emit(conversationEvent.loadConversationsRequest, undefined);
         emitter.emit(projectEvent.deleted, { projectId: id });
+        if (folderDeleteError) {
+          toast.warning(
+            `Project "${projectToDelete.name}" was deleted, but its VFS folder may need manual cleanup.`
+          );
+          return;
+        }
         toast.success(
           `Project "${projectToDelete.name}" and its contents deleted.`
         );

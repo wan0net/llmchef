@@ -7,7 +7,7 @@ This document provides a comprehensive reference for LLMChef's project organizat
 ```
 llmchef/
 ├── docs/                        # Developer documentation
-├── public/                      # Static assets and manifest
+├── public/                      # Static assets copied into builds
 ├── src/                         # Source code
 ├── package.json                 # Dependencies and scripts
 ├── README.md                    # Project overview
@@ -21,10 +21,9 @@ llmchef/
 
 ```
 public/
-├── index.html                  # Main HTML template
-├── manifest.json               # PWA manifest
 ├── favicon.ico                 # Application icon
 ├── icons/                      # PWA icons in various sizes
+├── release/                    # Downloadable local-first bundles
 └── dev.llm.txt                # Development context file
 ```
 

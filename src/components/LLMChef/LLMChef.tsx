@@ -447,7 +447,7 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
             {!isSidebarCollapsed && (
               <div className="min-w-0">
                 <div className="text-sm font-semibold tracking-[-0.02em] text-sidebar-foreground">
-                  Link42 Chat
+                  LLMChef
                 </div>
                 <div className="truncate text-[11px] text-muted-foreground">
                   Local-first AI workspace
@@ -507,7 +507,7 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
                   <span className="llmchef-brand-mark flex h-7 w-7 items-center justify-center rounded-md text-white">
                     <ShieldCheck className="h-4 w-4" />
                   </span>
-                  <h2 className="font-semibold text-card-foreground">Link42 Chat</h2>
+                  <h2 className="font-semibold text-card-foreground">LLMChef</h2>
                 </div>
                 <button
                   onClick={toggleMobileSidebar}

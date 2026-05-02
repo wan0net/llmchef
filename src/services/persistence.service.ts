@@ -421,12 +421,28 @@ export class PersistenceService {
         for (const child of childProjects) {
           await deleteRecursive(child.id);
         }
-        // Conversations are unlinked by ProjectStore via an event,
-        // or ConversationStore listening to project.deleted
         await db.projects.delete(projectId);
         console.log(`PersistenceService: Deleted Project ${projectId}`);
       };
-      await db.transaction("rw", [db.projects], async () => {
+      const projectIdsToDelete: string[] = [];
+      await db.transaction("rw", [db.projects, db.conversations], async () => {
+        const collectDescendants = async (projectId: string) => {
+          const childProjects = await db.projects
+            .where("parentId")
+            .equals(projectId)
+            .toArray();
+          for (const child of childProjects) {
+            projectIdsToDelete.push(child.id);
+            await collectDescendants(child.id);
+          }
+        };
+        projectIdsToDelete.length = 0;
+        projectIdsToDelete.push(id);
+        await collectDescendants(id);
+        await db.conversations
+          .where("projectId")
+          .anyOf(projectIdsToDelete)
+          .modify({ projectId: null });
         await deleteRecursive(id);
       });
     } catch (error) {

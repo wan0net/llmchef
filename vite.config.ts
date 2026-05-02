@@ -151,7 +151,7 @@ export default defineConfig({
           // }
         ]
       },
-      includeAssets: ['favicon.ico', 'icons/*.png', 'manifest.json'],
+      includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
         name: 'LLMChef',
         short_name: 'LLMChef',

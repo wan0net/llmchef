@@ -10,6 +10,8 @@ import { WorkflowWebSearchControlTrigger } from "../components/workflow-websearc
 import { useInteractionStore } from "@/store/interaction.store";
 import { PersistenceService } from "@/services/persistence.service";
 import { websearchPromptTemplates, WEBSEARCH_TEMPLATE_IDS } from "@/lib/llmchef/websearch-prompt-templates";
+import basicWebSearchWorkflow from "@/assets/workflows/basic-websearch.json";
+import deepWebSearchWorkflow from "@/assets/workflows/deep-websearch.json";
 import type { 
   WebSearchConfig, 
   DeepSearchConfig, 
@@ -174,26 +176,16 @@ export class WorkflowWebSearchControlModule implements ControlModule {
 
   private async registerWorkflowTemplates(): Promise<void> {
     try {
-      // Load workflow templates from public assets
-      const basicWorkflowResponse = await fetch('/assets/workflows/basic-websearch.json');
-      const deepWorkflowResponse = await fetch('/assets/workflows/deep-websearch.json');
-      
-      if (basicWorkflowResponse.ok && deepWorkflowResponse.ok) {
-        const basicWorkflow = await basicWorkflowResponse.json();
-        const deepWorkflow = await deepWorkflowResponse.json();
-        
-        // Check if workflows are already registered
-        const existingWorkflows = await PersistenceService.loadWorkflows();
-        
-        if (!existingWorkflows.some(w => w.id === 'basic-websearch')) {
-          await PersistenceService.saveWorkflow(basicWorkflow);
-          console.log(`[${this.id}] Registered workflow template: basic-websearch`);
-        }
-        
-        if (!existingWorkflows.some(w => w.id === 'deep-websearch')) {
-          await PersistenceService.saveWorkflow(deepWorkflow);
-          console.log(`[${this.id}] Registered workflow template: deep-websearch`);
-        }
+      const existingWorkflows = await PersistenceService.loadWorkflows();
+
+      if (!existingWorkflows.some(w => w.id === 'basic-websearch')) {
+        await PersistenceService.saveWorkflow(basicWebSearchWorkflow);
+        console.log(`[${this.id}] Registered workflow template: basic-websearch`);
+      }
+
+      if (!existingWorkflows.some(w => w.id === 'deep-websearch')) {
+        await PersistenceService.saveWorkflow(deepWebSearchWorkflow);
+        console.log(`[${this.id}] Registered workflow template: deep-websearch`);
       }
     } catch (error) {
       console.warn(`[${this.id}] Failed to register workflow templates:`, error);

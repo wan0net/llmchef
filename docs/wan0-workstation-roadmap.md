@@ -206,6 +206,38 @@ Acceptance:
 - Known high-severity dependency issues are upgraded or documented with rationale.
 - New skill/import/preview features have explicit safety boundaries.
 
+## Feature G: JavaScript MCP Capabilities
+
+Status: planned
+
+Goal: Let workflows, recipes, and approved runnable blocks call MCP tools from
+JavaScript without giving arbitrary JS broad app, storage, or network access.
+
+Design:
+
+- Expose MCP as a narrow capability object, not a global escape hatch:
+  `llmchef.mcp.call(toolName, input)`.
+- Require a per-run capability manifest that lists allowed MCP servers, tools,
+  argument schemas, and whether the call can read project files.
+- Route every JS MCP call through the existing MCP store/module, so bridge
+  tokens, server profiles, protocol negotiation, and tool approval logging stay
+  centralized.
+- Add a consent prompt before first use in a run:
+  "This recipe wants to call these MCP tools with this project context."
+- Return structured tool results back to the JS sandbox without exposing API
+  keys, bridge tokens, IndexedDB, provider objects, or unrestricted `fetch`.
+- Record provenance on the chat message: recipe id, tool name, input summary,
+  output summary, timestamp, and approved capability set.
+
+Acceptance:
+
+- A JS workflow can call an explicitly approved MCP tool.
+- Unapproved MCP tools fail closed.
+- The same permission model works for recipes, workflow function steps, and
+  runnable JS blocks.
+- MCP calls appear in the network/tool provenance ledger.
+- Imported recipes cannot silently gain new MCP permissions after install.
+
 ## Implementation Order
 
 1. Security baseline: audit current repo and document known risks.
@@ -218,7 +250,8 @@ Acceptance:
 8. crea8 memory foundation: note/proposal types and prompt-context contract.
 9. crea8 read connector: browse/search/attach wiki pages.
 10. crea8 write workflows: accept memory proposals and publish summaries/docs.
-11. Full security pass: dependency upgrades, threat-model closure, final hardening.
+11. JavaScript MCP capabilities: approved tool calls from recipes/workflows.
+12. Full security pass: dependency upgrades, threat-model closure, final hardening.
 
 ## Working Notes
 

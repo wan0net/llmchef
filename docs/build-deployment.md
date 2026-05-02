@@ -273,7 +273,7 @@ npm run build
 # Build output in dist/ directory
 # - index.html (main entry point)
 # - assets/ (CSS, JS, fonts, images)
-# - manifest.json (PWA manifest)
+# - manifest.webmanifest (generated PWA manifest)
 # - icons/ (PWA icons)
 ```
 
@@ -751,7 +751,7 @@ const urlsToCache = [
   '/',
   '/assets/index.css',
   '/assets/index.js',
-  '/manifest.json'
+  '/manifest.webmanifest'
 ];
 
 self.addEventListener('install', (event) => {
