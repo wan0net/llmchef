@@ -27,7 +27,7 @@ import {
   gitListRemotesOp as _gitListRemotesOp,
 } from "./vfs-git-operations";
 
-const VFS_DB_PREFIX = "lite" + "chat_vfs_";
+const VFS_DB_PREFIX = "llmchef_vfs_";
 
 // --- Helper Functions (Non-Git) ---
 const createDirectoryRecursive = async (

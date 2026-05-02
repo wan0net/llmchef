@@ -22,6 +22,7 @@ import { emitter } from "@/lib/llmchef/event-emitter";
 import { vfsEvent } from "@/types/llmchef/events/vfs.events";
 import { toast } from "sonner";
 import { cleanPromptParameters } from "@/lib/llmchef/prompt-parameters";
+import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 
 export class PromptCompilationService {
   /**
@@ -205,7 +206,7 @@ ${skillPromptContext}`
     let failedCrea8MemoryRefs: Crea8MemoryNoteRef[] = [];
 
     if (crea8MemoryRefs.length > 0) {
-      const targetVfsKey = currentProjectId ?? "orphan";
+      const targetVfsKey = APP_VFS_KEY;
       try {
         const fsInstance = await this._ensureVfsReady(targetVfsKey);
         const connector = createCrea8VfsConnector({
@@ -341,10 +342,7 @@ ${memoryContext.context}`
     let vfsInstance: any;
 
     if (vfsFiles.length > 0) {
-      const currentConversation = useConversationStore
-        .getState()
-        .getConversationById(conversationId);
-      const targetVfsKey = currentConversation?.projectId ?? "orphan";
+      const targetVfsKey = APP_VFS_KEY;
       try {
         vfsInstance = await this._ensureVfsReady(targetVfsKey);
       } catch {

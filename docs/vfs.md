@@ -24,11 +24,11 @@ export const initializeFsOp = async (vfsKey: string): Promise<typeof fs | null> 
 };
 ```
 
-### Context-Based VFS Switching
-The VFS operates with different contexts based on the `vfsKey`:
+### Shared App VFS With Project Folders
+User files live in the shared LLMChef VFS:
 
-- **Project VFS**: `vfsKey = projectId` - Project-specific filesystem
-- **Orphan VFS**: `vfsKey = "orphan"` - Shared filesystem for conversations without projects
+- **App VFS**: `vfsKey = "llmchef"` - Main filesystem that contains project folders and free-form root files
+- **Project folder view**: each project stores files under its `Project.path` folder inside the app VFS
 - **Sync VFS**: `vfsKey = "sync_repos"` - Dedicated filesystem for Git repositories
 
 ## VFS Store Architecture
@@ -78,38 +78,34 @@ interface VfsDirectory extends VfsNodeBase {
 type VfsNode = VfsFile | VfsDirectory;
 ```
 
-## Context Switching
+## Folder Scoping
 
-### Automatic Context Management
-The main LLMChef component manages VFS context switching based on UI state:
+### Automatic Project Folder Management
+The main LLMChef component keeps the app VFS active and changes the current folder based on UI state:
 
 ```typescript
-// In LLMChef.tsx - Context switching logic
+// In LLMChef.tsx - Folder scoping logic
 useEffect(() => {
-  // Determine context based on selected item
-  let currentProjectId: string | null = null;
+  let targetPath = "/";
   if (selectedItemType === "project") {
-    currentProjectId = selectedItemId;
+    targetPath = getProjectById(selectedItemId)?.path ?? "/";
   } else if (selectedItemType === "conversation" && selectedItemId) {
     const conversation = getConversationByIdFromStore(selectedItemId);
-    currentProjectId = conversation?.projectId ?? null;
+    targetPath = getProjectById(conversation?.projectId ?? null)?.path ?? "/";
   }
 
-  // Set VFS key based on context
-  const targetVfsKey = currentProjectId || "orphan";
-  if (vfsKey !== targetVfsKey) {
-    emitter.emit(vfsEvent.setVfsKeyRequest, { vfsKey: targetVfsKey });
-  }
+  emitter.emit(vfsEvent.setVfsKeyRequest, { key: "llmchef" });
+  emitter.emit(vfsEvent.setCurrentPathRequest, { path: targetPath });
 }, [selectedItemId, selectedItemType]);
 ```
 
 ### VFS Initialization Process
-1. **Context Change**: UI determines new VFS context needed
-2. **Key Request**: `vfsEvent.setVfsKeyRequest` emitted with new key
-3. **Initialization**: VfsStore initializes filesystem for the key
+1. **Context Change**: UI determines the project folder path
+2. **Key Request**: `vfsEvent.setVfsKeyRequest` keeps the app VFS active
+3. **Initialization**: VfsStore initializes the `llmchef` filesystem
 4. **Backend Setup**: ZenFS creates/connects to IndexedDB backend
-5. **Tree Loading**: File/folder tree loaded for the context
-6. **UI Update**: File manager displays context-specific files
+5. **Tree Loading**: File/folder tree loaded for the active path
+6. **UI Update**: File manager displays the project folder, while the root VFS can browse all project folders
 
 ## File Operations
 

@@ -25,6 +25,7 @@ import { ProjectSettingsVfs } from "./ProjectSettingsVfs";
 import { ProjectSettingsRules } from "./ProjectSettingsRules";
 import { ProjectSettingsTags } from "./ProjectSettingsTags";
 import { useConversationStore } from "@/store/conversation.store";
+import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import {
   TabbedLayout,
   TabDefinition,
@@ -132,7 +133,10 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
 
   useEffect(() => {
     if (isOpen && projectId && project && effectiveSettings) {
-      setVfsKey(projectId);
+      setVfsKey(APP_VFS_KEY);
+      void useVfsStore.getState().initializeVFS(APP_VFS_KEY).then(() => {
+        void useVfsStore.getState().setCurrentPath(project.path);
+      });
       setSystemPrompt(project.systemPrompt ?? null);
       setModelId(project.modelId ?? null);
       setSyncRepoId(project.metadata?.syncRepoId ?? null);
@@ -149,7 +153,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       });
       setActiveTab("prompt");
     } else if (!isOpen) {
-      setVfsKey(null);
+      setVfsKey(APP_VFS_KEY);
       setSystemPrompt(null);
       setModelId(null);
       setSyncRepoId(null);

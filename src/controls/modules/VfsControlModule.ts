@@ -9,7 +9,9 @@ import { VfsTriggerButton } from "@/controls/components/vfs/VfsTriggerButton";
 import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { useVfsStore } from "@/store/vfs.store";
 import { useConversationStore } from "@/store/conversation.store";
+import { useProjectStore } from "@/store/project.store";
 import { useControlRegistryStore } from "@/store/control.store";
+import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 import { nanoid } from "nanoid";
 
@@ -65,35 +67,18 @@ export class VfsControlModule implements ControlModule {
       useConversationStore.getState();
     const currentVfsStoreKey = useVfsStore.getState().vfsKey;
 
-    let targetVfsKey: string | null = null;
-
-    // Prioritize VFS key based on modal state if it's open for this module
-    if (this.isModalOpenByManager) {
-      if (selectedItemType === "project") {
-        targetVfsKey = selectedItemId;
-      } else if (selectedItemType === "conversation") {
-        const convo = useConversationStore
-          .getState()
-          .getConversationById(selectedItemId);
-        targetVfsKey = convo?.projectId ?? "orphan";
-      } else {
-        targetVfsKey = "orphan"; // Default if modal is open without specific context
-      }
-    } else {
-      // If modal is not open, VFS key might still be relevant for background tasks or prompt attachments
-      if (selectedItemType === "project") {
-        targetVfsKey = selectedItemId;
-      } else if (selectedItemType === "conversation") {
-        const convo = useConversationStore
-          .getState()
-          .getConversationById(selectedItemId);
-        targetVfsKey = convo?.projectId ?? "orphan";
-      } else {
-        // If no project/conversation selected, and modal is closed,
-        // what should the VFS key be? "orphan" or null?
-        // Let's stick to "orphan" if VFS is generally enabled.
-        targetVfsKey = "orphan";
-      }
+    const targetVfsKey = APP_VFS_KEY;
+    let targetPath = "/";
+    if (selectedItemType === "project") {
+      targetPath =
+        useProjectStore.getState().getProjectById(selectedItemId)?.path ?? "/";
+    } else if (selectedItemType === "conversation") {
+      const convo = useConversationStore
+        .getState()
+        .getConversationById(selectedItemId);
+      targetPath =
+        useProjectStore.getState().getProjectById(convo?.projectId ?? null)
+          ?.path ?? "/";
     }
 
     if (currentVfsStoreKey !== targetVfsKey) {
@@ -102,6 +87,7 @@ export class VfsControlModule implements ControlModule {
       );
       this.modApiRef?.emit(vfsEvent.setVfsKeyRequest, { key: targetVfsKey });
     }
+    this.modApiRef?.emit(vfsEvent.setCurrentPathRequest, { path: targetPath });
   }
 
   public getEnableVfs = (): boolean => useVfsStore.getState().enableVfs;

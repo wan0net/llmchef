@@ -13,8 +13,8 @@ This pass moves the fork to the LLMChef name across the user-facing app, source 
 - `.llmchef`: config, conversation sync, skill import, and real filesystem sync folders.
 - `wan0net/llmchef`: GitHub links, release links, and GitHub Pages URLs.
 
-## Compatibility Notes
+## Local Storage Notes
 
-Existing local browser installs keep their current IndexedDB and VFS data because the low-level storage namespace remains stable behind the LLMChef API. New sync/export paths use the LLMChef naming scheme.
+Local browser storage now uses LLMChef namespaces (`LLMChefDatabase_Rewrite_v1` and `llmchef_vfs_*`). Project files live as folders inside the shared app VFS, so project views are scoped but the broader VFS can still browse and move files between project folders.
 
 The repo directory on disk may still be named by the local checkout path until the workspace or remote repository is moved.

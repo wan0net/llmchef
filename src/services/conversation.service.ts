@@ -18,6 +18,7 @@ import {
 import type { ModelMessage, ImagePart, TextPart } from "ai";
 import { toast } from "sonner";
 import { cleanPromptParameters } from "@/lib/llmchef/prompt-parameters";
+import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import type { AttachedFileMetadata } from "@/store/input.store";
 import type { fs as FsType } from "@zenfs/core";
 import { useConversationStore } from "@/store/conversation.store";
@@ -938,10 +939,7 @@ Keep the summary detailed enough that we can seamlessly continue our discussion,
     let vfsInstance: typeof FsType | undefined;
 
     if (vfsFiles.length > 0) {
-      const currentConversation = useConversationStore
-        .getState()
-        .getConversationById(conversationId);
-      const targetVfsKey = currentConversation?.projectId ?? "orphan";
+      const targetVfsKey = APP_VFS_KEY;
       try {
         vfsInstance = await this._ensureVfsReady(targetVfsKey);
       } catch {

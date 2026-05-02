@@ -14,7 +14,7 @@ import {
   syncConversationLogic,
 } from "@/services/sync.service";
 import { ImportExportService } from "@/services/import-export.service";
-import { SYNC_VFS_KEY } from "@/lib/llmchef/constants";
+import { APP_VFS_KEY, SYNC_VFS_KEY } from "@/lib/llmchef/constants";
 import type { fs } from "@zenfs/core";
 import * as VfsOps from "@/lib/llmchef/vfs-operations";
 import { emitter } from "@/lib/llmchef/event-emitter";
@@ -31,6 +31,7 @@ import { interactionEvent } from "@/types/llmchef/events/interaction.events";
 import { vfsEvent, VfsEventPayloads } from "@/types/llmchef/events/vfs.events";
 import { uiEvent } from "@/types/llmchef/events/ui.events";
 import { useVfsStore } from "./vfs.store";
+import { useProjectStore } from "./project.store";
 import { BulkSyncService } from "@/services/bulk-sync.service";
 
 export type SidebarItem =
@@ -544,7 +545,11 @@ export const useConversationStore = create(
       
       // Auto-select project's VFS
       if (type === "project" && id) {
-        emitter.emit(vfsEvent.initializeVFSRequest, { vfsKey: id });
+        emitter.emit(vfsEvent.initializeVFSRequest, { vfsKey: APP_VFS_KEY });
+        const projectPath = useProjectStore.getState().getProjectById(id)?.path;
+        if (projectPath) {
+          emitter.emit(vfsEvent.setCurrentPathRequest, { path: projectPath });
+        }
       }
 
       // Update interaction store first if needed

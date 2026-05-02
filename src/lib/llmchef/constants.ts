@@ -1,4 +1,5 @@
 // src/lib/llmchef/constants.ts
+export const APP_VFS_KEY = "llmchef";
 export const SYNC_VFS_KEY = "sync_repos";
 
 // Pyodide configuration - configurable via environment variables.

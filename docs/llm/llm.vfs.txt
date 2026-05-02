@@ -3,12 +3,12 @@
 ## Overview
 - Browser-based VFS using ZenFS with IndexedDB backend (see `src/lib/llmchef/vfs-operations.ts`)
 - All VFS operations run in a dedicated worker for performance
-- Supports multiple VFS contexts: project, orphan, sync repos
+- Supports a shared app VFS plus a dedicated sync repo VFS
 
 ## VFS Context Switching
-- VFS operates with different contexts:
-  - **Project VFS**: `vfsKey = projectId` — project-specific filesystem
-  - **Orphan VFS**: `vfsKey = "orphan"` — for conversations without projects
+- VFS operates with named stores:
+  - **App VFS**: `vfsKey = "llmchef"` — main filesystem containing project folders and free-form root files
+  - **Project folder view**: each project uses its `Project.path` folder inside the app VFS
   - **Sync VFS**: `vfsKey = "sync_repos"` — for Git repositories
 
 ## Core Operations (see `src/lib/llmchef/vfs-operations.ts`)

@@ -126,7 +126,8 @@ export const pickProjectDirectory = async (
 
 export const syncProjectDirectoryTwoWay = async (
   projectId: string,
-  fsInstance: typeof FsType
+  fsInstance: typeof FsType,
+  vfsPath = "/"
 ): Promise<RealFsSyncResult> => {
   const directoryHandle = await loadProjectDirectoryHandle(projectId);
   if (!directoryHandle) {
@@ -135,7 +136,7 @@ export const syncProjectDirectoryTwoWay = async (
   await ensureReadWritePermission(directoryHandle);
   return syncRealDirectoryTwoWay({
     fsInstance,
-    vfsPath: "/",
+    vfsPath,
     directoryHandle,
   });
 };

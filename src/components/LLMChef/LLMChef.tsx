@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Loader2, Menu, ShieldCheck, X } from "lucide-react";
 import { performFullInitialization } from "@/lib/llmchef/initialization";
+import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import { usePromptStateStore } from "@/store/prompt.store";
 import type {
   ControlModule,
@@ -70,9 +71,11 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
     }))
   );
 
-  const { getEffectiveProjectSettings } = useProjectStore(
+  const { getEffectiveProjectSettings, getProjectById, projects } = useProjectStore(
     useShallow((state) => ({
       getEffectiveProjectSettings: state.getEffectiveProjectSettings,
+      getProjectById: state.getProjectById,
+      projects: state.projects,
     }))
   );
   const { interactions, status: interactionStatus } = useInteractionStore(
@@ -304,46 +307,35 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
       return;
     const modApi = coreModApiRef.current;
 
-    let calculatedKey: any = null; // Allow any type initially for calculation
     const isVfsModalOpen = isChatControlPanelOpen["core-vfs-modal-panel"];
+    let targetPath = "/";
 
-    if (isVfsModalOpen || selectedItemType === "project") {
-      if (selectedItemType === "project") {
-        calculatedKey = selectedItemId;
-      } else if (selectedItemType === "conversation") {
-        const convo = getConversationByIdFromStore(selectedItemId);
-        calculatedKey = convo?.projectId ?? "orphan";
-      } else {
-        calculatedKey = "orphan";
-      }
+    if (selectedItemType === "project") {
+      targetPath = getProjectById(selectedItemId)?.path ?? "/";
     } else if (selectedItemType === "conversation") {
       const convo = getConversationByIdFromStore(selectedItemId);
-      calculatedKey = convo?.projectId ?? "orphan";
-    }
-    // Ensure targetVfsKey is strictly string or null before emitting.
-    let targetVfsKey: string | null = null;
-    if (typeof calculatedKey === 'string') {
-      targetVfsKey = calculatedKey;
-    } else if (calculatedKey === null) {
-      targetVfsKey = null;
-    } else {
-      // This case should ideally not happen if types are correct upstream.
-      // Logging helps identify if projectId or selectedItemId is not a string/null.
-      console.warn(
-        `[LLMChefVFS] Calculated VFS key was not a string or null. Type: ${typeof calculatedKey}, Value:`,
-        calculatedKey,
-        `Defaulting to 'orphan'.`
-      );
-      targetVfsKey = "orphan";
+      targetPath = getProjectById(convo?.projectId ?? null)?.path ?? "/";
+    } else if (!isVfsModalOpen) {
+      targetPath = "/";
     }
 
-    if (useVfsStore.getState().vfsKey !== targetVfsKey) {
-      modApi.emit(vfsEvent.setVfsKeyRequest, { key: targetVfsKey });
+    const vfsStore = useVfsStore.getState();
+    if (vfsStore.vfsKey !== APP_VFS_KEY) {
+      modApi.emit(vfsEvent.setVfsKeyRequest, { key: APP_VFS_KEY });
     }
+    void useVfsStore
+      .getState()
+      .initializeVFS(APP_VFS_KEY)
+      .then(() => useVfsStore.getState().setCurrentPath(targetPath))
+      .catch((err) => {
+        console.error("[LLMChefVFS] Failed to prepare VFS context:", err);
+      });
   }, [
     selectedItemId,
     selectedItemType,
     getConversationByIdFromStore,
+    getProjectById,
+    projects,
     isInitializing,
     hasInitializedSuccessfully,
     isChatControlPanelOpen,

@@ -9,6 +9,8 @@ import React, {
   useMemo,
 } from "react";
 import { useVfsStore } from "@/store/vfs.store";
+import { useConversationStore } from "@/store/conversation.store";
+import { useProjectStore } from "@/store/project.store";
 import { useShallow } from "zustand/react/shallow";
 import { VfsFile, VfsNode } from "@/types/llmchef/vfs";
 import {
@@ -79,6 +81,19 @@ export const FileManager = memo(() => {
       initializingKey: state.initializingKey,
     }))
   );
+  const { selectedItemId, selectedItemType, getConversationById } =
+    useConversationStore(
+      useShallow((state) => ({
+        selectedItemId: state.selectedItemId,
+        selectedItemType: state.selectedItemType,
+        getConversationById: state.getConversationById,
+      }))
+    );
+  const { getProjectById } = useProjectStore(
+    useShallow((state) => ({
+      getProjectById: state.getProjectById,
+    }))
+  );
 
   const [newName, setNewName] = useState("");
   const [editingPath, setEditingPath] = useState<string | null>(null);
@@ -142,8 +157,15 @@ export const FileManager = memo(() => {
     isCommitting ||
     Object.values(isGitOpLoading).some(Boolean);
 
-  const projectIdForLocalFolder =
-    configuredVfsKey && configuredVfsKey !== "orphan" ? configuredVfsKey : null;
+  const projectIdForLocalFolder = useMemo(() => {
+    if (selectedItemType === "project") return selectedItemId;
+    if (selectedItemType === "conversation") {
+      return getConversationById(selectedItemId)?.projectId ?? null;
+    }
+    return null;
+  }, [getConversationById, selectedItemId, selectedItemType]);
+  const projectFolderVfsPath =
+    getProjectById(projectIdForLocalFolder)?.path ?? null;
 
   useEffect(() => {
     if (
@@ -386,6 +408,12 @@ export const FileManager = memo(() => {
       if (!projectIdForLocalFolder || isAnyOperationLoading || isVfsLoading) {
         return;
       }
+      if (!projectFolderVfsPath) {
+        if (showToast) {
+          toast.error(t("fileManager.selectProjectBeforeLocalFolder", "Select a project first."));
+        }
+        return;
+      }
       if (projectFolderSyncingRef.current) return;
       const fsInstance = useVfsStore.getState().fs;
       if (!fsInstance) {
@@ -400,7 +428,8 @@ export const FileManager = memo(() => {
         );
         const result = await syncProjectDirectoryTwoWay(
           projectIdForLocalFolder,
-          fsInstance
+          fsInstance,
+          projectFolderVfsPath
         );
         const message = describeRealFsSyncResult("two-way", result);
         setLocalFolderStatus(message);
@@ -421,6 +450,7 @@ export const FileManager = memo(() => {
       currentParentId,
       isAnyOperationLoading,
       isVfsLoading,
+      projectFolderVfsPath,
       projectIdForLocalFolder,
       t,
     ]
@@ -435,7 +465,7 @@ export const FileManager = memo(() => {
   }, [localFolderName, projectIdForLocalFolder, runProjectFolderSync]);
 
   const handleConnectProjectFolder = useCallback(async () => {
-    if (!projectIdForLocalFolder) {
+    if (!projectIdForLocalFolder || !projectFolderVfsPath) {
       toast.error(t("fileManager.selectProjectBeforeLocalFolder", "Select a project first."));
       return;
     }
@@ -457,7 +487,7 @@ export const FileManager = memo(() => {
       );
       const result = await syncRealDirectoryTwoWay({
         fsInstance,
-        vfsPath: "/",
+        vfsPath: projectFolderVfsPath,
         directoryHandle,
       });
       const message = describeRealFsSyncResult("two-way", result);
@@ -477,6 +507,7 @@ export const FileManager = memo(() => {
     currentParentId,
     isAnyOperationLoading,
     isVfsLoading,
+    projectFolderVfsPath,
     projectIdForLocalFolder,
     t,
   ]);

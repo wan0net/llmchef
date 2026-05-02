@@ -43,6 +43,7 @@ import {
 } from "ai";
 import type { fs } from "@zenfs/core";
 import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import { vfsEvent } from "@/types/llmchef/events/vfs.events";
 import { canvasEvent,} from "@/types/llmchef/events/canvas.events";
 import { providerEvent } from "@/types/llmchef/events/provider.events";
@@ -797,23 +798,7 @@ export const InteractionService = {
                 execute: async (args: any) => {
                 const currentConvId =
                   useInteractionStore.getState().currentConversationId;
-                const conversation = currentConvId
-                  ? useConversationStore
-                      .getState()
-                      .getConversationById(currentConvId)
-                  : null;
-
-                let targetVfsKey: string;
-                if (conversation && conversation.projectId) {
-                  if (typeof conversation.projectId === 'string') {
-                    targetVfsKey = conversation.projectId;
-                  } else {
-                    console.warn(`[InteractionService] conversation.projectId for conversation ${currentConvId} is not a string (type: ${typeof conversation.projectId}). Defaulting VFS key to "orphan". Value:`, conversation.projectId);
-                    targetVfsKey = "orphan";
-                  }
-                } else {
-                  targetVfsKey = "orphan";
-                }
+                const targetVfsKey = APP_VFS_KEY;
                 
                 let fsInstance: typeof fs | undefined | null;
                 try {

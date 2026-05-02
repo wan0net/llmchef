@@ -7,6 +7,8 @@ import { PersistenceService } from "@/services/persistence.service";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { normalizePath } from "@/lib/llmchef/file-manager-utils";
+import { APP_VFS_KEY } from "@/lib/llmchef/constants";
+import * as VfsOps from "@/lib/llmchef/vfs-operations";
 import { useSettingsStore } from "./settings.store";
 import { useProviderStore } from "./provider.store";
 import { emitter } from "@/lib/llmchef/event-emitter";
@@ -19,6 +21,54 @@ import type {
   ActionHandler,
 } from "@/types/llmchef/control";
 import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+
+const getProjectFolderName = (name: string, id: string) =>
+  `${name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "project"}-${id.substring(0, 4)}`;
+
+const ensureProjectFolder = async (path: string) => {
+  const fsInstance = await VfsOps.initializeFsOp(APP_VFS_KEY);
+  if (!fsInstance) {
+    throw new Error("Failed to initialize the LLMChef VFS.");
+  }
+  await VfsOps.createDirectoryOp(path, { fsInstance });
+};
+
+const renameProjectFolder = async (oldPath: string, newPath: string) => {
+  const fsInstance = await VfsOps.initializeFsOp(APP_VFS_KEY);
+  if (!fsInstance) {
+    throw new Error("Failed to initialize the LLMChef VFS.");
+  }
+  const parentPath = normalizePath(newPath.split("/").slice(0, -1).join("/") || "/");
+  await VfsOps.createDirectoryOp(parentPath, { fsInstance });
+  try {
+    await fsInstance.promises.stat(oldPath);
+  } catch (err: any) {
+    if (err.code === "ENOENT") {
+      await VfsOps.createDirectoryOp(newPath, { fsInstance });
+      return;
+    }
+    throw err;
+  }
+  try {
+    await fsInstance.promises.stat(newPath);
+    throw new Error(`Project folder already exists at ${newPath}.`);
+  } catch (err: any) {
+    if (err.code !== "ENOENT") throw err;
+  }
+  await VfsOps.renameOp(oldPath, newPath, { fsInstance });
+};
+
+const deleteProjectFolder = async (path: string) => {
+  const fsInstance = await VfsOps.initializeFsOp(APP_VFS_KEY);
+  if (!fsInstance) {
+    throw new Error("Failed to initialize the LLMChef VFS.");
+  }
+  await VfsOps.rmdirRecursive(path, { fsInstance });
+};
 
 interface ProjectState {
   projects: Project[];
@@ -66,6 +116,9 @@ export const useProjectStore = create(
       set({ isLoading: true, error: null });
       try {
         const dbProjects = await PersistenceService.loadProjects();
+        await Promise.all(
+          dbProjects.map((project) => ensureProjectFolder(project.path))
+        );
         set({ projects: dbProjects, isLoading: false });
         emitter.emit(projectEvent.loaded, { projects: dbProjects });
       } catch (e) {
@@ -85,9 +138,7 @@ export const useProjectStore = create(
         ? get().getProjectById(projectData.parentId)?.path ?? "/"
         : "/";
       const newPath = normalizePath(
-        `${parentPath}/${projectData.name
-          .replace(/\s+/g, "-")
-          .toLowerCase()}-${newId.substring(0, 4)}`
+        `${parentPath}/${getProjectFolderName(projectData.name, newId)}`
       );
 
       const newProject: Project = {
@@ -111,6 +162,7 @@ export const useProjectStore = create(
       };
 
       try {
+        await ensureProjectFolder(newProject.path);
         await PersistenceService.saveProject(newProject);
         set((state) => {
           state.projects.unshift(newProject);
@@ -140,23 +192,48 @@ export const useProjectStore = create(
         updatedAt: new Date(),
       };
 
-      if (updates.name && updates.name !== originalProject.name) {
-        const parentPath = originalProject.parentId
-          ? get().getProjectById(originalProject.parentId)?.path ?? "/"
+      if (
+        (updates.name && updates.name !== originalProject.name) ||
+        (updates.parentId !== undefined && updates.parentId !== originalProject.parentId)
+      ) {
+        const parentPath = updatedProjectData.parentId
+          ? get().getProjectById(updatedProjectData.parentId)?.path ?? "/"
           : "/";
         updatedProjectData.path = normalizePath(
-          `${parentPath}/${updates.name
-            .replace(/\s+/g, "-")
-            .toLowerCase()}-${id.substring(0, 4)}`
+          `${parentPath}/${getProjectFolderName(updatedProjectData.name, id)}`
         );
       }
 
       try {
-        await PersistenceService.saveProject(updatedProjectData);
+        const projectsToSave = [updatedProjectData];
+        if (updatedProjectData.path !== originalProject.path) {
+          await renameProjectFolder(originalProject.path, updatedProjectData.path);
+          const oldPrefix = `${originalProject.path}/`;
+          const childProjects = get().projects.filter((p) =>
+            p.path.startsWith(oldPrefix)
+          );
+          for (const child of childProjects) {
+            projectsToSave.push({
+              ...child,
+              path: normalizePath(
+                `${updatedProjectData.path}/${child.path.slice(oldPrefix.length)}`
+              ),
+              updatedAt: new Date(),
+            });
+          }
+        }
+
+        await Promise.all(
+          projectsToSave.map((project) => PersistenceService.saveProject(project))
+        );
         set((state) => {
-          const index = state.projects.findIndex((p) => p.id === id);
-          if (index !== -1) {
-            state.projects[index] = updatedProjectData;
+          for (const project of projectsToSave) {
+            const index = state.projects.findIndex((p) => p.id === project.id);
+            if (index !== -1) {
+              state.projects[index] = project;
+            }
+          }
+          if (projectsToSave.length > 0) {
             state.projects.sort(
               (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
             );
@@ -187,6 +264,7 @@ export const useProjectStore = create(
       findDescendants(id);
 
       try {
+        await deleteProjectFolder(projectToDelete.path);
         await PersistenceService.deleteProject(id); // This handles recursive DB deletion
         set((state) => ({
           projects: state.projects.filter(

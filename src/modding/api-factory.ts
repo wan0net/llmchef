@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import type { z } from "zod";
 import { splitModelId } from "@/lib/llmchef/provider-helpers";
 import { useVfsStore } from "@/store/vfs.store";
+import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import type { fs } from "@zenfs/core";
 import { controlRegistryEvent } from "@/types/llmchef/events/control.registry.events";
 import { blockRendererEvent } from "@/types/llmchef/events/block-renderer.events";
@@ -230,8 +231,8 @@ export function createModApi(mod: DbMod): LLMChefModApi {
       unsubscribers.push(u);
       return u;
     },
-    getVfsInstance: async (vfsKey: string): Promise<typeof fs | null> => {
-      return useVfsStore.getState().initializeVFS(vfsKey, { force: true });
+    getVfsInstance: async (_vfsKey: string): Promise<typeof fs | null> => {
+      return useVfsStore.getState().initializeVFS(APP_VFS_KEY, { force: true });
     },
   };
 

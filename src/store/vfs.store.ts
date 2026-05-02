@@ -640,7 +640,27 @@ export const useVfsStore = create(
       if (!fsInstance || get().vfsKey !== get().configuredVfsKey) return;
 
       const normalizedPath = normalizePath(path);
-      const targetNode = findNodeByPath(normalizedPath);
+      let targetNode = findNodeByPath(normalizedPath);
+
+      if (!targetNode && normalizedPath !== "/" && rootId) {
+        const segments = normalizedPath.split("/").filter(Boolean);
+        let parentId = rootId;
+        for (const segment of segments) {
+          await fetchNodes(parentId);
+          const nextNode = Object.values(get().nodes).find(
+            (node) =>
+              node.parentId === parentId &&
+              node.name === segment &&
+              node.type === "folder"
+          );
+          if (!nextNode) break;
+          parentId = nextNode.id;
+          targetNode = nextNode;
+        }
+        if (targetNode?.path !== normalizedPath) {
+          targetNode = undefined;
+        }
+      }
 
       if (targetNode && targetNode.type === "folder") {
         set((state) => {

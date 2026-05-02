@@ -538,9 +538,9 @@ LLMChef implements a browser-based Virtual File System using ZenFS with IndexedD
 
 ### VFS Context Switching
 
-VFS operates with different contexts:
-- **Project VFS**: `vfsKey = projectId` - Project-specific filesystem
-- **Orphan VFS**: `vfsKey = "orphan"` - For conversations without projects
+VFS operates with named stores:
+- **App VFS**: `vfsKey = "llmchef"` - Main filesystem containing project folders and free-form files
+- **Project folder view**: each project uses its `Project.path` folder inside the app VFS
 - **Sync VFS**: `vfsKey = "sync_repos"` - For Git repositories
 
 ### VFS Operations (`src/lib/llmchef/vfs-operations.ts`)

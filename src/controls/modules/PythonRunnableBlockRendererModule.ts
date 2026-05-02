@@ -35,7 +35,7 @@ You can use the following methods on \`llmchef\`:
 - \`llmchef.emit(eventName, payload)\` — Emit events to the LLMChef system
 
 ### VFS (File System)
-- \`llmchef.getVfsInstance(vfsKey)\` — Get VFS instance ('orphan' is the default)
+- \`llmchef.getVfsInstance(vfsKey)\` — Get the shared LLMChef VFS instance
 
 ### DOM Target
 - \`llmchef.target\` — The DOM element for rendering content and UI
@@ -261,7 +261,7 @@ export class PythonRunnableBlockRendererModule implements ControlModule {
         this.modApiRef?.emit(eventName as any, payload);
       },
       getVfsInstance: (vfsKey?: string) => {
-        return this.modApiRef?.getVfsInstance(vfsKey || 'orphan');
+        return this.modApiRef?.getVfsInstance(vfsKey || 'llmchef');
       },
       target: previewElement
     };

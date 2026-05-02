@@ -60,8 +60,7 @@ export class LLMChefDatabase extends Dexie {
   crea8MemoryProposals!: Table<DbCrea8MemoryProposal, string>;
 
   constructor() {
-    // Preserve the existing IndexedDB namespace so renamed installs keep local data.
-    super("Lite" + "ChatDatabase_Rewrite_v1");
+    super("LLMChefDatabase_Rewrite_v1");
     this.version(14).stores({
       conversations:
         "++id, title, createdAt, updatedAt, syncRepoId, lastSyncedAt, projectId",
