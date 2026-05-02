@@ -27,9 +27,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Run Semgrep
-        run: semgrep scan --config auto --error
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            git fetch origin "$BASE_REF" --depth=1
+            BASE_SHA="$(git merge-base HEAD "origin/$BASE_REF")"
+            semgrep scan --config auto --error --baseline-commit "$BASE_SHA"
+          elif [[ "$EVENT_NAME" == "push" && -n "$BEFORE_SHA" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            semgrep scan --config auto --error --baseline-commit "$BEFORE_SHA"
+          else
+            semgrep scan --config auto
+          fi
 
   trivy:
     name: trivy fs
@@ -52,4 +70,3 @@ jobs:
           scanners: vuln,secret,misconfig
           skip-dirs: node_modules,dist,.git
           skip-files: public/release/latest.zip,public/release/llmchef-0.2.9-beta.zip
-
