@@ -880,6 +880,22 @@ export const InteractionService = {
       finalPrompt.parameters?.maxSteps ??
       useSettingsStore.getState().toolMaxSteps;
 
+    const hasExecutableTools =
+      modelSupportsTools &&
+      !!toolsWithExecute &&
+      Object.keys(toolsWithExecute).length > 0;
+
+    if (
+      modelSupportsTools &&
+      finalPrompt.toolChoice &&
+      finalPrompt.toolChoice !== "none" &&
+      !hasExecutableTools
+    ) {
+      console.warn(
+        `[InteractionService] Tool choice "${JSON.stringify(finalPrompt.toolChoice)}" was requested without executable tools. Omitting toolChoice for this request.`
+      );
+    }
+
     // Prepare options for AIService.executeInteraction
     const callOptions: AIServiceCallOptions = {
       model: modelInstance,
@@ -893,24 +909,22 @@ export const InteractionService = {
       presencePenalty: finalPrompt.parameters?.presence_penalty,
       frequencyPenalty: finalPrompt.parameters?.frequency_penalty,
       maxSteps: maxSteps,
-      // Only include tools if the model supports them
-      ...(modelSupportsTools &&
-        toolsWithExecute &&
-        Object.keys(toolsWithExecute).length > 0 && {
-          tools: toolsWithExecute,
-          // Enable multi-step calls for all interactions EXCEPT system ones that shouldn't have them
-          ...(interactionType !== "conversation.title_generation" && 
-              interactionType !== "conversation.compact" && 
-              interactionType !== "system.info" && 
-              interactionType !== "system.error" && {
+      // Only include tool-call controls when executable tools are actually present.
+      // Bedrock via LiteLLM rejects toolChoice/tool-calling params without tools.
+      ...(hasExecutableTools && {
+        tools: toolsWithExecute,
+        // Enable multi-step calls for all interactions EXCEPT system ones that shouldn't have them
+        ...(interactionType !== "conversation.title_generation" &&
+          interactionType !== "conversation.compact" &&
+          interactionType !== "system.info" &&
+          interactionType !== "system.error" && {
             stopWhen: stepCountIs(maxSteps || 5),
           }),
-        }),
+      }),
       ...(finalPrompt.parameters?.providerOptions && {
         providerOptions: finalPrompt.parameters.providerOptions,
       }),
-      // Only set toolChoice if the model supports tools
-      ...(modelSupportsTools && finalPrompt.toolChoice && {
+      ...(hasExecutableTools && finalPrompt.toolChoice && {
         toolChoice: finalPrompt.toolChoice,
       }),
       // Add image generation support
