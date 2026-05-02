@@ -79,7 +79,7 @@ const UniversalBlockRenderer: React.FC<UniversalBlockRendererProps> = ({
         </div>
       );
     }
-  }, [lang, code, filepath, isStreaming, blockId, blockRenderers]);
+  }, [interactionId, lang, code, filepath, isStreaming, blockId, blockRenderers, t]);
 
   return <>{renderedBlock}</>;
 };

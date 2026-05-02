@@ -271,7 +271,7 @@ const TriggerConfigForm = React.forwardRef<
       );
       mountedRef.current = true;
     }
-  }, [initialData, triggerForm.setFieldValue]);
+  }, [initialData, triggerForm]);
 
   const templatesForTrigger =
     currentValues.triggerType === "template" ? promptTemplates : agentTasks;
@@ -448,7 +448,7 @@ const TemplateVariableFormWrapper = React.forwardRef<
           }
         });
     }
-  }, [template.id, template.prompt, initialVariables, module.compileTemplate]); // Re-run when template changes
+  }, [template.id, template.prompt, initialVariables, module]); // Re-run when template changes
 
   return (
     <div>
@@ -852,7 +852,7 @@ export const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({ module }) => {
     setActiveTab("builder");
   };
 
-  const handleEditWorkflow = (existingWorkflow: WorkflowTemplate) => {
+  const handleEditWorkflow = useCallback((existingWorkflow: WorkflowTemplate) => {
     // Set editing mode and load existing workflow data
     setIsEditingExisting(true);
     setCurrentWorkflow(existingWorkflow);
@@ -886,7 +886,7 @@ export const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({ module }) => {
     // }, 100);
 
     setOpen(true);
-  };
+  }, []);
 
   const handleSaveWorkflow = async () => {
     // Gather all current form data before saving

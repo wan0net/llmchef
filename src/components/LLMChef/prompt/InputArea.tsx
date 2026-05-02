@@ -7,6 +7,8 @@ import React, {
   useEffect,
   useState,
   memo,
+  useCallback,
+  useMemo,
 } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -65,9 +67,13 @@ export const InputArea = memo(
       }
 
       // Initialize parser service and register namespaces
-      const parserService = new TextTriggerParserService(
-        settings.textTriggerStartDelimiter,
-        settings.textTriggerEndDelimiter
+      const parserService = useMemo(
+        () =>
+          new TextTriggerParserService(
+            settings.textTriggerStartDelimiter,
+            settings.textTriggerEndDelimiter
+          ),
+        [settings.textTriggerStartDelimiter, settings.textTriggerEndDelimiter]
       );
       
       // Parser service now gets namespaces directly from the control registry
@@ -319,7 +325,7 @@ export const InputArea = memo(
         }
       };
 
-      const parseTriggers = (text: string) => {
+      const parseTriggers = useCallback((text: string) => {
         if (!settings.textTriggersEnabled) {
           setTriggers([]);
           return;
@@ -332,7 +338,7 @@ export const InputArea = memo(
           console.warn('Error parsing triggers:', error);
           setTriggers([]);
         }
-      };
+      }, [parserService, settings.textTriggersEnabled]);
 
       const handleTextareaChange = (
         e: React.ChangeEvent<HTMLTextAreaElement>
@@ -396,12 +402,12 @@ export const InputArea = memo(
             onValueChange(initialValue);
           }
         }
-      }, [initialValue, onValueChange, setPromptInputValue]);
+      }, [initialValue, internalValue, onValueChange, setPromptInputValue]);
 
       // Parse triggers when value changes
       useEffect(() => {
         parseTriggers(internalValue);
-      }, [internalValue, settings.textTriggersEnabled]);
+      }, [internalValue, settings.textTriggersEnabled, parseTriggers]);
 
 
 

@@ -115,6 +115,24 @@ const DEFAULT_MCP_CONNECTION_TIMEOUT = 10000; // 10 seconds
 const DEFAULT_MCP_MAX_RESPONSE_SIZE = 128000; // 128KB - much more generous default
 const DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL = "https://esm.sh";
 
+const isLoopbackRegistryHost = (host: string): boolean =>
+  host === "localhost" ||
+  host.startsWith("localhost:") ||
+  host === "127.0.0.1" ||
+  host.startsWith("127.") ||
+  host.startsWith("[::1]");
+
+const normalizeMcpPackageRegistryUrl = (value: string): string => {
+  const parsed = new URL(value);
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error("Registry URL must use HTTP(S).");
+  }
+  if (parsed.protocol === "http:" && !isLoopbackRegistryHost(parsed.host)) {
+    throw new Error("HTTP package registries are only allowed on localhost.");
+  }
+  return `${parsed.protocol}//${parsed.host}`;
+};
+
 const defaultMcpState: McpState = {
   servers: [],
   packageImports: [],
@@ -350,14 +368,10 @@ export const useMcpStore = create(
     setPackageRuntimeRegistryUrl: (url: string) => {
       let normalized: string;
       try {
-        const parsed = new URL(url);
-        if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-          throw new Error("Registry URL must use HTTP(S).");
-        }
-        normalized = `${parsed.protocol}//${parsed.host}`;
+        normalized = normalizeMcpPackageRegistryUrl(url);
       } catch {
         set((state) => {
-          state.error = "MCP package registry URL must be a valid HTTP(S) URL.";
+          state.error = "MCP package registry URL must be HTTPS, or HTTP on localhost.";
         });
         return;
       }

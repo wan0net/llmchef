@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { init } from "es-module-lexer";
 import {
   buildEsmPackageEntryUrl,
+  normalizeMcpPackageRegistryBaseUrl,
   packageSpecToEsmPath,
   parseJsonRpcLines,
   resolveEsmImportSpecifier,
@@ -23,6 +24,14 @@ describe("mcp-js-runtime", () => {
     expect(packageSpecToEsmPath("github:example/mcp-server")).toBe("gh/example/mcp-server");
     expect(buildEsmPackageEntryUrl("https://esm.sh", "github:example/mcp-server")).toBe(
       "https://esm.sh/gh/example/mcp-server?bundle=&target=es2022&platform=browser",
+    );
+  });
+
+  it("requires HTTPS package registries except loopback HTTP", () => {
+    expect(normalizeMcpPackageRegistryBaseUrl("https://esm.sh/path")).toBe("https://esm.sh");
+    expect(normalizeMcpPackageRegistryBaseUrl("http://127.0.0.1:8787")).toBe("http://127.0.0.1:8787");
+    expect(() => normalizeMcpPackageRegistryBaseUrl("http://example.com")).toThrow(
+      "HTTP MCP package registries are only allowed on localhost.",
     );
   });
 

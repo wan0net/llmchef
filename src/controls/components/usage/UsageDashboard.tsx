@@ -1,7 +1,7 @@
 // src/controls/components/usage/UsageDashboard.tsx
 // Usage dashboard component showing cost and token analytics
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useProviderStore } from "@/store/provider.store";
 import { PersistenceService } from "@/services/persistence.service";
 import { calculateTokenCost } from "@/lib/llmchef/prompt-util";
@@ -68,7 +68,7 @@ export const UsageDashboard: React.FC = () => {
   const { dbProviderConfigs } = useProviderStore();
 
   // Load interactions for the selected date range
-  const loadUsageData = async () => {
+  const loadUsageData = useCallback(async () => {
     setLoading(true);
     try {
       const endDate = endOfDay(new Date());
@@ -87,12 +87,12 @@ export const UsageDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange]);
 
   // Load data on component mount and when date range changes
   React.useEffect(() => {
     loadUsageData();
-  }, [dateRange]);
+  }, [loadUsageData]);
 
   // Process data for daily usage chart
   const dailyUsageData = useMemo((): DailyUsage[] => {

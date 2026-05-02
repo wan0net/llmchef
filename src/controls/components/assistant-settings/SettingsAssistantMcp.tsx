@@ -13,7 +13,7 @@ import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { z } from "zod";
 import { parseMcpImportInput } from "@/lib/llmchef/mcp-package-import";
-import { buildEsmPackageEntryUrl, installMcpJsRuntimePackage, probeMcpJsRuntimeTools, smokeTestMcpJsRuntimePackage } from "@/lib/llmchef/mcp-js-runtime";
+import { buildEsmPackageEntryUrl, installMcpJsRuntimePackage, probeMcpJsRuntimeTools } from "@/lib/llmchef/mcp-js-runtime";
 
 import {
   TabbedLayout,
@@ -132,7 +132,7 @@ function PackageImportsTab() {
     }
   };
 
-  const handleInstallAndTest = async (packageImportId: string) => {
+  const handleInstallPackage = async (packageImportId: string) => {
     const packageImport = packageImports.find((item) => item.id === packageImportId);
     if (!packageImport) return;
 
@@ -144,15 +144,6 @@ function PackageImportsTab() {
         registryBaseUrl: packageRuntimeRegistryUrl,
       });
       upsertPackageRuntimeInstall(install);
-      const result = await smokeTestMcpJsRuntimePackage(install);
-
-      if (!result.ok) {
-        toast.warning(t('mcp.import.installTestWarning'), {
-          id: `mcp-install-${packageImportId}`,
-          description: result.messages.join("\n") || t('mcp.import.installTestWarningDescription'),
-        });
-        return;
-      }
 
       toast.success(t('mcp.import.installSuccess'), {
         id: `mcp-install-${packageImportId}`,
@@ -344,7 +335,7 @@ function PackageImportsTab() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleInstallAndTest(item.id)}
+                            onClick={() => handleInstallPackage(item.id)}
                             disabled={activeInstallId !== null}
                             title={t('mcp.import.installButton')}
                           >
@@ -385,6 +376,21 @@ function PackageImportsTab() {
                                 <p><span className="text-muted-foreground">{t('mcp.import.entryUrlLabel')}:</span> <span className="font-mono">{buildEsmPackageEntryUrl(packageRuntimeRegistryUrl, item.packageName)}</span></p>
                                 <p><span className="text-muted-foreground">{t('mcp.import.argsLabel')}:</span> <span className="font-mono">{item.args.length > 0 ? item.args.join(" ") : "—"}</span></p>
                                 <p><span className="text-muted-foreground">{t('mcp.import.vfsRootLabel')}:</span> <span className="font-mono">{install?.vfsRoot ?? "—"}</span></p>
+                                {install ? (
+                                  <div>
+                                    <p className="text-muted-foreground">{t('mcp.import.lockLabel', 'Resolved lock')}:</p>
+                                    <ul className="mt-1 space-y-1 font-mono">
+                                      {Object.entries(install.moduleHashes).slice(0, 3).map(([url, hash]) => (
+                                        <li key={url} className="break-all">
+                                          {url} · {hash.slice(0, 12)}
+                                        </li>
+                                      ))}
+                                      {Object.keys(install.moduleHashes).length > 3 ? (
+                                        <li>{t('mcp.import.lockMore', '+ {{count}} more modules', { count: Object.keys(install.moduleHashes).length - 3 })}</li>
+                                      ) : null}
+                                    </ul>
+                                  </div>
+                                ) : null}
                               </div>
                               <div className="space-y-2">
                                 <div className="flex flex-wrap gap-1">

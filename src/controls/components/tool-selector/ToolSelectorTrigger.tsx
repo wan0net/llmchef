@@ -41,8 +41,8 @@ export const ToolSelectorTrigger: React.FC<ToolSelectorTriggerProps> = ({
   const isVisible = module.getIsVisible(); // Get visibility from module
 
   useEffect(() => {
-    setPopoverMaxSteps(module.getMaxStepsOverride());
-  }, [module.getMaxStepsOverride()]);
+    setPopoverMaxSteps(maxStepsOverride);
+  }, [maxStepsOverride]);
 
   const handlePopoverOpenChange = (open: boolean) => {
     setPopoverOpen(open);

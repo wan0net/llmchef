@@ -163,7 +163,7 @@ export const ConversationListControlComponent: React.FC<
         return () => observer.disconnect();
       }
     }
-  }, [listRef.current, viewportReady]);
+  }, [viewportReady]);
 
   const {
     selectedItemId,

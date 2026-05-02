@@ -318,6 +318,7 @@ const PythonRunnableBlockRendererComponent: React.FC<PythonRunnableBlockRenderer
   const [showPreview, setShowPreview] = useState(false);
   const [hasRun, setHasRun] = useState(false);
   const [previewContentUpdated, setPreviewContentUpdated] = useState(0);
+  const executeCodeRef = useRef<(() => Promise<void>) | null>(null);
 
   // Security validation state
   const [securityResult, setSecurityResult] = useState<CodeSecurityResult | null>(null);
@@ -385,7 +386,7 @@ const PythonRunnableBlockRendererComponent: React.FC<PythonRunnableBlockRenderer
     } finally {
       setIsCheckingSecurity(false);
     }
-  }, [code, editedCode, isEditing]);
+  }, [code, editedCode, isEditing, t]);
 
   const handleRunClick = useCallback(async () => {
     if (!runnableBlocksEnabled) {
@@ -436,8 +437,8 @@ const PythonRunnableBlockRendererComponent: React.FC<PythonRunnableBlockRenderer
       setClickCount(0);
     }
 
-    executeCode();
-  }, [securityResult, clickCount, lastClickTime, runnableBlocksEnabled, pythonManager]);
+    void executeCodeRef.current?.();
+  }, [securityResult, clickCount, lastClickTime, runnableBlocksEnabled, pythonManager, t]);
 
   const executeCode = useCallback(async () => {
     if (!window.pyodide || !window.llmChefPython?.isReady) return;
@@ -597,6 +598,7 @@ print("✓ Matplotlib configured for Pyodide with always-present target element"
       }
     }
   }, [code, editedCode, isEditing, pythonManager]);
+  executeCodeRef.current = executeCode;
 
   const renderSlotForCodeBlock = useCallback(
     (
@@ -719,7 +721,7 @@ print("✓ Matplotlib configured for Pyodide with always-present target element"
       previewRef.current.children.length > 0 || 
       previewRef.current.innerHTML.trim().length > 0
     );
-  }, [hasRun, previewContentUpdated]);
+  }, [hasRun]);
 
   return (
     <div className="code-block-container group/codeblock my-4 max-w-full">

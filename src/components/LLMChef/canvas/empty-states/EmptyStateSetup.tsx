@@ -276,7 +276,7 @@ export const EmptyStateSetup: React.FC = () => {
         setIsSavingKey(false);
       }
     },
-    [addApiKey]
+    [addApiKey, t]
   );
 
   const handleSaveProvider = useCallback(
@@ -300,7 +300,7 @@ export const EmptyStateSetup: React.FC = () => {
         setIsSavingProvider(false);
       }
     },
-    [addProviderConfig, initialApiKeyIdForForm]
+    [addProviderConfig, initialApiKeyIdForForm, t]
   );
 
   const handleModelToggle = useCallback(
@@ -333,7 +333,7 @@ export const EmptyStateSetup: React.FC = () => {
         setIsUpdatingModels(false);
       }
     },
-    [firstProvider, updateProviderConfig]
+    [firstProvider, updateProviderConfig, t]
   );
 
   const handleStartFirstChat = useCallback(async () => {
@@ -350,7 +350,7 @@ export const EmptyStateSetup: React.FC = () => {
       setIsStartingChat(false);
       setShowProgress(false);
     }
-  }, [addConversation, selectItem]);
+  }, [addConversation, selectItem, t]);
 
   const openSettings = () => {
     emitter.emit(uiEvent.openModalRequest, {

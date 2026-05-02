@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useShallow } from "zustand/react/shallow";
 import { z } from "zod";
@@ -43,10 +43,10 @@ const SettingsRunnableBlocksComponent: React.FC = () => {
     }))
   );
 
-  const getSetting = (ruleId: string, defaultValue: boolean): boolean => {
+  const getSetting = useCallback((ruleId: string, defaultValue: boolean): boolean => {
     const value = settings.controlRuleAlwaysOn?.[ruleId];
     return typeof value === 'boolean' ? value : defaultValue;
-  }
+  }, [settings.controlRuleAlwaysOn]);
 
   const form = useForm({
     defaultValues: {
@@ -111,6 +111,7 @@ const SettingsRunnableBlocksComponent: React.FC = () => {
     settings.runnableBlocksSecurityModelId,
     settings.runnableBlocksSecurityPrompt,
     formReset,
+    getSetting,
   ]);
 
   return (

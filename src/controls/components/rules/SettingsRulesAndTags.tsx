@@ -38,7 +38,7 @@ export const SettingsRulesAndTags: React.FC<SettingsRulesAndTagsProps> = ({
         content: <SettingsTags module={module} />,
       },
     ],
-    [module]
+    [module, t]
   );
 
   return (

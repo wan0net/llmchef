@@ -40,11 +40,10 @@ export const GlobalModelSelector: React.FC<GlobalModelSelectorProps> =
         ? module.isLoadingProviders
         : false;
 
-      const models = isModuleDriven
-        ? module.globallyEnabledModels
-        : useProviderStore((state) =>
-            state.getGloballyEnabledModelDefinitions()
-          );
+      const storeModels = useProviderStore((state) =>
+        state.getGloballyEnabledModelDefinitions()
+      );
+      const models = isModuleDriven ? module.globallyEnabledModels : storeModels;
 
       const handleModelChange = useCallback(
         (newValue: string | null) => {

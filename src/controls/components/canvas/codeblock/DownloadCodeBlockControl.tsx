@@ -71,7 +71,7 @@ export const DownloadCodeBlockControl: React.FC<DownloadCodeBlockControlProps> =
         toast.error(t('actions.downloadFailed', 'Failed to download file'));
       }
     },
-    [interactionId, codeBlockId, language, codeToDownload, filepath, disabled, t]
+    [language, codeToDownload, filepath, disabled, t]
   );
 
   // Only show download button if there's a filepath or if the code is substantial

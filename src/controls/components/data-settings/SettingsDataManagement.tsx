@@ -280,7 +280,6 @@ const SettingsDataManagementComponent: React.FC = () => {
     return (
       <formInstance.Field
         name={optionKey}
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         children={(fieldApi: AnyFieldApi) => (
           <div className="flex items-center space-x-2">

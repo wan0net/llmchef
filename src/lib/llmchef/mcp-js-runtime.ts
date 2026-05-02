@@ -99,7 +99,7 @@ export const rewriteEsmImports = (
 export const installMcpJsRuntimePackage = async (
   options: McpJsRuntimeInstallOptions,
 ): Promise<McpPackageRuntimeInstall> => {
-  const registryBaseUrl = normalizeRegistryBaseUrl(options.registryBaseUrl);
+  const registryBaseUrl = normalizeMcpPackageRegistryBaseUrl(options.registryBaseUrl);
   const entryUrl = buildEsmPackageEntryUrl(registryBaseUrl, options.packageImport.packageName);
   const registryHost = getOutboundHost(registryBaseUrl);
   const modules = await withTransientAllowedOutboundHost(registryHost, () =>
@@ -467,13 +467,23 @@ const normalizeToolNames = (value: unknown): string[] => {
     .filter((name): name is string => Boolean(name));
 };
 
-const normalizeRegistryBaseUrl = (value: string): string => {
+export const normalizeMcpPackageRegistryBaseUrl = (value: string): string => {
   const url = new URL(value);
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new Error("MCP package registry must be an HTTP(S) URL.");
   }
+  if (url.protocol === "http:" && !isLoopbackHost(url.host)) {
+    throw new Error("HTTP MCP package registries are only allowed on localhost.");
+  }
   return `${url.protocol}//${url.host}`;
 };
+
+const isLoopbackHost = (host: string): boolean =>
+  host === "localhost" ||
+  host.startsWith("localhost:") ||
+  host === "127.0.0.1" ||
+  host.startsWith("127.") ||
+  host.startsWith("[::1]");
 
 const stableInstallId = async (packageName: string, entryUrl: string): Promise<string> => {
   const hash = (await sha256Hex(`${packageName}\n${entryUrl}`)).slice(0, 16);

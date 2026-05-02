@@ -20,7 +20,161 @@ export interface JsExecutionOptions {
   mode?: "isolated" | "page";
 }
 
+export interface PyExecutionOptions {
+  consent?: {
+    execute: boolean;
+  };
+  permissions?: {
+    network?: boolean;
+    storage?: boolean;
+    provider?: boolean;
+  };
+  timeoutMs?: number;
+}
+
 const JS_IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
+const PY_NETWORK_PATTERN = /\b(import\s+(?:js|pyodide\.http|urllib|requests|socket|micropip)|from\s+(?:js|pyodide\.http|urllib|requests|socket|micropip)\b|fetch\s*\(|open_url\s*\(|XMLHttpRequest|WebSocket|EventSource)\b/;
+const PY_STORAGE_PATTERN = /\b(localStorage|sessionStorage|indexedDB|caches)\b/;
+const PY_PROVIDER_PATTERN = /\b(LLMChefProvider|ai\s*\.)\b/;
+
+const assertPythonPermissions = (
+  code: string,
+  permissions: NonNullable<PyExecutionOptions["permissions"]>,
+): void => {
+  if (!permissions.network && PY_NETWORK_PATTERN.test(code)) {
+    throw new Error("Python workflow step requests network/browser bridge access, but network permission is disabled.");
+  }
+  if (!permissions.storage && PY_STORAGE_PATTERN.test(code)) {
+    throw new Error("Python workflow step requests browser storage access, but storage permission is disabled.");
+  }
+  if (!permissions.provider && PY_PROVIDER_PATTERN.test(code)) {
+    throw new Error("Python workflow step requests provider access, but provider permission is disabled.");
+  }
+};
+
+const buildPythonWorkerSource = (pyodideScriptUrl: string, pyodideIndexUrl: string): string => `
+  let pyodidePromise = null;
+  const pyodideScriptUrl = ${JSON.stringify(pyodideScriptUrl)};
+  const pyodideIndexUrl = ${JSON.stringify(pyodideIndexUrl)};
+  const deny = (name) => () => { throw new Error(name + " is not permitted for this workflow step."); };
+  const disableGlobal = (name, value) => {
+    try {
+      Object.defineProperty(self, name, { value, configurable: true, writable: true });
+    } catch {
+      try { self[name] = value; } catch {}
+    }
+  };
+
+  const loadPyodideRuntime = async () => {
+    if (!pyodidePromise) {
+      importScripts(pyodideScriptUrl);
+      pyodidePromise = self.loadPyodide({ indexURL: pyodideIndexUrl });
+    }
+    return pyodidePromise;
+  };
+
+  const applyPermissions = (permissions) => {
+    disableGlobal("Worker", function () { throw new Error("Child workers are not permitted for this workflow step."); });
+    disableGlobal("SharedWorker", function () { throw new Error("Shared workers are not permitted for this workflow step."); });
+    disableGlobal("Blob", undefined);
+    if (self.URL) {
+      const originalURL = self.URL;
+      disableGlobal("URL", new Proxy(originalURL, {
+        get(target, prop, receiver) {
+          if (prop === "createObjectURL") return deny("Object URL creation");
+          if (prop === "revokeObjectURL") return () => undefined;
+          return Reflect.get(target, prop, receiver);
+        },
+      }));
+    }
+    if (!permissions.network) {
+      disableGlobal("fetch", deny("Network access"));
+      disableGlobal("XMLHttpRequest", undefined);
+      disableGlobal("WebSocket", undefined);
+      disableGlobal("EventSource", undefined);
+      disableGlobal("importScripts", deny("Script imports"));
+    }
+    if (!permissions.storage) {
+      disableGlobal("indexedDB", undefined);
+      disableGlobal("caches", undefined);
+      disableGlobal("localStorage", undefined);
+      disableGlobal("sessionStorage", undefined);
+    }
+    if (!permissions.provider) {
+      disableGlobal("LLMChefProvider", undefined);
+      disableGlobal("ai", undefined);
+    }
+  };
+
+  self.onmessage = async (event) => {
+    const { code, context, contextKeys, permissions } = event.data;
+    try {
+      const pyodide = await loadPyodideRuntime();
+      const effectivePermissions = permissions || {};
+      applyPermissions(effectivePermissions);
+      pyodide.globals.set("_workflow_result", null);
+      pyodide.globals.set("USER_CODE", code);
+      pyodide.globals.set("_LLMCHEF_BLOCKED_MODULES_JSON", JSON.stringify([
+        ...(!effectivePermissions.network ? ["pyodide.http", "urllib", "requests", "socket", "micropip"] : []),
+        ...(!effectivePermissions.network || !effectivePermissions.storage || !effectivePermissions.provider ? ["js"] : []),
+      ]));
+      for (const key of contextKeys) {
+        pyodide.globals.set(key, context[key]);
+      }
+
+      pyodide.runPython(\`
+import builtins
+import json
+import sys
+
+_workflow_result = None
+_llmchef_blocked_modules = tuple(json.loads(_LLMCHEF_BLOCKED_MODULES_JSON))
+_llmchef_original_import = getattr(builtins, "_llmchef_original_import", builtins.__import__)
+builtins._llmchef_original_import = _llmchef_original_import
+
+def _llmchef_module_blocked(name):
+    return any(name == blocked or name.startswith(blocked + ".") for blocked in _llmchef_blocked_modules)
+
+def _llmchef_guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if level == 0 and _llmchef_module_blocked(name):
+        raise ImportError(f"{name} is not permitted for this workflow step.")
+    return _llmchef_original_import(name, globals, locals, fromlist, level)
+
+for _llmchef_module_name in list(sys.modules.keys()):
+    if _llmchef_module_blocked(_llmchef_module_name):
+        sys.modules.pop(_llmchef_module_name, None)
+
+builtins.__import__ = _llmchef_guarded_import
+
+def workflow_return(value):
+    global _workflow_result
+    _workflow_result = value
+    return value
+\`);
+
+      pyodide.runPython(\`
+try:
+    exec(USER_CODE, globals())
+except Exception as e:
+    _workflow_result = {"error": str(e)}
+    raise
+\`);
+
+      const result = pyodide.globals.get("_workflow_result");
+      self.postMessage({
+        ok: true,
+        result: result && typeof result.toJs === "function"
+          ? result.toJs({ dict_converter: Object.fromEntries })
+          : result,
+      });
+    } catch (error) {
+      self.postMessage({
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+`;
 
 export const CodeExecutionService = {
   /**
@@ -240,64 +394,84 @@ export const CodeExecutionService = {
    * @param context - Context object with workflow data
    * @returns Promise<any> - Return value from the code
    */
-  async executePy(code: string, context: Record<string, any>): Promise<any> {
+  async executePy(
+    code: string,
+    context: Record<string, any>,
+    options: PyExecutionOptions = {},
+  ): Promise<any> {
     if (!code.trim()) {
       throw new Error('Python code cannot be empty');
     }
 
-    // No security validation needed - this is user-authored workflow code
+    if (!options.consent?.execute) {
+      throw new Error('Python workflow execution requires explicit user consent for this run.');
+    }
+
+    const timeoutMs = options.timeoutMs || 5000;
+    const permissions = options.permissions || {};
+    assertPythonPermissions(code, permissions);
 
     try {
-      const pyodide = await this.getPyodide();
-      pyodide.globals.set("_workflow_result", null);
-      // Set context variables in Python global scope
-      for (const [key, value] of Object.entries(context)) {
-        pyodide.globals.set(key, value);
+      if (typeof Worker === "undefined" || typeof Blob === "undefined" || typeof URL === "undefined") {
+        throw new Error("Isolated Python execution requires browser Worker support.");
       }
-      
-      // Set up return value capture
-      pyodide.runPython(`
-import sys
-import json
 
-# Create a result container
-_workflow_result = None
-
-def workflow_return(value):
-    global _workflow_result
-    _workflow_result = value
-    return value
-      `);
-      
-      // Instead of interpolating user code, use exec to safely execute user code in a controlled scope
-      // This prevents code injection via triple quotes or special syntax
-      const safeWrapper = `
-import sys
-import json
-
-try:
-    exec(USER_CODE, globals())
-    # If no explicit return, try to capture the last expression
-    if '_workflow_result' not in globals() or _workflow_result is None:
-        pass  # No return value
-except Exception as e:
-    _workflow_result = {'error': str(e)}
-    raise
-`;
-      // Replace USER_CODE with a unique placeholder, then use runPython with code argument
-      // Pyodide supports runPython(code, globals, locals) but not direct code injection, so we use set
-      pyodide.globals.set("USER_CODE", code);
-      pyodide.runPython(safeWrapper);
-      
-      // Get the return value
-      const result = pyodide.globals.get('_workflow_result');
-      
-      // Convert Python objects to JavaScript
-      if (result && result.toJs) {
-        return result.toJs({ dict_converter: Object.fromEntries });
+      const contextKeys = Object.keys(context);
+      for (const key of contextKeys) {
+        if (!JS_IDENTIFIER.test(key)) {
+          throw new Error(`Invalid Python context variable name: ${key}`);
+        }
       }
-      
-      return result;
+
+      const pyodideScriptUrl = new URL(PYODIDE_VERSION_URL, window.location.href).href;
+      const pyodideIndexUrl = pyodideScriptUrl.replace(/\/pyodide\.js$/, "/");
+      const workerSource = buildPythonWorkerSource(pyodideScriptUrl, pyodideIndexUrl);
+      const blobUrl = URL.createObjectURL(new Blob([workerSource], { type: "text/javascript" }));
+      const worker = new Worker(blobUrl, { name: "llmchef-workflow-python" });
+
+      return await new Promise((resolve, reject) => {
+        const timer = window.setTimeout(() => {
+          worker.terminate();
+          URL.revokeObjectURL(blobUrl);
+          reject(new Error(`Python execution timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+
+        worker.onmessage = (event) => {
+          window.clearTimeout(timer);
+          worker.terminate();
+          URL.revokeObjectURL(blobUrl);
+          if (event.data?.ok) {
+            resolve(event.data.result);
+          } else {
+            reject(new Error(event.data?.error || "Unknown isolated Python execution error"));
+          }
+        };
+
+        worker.onerror = (event) => {
+          window.clearTimeout(timer);
+          worker.terminate();
+          URL.revokeObjectURL(blobUrl);
+          reject(new Error(event.message || "Worker Python execution failed"));
+        };
+
+        try {
+          worker.postMessage({
+            code,
+            context,
+            contextKeys,
+            permissions: {
+              network: permissions.network === true,
+              storage: permissions.storage === true,
+              provider: permissions.provider === true,
+            },
+          });
+        } catch (error) {
+          window.clearTimeout(timer);
+          worker.terminate();
+          URL.revokeObjectURL(blobUrl);
+          reject(new Error(`Python context is not cloneable for isolated execution: ${error instanceof Error ? error.message : "Unknown error"}`));
+        }
+      });
     } catch (error) {
       console.error('[CodeExecutionService] Python execution error:', error);
       throw new Error(`Python execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

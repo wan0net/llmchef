@@ -16,7 +16,7 @@
     "build:all": "npm run build:en && npm run build:fr",
     "build:pages": "VITE_BASE=/llmchef/ npm run build",
     "lint": "node scripts/lint-touched.mjs",
-    "lint:all": "eslint .",
+    "lint:all": "eslint . --max-warnings=0",
     "preview": "vite preview",
     "test": "DEBUG_PRINT_LIMIT=10000 vitest",
     "test:ui": "DEBUG_PRINT_LIMIT=10000 vitest --ui",

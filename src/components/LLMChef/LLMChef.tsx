@@ -129,7 +129,7 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
     if (isMobileSidebarOpen && selectedItemId && (selectedItemType === "conversation" || selectedItemType === "project")) {
       setIsMobileSidebarOpen(false);
     }
-  }, [selectedItemId, selectedItemType]);
+  }, [isMobileSidebarOpen, selectedItemId, selectedItemType]);
 
   useEffect(() => {
     if (!coreModApiRef.current) {
@@ -223,7 +223,6 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
     getConversationByIdFromStore,
     getEffectiveProjectSettings,
     isInitializing,
-    hasInitializedSuccessfully,
   ]);
 
   useEffect(() => {
@@ -299,7 +298,6 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
     getConversationByIdFromStore,
     getEffectiveProjectSettings,
     isInitializing,
-    hasInitializedSuccessfully,
   ]);
 
   useEffect(() => {
@@ -337,7 +335,6 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
     getProjectById,
     projects,
     isInitializing,
-    hasInitializedSuccessfully,
     isChatControlPanelOpen,
   ]);
 

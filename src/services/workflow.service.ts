@@ -340,6 +340,19 @@ export const WorkflowService = {
     );
   },
 
+  _confirmPyFunctionStepExecution: (run: WorkflowRun, step: WorkflowStep): boolean => {
+    if (typeof window === "undefined" || typeof window.confirm !== "function") {
+      return false;
+    }
+
+    const stepName = step.name || step.id;
+    const workflowName = run.template.name || run.template.id;
+    return window.confirm(
+      `Run Python workflow step "${stepName}" in "${workflowName}"?\n\n` +
+      "It will run in an isolated Pyodide worker. Browser storage, network, provider, and child-worker access are blocked by default.",
+    );
+  },
+
   /**
    * Execute transform step - validate queries and apply transformations
    */
@@ -1889,7 +1902,16 @@ ${JSON.stringify(triggerParameters.structured_output, null, 2)}`;
               },
             });
           } else if (step.functionLanguage === "py") {
-            result = await CodeExecutionService.executePy(step.functionCode, context);
+            const hasConsent = WorkflowService._confirmPyFunctionStepExecution(run, step);
+            result = await CodeExecutionService.executePy(step.functionCode, context, {
+              consent: { execute: hasConsent },
+              permissions: {
+                network: false,
+                storage: false,
+                provider: false,
+              },
+              timeoutMs: 30000,
+            });
           } else {
             throw new WorkflowError(`Unsupported function language: ${step.functionLanguage}`, "STEP_CREATION_FAILED", { runId: run.runId, stepId: step.id });
           }

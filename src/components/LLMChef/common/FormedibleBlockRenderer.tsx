@@ -837,6 +837,8 @@ const FormedibleBlockRendererComponent: React.FC<FormedibleBlockRendererProps> =
     formOptions: { defaultValues: {} }
   });
 
+  const FormedibleForm = formedibleResult.Form;
+
   const renderedForm = useMemo(() => {
     if (!formConfig) {
       return null;
@@ -856,8 +858,8 @@ const FormedibleBlockRendererComponent: React.FC<FormedibleBlockRendererProps> =
       return null;
     }
 
-    return <formedibleResult.Form />;
-  }, [formConfig, formDefinition, formedibleResult.Form]);
+    return <FormedibleForm />;
+  }, [formConfig, formDefinition, FormedibleForm]);
 
   const codeBlockHeaderActions = renderSlotForCodeBlock(
     "codeblock-header-actions",

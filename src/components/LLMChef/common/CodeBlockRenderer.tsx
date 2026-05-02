@@ -110,7 +110,7 @@ const CodeBlockRendererComponent: React.FC<CodeBlockRendererProps> = ({
         })
         .filter(Boolean);
     },
-    [canvasControls, editedCode, interactionId, setIsEditing]
+    [blockId, canvasControls, editedCode, interactionId, setIsEditing]
   );
 
   const highlightCode = useCallback(() => {

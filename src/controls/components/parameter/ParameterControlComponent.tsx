@@ -85,7 +85,7 @@ export const ParameterControlComponent: React.FC<ParameterControlComponentProps>
         moduleSetter(value);
       }
     },
-    [form, module]
+    [form]
   );
   
   const handleNumberInputBlur = useCallback(
@@ -96,7 +96,7 @@ export const ParameterControlComponent: React.FC<ParameterControlComponentProps>
         moduleSetter(formValue as number | null); // formValue type should align with ParamsFormValues
       }
     },
-    [form, module]
+    [form]
   );
 
   const handleUseDefault = useCallback(
@@ -106,7 +106,7 @@ export const ParameterControlComponent: React.FC<ParameterControlComponentProps>
       // For simplicity, we directly call moduleSetter(null) as per original logic.
       moduleSetter(null); 
     },
-    [form, module]
+    [form]
   );
   
   const supportedParams = module.supportedParams;

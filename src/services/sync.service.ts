@@ -173,7 +173,6 @@ export async function syncConversationLogic(
         await PersistenceService.loadInteractionsForConversation(
           conversation.id,
         );
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { lastSyncedAt, ...conversationToSave } = conversation;
       const localData = JSON.stringify(
         { conversation: conversationToSave, interactions },

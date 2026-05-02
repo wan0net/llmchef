@@ -116,21 +116,17 @@ export const ConversationItemRenderer = memo<ConversationItemProps>(
       }
     }, [isGloballyEditingThis, item, isProject]);
 
+    const itemDisplayName = isProject
+      ? (item as Project).name
+      : (item as Conversation).title;
+
     useEffect(() => {
       if (!isGloballyEditingThis) {
-        const currentItemName = isProject
-          ? (item as Project).name
-          : (item as Conversation).title;
-        if (localEditName !== currentItemName) {
-          setLocalEditName(currentItemName);
+        if (localEditName !== itemDisplayName) {
+          setLocalEditName(itemDisplayName);
         }
       }
-    }, [
-      isProject ? (item as Project).name : (item as Conversation).title,
-      isGloballyEditingThis,
-      localEditName,
-      isProject,
-    ]);
+    }, [itemDisplayName, isGloballyEditingThis, localEditName]);
 
     const isExpanded = isProject && expandedProjects.has(item.id);
     const canExpand = isProject;

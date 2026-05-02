@@ -410,6 +410,48 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
           className="flex flex-wrap gap-1 md:gap-2 items-start mb-1 md:mb-2"
         />
       )}
+      <div className="rounded-md border border-border/70 bg-card/80 px-2 py-1.5 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <PromptControlWrapper
+            controls={triggerControls}
+            area="trigger"
+            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
+          />
+          <div className="ml-auto flex items-center gap-1">
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={() => void handleQueueCurrentPrompt()}
+              disabled={!canUseComposer}
+              className="h-8 w-8 flex-shrink-0"
+              aria-label="Add prompt to queue"
+              title="Add prompt to queue"
+            >
+              <ListPlusIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              onClick={() => handleSubmit(undefined)}
+              disabled={
+                isSubmitting ||
+                (!hasInputValue && attachedFilesMetadata.length === 0) ||
+                !currentModelIdFromPromptStore
+              }
+              className="h-8 w-8 flex-shrink-0"
+              aria-label={t('sendMessage')}
+              title={t('sendMessage')}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <SendHorizonalIcon className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
       {queueItems.length > 0 && (
         <div className="rounded-md border border-border bg-card/70 p-2 shadow-xs">
           <div className="mb-2 flex items-center justify-between gap-2">
@@ -546,50 +588,16 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
           </div>
         </div>
       )}
-      <div className="flex items-end gap-2">
+      <div className="flex">
         <InputAreaRenderer
           ref={inputAreaRef}
           onSubmit={handleSubmit}
           placeholder={placeholder || translatedPlaceholder}
           onValueChange={handleInputValueChange}
           disabled={isSubmitting}
-          className="flex-grow"
+          className="w-full flex-grow"
         />
-        <Button
-          type="button"
-          size="icon"
-          variant="outline"
-          onClick={() => void handleQueueCurrentPrompt()}
-          disabled={!canUseComposer}
-          className="h-9 w-9 flex-shrink-0"
-          aria-label="Add prompt to queue"
-        >
-          <ListPlusIcon className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          size="icon"
-          onClick={() => handleSubmit(undefined)}
-          disabled={
-            isSubmitting ||
-            (!hasInputValue && attachedFilesMetadata.length === 0) ||
-            !currentModelIdFromPromptStore
-          }
-          className="h-9 w-9 flex-shrink-0"
-          aria-label={t('sendMessage')}
-        >
-          {isSubmitting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <SendHorizonalIcon className="h-4 w-4" />
-          )}
-        </Button>
-      </div>{" "}
-      <PromptControlWrapper
-        controls={triggerControls}
-        area="trigger"
-        className="flex items-center gap-1 flex-wrap flex-shrink-0 mt-1 md:mt-2"
-      />
+      </div>
     </div>
   );
 };
