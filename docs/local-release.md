@@ -5,8 +5,7 @@ LLMChef is built to behave like a CyberChef-style static tool: download the app 
 ## Standard Local Bundle
 
 ```bash
-npm run build
-bin/releaser
+npm run release:local
 ```
 
 This creates:
@@ -18,15 +17,13 @@ The ZIP contains the static app under `dist/`, with release and version folders 
 
 ## Python Runtime
 
-Runnable Python blocks load Pyodide from same-origin `/pyodide/v<version>/full/pyodide.js`.
+Runnable Python blocks load Pyodide from the app's same-origin base path, such as `/pyodide/v<version>/full/pyodide.js` in the local bundle or `/llmchef/pyodide/v<version>/full/pyodide.js` on GitHub Pages.
 
 To include Pyodide in the static bundle:
 
 ```bash
 npm install --save-dev pyodide@0.27.7
-npm run vendor:pyodide
-npm run build
-bin/releaser
+npm run release:local
 ```
 
 If `public/pyodide/v0.27.7/full/pyodide.js` is missing, Python runnable blocks will fail closed instead of contacting a CDN.

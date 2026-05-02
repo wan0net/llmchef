@@ -402,7 +402,7 @@ Current guardrails:
 - Export helpers use local CSS/fallback CSS instead of a CDN.
 - Prism code themes no longer default to CDN stylesheets; custom code themes
   must be same-origin paths.
-- Pyodide defaults to a same-origin `/pyodide` runtime path instead of a CDN.
+- Pyodide defaults to a same-origin app-base runtime path instead of a CDN.
 - Formedible location maps are off by default and no longer load Leaflet or map
   tiles from public CDNs.
 - Beat/Strudel rendering requires a locally bundled `strudel-repl` element
