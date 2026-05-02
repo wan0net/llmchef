@@ -7,11 +7,11 @@ LLMChef supports dynamic tool loading, marketplace integration, and full modding
 
 ## MCP (Model Context Protocol)
 - **Files**: `src/controls/modules/McpToolsModule.ts`, `src/store/mcp.store.ts`
-- **McpToolsModule**: Manages MCP client connections (streamable HTTP, SSE, stdio)
+- **McpToolsModule**: Manages MCP client connections (streamable HTTP, SSE)
   - Dynamically registers tools from connected MCP servers
   - Handles retry logic, connection status, event-driven reconnection
   - Public API: `registerMcpToolWithAI`, `unregisterMcpToolFromAI`, `getConnectionStatus`, `retryServerConnection`
-- **McpStore**: Manages server configs, connection state, retry/error logic, bridge config, and emits all connection/tool events
+- **McpStore**: Manages server configs, connection state, retry/error logic, and emits all connection/tool events
 - **Dynamic tool loading**: Tools are registered/unregistered at runtime as servers connect/disconnect
 
 ---

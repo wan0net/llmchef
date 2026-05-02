@@ -24,8 +24,7 @@ Recent hardening shipped:
 - Web search, page extraction, and marketplace loading no longer ship with
   default LLMChef service endpoints. They stay inert until the user configures
   their own service/source.
-- The local MCP bridge now rejects unapproved browser origins and unapproved
-  stdio commands before spawning local processes.
+- MCP requests now stay limited to explicitly configured HTTP endpoints.
 - Formedible location lookup no longer defaults to OpenStreetMap/Nominatim; a
   location endpoint must be supplied explicitly by the form config.
 - Race result export no longer fetches Tailwind from a public CDN in dev mode.
@@ -387,7 +386,7 @@ Current intentional outbound paths:
 - User-configured OpenAI-compatible/Ollama base URLs.
 - User-configured web-search CORS proxy and markdown extraction service.
 - User-configured marketplace sources and package URLs.
-- User-configured MCP HTTP/SSE endpoints and stdio bridge URL.
+- User-configured MCP HTTP/SSE endpoints.
 - User-configured Git remotes.
 - User-triggered downloads of generated image URLs returned by the selected
   image provider.
@@ -396,8 +395,7 @@ Current guardrails:
 
 - No default CORS proxy or markdown extraction service is bundled.
 - No default marketplace source is bundled.
-- The local MCP bridge has `MCP_BRIDGE_ALLOWED_ORIGINS` and
-  `MCP_BRIDGE_ALLOWED_COMMANDS` allowlists.
+- MCP requests are limited to explicitly configured endpoints.
 - Location lookup has no third-party default endpoint.
 - Export helpers use local CSS/fallback CSS instead of a CDN.
 - Prism code themes no longer default to CDN stylesheets; custom code themes
@@ -463,7 +461,7 @@ Required guardrails:
 - [x] Add install review UI for imported skills/mods/tools.
 - [ ] Add service-worker cache guidance after security upgrades.
 - [x] Remove bundled non-LLM helper-service defaults.
-- [x] Restrict local MCP bridge origins and commands.
+- [x] Remove local MCP process launching from the app surface.
 - [x] Update fork/repository links for `wan0net/llmchef`.
 
 ## Verification Commands

@@ -1,4 +1,4 @@
-import type { McpState, McpServerConfig, McpBridgeConfig } from "@/store/mcp.store";
+import type { McpState, McpServerConfig } from "@/store/mcp.store";
 
 export const mcpEvent = {
   // State Change Events
@@ -14,7 +14,6 @@ export const mcpEvent = {
   retryDelayChanged: "mcp.retry.delay.changed",
   connectionTimeoutChanged: "mcp.connection.timeout.changed",
   maxResponseSizeChanged: "mcp.max.response.size.changed",
-  bridgeConfigChanged: "mcp.bridge.config.changed",
 
   // Tool Lifecycle Events for Modding API
   beforeToolCall: "mcp.tool.before.call",
@@ -64,7 +63,6 @@ export interface McpEventPayloads {
   [mcpEvent.retryDelayChanged]: { delay: number };
   [mcpEvent.connectionTimeoutChanged]: { timeout: number };
   [mcpEvent.maxResponseSizeChanged]: { size: number };
-  [mcpEvent.bridgeConfigChanged]: { config: McpBridgeConfig };
 
   // Tool Lifecycle Events for Modding API
   [mcpEvent.beforeToolCall]: {
@@ -140,4 +138,4 @@ export interface McpEventPayloads {
   [mcpEvent.setRetryDelayRequest]: { delay: number };
   [mcpEvent.setConnectionTimeoutRequest]: { timeout: number };
   [mcpEvent.setMaxResponseSizeRequest]: { size: number };
-} 
+}

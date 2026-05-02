@@ -48,7 +48,7 @@ LLMChef integrates web search, file system, block rendering, AI image generation
 ## MCP Tools Module
 - **File**: `src/controls/modules/McpToolsModule.ts`
 - **Class**: `McpToolsModule` (ControlModule)
-  - Manages MCP client connections (streamable HTTP, SSE, stdio)
+  - Manages MCP client connections (streamable HTTP, SSE)
   - Dynamically registers tools from connected MCP servers
   - Handles retry logic, connection status, event-driven reconnection
   - **Public API**: `registerMcpToolWithAI`, `unregisterMcpToolFromAI`, `getConnectionStatus`, `retryServerConnection`

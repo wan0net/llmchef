@@ -14,13 +14,6 @@ export interface McpServerConfig {
   description?: string;
 }
 
-export interface McpBridgeConfig {
-  url?: string;        // Full URL: http://192.168.1.100:3001
-  host?: string;       // Host only: 192.168.1.100
-  port?: number;       // Port only: 3001
-  token?: string;      // Token printed by the local bridge
-}
-
 export interface McpServerStatus {
   serverId: string;
   connected: boolean;
@@ -41,8 +34,6 @@ export interface McpState {
   connectionTimeout: number;
   // Tool response settings
   maxResponseSize: number;
-  // Bridge configuration for stdio servers
-  bridgeConfig: McpBridgeConfig;
 }
 
 export interface McpActions {
@@ -63,9 +54,6 @@ export interface McpActions {
   
   // Tool Response Settings
   setMaxResponseSize: (size: number) => void;
-  
-  // Bridge Configuration
-  setBridgeConfig: (config: McpBridgeConfig) => void;
   
   // State Management
   setLoading: (loading: boolean) => void;
@@ -95,7 +83,6 @@ const defaultMcpState: McpState = {
   retryDelay: DEFAULT_MCP_RETRY_DELAY,
   connectionTimeout: DEFAULT_MCP_CONNECTION_TIMEOUT,
   maxResponseSize: DEFAULT_MCP_MAX_RESPONSE_SIZE,
-  bridgeConfig: {},
 };
 
 export const useMcpStore = create(
@@ -271,19 +258,6 @@ export const useMcpStore = create(
       emitter.emit(mcpEvent.maxResponseSizeChanged, { size: clampedSize });
     },
 
-    // Bridge Configuration Actions
-    setBridgeConfig: (config: McpBridgeConfig) => {
-      set((state) => {
-        state.bridgeConfig = { ...config };
-      });
-      
-      PersistenceService.saveSetting("mcpBridgeConfig", config).catch((error: any) => {
-        console.error("Failed to persist MCP bridge config:", error);
-      });
-      
-      emitter.emit(mcpEvent.bridgeConfigChanged, { config });
-    },
-
     // State Management Actions
     setLoading: (loading: boolean) => {
       set((state) => {
@@ -311,14 +285,12 @@ export const useMcpStore = create(
           retryDelay,
           connectionTimeout,
           maxResponseSize,
-          bridgeConfig,
         ] = await Promise.all([
           PersistenceService.loadSetting<McpServerConfig[]>("mcpServers", []),
           PersistenceService.loadSetting<number>("mcpRetryAttempts", DEFAULT_MCP_RETRY_ATTEMPTS),
           PersistenceService.loadSetting<number>("mcpRetryDelay", DEFAULT_MCP_RETRY_DELAY),
           PersistenceService.loadSetting<number>("mcpConnectionTimeout", DEFAULT_MCP_CONNECTION_TIMEOUT),
           PersistenceService.loadSetting<number>("mcpMaxResponseSize", DEFAULT_MCP_MAX_RESPONSE_SIZE),
-          PersistenceService.loadSetting<McpBridgeConfig>("mcpBridgeConfig", {}),
         ]);
         
         set((state) => {
@@ -327,7 +299,6 @@ export const useMcpStore = create(
           state.retryDelay = retryDelay;
           state.connectionTimeout = connectionTimeout;
           state.maxResponseSize = maxResponseSize;
-          state.bridgeConfig = bridgeConfig || {};
           state.loading = false;
         });
 
@@ -337,7 +308,6 @@ export const useMcpStore = create(
         emitter.emit(mcpEvent.retryDelayChanged, { delay: retryDelay });
         emitter.emit(mcpEvent.connectionTimeoutChanged, { timeout: connectionTimeout });
         emitter.emit(mcpEvent.maxResponseSizeChanged, { size: maxResponseSize });
-        emitter.emit(mcpEvent.bridgeConfigChanged, { config: bridgeConfig || {} });
         
       } catch (error: any) {
         console.error("Failed to load MCP state:", error);
@@ -356,7 +326,6 @@ export const useMcpStore = create(
         state.retryDelay = DEFAULT_MCP_RETRY_DELAY;
         state.connectionTimeout = DEFAULT_MCP_CONNECTION_TIMEOUT;
         state.maxResponseSize = DEFAULT_MCP_MAX_RESPONSE_SIZE;
-        state.bridgeConfig = {};
         state.loading = false;
         state.error = null;
       });

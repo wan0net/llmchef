@@ -71,10 +71,6 @@ export const getRuntimeAllowedOutboundHosts = (): string[] => {
   for (const server of mcpState.servers) {
     addUrlHost(hosts, server.url);
   }
-  addUrlHost(hosts, mcpState.bridgeConfig.url);
-  if (mcpState.bridgeConfig.host) {
-    hosts.add(`${mcpState.bridgeConfig.host}:${mcpState.bridgeConfig.port ?? 3001}`);
-  }
 
   for (const source of useMarketplaceStore.getState().marketplaceSources) {
     addUrlHost(hosts, source.url);

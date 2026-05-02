@@ -505,7 +505,7 @@ VITE_USER_CONFIG_FILE=prod-config.json bin/builder --release v1.0.0 --docker-rep
 - `myuser/llmchef:v1.0.0` (release-specific tag)
 - `myuser/llmchef:latest` (always updated to latest release)
 
-#### Docker Compose with MCP Bridge
+#### Docker Compose
 
 ```yaml
 # docker-compose.yml
@@ -519,8 +519,6 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-    depends_on:
-      - mcp-bridge
 
   # Alternative: Use pre-built image from Docker Hub
   # llmchef-hub:
@@ -528,28 +526,6 @@ services:
   #   ports:
   #     - "${LLMCHEF_PORT:-8080}:3000"
   #   restart: unless-stopped
-  #   depends_on:
-  #     - mcp-bridge
-
-  mcp-bridge:
-    image: node:20-alpine
-    working_dir: /app
-    command: ["node", "bin/mcp-bridge.js"]
-    ports:
-      - "127.0.0.1:${MCP_BRIDGE_PORT:-3001}:${MCP_BRIDGE_INTERNAL_PORT:-3001}"
-    environment:
-      - MCP_BRIDGE_PORT=${MCP_BRIDGE_INTERNAL_PORT:-3001}
-      - MCP_BRIDGE_HOST=${MCP_BRIDGE_HOST:-127.0.0.1}
-      - MCP_BRIDGE_VERBOSE=${MCP_BRIDGE_VERBOSE:-false}
-    volumes:
-      - ./bin/mcp-bridge.js:/app/bin/mcp-bridge.js:ro
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${MCP_BRIDGE_INTERNAL_PORT:-3001}/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
   # Optional: Reverse proxy with SSL
   nginx-proxy:
@@ -572,9 +548,6 @@ Create a `.env` file for easy configuration:
 ```bash
 # .env
 LLMCHEF_PORT=8080
-MCP_BRIDGE_PORT=3001
-MCP_BRIDGE_INTERNAL_PORT=3001
-MCP_BRIDGE_VERBOSE=false
 ```
 
 #### Manual Docker Build
@@ -589,7 +562,7 @@ docker build -t llmchef .
 # Run container (serves on port 3000)
 docker run -d -p 8080:3000 llmchef
 
-# Or with Docker Compose (includes MCP bridge)
+# Or with Docker Compose
 docker-compose up -d
 ```
 

@@ -56,7 +56,7 @@ This repository is the `wan0net/llmchef` fork, renamed and maintained as LLMChef
 - **Rules & Tags**: Reusable prompt engineering with organization
 
 ### 🔌 **MCP (Model Context Protocol) Integration**
-- **HTTP and Stdio MCP Servers**: Connect to external MCP servers via HTTP Server-Sent Events, HTTP Stream Transport and Stdio (via [node ./bin/mcp-bridge.js](./bin/mcp-bridge.js))
+- **HTTP MCP Servers**: Connect to external MCP servers via Streamable HTTP with SSE fallback
 - **Automatic Tool Discovery**: Tools from MCP servers are automatically available to the AI
 - **Graceful Error Handling**: Configurable retry logic with exponential backoff
 - **Connection Management**: Real-time status monitoring and manual retry capabilities
@@ -82,7 +82,6 @@ For comprehensive documentation, see the [`docs/`](./docs/) directory:
 - **[Getting Started Guide](./docs/readme.md)** - Architecture overview and development setup
 - **[AI Integration](./docs/ai-integration.md)** - Provider setup, streaming, and tool execution
 - **[MCP Integration](./docs/mcp-integration.md)** - Model Context Protocol server integration and external tools
-- **[MCP Bridge Specification](./docs/mcp-bridge-spec.md)** - MCP bridge protocol and implementation details
 - **[Virtual File System](./docs/vfs.md)** - Browser-based filesystem and file operations
 - **[Git Integration](./docs/git.md)** - Repository management and conversation sync
 - **[Canvas Features](./docs/canvas-features.md)** - Code blocks, diagrams, and interaction controls
@@ -166,23 +165,15 @@ docker build -t llmchef .
 # Run container (serves on port 3000)
 docker run -d -p 8080:3000 llmchef
 
-# Or use Docker Compose (includes MCP bridge service)
+# Or use Docker Compose
 docker-compose up -d
 ```
 
-#### Docker Compose with MCP Bridge
-
-The included `docker-compose.yml` provides a complete setup with MCP bridge:
+#### Docker Compose
 
 ```yaml
 # Environment variables (create .env file)
 LLMCHEF_PORT=8080
-MCP_BRIDGE_PORT=3001
-MCP_BRIDGE_TOKEN=change-this-local-token
-MCP_BRIDGE_SERVERS={"myfs":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","."]}}
-MCP_BRIDGE_VERBOSE=false
-MCP_BRIDGE_ALLOWED_ORIGINS=https://wan0net.github.io,http://localhost:5173
-MCP_BRIDGE_ALLOWED_COMMANDS=npx,node,python,python3
 
 # Start services
 docker-compose up -d
@@ -192,22 +183,13 @@ docker-compose ps
 
 # View logs
 docker-compose logs -f llmchef
-docker-compose logs -f mcp-bridge
 ```
 
 **Services included:**
 - **llmchef**: Main application (port configurable via `LLMCHEF_PORT`)
-- **mcp-bridge**: MCP bridge service (port configurable via `MCP_BRIDGE_PORT`)
 
 **Environment Variables:**
 - `LLMCHEF_PORT`: External port for LLMChef (default: 8080)
-- `MCP_BRIDGE_PORT`: External port for MCP bridge (default: 3001)
-- `MCP_BRIDGE_INTERNAL_PORT`: Internal container port (default: 3001)
-- `MCP_BRIDGE_VERBOSE`: Enable verbose logging (default: false)
-- `MCP_BRIDGE_ALLOWED_ORIGINS`: Comma-separated browser origins allowed to call the bridge
-- `MCP_BRIDGE_TOKEN`: Token LLMChef must send to use local stdio profiles
-- `MCP_BRIDGE_SERVERS`: JSON object of named stdio server profiles; use `stdio://profile-name` in LLMChef
-- `MCP_BRIDGE_ALLOWED_COMMANDS`: Comma-separated commands allowed inside named profiles
 
 #### Automated Build with Builder Script
 

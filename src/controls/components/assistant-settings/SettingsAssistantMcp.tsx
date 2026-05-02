@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, SettingsIcon, RotateCcwIcon } from "lucide-react";
+import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon } from "lucide-react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { z } from "zod";
 
@@ -30,13 +30,14 @@ import { toast } from "sonner";
 // Schemas for form validation - single source of truth
 const mcpServerFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  url: z.string().url("Must be a valid URL"),
+  url: z.string().url("Must be a valid URL").refine(
+    (value) => value.startsWith("http://") || value.startsWith("https://"),
+    "MCP servers must use http:// or https://",
+  ),
   description: z.string(),
   headers: z.string(), // JSON string in form, will be parsed to Record<string, string>
   enabled: z.boolean(),
 });
-
-// Bridge configuration uses inline validation
 
 const connectionConfigFormSchema = z.object({
   retryAttempts: z.number().min(0, "Min 0 attempts").max(10, "Max 10 attempts"),
@@ -58,216 +59,6 @@ function FieldMetaMessages({ field }: { field: AnyFieldApi }) {
         </em>
       ) : null}
     </>
-  );
-}
-
-// Bridge Configuration Component
-function BridgeConfigurationTab() {
-  const { t } = useTranslation('assistantSettings');
-  const { bridgeConfig, setBridgeConfig } = useMcpStore(
-    useShallow((state) => ({
-      bridgeConfig: state.bridgeConfig,
-      setBridgeConfig: state.setBridgeConfig,
-    }))
-  );
-
-  const form = useForm({
-    defaultValues: {
-      url: bridgeConfig.url || "",
-      host: bridgeConfig.host || "",
-      port: bridgeConfig.port || undefined,
-      token: bridgeConfig.token || "",
-    },
-    onSubmit: async ({ value }) => {
-      setBridgeConfig({
-        url: value.url || undefined,
-        host: value.host || undefined,
-        port: value.port,
-        token: value.token || undefined,
-      });
-    },
-  });
-
-  // Update form when store changes
-  useEffect(() => {
-    form.reset({
-      url: bridgeConfig.url || "",
-      host: bridgeConfig.host || "",
-      port: bridgeConfig.port || undefined,
-      token: bridgeConfig.token || "",
-    });
-  }, [bridgeConfig, form]);
-
-  const handleReset = () => {
-    if (window.confirm(t('mcp.bridge.resetConfirm'))) {
-      setBridgeConfig({});
-    }
-  };
-
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        form.handleSubmit();
-      }}
-      className="space-y-6"
-    >
-      <div>
-        <h3 className="font-medium">{t('mcp.bridge.dynamicConfiguration')}</h3>
-        <p className="text-sm text-muted-foreground">
-          {t('mcp.bridge.configDescription')}
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center">
-            <SettingsIcon className="mr-2 h-4 w-4" />
-            {t('mcp.bridge.location')}
-          </CardTitle>
-          <CardDescription>
-            {t('mcp.bridge.locationDescription')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <form.Field name="url">
-              {(field) => (
-                <div className="space-y-2">
-                  <Label htmlFor={field.name}>{t('mcp.bridge.fullUrl')}</Label>
-                  <Input
-                    id={field.name}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    placeholder="http://192.168.1.100:3001"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {t('mcp.bridge.fullUrlDescription')}
-                  </p>
-                  <FieldMetaMessages field={field} />
-                </div>
-              )}
-            </form.Field>
-            
-            <div className="space-y-2">
-              <Label>{t('mcp.bridge.hostPort')}</Label>
-              <div className="flex gap-2">
-                <form.Field name="host">
-                  {(field) => (
-                    <div className="flex-1">
-                      <Input
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                        placeholder="localhost"
-                      />
-                      <FieldMetaMessages field={field} />
-                    </div>
-                  )}
-                </form.Field>
-                <form.Field name="port">
-                  {(field) => (
-                    <div className="w-20">
-                      <Input
-                        type="number"
-                        value={field.state.value || ""}
-                        onChange={(e) => field.handleChange(parseInt(e.target.value) || undefined)}
-                        onBlur={field.handleBlur}
-                        placeholder="3001"
-                      />
-                      <FieldMetaMessages field={field} />
-                    </div>
-                  )}
-                </form.Field>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('mcp.bridge.hostPortDescription')}
-              </p>
-            </div>
-          </div>
-          <form.Field name="token">
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>{t('mcp.bridge.token')}</Label>
-                <Input
-                  id={field.name}
-                  type="password"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  placeholder={t('mcp.bridge.tokenPlaceholder')}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t('mcp.bridge.tokenDescription')}
-                </p>
-                <FieldMetaMessages field={field} />
-              </div>
-            )}
-          </form.Field>
-          
-          <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
-            <p className="font-medium mb-1">{t('mcp.bridge.detectionPriority')}</p>
-            <ol className="list-decimal list-inside space-y-1 text-xs">
-              <li>{t('mcp.bridge.priority1')}</li>
-              <li>{t('mcp.bridge.priority2')}</li>
-              <li>{t('mcp.bridge.priority3')}</li>
-            </ol>
-            <p className="mt-2 text-xs">
-              {t('mcp.bridge.priorityNote')}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t('mcp.bridge.setupInstructions')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="text-sm space-y-2">
-            <p className="font-medium">{t('mcp.bridge.instructionsText')}</p>
-            <div className="bg-muted p-3 rounded font-mono text-xs">
-              <p># {t('mcp.bridge.startBridge')}</p>
-              <p>{'MCP_BRIDGE_TOKEN=secret MCP_BRIDGE_SERVERS=\'{"myfs":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","."]}}\' node bin/mcp-bridge.js'}</p>
-              <p></p>
-              <p># {t('mcp.bridge.customSettings')}</p>
-              <p>MCP_BRIDGE_TOKEN=secret node bin/mcp-bridge.js --host 127.0.0.1 --port 3001</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex items-center justify-between pt-3 border-t">
-        <form.Subscribe>
-          {(state) => (
-            <div className="flex items-center space-x-2">
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!state.canSubmit || state.isSubmitting || state.isValidating || !state.isValid}
-              >
-                {state.isSubmitting
-                  ? t('common.saving')
-                  : state.isValidating
-                  ? t('common.validating')
-                  : t('mcp.bridge.saveConfig')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleReset}
-                type="button"
-              >
-                <RotateCcwIcon className="mr-2 h-4 w-4" />
-                {t('common.reset')}
-              </Button>
-            </div>
-          )}
-        </form.Subscribe>
-      </div>
-    </form>
   );
 }
 
@@ -872,11 +663,6 @@ export const SettingsAssistantMcp: React.FC = () => {
           onEditServer={handleEditServer}
         />
       ),
-    },
-    {
-      value: "bridge",
-      label: t('mcp.tabs.bridge'),
-      content: <BridgeConfigurationTab />,
     },
     {
       value: "connection",

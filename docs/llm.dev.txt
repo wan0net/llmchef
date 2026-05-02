@@ -488,7 +488,6 @@ export const useExampleStore = create(
 
 #### McpStore (`src/store/mcp.store.ts`)
 - Manages MCP server configurations and connection status
-- Bridge configuration for stdio MCP servers (`bridgeConfig`)
 - Retry settings and connection timeouts
 - Server status tracking and tool discovery
 - Tool response size configuration (`maxResponseSize`)
@@ -703,7 +702,7 @@ appendInteractionResponseChunk: (id: string, chunk: string) => {
 
 ## MCP (Model Context Protocol) Integration
 
-LLMChef provides comprehensive MCP integration with multiple transport protocols and flexible deployment options.
+LLMChef provides MCP integration through browser-managed HTTP endpoints.
 
 ### Supported Transport Protocols
 
@@ -712,28 +711,9 @@ LLMChef provides comprehensive MCP integration with multiple transport protocols
    - Session management and security improvements
    - Single endpoint design with better error handling
 
-2. **Stdio Transport** - Local/Remote Servers
-   - Via LLMChef MCP Bridge service
-   - Supports local and remote bridge deployments
-   - Process management and secure proxy functionality
-
-3. **SSE Transport** - Legacy Compatibility
+2. **SSE Transport** - Legacy Compatibility
    - Backwards compatibility with older MCP implementations
    - Automatic fallback when newer protocols fail
-
-### Bridge Configuration
-
-The MCP Bridge supports flexible deployment scenarios:
-
-```typescript
-interface McpBridgeConfig {
-  url?: string;        // Full URL: http://192.168.1.100:3001
-  host?: string;       // Host only: 192.168.1.100
-  port?: number;       // Port only: 3001
-}
-
-// Auto-detection fallback: localhost ports 3001, 8080, 3000, 8000
-```
 
 ### MCP Server Configuration
 
@@ -741,7 +721,7 @@ interface McpBridgeConfig {
 interface McpServerConfig {
   id: string;
   name: string;
-  url: string;          // HTTP/HTTPS or stdio:// URLs
+  url: string;          // HTTP/HTTPS MCP endpoint
   description?: string;
   headers?: Record<string, string>;
   enabled: boolean;
@@ -1159,9 +1139,6 @@ npm test
 
 # Type checking
 npx tsc --noEmit
-
-# MCP Bridge (for stdio MCP servers)
-node bin/mcp-bridge.js
 ```
 
 ### Build Process

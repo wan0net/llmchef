@@ -17,7 +17,7 @@ interface McpClient {
   client: any; // MCP client instance
   tools: Record<string, Tool>;
   sessionId?: string; // For Streamable HTTP session management
-  transport: 'streamable-http' | 'sse' | 'stdio'; // Track which transport is being used
+  transport: 'streamable-http' | 'sse'; // Track which transport is being used
 }
 
 interface RetryConfig {
@@ -238,40 +238,31 @@ export class McpToolsModule implements ControlModule {
 
     try {
       let mcpClient: any;
-      let transportType: 'streamable-http' | 'sse' | 'stdio' = 'streamable-http';
+      let transportType: 'streamable-http' | 'sse' = 'streamable-http';
 
-      // Determine transport type based on URL scheme
-      if (server.url.startsWith('stdio://')) {
-        // Try stdio transport via multi-server bridge
-        // No timeout for stdio as it needs time to spawn the npx process
+      if (!server.url.startsWith('http://') && !server.url.startsWith('https://')) {
+        throw new Error('MCP server URL must use http:// or https://.');
+      }
 
-        mcpClient = await this.connectWithStdioTransport(server);
-        transportType = 'stdio';
-      } else {
-        // Create a timeout promise for HTTP-based transports only
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => {
-            reject(new Error(`Connection timeout after ${retryConfig.timeout}ms`));
-          }, retryConfig.timeout);
-        });
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`Connection timeout after ${retryConfig.timeout}ms`));
+        }, retryConfig.timeout);
+      });
 
-        // Try HTTP-based transports with timeout
-        try {
-          // First try the new Streamable HTTP transport
-          mcpClient = await Promise.race([
-            this.connectWithStreamableHttp(server),
-            timeoutPromise,
-          ]);
-          transportType = 'streamable-http';
-        } catch (streamableError) {
-          console.debug(`[${this.id}] Streamable HTTP transport failed, falling back to SSE:`, streamableError);
-          // Fallback to deprecated SSE transport for backwards compatibility
-          mcpClient = await Promise.race([
-            this.connectWithSseTransport(server),
-            timeoutPromise,
-          ]);
-          transportType = 'sse';
-        }
+      try {
+        mcpClient = await Promise.race([
+          this.connectWithStreamableHttp(server),
+          timeoutPromise,
+        ]);
+        transportType = 'streamable-http';
+      } catch (streamableError) {
+        console.debug(`[${this.id}] Streamable HTTP transport failed, falling back to SSE:`, streamableError);
+        mcpClient = await Promise.race([
+          this.connectWithSseTransport(server),
+          timeoutPromise,
+        ]);
+        transportType = 'sse';
       }
 
 
@@ -285,9 +276,7 @@ export class McpToolsModule implements ControlModule {
       let enhancedError = error;
 
       if (error instanceof Error) {
-        if (error.message.includes('Bridge service not healthy') || error.message.includes('stdio bridge connection failed')) {
-          enhancedError = new Error(`Stdio MCP server requires LLMChef MCP Bridge. Please install and start the bridge service: npm install -g llmchef-mcp-bridge && llmchef-mcp-bridge`);
-        } else if (error.message.includes('fetch')) {
+        if (error.message.includes('fetch')) {
           enhancedError = new Error(`Network error: Unable to reach MCP server at ${server.url}. Please check if the server is running and accessible.`);
         } else if (error.message.includes('timeout')) {
           enhancedError = new Error(`Connection timeout: MCP server at ${server.url} did not respond within ${retryConfig.timeout}ms.`);
@@ -319,41 +308,6 @@ export class McpToolsModule implements ControlModule {
     return experimental_createMCPClient({
       transport,
     });
-  }
-
-  /**
-   * Detect if stdio bridge is available on configured locations
-   */
-  private async getBridgeUrl(): Promise<string> {
-    // Get bridge configuration from MCP settings
-    const mcpState = useMcpStore.getState();
-    const bridgeConfig = mcpState.bridgeConfig || {};
-
-    // If user has configured a specific bridge URL, use that
-    if (bridgeConfig.url) {
-      return bridgeConfig.url;
-    }
-
-    // If user has configured host/port, use that combination
-    if (bridgeConfig.host || bridgeConfig.port) {
-      const host = bridgeConfig.host || 'localhost';
-      const port = bridgeConfig.port || 3001;
-
-      // For host/port config, default to HTTP (user can specify full URL with protocol if they want HTTPS)
-      return `http://${host}:${port}`;
-    }
-
-    // Default fallback: localhost:3001
-    return 'http://localhost:3001';
-  }
-
-  private getBridgeHeaders(server: McpServerConfig): Record<string, string> {
-    const { bridgeConfig } = useMcpStore.getState();
-    return {
-      'Content-Type': 'application/json',
-      ...(bridgeConfig.token ? { 'X-MCP-Bridge-Token': bridgeConfig.token } : {}),
-      ...server.headers,
-    };
   }
 
   private getMcpHttpHeaders(
@@ -398,102 +352,6 @@ export class McpToolsModule implements ControlModule {
     return [JSON.parse(text)];
   }
 
-  /**
-   * Connect directly to bridge and get tools - NO AI SDK BULLSHIT!
-   */
-  private async connectWithStdioTransport(server: McpServerConfig): Promise<any> {
-
-
-    // Check if this is a stdio server configuration
-    if (!server.url.startsWith('stdio://')) {
-      throw new Error('Not a stdio server configuration');
-    }
-
-    // Parse stdio URL. Preferred form is stdio://profile-name, where the
-    // bridge owns the command and args in MCP_BRIDGE_SERVERS.
-    const stdioUrl = new URL(server.url);
-    const profileName = stdioUrl.hostname || stdioUrl.pathname.replace(/^\/+/, '');
-    if (!profileName) {
-      throw new Error('stdio:// URL must specify a bridge profile (e.g., stdio://myfs).');
-    }
-
-    // Get the configured bridge URL
-    const bridgeUrl = await this.getBridgeUrl();
-
-    try {
-      const serverEndpoint = assertAllowedOutboundUrl(
-        `${bridgeUrl}/servers/${encodeURIComponent(profileName)}/mcp`,
-        `mcp:stdio-bridge:${server.name}`,
-      );
-
-
-
-      // Get the tools list by making a POST request with tools/list method
-      // The bridge will create the server automatically on the first request
-      const toolsResponse = await fetch(serverEndpoint, {
-        method: 'POST',
-        headers: this.getBridgeHeaders(server),
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'tools/list',
-          params: {}
-        })
-      });
-
-      if (!toolsResponse.ok) {
-        throw new Error(`Failed to get tools: ${toolsResponse.status} ${toolsResponse.statusText}`);
-      }
-
-      const toolsResult = await toolsResponse.json();
-
-
-      if (toolsResult.error) {
-        throw new Error(`Tools request failed: ${toolsResult.error.message}`);
-      }
-
-      // Create a counter for unique IDs to prevent collisions in rapid tool calls
-      let requestIdCounter = 0;
-
-      // Return a simple client that can call tools
-      return {
-        tools: toolsResult.result?.tools || [],
-        serverEndpoint,
-        callTool: async (request: { name: string; arguments: any }) => {
-          // Generate unique ID using timestamp + counter to prevent collisions
-          const uniqueId = `${Date.now()}_${++requestIdCounter}`;
-
-          const response = await fetch(serverEndpoint, {
-            method: 'POST',
-            headers: this.getBridgeHeaders(server),
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              id: uniqueId,
-              method: 'tools/call',
-              params: {
-                name: request.name,
-                arguments: request.arguments
-              }
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error(`Tool call failed: ${response.status} ${response.statusText}`);
-          }
-
-          const result = await response.json();
-          if (result.error) {
-            throw new Error(`Tool execution failed: ${result.error.message}`);
-          }
-
-          return result.result;
-        }
-      };
-
-    } catch (error) {
-      throw new Error(`Bridge connection failed: ${error instanceof Error ? error.message : error}. Ensure bridge is running with a matching MCP_BRIDGE_SERVERS profile and bridge token. Profile: ${profileName}`);
-    }
-  }
 
   /**
    * Fallback to the deprecated SSE transport for backwards compatibility
@@ -641,16 +499,15 @@ export class McpToolsModule implements ControlModule {
   private async handleSuccessfulConnection(
     server: McpServerConfig,
     mcpClient: any,
-    transportType: 'streamable-http' | 'sse' | 'stdio'
+    transportType: 'streamable-http' | 'sse'
   ): Promise<void> {
 
 
-    // Get available tools from our simple bridge client
+    // Get available tools from the MCP client
     let tools;
     try {
 
 
-      // Our simple client already has the tools from the bridge
       if (mcpClient.tools && Array.isArray(mcpClient.tools)) {
         // Convert array of tools to object format expected by the rest of the code
         tools = {};
@@ -663,8 +520,8 @@ export class McpToolsModule implements ControlModule {
 
 
       } else {
-        console.error(`[${this.id}] Bridge client missing tools array:`, mcpClient);
-        throw new Error('Bridge client missing tools array');
+        console.error(`[${this.id}] MCP client missing tools array:`, mcpClient);
+        throw new Error('MCP client missing tools array');
       }
 
 
@@ -701,7 +558,7 @@ export class McpToolsModule implements ControlModule {
 
 
         // Tool definition for LLMChef registry
-        const mcpTool = tool as any; // MCP tool from bridge
+        const mcpTool = tool as any;
 
         // Convert JSON schema to Zod schema
         let parametersSchema: z.ZodSchema<any>;
@@ -758,7 +615,7 @@ export class McpToolsModule implements ControlModule {
           inputSchema: parametersSchema,
         };
 
-        // Tool implementation that calls the MCP bridge
+        // Tool implementation that calls the MCP client
         const toolImplementation = async (args: any) => {
           const result = await clientInfo.client.callTool({
             name: toolName,
@@ -830,7 +687,6 @@ export class McpToolsModule implements ControlModule {
     const transportNames = {
       'streamable-http': 'Streamable HTTP (latest)',
       'sse': 'SSE (legacy)',
-      'stdio': 'Stdio (local bridge)'
     };
 
     toast.success(`Connected to MCP server: ${server.name}`, {
@@ -929,7 +785,7 @@ export class McpToolsModule implements ControlModule {
 
       // Tool implementation (separate from definition)
       const toolImplementation = async (args: any) => {
-        // Use our bridge client to call the tool
+        // Use the connected MCP client to call the tool
         const result = await clientInfo.client.callTool({
           name: toolName,
           arguments: args

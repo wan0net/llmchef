@@ -6,14 +6,14 @@ LLMChef is now positioned as a fork of LLMChef with a CyberChef-style operating 
 
 - Default runtime resources are local-first. Generated exports, prompt examples, and app metadata avoid loading LLMChef assets from GitHub Pages.
 - Markdown, Mermaid, and generated diagram HTML are sanitized before rendering. These remain high-risk surfaces because they intentionally render model/user-provided content.
-- Outbound traffic is concentrated in provider calls, provider model-list fetches, optional image providers, optional DuckDuckGo proxy search, optional MCP bridge usage, sync/marketplace URLs configured by the user, and package/update checks.
-- Model-list fetching, optional web search/content extraction, marketplace downloads, remote mod scripts, MCP HTTP/bridge calls, OpenRouter endpoint metadata, race-export stylesheet capture, and Formedible location lookups now pass through `src/lib/llmchef/outbound-policy.ts`, which blocks non-HTTP(S) URLs, enforces known provider hosts for model-list requests, and keeps an in-memory destination log shown in Settings -> Network.
+- Outbound traffic is concentrated in provider calls, provider model-list fetches, optional image providers, optional DuckDuckGo proxy search, configured MCP endpoints, sync/marketplace URLs configured by the user, and package/update checks.
+- Model-list fetching, optional web search/content extraction, marketplace downloads, remote mod scripts, MCP HTTP calls, OpenRouter endpoint metadata, race-export stylesheet capture, and Formedible location lookups now pass through `src/lib/llmchef/outbound-policy.ts`, which blocks non-HTTP(S) URLs, enforces known provider hosts for model-list requests, and keeps an in-memory destination log shown in Settings -> Network.
 - A runtime fetch guard is installed at startup to catch provider SDK and other indirect `fetch` calls. Same-origin and local loopback requests are allowed; remote hosts must come from configured providers, service URLs, MCP servers, marketplace sources, remote mods, or sync repositories. Settings -> Network lists both the session ledger and the configured remote host set.
 - `docs/local-release.md` documents the local bundle flow. `npm run release:local` vendors Pyodide into `public/pyodide/...` before build so runnable Python can work without any CDN or PyPI fallback.
 - The Strudel beat control prompt now avoids remote sample-pack guidance and asks for local-first, self-contained patterns.
 - The app still has intentional execution surfaces for mods, runnable JavaScript, runnable Python, and generated standalone HTML. Treat these as user-consented execution zones, not passive document rendering.
 - Error reports are redacted before export and link to the LLMChef repository.
-- The MCP bridge allows configured origins only. Defaults include localhost and the project GitHub Pages origin; deployments should narrow this further when possible.
+- MCP integration is limited to configured HTTP endpoints.
 - `npm audit` currently reports only the Mermaid/UUID issue; the suggested force fix downgrades Mermaid and is not a clean non-breaking fix.
 
 ## Optimization Review
@@ -27,7 +27,7 @@ LLMChef is now positioned as a fork of LLMChef with a CyberChef-style operating 
 
 - Recipes: CyberChef-like chains that transform prompts, files, structured data, and model outputs locally.
 - Recipe packs: importable `.llmchef` bundles that can be inspected before activation and used offline after download.
-- Endpoint firewall: a visible allowlist of LLM hosts, model-list URLs, search proxies, image providers, and MCP bridges.
+- Endpoint firewall: a visible allowlist of LLM hosts, model-list URLs, search proxies, image providers, and MCP endpoints.
 - Network ledger: a local activity log showing every outbound request destination, purpose, and triggering feature.
 - Capability prompts: runnable blocks request explicit permissions such as network, clipboard, file export, or long-running compute.
 - Prompt diff and trace: compare prompt assembly, system prompts, tool calls, and final payloads across providers.

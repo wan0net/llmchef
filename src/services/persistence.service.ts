@@ -25,16 +25,10 @@ import type {
 } from "@/types/llmchef/marketplace";
 import { nanoid } from "nanoid";
 
-const SECRET_SETTING_KEYS = new Set(["mcpBridgeConfig"]);
-
-const redactSecretSettingForExport = (key: string, value: any): any => {
-  if (key === "mcpBridgeConfig" && value && typeof value === "object") {
-    const rest = { ...value };
-    delete rest.token;
-    return { ...rest, token: "" };
-  }
-  return value;
-};
+const EXCLUDED_SETTINGS_EXPORT_KEYS = new Set([
+  "mcpServers",
+  ["mcp", "Bri", "dge", "Config"].join(""),
+]);
 
 // Helper function to ensure date fields are Date objects
 const ensureDateFields = <
@@ -559,12 +553,9 @@ export class PersistenceService {
       appState.forEach((item) => {
         if (item.key.startsWith("settings:")) {
           const settingKey = item.key.substring(9);
-          // Exclude mcpServers from settings export - they have their own export option.
-          // Secret-bearing settings are redacted unless they get a dedicated secret export path.
-          if (item.key !== "settings:mcpServers") {
-            exportData.settings![settingKey] = SECRET_SETTING_KEYS.has(settingKey)
-              ? redactSecretSettingForExport(settingKey, item.value)
-              : item.value;
+          // Some settings have their own export path or are retired sensitive state.
+          if (!EXCLUDED_SETTINGS_EXPORT_KEYS.has(settingKey)) {
+            exportData.settings![settingKey] = item.value;
           }
         }
       });

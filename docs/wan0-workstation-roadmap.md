@@ -9,8 +9,8 @@ repos, skills, generated files, and crea8-backed knowledge.
   context hang from a project.
 - Browser-local first: everything useful should work from static Pages with
   IndexedDB, VFS, Git-in-browser, and user-granted File System Access.
-- Optional bridges second: local helpers may improve Git, filesystem, and MCP,
-  but the app must remain useful without them.
+- Browser-local first: integrations should be visible, permissioned, and driven
+  through configured JavaScript-facing capabilities.
 - Secure by default: generated code, imported skills, repo content, and previews
   must be treated as untrusted.
 - Link42/crea8 aligned: visual language, density, typography, and information
@@ -219,13 +219,12 @@ Design:
   `llmchef.mcp.call(toolName, input)`.
 - Require a per-run capability manifest that lists allowed MCP servers, tools,
   argument schemas, and whether the call can read project files.
-- Route every JS MCP call through the existing MCP store/module, so bridge
-  tokens, server profiles, protocol negotiation, and tool approval logging stay
-  centralized.
+- Route every JS MCP call through the existing MCP store/module, so endpoint
+  configuration, protocol negotiation, and tool approval logging stay centralized.
 - Add a consent prompt before first use in a run:
   "This recipe wants to call these MCP tools with this project context."
 - Return structured tool results back to the JS sandbox without exposing API
-  keys, bridge tokens, IndexedDB, provider objects, or unrestricted `fetch`.
+  keys, IndexedDB, provider objects, or unrestricted `fetch`.
 - Record provenance on the chat message: recipe id, tool name, input summary,
   output summary, timestamp, and approved capability set.
 

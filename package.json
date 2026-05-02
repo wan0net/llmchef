@@ -25,7 +25,6 @@
     "release:local": "npm run vendor:pyodide && npm run build && bin/releaser",
     "deploy": "npm run release:local && npm run build:pages && gh-pages -d dist --no-history --dotfiles --remove \".proompts/**/*\"",
     "to2web": "npm run deploy",
-    "mcp-proxy": "node bin/mcp-bridge.js",
     "serve": "npm run build && npx http-server dist --port ${LLMCHEF_PORT:=5173}",
     "update": "git pull ${LLMCHEF_ORIGIN:=origin} ${LLMCHEF_BRANCH:=main} && npm install && npm run serve"
   },

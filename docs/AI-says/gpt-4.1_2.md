@@ -12,7 +12,7 @@ LLMChef is an ambitious, highly modular, and technically sophisticated client-si
 - **Universal Block Renderer**: The extensible code block rendering system is best-in-class for hackability and future-proofing.
 - **Event System**: The mitt-based event bus and strong typing make for robust, decoupled communication.
 - **Worker-based VFS/Git**: Running heavy operations in workers is a mark of serious engineering maturity.
-- **MCP Integration**: Multi-transport support (HTTP, SSE, stdio/bridge) is rare and powerful, enabling both cloud and local tool ecosystems.
+- **MCP Integration**: HTTP transport support with SSE fallback is rare and powerful, enabling external tool ecosystems.
 
 ### 2. **Code Quality & Patterns**
 - **TypeScript Usage**: Excellent type safety and interface discipline.
