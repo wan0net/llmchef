@@ -41,6 +41,15 @@ interface FlowContentMatch {
   hasFlow: boolean;
 }
 
+const UNSAFE_PATH_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+
+function getSafePathValue(source: any, key: string): any {
+  if (!key || UNSAFE_PATH_KEYS.has(key)) return undefined;
+  if (source === null || source === undefined) return undefined;
+  if (!Object.prototype.hasOwnProperty.call(Object(source), key)) return undefined;
+  return source[key];
+}
+
 // Note: Refactored to a static class to align with other services like InteractionService.
 // This service's lifecycle is tied to the application's lifecycle, so event listeners
 // are registered once and are not manually unsubscribed.
@@ -180,13 +189,13 @@ export const WorkflowService = {
           if (!indexMatches) return undefined;
 
           // Start with the property (if it exists)
-          let current = prop ? acc[prop] : acc;
+          let current = prop ? getSafePathValue(acc, prop) : acc;
 
           // Apply each array index in sequence
           for (const indexMatch of indexMatches) {
             const indexStr = indexMatch.slice(1, -1); // Remove [ and ]
             const index = parseInt(indexStr, 10);
-            if (isNaN(index) || current === null || current === undefined) {
+            if (!Number.isSafeInteger(index) || index < 0 || !Array.isArray(current)) {
               return undefined;
             }
             current = current[index];
@@ -195,7 +204,7 @@ export const WorkflowService = {
           return current;
         }
 
-        return acc[part];
+        return getSafePathValue(acc, part);
       }, obj);
     } catch (error) {
       console.warn(

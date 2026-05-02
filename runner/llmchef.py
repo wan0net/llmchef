@@ -25,7 +25,7 @@ os.chdir(temp_dir)
 print("Downloading LLMChef release...")
 zip_path = os.path.join(temp_dir, 'llmchef.zip')
 try:
-    request.urlretrieve('https://wan0net.github.io/llmchef/release/latest.zip', zip_path)
+    request.urlretrieve('https://wan0.net/llmchef/release/latest.zip', zip_path)
     print("Download complete. Extracting...")
 
     # Extract the zip file

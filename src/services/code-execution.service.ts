@@ -139,15 +139,19 @@ export const CodeExecutionService = {
       const denyConstruct = (name) => function () { throw new Error(name + " is not permitted for this workflow step."); };
       self.Worker = denyConstruct("Child workers");
       self.SharedWorker = denyConstruct("Shared workers");
-      if (self.URL && typeof self.URL === "function") {
-        const OriginalURL = self.URL;
-        self.URL = new Proxy(OriginalURL, {
+      const disableObjectUrls = (urlCtor) => {
+        if (!urlCtor || typeof urlCtor !== "function") return urlCtor;
+        return new Proxy(urlCtor, {
           get(target, prop, receiver) {
             if (prop === "createObjectURL") return deny("Object URL creation");
+            if (prop === "revokeObjectURL") return () => undefined;
             return Reflect.get(target, prop, receiver);
           },
         });
-      }
+      };
+      self.URL = disableObjectUrls(self.URL);
+      self.webkitURL = disableObjectUrls(self.webkitURL);
+      self.Blob = undefined;
       self.onmessage = async (event) => {
         const { code, context, contextKeys, permissions } = event.data;
         try {

@@ -38,7 +38,7 @@ $context = stream_context_create([
     ]
 ]);
 
-$zipContent = file_get_contents('https://wan0net.github.io/llmchef/release/latest.zip', false, $context);
+$zipContent = file_get_contents('https://wan0.net/llmchef/release/latest.zip', false, $context);
 if ($zipContent === false) {
     echo "Error downloading LLMChef.\n";
     exit(1);

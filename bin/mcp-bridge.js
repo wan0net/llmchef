@@ -66,7 +66,7 @@ const config = {
   port: parseInt(process.env.MCP_BRIDGE_PORT) || 3001,
   host: process.env.MCP_BRIDGE_HOST || '127.0.0.1',
   verbose: process.env.MCP_BRIDGE_VERBOSE === 'true' || false,
-  allowedOrigins: parseCsv(process.env.MCP_BRIDGE_ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173,https://wan0net.github.io'),
+  allowedOrigins: parseCsv(process.env.MCP_BRIDGE_ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173,https://wan0.net,https://wan0net.github.io'),
   allowedCommands: parseCsv(process.env.MCP_BRIDGE_ALLOWED_COMMANDS || 'npx,node,python,python3'),
   serverProfiles: parseServerProfiles(process.env.MCP_BRIDGE_SERVERS),
   token: process.env.MCP_BRIDGE_TOKEN || randomBytes(24).toString('base64url'),
@@ -488,7 +488,6 @@ function isAuthorized(req) {
 
 function isAllowedOrigin(origin) {
   if (!origin) return true;
-  if (config.allowedOrigins.includes('*')) return true;
   if (config.allowedOrigins.includes(origin)) return true;
   try {
     const parsed = new URL(origin);
@@ -504,7 +503,7 @@ function applyCors(req, res) {
     return false;
   }
   if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Origin', origin); // nosemgrep: javascript.express.security.cors-misconfiguration.cors-misconfiguration
     res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

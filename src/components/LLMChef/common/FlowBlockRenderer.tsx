@@ -33,7 +33,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getTreeLayout } from '@/lib/llmchef/tree-layout';
 import { toPng } from 'html-to-image';
-import DOMPurify from 'dompurify';
 
 import '@xyflow/react/dist/style.css';
 
@@ -55,15 +54,6 @@ const FlowStepNode: React.FC<NodeProps<any>> = ({ data }) => {
   // Get handle positions from node data
   const sourcePosition = data.sourcePosition;
   const targetPosition = data.targetPosition;
-
-  // Only allow <img> and <svg> tags in label HTML
-  const sanitizeLabel = (raw: string) => {
-    return DOMPurify.sanitize(raw, {
-      ALLOWED_TAGS: ['img', 'svg', 'path', 'circle', 'rect', 'g', 'line', 'ellipse', 'polygon', 'polyline', 'text', 'tspan', 'defs', 'linearGradient', 'stop', 'title', 'desc'],
-      ALLOWED_ATTR: ['src', 'alt', 'width', 'height', 'style', 'viewBox', 'fill', 'stroke', 'd', 'cx', 'cy', 'r', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'points', 'transform', 'class', 'id', 'opacity', 'stop-color', 'stop-opacity', 'offset', 'xmlns'],
-      KEEP_CONTENT: false
-    });
-  };
 
   // Helper to convert position strings to Position enum
   const getPositionFromString = (pos: string): Position => {
@@ -153,11 +143,7 @@ const FlowStepNode: React.FC<NodeProps<any>> = ({ data }) => {
         {showIcon && <span className="text-lg">{data.icon}</span>}
         <div className="flex-1 min-w-0">
           <div className="font-medium text-sm leading-tight break-words">
-            {typeof label === 'string' && /<(img|svg)[\s>]/i.test(label) ? (
-              <span dangerouslySetInnerHTML={{ __html: sanitizeLabel(label) }} />
-            ) : (
-              label
-            )}
+            {label}
           </div>
           {data.templateName && (
             <div className="text-xs opacity-75 break-words">
@@ -275,7 +261,7 @@ const FlowBlockRendererComponent: React.FC<FlowBlockRendererProps> = ({
       try {
         JSON.parse(trimmedCode);
         // If we get here, JSON is complete and valid
-      } catch (jsonError) {
+      } catch {
         // JSON is not complete/valid yet during streaming
         setError(null);
         return;
@@ -325,7 +311,7 @@ const FlowBlockRendererComponent: React.FC<FlowBlockRendererProps> = ({
       })) as Node[];
       
       // Convert flow edges to ReactFlow edges - preserve all original properties
-      let reactFlowEdges = data.edges.map(edge => ({
+      const reactFlowEdges = data.edges.map(edge => ({
         ...edge, // Preserve all original edge properties
         markerEnd: edge.markerEnd || { type: XYMarkerType.ArrowClosed }
       })) as Edge[];
@@ -369,7 +355,7 @@ const FlowBlockRendererComponent: React.FC<FlowBlockRendererProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [code, isFolded, isStreaming]);
+  }, [code, isFolded, isStreaming, t]);
 
   useEffect(() => {
     if (!isFolded && code.trim() && !showCode) {
@@ -452,7 +438,7 @@ const FlowBlockRendererComponent: React.FC<FlowBlockRendererProps> = ({
       console.error("Error downloading flow diagram:", error);
       toast.error(t('flowBlock.downloadFailed'));
     }
-  }, [isReactFlowReady]);
+  }, [isReactFlowReady, t]);
 
   const toggleView = useCallback(() => {
     setShowCode((prev) => !prev);

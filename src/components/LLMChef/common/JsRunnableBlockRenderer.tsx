@@ -58,7 +58,6 @@ interface JsRunnableBlockRendererProps {
   isStreaming?: boolean;
   interactionId?: string;
   blockId?: string;
-  module?: any;
 }
 
 // QuickJS loader utility
@@ -114,8 +113,7 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
   code, 
   isStreaming = false, 
   interactionId, 
-  blockId, 
-  module 
+  blockId
 }) => {
   const { t } = useTranslation('renderers');
   
@@ -144,7 +142,7 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
   const [lastClickTime, setLastClickTime] = useState(0);
 
   // Execution mode - Safe by default
-  const [executionMode, setExecutionMode] = useState<'safe' | 'iframe' | 'unsafe'>('safe');
+  const [executionMode, setExecutionMode] = useState<'safe' | 'iframe'>('safe');
   
   // Unique ID for this block
   const blockUniqueId = useMemo(() => blockId || `js-block-${Math.random().toString(36).substr(2, 9)}`, [blockId]);
@@ -523,86 +521,6 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
     }
   }, []);
 
-  // CLEAN UNSAFE MODE EXECUTION - NO CONSOLE OVERRIDE!
-  const executeUnsafeMode = useCallback(async (codeToRun: string, capturedLogs: string[]) => {
-    try {
-      // Create clean execution context WITHOUT touching console
-      let contextObj: any = {};
-      if (module && module.getEnhancedContext) {
-        contextObj = module.getEnhancedContext(capturedLogs, previewRef.current);
-        // Ensure the enhanced context has all required utils functions
-        if (contextObj.llmchef && contextObj.llmchef.utils) {
-          contextObj.llmchef.utils.error = contextObj.llmchef.utils.error || console.error;
-          contextObj.llmchef.utils.warn = contextObj.llmchef.utils.warn || console.warn;
-          contextObj.llmchef.utils.log = contextObj.llmchef.utils.log || console.log;
-          contextObj.llmchef.utils.toast = contextObj.llmchef.utils.toast || ((message: string) => toast(message));
-        }
-      } else {
-        contextObj = {
-          llmchef: {
-            utils: { 
-              log: (...args: any[]) => {
-                const formatted = args.map(arg => 
-                  typeof arg === "object" ? JSON.stringify(arg) : String(arg)
-                ).join(" ");
-                capturedLogs.push(formatted);
-                console.log(...args);
-              },
-              toast: (message: string) => toast(message), 
-              error: (...args: any[]) => {
-                const formatted = args.map(arg => 
-                  typeof arg === "object" ? JSON.stringify(arg) : String(arg)
-                ).join(" ");
-                capturedLogs.push(`Error: ${formatted}`);
-                console.error(...args);
-              },
-              warn: (...args: any[]) => {
-                const formatted = args.map(arg => 
-                  typeof arg === "object" ? JSON.stringify(arg) : String(arg)
-                ).join(" ");
-                capturedLogs.push(`Warning: ${formatted}`);
-                console.warn(...args);
-              }
-            },
-            target: previewRef.current || document.createElement('div'),
-          },
-        };
-      }
-
-      // Make llmchef globally available
-      const originalLLMChef = (window as any).llmchef;
-      (window as any).llmchef = contextObj.llmchef;
-
-      // Execute code directly with eval - PURE UNSAFE MODE
-      const wrappedCode = `
-        (async () => { 
-          const llmchef = window.llmchef;
-          console.log('llmchef.target in execution context:', llmchef.target);
-          ${codeToRun} 
-        })()
-      `;
-      
-      const result = eval(wrappedCode);
-      if (result && typeof result.then === "function") {
-        await result;
-      }
-
-      if (capturedLogs.length === 0) {
-        capturedLogs.push("Code executed successfully in unsafe mode - use llmchef.utils.log() for captured output");
-      }
-
-      // Restore global llmchef
-      if (originalLLMChef !== undefined) {
-        (window as any).llmchef = originalLLMChef;
-      } else {
-        delete (window as any).llmchef;
-      }
-
-    } catch (error) {
-      capturedLogs.push(`Execution Error: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }, [module]);
-
   // IFRAME MODE EXECUTION - Completely isolated in iframe
   const executeIframeMode = useCallback(async (codeToRun: string, capturedLogs: string[]) => {
     let messageHandler: ((event: MessageEvent) => void) | null = null;
@@ -620,12 +538,17 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
       iframe.style.border = 'none';
       iframe.style.borderRadius = '8px';
       iframe.sandbox.add('allow-scripts');
+
+      const messageToken = window.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
+      const parentOrigin = window.location.origin;
+      const userCodeLiteral = JSON.stringify(codeToRun).replace(/</g, "\\u003c");
       
       // Create the iframe content with minimal LLMChef API
       const iframeContent = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${parentOrigin}; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; worker-src 'none'; child-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LLMChef Iframe Execution</title>
     <style>
@@ -645,12 +568,36 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
     <div id="llmchef-target"></div>
     
     <script type="module">
+        const parentOrigin = ${JSON.stringify(parentOrigin)};
+        const messageToken = ${JSON.stringify(messageToken)};
+        const userCode = ${userCodeLiteral};
         const target = document.getElementById('llmchef-target');
         const logs = [];
+        const deny = (name) => () => { throw new Error(name + ' is disabled in iframe execution.'); };
+        window.fetch = deny('Network access');
+        window.XMLHttpRequest = undefined;
+        window.WebSocket = undefined;
+        window.EventSource = undefined;
+        window.Worker = undefined;
+        window.SharedWorker = undefined;
+        if (window.URL && typeof window.URL === 'function') {
+            const OriginalURL = window.URL;
+            window.URL = new Proxy(OriginalURL, {
+                get(targetUrl, prop, receiver) {
+                    if (prop === 'createObjectURL') return deny('Object URL creation');
+                    if (prop === 'revokeObjectURL') return () => undefined;
+                    return Reflect.get(targetUrl, prop, receiver);
+                },
+            });
+        }
+
+        const postToParent = (message) => {
+            window.parent.postMessage({ ...message, token: messageToken }, parentOrigin);
+        };
 
         const assertLocalResource = (url, label) => {
-            const parsed = new URL(url, window.location.origin);
-            if (parsed.origin !== window.location.origin) {
+            const parsed = new URL(url, parentOrigin);
+            if (parsed.origin !== parentOrigin) {
                 throw new Error(label + ' must be served from the LLMChef origin.');
             }
         };
@@ -666,10 +613,10 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
                     logs.push(formatted);
                     console.log(...args);
                     // Send log to parent (if needed)
-                    window.parent.postMessage({
+                    postToParent({
                         type: 'llmchef-log',
                         message: formatted
-                    }, '*');
+                    });
                 },
                 toast: (message) => {
                     // Simple toast in iframe
@@ -744,11 +691,11 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
                 }
             },
             emit: (eventName, payload) => {
-                window.parent.postMessage({
+                postToParent({
                     type: 'llmchef-event',
                     eventName,
                     payload
-                }, '*');
+                });
             }
         };
         
@@ -756,15 +703,16 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
         function resizeIframe() {
             const minHeight = Math.floor(window.parent.innerHeight * 0.67);
             const height = Math.max(document.body.scrollHeight, minHeight);
-            window.parent.postMessage({
+            postToParent({
                 type: 'llmchef-resize',
                 height: height
-            }, '*');
+            });
         }
         
         // Execute user code
         try {
-            ${codeToRun}
+            const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+            await new AsyncFunction(userCode)();
             // Resize after code execution
             setTimeout(resizeIframe, 100);
         } catch (error) {
@@ -774,10 +722,10 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
             errorDiv.textContent = \`Error: \${error.message}\`;
             target.appendChild(errorDiv);
             
-            window.parent.postMessage({
+            postToParent({
                 type: 'llmchef-error',
                 error: error.message
-            }, '*');
+            });
             
             // Resize after error display
             setTimeout(resizeIframe, 100);
@@ -788,7 +736,7 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
 
       // Set up message listener for iframe communication
       messageHandler = (event: MessageEvent) => {
-        if (event.source === iframe.contentWindow) {
+        if (event.source === iframe.contentWindow && event.origin === "null" && event.data?.token === messageToken) {
           switch (event.data.type) {
             case 'llmchef-log':
               capturedLogs.push(event.data.message);
@@ -806,6 +754,7 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
         }
       };
 
+      // nosemgrep: javascript.browser.security.insufficient-postmessage-origin-validation.insufficient-postmessage-origin-validation
       window.addEventListener('message', messageHandler);
 
       // Set iframe content and append to preview
@@ -854,16 +803,10 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
     const codeToRun = isEditing ? editedCode : code;
 
     try {
-      switch (executionMode) {
-        case 'safe':
-          await executeSafeMode(codeToRun, capturedLogs);
-          break;
-        case 'iframe':
-          await executeIframeMode(codeToRun, capturedLogs);
-          break;
-        case 'unsafe':
-          await executeUnsafeMode(codeToRun, capturedLogs);
-          break;
+      if (executionMode === 'safe') {
+        await executeSafeMode(codeToRun, capturedLogs);
+      } else {
+        await executeIframeMode(codeToRun, capturedLogs);
       }
     } catch (error) {
       capturedLogs.push(`Execution Error: ${error instanceof Error ? error.message : String(error)}`);
@@ -872,9 +815,9 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
       setHasRun(true);
       setIsRunning(false);
 
-      // Always show preview first for unsafe and iframe modes, then check for content
-      if (executionMode === 'unsafe' || executionMode === 'iframe') {
-        // Force preview mode immediately for unsafe/iframe execution
+      // Always show preview first for iframe mode, then check for content
+      if (executionMode === 'iframe') {
+        // Force preview mode immediately for iframe execution
         setShowPreview(true);
         setShowOutput(false);
         
@@ -888,7 +831,7 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
             setShowOutput(true);
             setShowPreview(false);
           }
-        }, executionMode === 'iframe' ? 1500 : 200); // Longer delay for iframe
+        }, 1500);
       } else {
         // Safe mode - check content immediately
         const hasPreviewContent = previewRef.current && 
@@ -907,13 +850,13 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
       if (capturedLogs.some((log) => log.includes("Error:"))) {
         toast.error(t('jsRunnableBlock.executionFailed'));
       } else {
-        const modeText = executionMode === 'safe' ? t('jsRunnableBlock.safeMode') : 
-                        executionMode === 'iframe' ? t('jsRunnableBlock.iframeMode') : 
-                        t('jsRunnableBlock.unsafeMode');
+        const modeText = executionMode === 'safe'
+          ? t('jsRunnableBlock.safeMode')
+          : t('jsRunnableBlock.iframeMode');
         toast.success(t('jsRunnableBlock.executionSuccess', { mode: modeText }));
       }
     }
-  }, [code, editedCode, isEditing, executionMode, executeSafeMode, executeIframeMode, executeUnsafeMode]);
+  }, [code, editedCode, isEditing, executionMode, executeSafeMode, executeIframeMode, t]);
 
   // Click handler with security validation
   const handleRunClick = useCallback(async () => {
@@ -1423,12 +1366,10 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
           {/* Mode indicator */}
           <span className={`text-xs px-1.5 py-0.5 rounded ${
             executionMode === 'safe' ? "bg-green-100 text-green-700" : 
-            executionMode === 'iframe' ? "bg-blue-100 text-blue-700" :
-            "bg-orange-100 text-orange-700"
+            "bg-blue-100 text-blue-700"
           }`}>
             {executionMode === 'safe' ? t('jsRunnableBlock.safe') : 
-             executionMode === 'iframe' ? t('jsRunnableBlock.iframe') :
-             t('jsRunnableBlock.unsafe')}
+             t('jsRunnableBlock.iframe')}
           </span>
           
           {/* Security result */}
@@ -1447,7 +1388,7 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
         
         <div className="flex items-center gap-1">
           {/* Execution Mode Selector */}
-          <Select value={executionMode} onValueChange={(value: 'safe' | 'iframe' | 'unsafe') => setExecutionMode(value)}>
+          <Select value={executionMode} onValueChange={(value: 'safe' | 'iframe') => setExecutionMode(value)}>
             <SelectTrigger className="w-24 h-7 text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -1462,12 +1403,6 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
                 <div className="flex items-center gap-1">
                   <MonitorSpeakerIcon className="h-3 w-3 text-blue-600" />
                   Iframe
-                </div>
-              </SelectItem>
-              <SelectItem value="unsafe" className="text-xs">
-                <div className="flex items-center gap-1">
-                  <ShieldIcon className="h-3 w-3 text-orange-600" />
-                  Unsafe
                 </div>
               </SelectItem>
             </SelectContent>

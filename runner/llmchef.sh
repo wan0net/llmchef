@@ -20,9 +20,9 @@ mkdir -p "$TEMP_DIR"
 ZIP_PATH="$TEMP_DIR/llmchef.zip"
 echo "Downloading LLMChef release..."
 if command -v curl &> /dev/null; then
-  curl -L https://wan0net.github.io/llmchef/release/latest.zip -o "$ZIP_PATH"
+  curl -L https://wan0.net/llmchef/release/latest.zip -o "$ZIP_PATH"
 elif command -v wget &> /dev/null; then
-  wget https://wan0net.github.io/llmchef/release/latest.zip -O "$ZIP_PATH"
+  wget https://wan0.net/llmchef/release/latest.zip -O "$ZIP_PATH"
 else
   echo "Error: Neither curl nor wget is installed. Please install one of them."
   exit 1

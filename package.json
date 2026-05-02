@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.2.9-beta",
   "type": "module",
-  "homepage": "https://wan0net.github.io/llmchef",
+  "homepage": "https://wan0.net/llmchef",
   "repository": {
     "type": "git",
     "url": "https://github.com/wan0net/llmchef.git"

@@ -2,7 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const https = require("https");
-const { exec } = require("child_process");
+const { execFile } = require("child_process");
 const express = require("express");
 const app = express();
 
@@ -22,19 +22,19 @@ const zipPath = path.join(tempDir, "llmchef.zip");
 const file = fs.createWriteStream(zipPath);
 
 https
-  .get("https://wan0net.github.io/llmchef/release/latest.zip", (response) => {
+  .get("https://wan0.net/llmchef/release/latest.zip", (response) => {
     response.pipe(file);
     file.on("finish", () => {
       file.close();
       console.log("Download complete. Extracting...");
 
       // Extract the zip file
-      const extractCommand =
-        process.platform === "win32"
-          ? `powershell -command "Expand-Archive -Path '${zipPath}' -DestinationPath '${tempDir}' -Force"`
-          : `unzip -o ${zipPath} -d ${tempDir}`;
+      const extractCommand = process.platform === "win32" ? "powershell" : "unzip";
+      const extractArgs = process.platform === "win32"
+        ? ["-NoProfile", "-Command", "Expand-Archive", "-Path", zipPath, "-DestinationPath", tempDir, "-Force"]
+        : ["-o", zipPath, "-d", tempDir];
 
-      exec(extractCommand, (error) => {
+      execFile(extractCommand, extractArgs, (error) => {
         if (error) {
           console.error("Error extracting files:", error);
           return;
