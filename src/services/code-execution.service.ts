@@ -3,6 +3,25 @@ import { PYODIDE_VERSION_URL } from "@/lib/llmchef/constants";
 // Global pyodide instance for reuse
 let pyodidePromise: Promise<any> | null = null;
 
+export interface JsExecutionPermissions {
+  network?: boolean;
+  storage?: boolean;
+  provider?: boolean;
+  pageContext?: boolean;
+}
+
+export interface JsExecutionOptions {
+  consent?: {
+    execute: boolean;
+    pageContext?: boolean;
+  };
+  permissions?: JsExecutionPermissions;
+  timeoutMs?: number;
+  mode?: "isolated" | "page";
+}
+
+const JS_IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
+
 export const CodeExecutionService = {
   /**
    * Initialize and get Pyodide instance
@@ -34,7 +53,7 @@ export const CodeExecutionService = {
         script.onerror = reject;
       });
       
-      // @ts-ignore - Global pyodide from script
+      // @ts-expect-error - Global pyodide from script
       const pyodide = await window.loadPyodide({
         indexURL: PYODIDE_VERSION_URL.replace(/\/pyodide\.js$/, '/'),
       });
@@ -52,43 +71,151 @@ export const CodeExecutionService = {
    * @param context - Context object with workflow data (same structure as transform steps)
    * @returns Promise<any> - Return value from the code
    */
-  async executeJs(code: string, context: Record<string, any>): Promise<any> {
+  async executeJs(
+    code: string,
+    context: Record<string, any>,
+    options: JsExecutionOptions = {},
+  ): Promise<any> {
     if (!code.trim()) {
       throw new Error('JavaScript code cannot be empty');
     }
 
-    // No security validation needed - this is user-authored workflow code
-    // i just **CHOSE** to open the door !
+    if (!options.consent?.execute) {
+      throw new Error('JavaScript workflow execution requires explicit user consent for this run.');
+    }
+
+    const mode = options.mode || "isolated";
+    const permissions = options.permissions || {};
+
+    if (mode === "page") {
+      if (!options.consent.pageContext || !permissions.pageContext) {
+        throw new Error('Page-context JavaScript requires explicit page-context consent and permission.');
+      }
+      return this.executeJsInPageContext(code, context);
+    }
+
+    return this.executeJsInIsolatedWorker(code, context, permissions, options.timeoutMs || 5000);
+  },
+
+  async executeJsInPageContext(code: string, context: Record<string, any>): Promise<any> {
     try {
-      // Create function with context variables available
       const contextKeys = Object.keys(context);
       const contextValues = Object.values(context);
-      
-      // Wrap code in function that can return a value
-      const wrappedCode = `
-        (function(${contextKeys.join(', ')}) {
-          ${code}
-        })
-      `;
+      contextKeys.forEach((key) => {
+        if (!JS_IDENTIFIER.test(key)) {
+          throw new Error(`Invalid JavaScript context variable name: ${key}`);
+        }
+      });
 
-      // Evaluate the function, user provided code is consider "safe", 
-      // their machine, their code, their choice, 
-      // they could do that in userscripts land, i just **CHOSE** to open the door !
-      const func = eval(wrappedCode);
-      
-      // Execute with context
+      const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+      const func = new AsyncFunction(...contextKeys, code);
       const result = func(...contextValues);
-      
-      // Handle promises
-      if (result && typeof result.then === 'function') {
-        return await result;
-      }
-      
-      return result;
+      return result && typeof result.then === 'function' ? await result : result;
     } catch (error) {
       console.error('[CodeExecutionService] JavaScript execution error:', error);
       throw new Error(`JavaScript execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  },
+
+  async executeJsInIsolatedWorker(
+    code: string,
+    context: Record<string, any>,
+    permissions: JsExecutionPermissions,
+    timeoutMs: number,
+  ): Promise<any> {
+    if (typeof Worker === "undefined" || typeof Blob === "undefined" || typeof URL === "undefined") {
+      throw new Error("Isolated JavaScript execution requires browser Worker support.");
+    }
+
+    const contextKeys = Object.keys(context);
+    contextKeys.forEach((key) => {
+      if (!JS_IDENTIFIER.test(key)) {
+        throw new Error(`Invalid JavaScript context variable name: ${key}`);
+      }
+    });
+
+    const workerSource = `
+      const deny = (name) => () => { throw new Error(name + " is not permitted for this workflow step."); };
+      self.onmessage = async (event) => {
+        const { code, context, contextKeys, permissions } = event.data;
+        try {
+          if (!permissions.network) {
+            self.fetch = deny("Network access");
+            self.XMLHttpRequest = undefined;
+            self.WebSocket = undefined;
+            self.EventSource = undefined;
+            self.importScripts = deny("Script imports");
+          }
+          if (!permissions.storage) {
+            self.indexedDB = undefined;
+            self.caches = undefined;
+            self.localStorage = undefined;
+            self.sessionStorage = undefined;
+          }
+          if (!permissions.provider) {
+            self.LLMChefProvider = undefined;
+            self.ai = undefined;
+          }
+          const contextValues = contextKeys.map((key) => context[key]);
+          const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+          const fn = new AsyncFunction(...contextKeys, code);
+          const result = await fn(...contextValues);
+          self.postMessage({ ok: true, result });
+        } catch (error) {
+          self.postMessage({
+            ok: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      };
+    `;
+
+    const blobUrl = URL.createObjectURL(new Blob([workerSource], { type: "text/javascript" }));
+    const worker = new Worker(blobUrl);
+
+    return await new Promise((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        worker.terminate();
+        URL.revokeObjectURL(blobUrl);
+        reject(new Error(`JavaScript execution timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+
+      worker.onmessage = (event) => {
+        window.clearTimeout(timer);
+        worker.terminate();
+        URL.revokeObjectURL(blobUrl);
+        if (event.data?.ok) {
+          resolve(event.data.result);
+        } else {
+          reject(new Error(event.data?.error || "Unknown isolated JavaScript execution error"));
+        }
+      };
+
+      worker.onerror = (event) => {
+        window.clearTimeout(timer);
+        worker.terminate();
+        URL.revokeObjectURL(blobUrl);
+        reject(new Error(event.message || "Worker JavaScript execution failed"));
+      };
+
+      try {
+        worker.postMessage({
+          code,
+          context,
+          contextKeys,
+          permissions: {
+            network: permissions.network === true,
+            storage: permissions.storage === true,
+            provider: permissions.provider === true,
+          },
+        });
+      } catch (error) {
+        window.clearTimeout(timer);
+        worker.terminate();
+        URL.revokeObjectURL(blobUrl);
+        reject(new Error(`JavaScript context is not cloneable for isolated execution: ${error instanceof Error ? error.message : "Unknown error"}`));
+      }
+    });
   },
 
   /**

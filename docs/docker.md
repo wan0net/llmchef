@@ -70,6 +70,8 @@ LLMCHEF_PORT=8080
 MCP_BRIDGE_PORT=3001
 MCP_BRIDGE_INTERNAL_PORT=3001
 MCP_BRIDGE_VERBOSE=false
+# Optional. Required if you deliberately bind the bridge beyond localhost.
+MCP_BRIDGE_TOKEN=
 ```
 
 ### Available Variables
@@ -81,7 +83,7 @@ MCP_BRIDGE_VERBOSE=false
 | `MCP_BRIDGE_INTERNAL_PORT` | 3001 | Internal container port for MCP bridge |
 | `MCP_BRIDGE_VERBOSE` | false | Enable verbose logging for MCP bridge |
 | `MCP_BRIDGE_ALLOWED_ORIGINS` | local dev + fork Pages origin | Browser origins allowed to call the bridge |
-| `MCP_BRIDGE_TOKEN` | generated per process | Token LLMChef must send to use local stdio profiles |
+| `MCP_BRIDGE_TOKEN` | generated per process on loopback only | Token LLMChef must send to use local stdio profiles |
 | `MCP_BRIDGE_SERVERS` | `{}` | JSON object of named stdio server profiles |
 | `MCP_BRIDGE_ALLOWED_COMMANDS` | npx,node,python,python3 | Commands allowed inside named stdio profiles |
 
@@ -140,19 +142,19 @@ services:
       - "8080:3000"
     restart: unless-stopped
 
-  # MCP bridge with custom settings
+  # MCP bridge with custom settings. The host port is still loopback-only.
   mcp-bridge:
     image: node:20-alpine
     working_dir: /app
     command: ["node", "bin/mcp-bridge.js", "--host", "0.0.0.0", "--verbose"]
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     environment:
       - MCP_BRIDGE_PORT=3001
       - MCP_BRIDGE_HOST=0.0.0.0
       - MCP_BRIDGE_VERBOSE=true
       - MCP_BRIDGE_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,https://wan0net.github.io
-      - MCP_BRIDGE_TOKEN=change-this-local-token
+      - MCP_BRIDGE_TOKEN=<generate-a-strong-token>
       - MCP_BRIDGE_SERVERS={"myfs":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","."]}}
       - MCP_BRIDGE_ALLOWED_COMMANDS=npx,node,python,python3
     volumes:

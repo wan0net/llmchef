@@ -200,7 +200,7 @@ docker run -p 3001:3001 my-mcp-bridge node bin/mcp-bridge.js --host 0.0.0.0
 - **Process Permissions**: Ability to spawn child processes for MCP servers
 - **Firewall**: Ensure ports are accessible if running bridge remotely
 
-> **Security Note**: Configure bridge host binding carefully. Use `127.0.0.1` for localhost-only, or `0.0.0.0` for remote access. Always validate commands against the allowlist.
+> **Security Note**: Configure bridge host binding carefully. Use `127.0.0.1` for localhost-only. If you intentionally bind to `0.0.0.0` or another non-loopback interface, set a strong `MCP_BRIDGE_TOKEN`; the bridge refuses non-loopback startup without one.
 
 > **Remote Access**: When running the bridge on a remote host, ensure proper network security and consider using VPN or firewall rules to restrict access.
 

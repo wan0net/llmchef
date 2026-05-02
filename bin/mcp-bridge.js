@@ -73,6 +73,13 @@ const config = {
   allowDynamicServers: process.env.MCP_BRIDGE_ALLOW_DYNAMIC === 'true',
 };
 
+function isLoopbackBindHost(host) {
+  const normalized = String(host || '').trim().toLowerCase().replace(/^\[|\]$/g, '');
+  return normalized === 'localhost'
+    || normalized === '127.0.0.1'
+    || normalized === '::1';
+}
+
 // Parse command line arguments
 const args = process.argv.slice(2);
 for (let i = 0; i < args.length; i++) {
@@ -122,6 +129,12 @@ stdio://command?args=... URLs, set MCP_BRIDGE_ALLOW_DYNAMIC=true.
       `);
       process.exit(0);
   }
+}
+
+if (generatedToken && !isLoopbackBindHost(config.host)) {
+  console.error(`[${new Date().toISOString()}] ERROR: Refusing to start MCP bridge on non-loopback host "${config.host}" without MCP_BRIDGE_TOKEN.`);
+  console.error('Set MCP_BRIDGE_TOKEN to a strong secret, or bind MCP_BRIDGE_HOST to 127.0.0.1/localhost.');
+  process.exit(1);
 }
 
 // Global state

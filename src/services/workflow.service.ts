@@ -240,7 +240,7 @@ export const WorkflowService = {
     }
 
     // Check for invalid characters or patterns
-    const invalidChars = /[^a-zA-Z0-9_.$\[\]]/;
+    const invalidChars = /[^a-zA-Z0-9_.$[\]]/;
     if (invalidChars.test(query.replace(/\[(\d+)\]/g, ""))) {
       return { isValid: false, error: "Invalid characters in query" };
     }
@@ -316,6 +316,19 @@ export const WorkflowService = {
     //   `[WorkflowService] Built context with ${outputs.length} outputs`
     // );
     return context;
+  },
+
+  _confirmJsFunctionStepExecution: (run: WorkflowRun, step: WorkflowStep): boolean => {
+    if (typeof window === "undefined" || typeof window.confirm !== "function") {
+      return false;
+    }
+
+    const stepName = step.name || step.id;
+    const workflowName = run.template.name || run.template.id;
+    return window.confirm(
+      `Run JavaScript workflow step "${stepName}" in "${workflowName}"?\n\n` +
+      "It will run in an isolated worker. Browser storage, network, provider, and page-context access are blocked by default.",
+    );
   },
 
   /**
@@ -758,7 +771,7 @@ export const WorkflowService = {
             try {
               const output = WorkflowService._parseStepOutput(interaction, fakeStep);
               resolve(output);
-            } catch (error) {
+            } catch {
               // Fallback to raw response
               resolve(interaction.response ?? "No output");
             }
@@ -939,8 +952,9 @@ export const WorkflowService = {
     subWorkflowTemplate: WorkflowTemplate,
     triggerPrompt: string
   ): Promise<any> => {
-    return new Promise(async (resolve, reject) => {
-      try {
+    return new Promise((resolve, reject) => {
+      void (async () => {
+        try {
         const interactionStore = useInteractionStore.getState();
 
         // Create sub-workflow main interaction manually (following main workflow pattern)
@@ -1064,9 +1078,10 @@ export const WorkflowService = {
           metadata: createWorkflowEventMetadata(subRun.runId, "high", 1),
         });
 
-      } catch (error) {
-        reject(error);
-      }
+        } catch (error) {
+          reject(error);
+        }
+      })();
     });
   },
 
@@ -1172,7 +1187,7 @@ export const WorkflowService = {
         ) {
           return toolCall.arguments || toolCall.args;
         }
-      } catch (e) {
+      } catch {
         /* continue to text parsing */
       }
     }
@@ -1185,7 +1200,7 @@ export const WorkflowService = {
         return JSON.parse(match[1]);
       }
       return JSON.parse(interaction.response ?? "{}");
-    } catch (e) {
+    } catch {
       throw new Error("Could not parse structured output from response");
     }
   },
@@ -1854,7 +1869,16 @@ ${JSON.stringify(triggerParameters.structured_output, null, 2)}`;
         try {
           let result;
           if (step.functionLanguage === "js") {
-            result = await CodeExecutionService.executeJs(step.functionCode, context);
+            const hasConsent = WorkflowService._confirmJsFunctionStepExecution(run, step);
+            result = await CodeExecutionService.executeJs(step.functionCode, context, {
+              consent: { execute: hasConsent },
+              permissions: {
+                network: false,
+                storage: false,
+                provider: false,
+                pageContext: false,
+              },
+            });
           } else if (step.functionLanguage === "py") {
             result = await CodeExecutionService.executePy(step.functionCode, context);
           } else {
@@ -2346,7 +2370,7 @@ ${JSON.stringify(stepParameters.structured_output, null, 2)}`;
       let stepOutput: any;
       try {
         stepOutput = WorkflowService._parseStepOutput(interaction, stepSpec);
-      } catch (error) {
+      } catch {
         emitter.emit(workflowEvent.paused, {
           runId: activeRun.runId,
           step: stepSpec,

@@ -534,12 +534,12 @@ services:
   mcp-bridge:
     image: node:20-alpine
     working_dir: /app
-    command: ["node", "bin/mcp-bridge.js", "--host", "0.0.0.0"]
+    command: ["node", "bin/mcp-bridge.js"]
     ports:
-      - "${MCP_BRIDGE_PORT:-3001}:${MCP_BRIDGE_INTERNAL_PORT:-3001}"
+      - "127.0.0.1:${MCP_BRIDGE_PORT:-3001}:${MCP_BRIDGE_INTERNAL_PORT:-3001}"
     environment:
       - MCP_BRIDGE_PORT=${MCP_BRIDGE_INTERNAL_PORT:-3001}
-      - MCP_BRIDGE_HOST=0.0.0.0
+      - MCP_BRIDGE_HOST=${MCP_BRIDGE_HOST:-127.0.0.1}
       - MCP_BRIDGE_VERBOSE=${MCP_BRIDGE_VERBOSE:-false}
     volumes:
       - ./bin/mcp-bridge.js:/app/bin/mcp-bridge.js:ro
