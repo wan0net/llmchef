@@ -50,3 +50,12 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Check bundle budget
+        run: npm run budget
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser smoke tests
+        run: npm run test:e2e
