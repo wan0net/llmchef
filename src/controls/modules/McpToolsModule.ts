@@ -520,7 +520,7 @@ export class McpToolsModule implements ControlModule {
 
 
       } else {
-        console.error(`[${this.id}] MCP client missing tools array:`, mcpClient);
+        console.error("[%s] MCP client missing tools array:", this.id, mcpClient);
         throw new Error('MCP client missing tools array');
       }
 
