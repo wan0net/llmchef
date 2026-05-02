@@ -23,12 +23,11 @@ import { CommitDialog } from "./CommitDialog";
 import * as VfsOps from "@/lib/litechat/vfs-operations";
 import {
   describeRealFsSyncResult,
+  getProjectDirectoryHandleInfo,
   isRealFsSyncSupported,
-  pickRealDirectory,
-  syncRealDirectoryToVfs,
+  pickProjectDirectory,
+  syncProjectDirectoryTwoWay,
   syncRealDirectoryTwoWay,
-  syncVfsToRealDirectory,
-  type RealFsSyncDirection,
 } from "@/lib/litechat/real-fs-sync";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -106,12 +105,17 @@ export const FileManager = memo(() => {
   const [previewLoadingPath, setPreviewLoadingPath] = useState<string | null>(
     null
   );
+  const [localFolderName, setLocalFolderName] = useState<string | null>(null);
+  const [localFolderStatus, setLocalFolderStatus] = useState<string | null>(
+    null
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const archiveInputRef = useRef<HTMLInputElement | null>(null);
   const renameInputRef = useRef<HTMLInputElement | null>(null);
   const newFolderInputRef = useRef<HTMLInputElement | null>(null);
+  const projectFolderSyncingRef = useRef(false);
 
   const currentDirectory = currentParentId ? nodes[currentParentId] : null;
   const currentPath = currentDirectory ? currentDirectory.path : "/";
@@ -137,6 +141,9 @@ export const FileManager = memo(() => {
     isCloning ||
     isCommitting ||
     Object.values(isGitOpLoading).some(Boolean);
+
+  const projectIdForLocalFolder =
+    configuredVfsKey && configuredVfsKey !== "orphan" ? configuredVfsKey : null;
 
   useEffect(() => {
     if (
@@ -170,6 +177,32 @@ export const FileManager = memo(() => {
       renameInputRef.current?.select();
     }
   }, [editingPath]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadLocalFolder = async () => {
+      if (!projectIdForLocalFolder || !isRealFsSyncSupported()) {
+        setLocalFolderName(null);
+        setLocalFolderStatus(null);
+        return;
+      }
+      const info = await getProjectDirectoryHandleInfo(projectIdForLocalFolder);
+      if (cancelled) return;
+      setLocalFolderName(info?.name ?? null);
+      setLocalFolderStatus(
+        info
+          ? t("fileManager.localFolderAutoSyncReady", {
+              folderName: info.name,
+              defaultValue: `Local: ${info.name} · 1 min`,
+            })
+          : null
+      );
+    };
+    void loadLocalFolder();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectIdForLocalFolder, t]);
 
   useEffect(() => {
     if (creatingFolder) {
@@ -348,70 +381,163 @@ export const FileManager = memo(() => {
   const handleFolderUploadClick = () => folderInputRef.current?.click();
   const handleArchiveUploadClick = () => archiveInputRef.current?.click();
 
-  const runRealFolderSync = useCallback(
-    async (direction: RealFsSyncDirection) => {
-      if (isAnyOperationLoading || isVfsLoading) return;
+  const runProjectFolderSync = useCallback(
+    async (showToast = false) => {
+      if (!projectIdForLocalFolder || isAnyOperationLoading || isVfsLoading) {
+        return;
+      }
+      if (projectFolderSyncingRef.current) return;
       const fsInstance = useVfsStore.getState().fs;
       if (!fsInstance) {
-        toast.error(t("fileManager.filesystemNotReady"));
+        if (showToast) toast.error(t("fileManager.filesystemNotReady"));
         return;
       }
 
-      emitter.emit(vfsEvent.loadingStateChanged, {
-        isLoading: loading,
-        operationLoading: true,
-        error: null,
-      });
-
       try {
-        const directoryHandle = await pickRealDirectory();
-        const options = { fsInstance, vfsPath: currentPath, directoryHandle };
-        const result =
-          direction === "import"
-            ? await syncRealDirectoryToVfs(options)
-            : direction === "export"
-              ? await syncVfsToRealDirectory(options)
-              : await syncRealDirectoryTwoWay(options);
-
-        toast.success(describeRealFsSyncResult(direction, result));
+        projectFolderSyncingRef.current = true;
+        setLocalFolderStatus(
+          t("fileManager.localFolderSyncing", "Syncing local folder...")
+        );
+        const result = await syncProjectDirectoryTwoWay(
+          projectIdForLocalFolder,
+          fsInstance
+        );
+        const message = describeRealFsSyncResult("two-way", result);
+        setLocalFolderStatus(message);
+        if (showToast) toast.success(message);
         emitter.emit(vfsEvent.fetchNodesRequest, {
           parentId: currentParentId,
         });
       } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
         const message = err instanceof Error ? err.message : String(err);
-        console.error("Real folder sync error:", err);
-        toast.error(message);
+        console.error("Project folder sync error:", err);
+        setLocalFolderStatus(message);
+        if (showToast) toast.error(message);
       } finally {
-        emitter.emit(vfsEvent.loadingStateChanged, {
-          isLoading: loading,
-          operationLoading: false,
-          error,
-        });
+        projectFolderSyncingRef.current = false;
       }
     },
     [
       currentParentId,
-      currentPath,
-      error,
       isAnyOperationLoading,
       isVfsLoading,
-      loading,
+      projectIdForLocalFolder,
       t,
     ]
   );
 
-  const handleRealFolderImport = useCallback(() => {
-    void runRealFolderSync("import");
-  }, [runRealFolderSync]);
+  useEffect(() => {
+    if (!localFolderName || !projectIdForLocalFolder) return;
+    const interval = window.setInterval(() => {
+      void runProjectFolderSync(false);
+    }, 60_000);
+    return () => window.clearInterval(interval);
+  }, [localFolderName, projectIdForLocalFolder, runProjectFolderSync]);
 
-  const handleRealFolderExport = useCallback(() => {
-    void runRealFolderSync("export");
-  }, [runRealFolderSync]);
+  const handleConnectProjectFolder = useCallback(async () => {
+    if (!projectIdForLocalFolder) {
+      toast.error(t("fileManager.selectProjectBeforeLocalFolder", "Select a project first."));
+      return;
+    }
+    if (isAnyOperationLoading || isVfsLoading) return;
+    const fsInstance = useVfsStore.getState().fs;
+    if (!fsInstance) {
+      toast.error(t("fileManager.filesystemNotReady"));
+      return;
+    }
 
-  const handleRealFolderSync = useCallback(() => {
-    void runRealFolderSync("two-way");
-  }, [runRealFolderSync]);
+    try {
+      const directoryHandle = await pickProjectDirectory(projectIdForLocalFolder);
+      setLocalFolderName(directoryHandle.name);
+      setLocalFolderStatus(
+        t("fileManager.localFolderConnected", {
+          folderName: directoryHandle.name,
+          defaultValue: `Local: ${directoryHandle.name} connected`,
+        })
+      );
+      const result = await syncRealDirectoryTwoWay({
+        fsInstance,
+        vfsPath: "/",
+        directoryHandle,
+      });
+      const message = describeRealFsSyncResult("two-way", result);
+      setLocalFolderStatus(message);
+      toast.success(message);
+      emitter.emit(vfsEvent.fetchNodesRequest, {
+        parentId: currentParentId,
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Project folder connect error:", err);
+      setLocalFolderStatus(message);
+      toast.error(message);
+    }
+  }, [
+    currentParentId,
+    isAnyOperationLoading,
+    isVfsLoading,
+    projectIdForLocalFolder,
+    t,
+  ]);
+
+  const handleProjectFolderSyncNow = useCallback(() => {
+    void runProjectFolderSync(true);
+  }, [runProjectFolderSync]);
+
+  const handleCreateFile = useCallback(() => {
+    if (isAnyOperationLoading || isVfsLoading || editingPath) return;
+    const name = window.prompt(
+      t("fileManager.createFilePrompt", "New file name"),
+      "notes.md"
+    );
+    if (!name?.trim()) return;
+    void runOperation(vfsEvent.createFileRequest, {
+      parentId: currentParentId,
+      name: name.trim(),
+    });
+  }, [
+    currentParentId,
+    editingPath,
+    isAnyOperationLoading,
+    isVfsLoading,
+    runOperation,
+    t,
+  ]);
+
+  const handleMoveSelected = useCallback(() => {
+    const ids = Array.from(selectedFileIds);
+    if (ids.length === 0 || isAnyOperationLoading || isVfsLoading) return;
+    const targetPath = window.prompt(
+      t("fileManager.moveSelectedPrompt", "Move selected files to folder path"),
+      currentPath
+    );
+    if (targetPath === null) return;
+    void runOperation(vfsEvent.moveNodesRequest, {
+      ids,
+      targetPath: targetPath.trim() || "/",
+    });
+  }, [
+    currentPath,
+    isAnyOperationLoading,
+    isVfsLoading,
+    runOperation,
+    selectedFileIds,
+    t,
+  ]);
+
+  const handleDeleteSelected = useCallback(() => {
+    const ids = Array.from(selectedFileIds);
+    if (ids.length === 0 || isAnyOperationLoading || isVfsLoading) return;
+    const confirmation = window.confirm(
+      t("fileManager.deleteSelectedConfirmation", {
+        count: ids.length,
+        defaultValue: `Delete ${ids.length} selected file(s)?`,
+      })
+    );
+    if (!confirmation) return;
+    void runOperation(vfsEvent.deleteNodesRequest, { ids });
+  }, [isAnyOperationLoading, isVfsLoading, runOperation, selectedFileIds, t]);
 
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -736,12 +862,17 @@ export const FileManager = memo(() => {
         handleNavigateUp={handleNavigateUp}
         handleRefresh={handleRefresh}
         startCreatingFolder={startCreatingFolder}
+        handleCreateFile={handleCreateFile}
         handleUploadClick={handleUploadClick}
         handleFolderUploadClick={handleFolderUploadClick}
         handleArchiveUploadClick={handleArchiveUploadClick}
-        handleRealFolderImport={handleRealFolderImport}
-        handleRealFolderExport={handleRealFolderExport}
-        handleRealFolderSync={handleRealFolderSync}
+        handleConnectProjectFolder={handleConnectProjectFolder}
+        handleProjectFolderSyncNow={handleProjectFolderSyncNow}
+        localFolderName={localFolderName}
+        localFolderStatus={localFolderStatus}
+        selectedCount={selectedFileIds.size}
+        handleMoveSelected={handleMoveSelected}
+        handleDeleteSelected={handleDeleteSelected}
         handleDownloadAll={handleDownloadAll}
         handleCloneClick={handleCloneClick}
         isRealFsSyncSupported={isRealFsSyncSupported()}

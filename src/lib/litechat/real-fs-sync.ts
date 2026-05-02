@@ -1,8 +1,9 @@
 import type { fs as FsType } from "@zenfs/core";
+import { db } from "@/lib/litechat/db";
 import { joinPath, normalizePath } from "./file-manager-utils";
 import * as VfsOps from "./vfs-operations";
 
-type FileSystemDirectoryHandleLike = {
+export type FileSystemDirectoryHandleLike = {
   kind: "directory";
   name: string;
   entries: () => AsyncIterableIterator<[string, FileSystemHandleLike]>;
@@ -53,6 +54,7 @@ const IGNORED_NAMES = new Set([
   ".litechat",
   "node_modules",
 ]);
+const PROJECT_DIRECTORY_HANDLE_PREFIX = "projectDirectoryHandle:";
 
 export const isRealFsSyncSupported = (): boolean =>
   typeof window !== "undefined" && "showDirectoryPicker" in window;
@@ -60,7 +62,9 @@ export const isRealFsSyncSupported = (): boolean =>
 export const shouldIgnoreRealFsEntry = (name: string): boolean =>
   IGNORED_NAMES.has(name);
 
-export const pickRealDirectory = async (): Promise<FileSystemDirectoryHandleLike> => {
+export const pickRealDirectory = async (
+  id = "litechat-vfs-sync"
+): Promise<FileSystemDirectoryHandleLike> => {
   if (!isRealFsSyncSupported()) {
     throw new Error("Folder sync requires a browser with File System Access API support.");
   }
@@ -72,11 +76,68 @@ export const pickRealDirectory = async (): Promise<FileSystemDirectoryHandleLike
 
   const directoryHandle = await picker({
     mode: "readwrite",
-    id: "litechat-vfs-sync",
+    id,
   });
 
   await ensureReadWritePermission(directoryHandle);
   return directoryHandle;
+};
+
+export const getProjectDirectoryHandleInfo = async (
+  projectId: string
+): Promise<{ name: string; savedAt: string } | null> => {
+  const record = await db.appState.get(`${PROJECT_DIRECTORY_HANDLE_PREFIX}${projectId}`);
+  const value = record?.value;
+  if (!value?.handle) return null;
+  return {
+    name: value.name || value.handle.name || "Local folder",
+    savedAt: value.savedAt || new Date().toISOString(),
+  };
+};
+
+export const saveProjectDirectoryHandle = async (
+  projectId: string,
+  directoryHandle: FileSystemDirectoryHandleLike
+): Promise<void> => {
+  await db.appState.put({
+    key: `${PROJECT_DIRECTORY_HANDLE_PREFIX}${projectId}`,
+    value: {
+      handle: directoryHandle,
+      name: directoryHandle.name,
+      savedAt: new Date().toISOString(),
+    },
+  });
+};
+
+export const loadProjectDirectoryHandle = async (
+  projectId: string
+): Promise<FileSystemDirectoryHandleLike | null> => {
+  const record = await db.appState.get(`${PROJECT_DIRECTORY_HANDLE_PREFIX}${projectId}`);
+  return record?.value?.handle ?? null;
+};
+
+export const pickProjectDirectory = async (
+  projectId: string
+): Promise<FileSystemDirectoryHandleLike> => {
+  const directoryHandle = await pickRealDirectory(`llmchef-project-${projectId}`);
+  await saveProjectDirectoryHandle(projectId, directoryHandle);
+  return directoryHandle;
+};
+
+export const syncProjectDirectoryTwoWay = async (
+  projectId: string,
+  fsInstance: typeof FsType
+): Promise<RealFsSyncResult> => {
+  const directoryHandle = await loadProjectDirectoryHandle(projectId);
+  if (!directoryHandle) {
+    throw new Error("No local project folder is connected.");
+  }
+  await ensureReadWritePermission(directoryHandle);
+  return syncRealDirectoryTwoWay({
+    fsInstance,
+    vfsPath: "/",
+    directoryHandle,
+  });
 };
 
 export const syncRealDirectoryToVfs = async (
@@ -116,7 +177,7 @@ const createEmptyResult = (): RealFsSyncResult => ({
   filesSkipped: 0,
 });
 
-const ensureReadWritePermission = async (
+export const ensureReadWritePermission = async (
   directoryHandle: FileSystemDirectoryHandleLike
 ): Promise<void> => {
   const descriptor = { mode: "readwrite" as const };

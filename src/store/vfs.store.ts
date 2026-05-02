@@ -53,8 +53,10 @@ interface VfsActions {
   findNodeByPath: (path: string) => VfsNode | undefined;
 
   createDirectory: (parentId: string | null, name: string) => Promise<void>;
+  createFile: (parentId: string | null, name: string) => Promise<void>;
   uploadFiles: (parentId: string | null, files: FileList) => Promise<void>;
   deleteNodes: (ids: string[]) => Promise<void>;
+  moveNodes: (ids: string[], targetPath: string) => Promise<void>;
   renameNode: (id: string, newName: string) => Promise<void>;
   downloadFile: (
     fileId: string
@@ -713,6 +715,48 @@ export const useVfsStore = create(
       }
     },
 
+    createFile: async (parentId, name) => {
+      const {
+        _setOperationLoading,
+        _setError,
+        fs: fsInstance,
+        nodes,
+        rootId,
+        configuredVfsKey,
+        vfsKey,
+      } = get();
+      if (!fsInstance || configuredVfsKey !== vfsKey) {
+        _setError("Filesystem not ready.");
+        return;
+      }
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        _setError("File name cannot be empty.");
+        return;
+      }
+      _setOperationLoading(true);
+      try {
+        const parentNode = parentId ? nodes[parentId] : nodes[rootId || ""];
+        const parentPath = parentNode ? parentNode.path : "/";
+        const newPath = buildPath(parentPath, trimmedName);
+
+        try {
+          await fsInstance.promises.stat(newPath);
+          throw new Error(`"${trimmedName}" already exists.`);
+        } catch (statErr: any) {
+          if (statErr.code !== "ENOENT") throw statErr;
+        }
+
+        await VfsOps.writeFileOp(newPath, "", { fsInstance });
+        await get().fetchNodes(parentId);
+      } catch (err: any) {
+        console.error("Failed to create file:", err);
+        _setError(err.message || "Failed to create file.");
+      } finally {
+        _setOperationLoading(false);
+      }
+    },
+
     uploadFiles: async (parentId, files) => {
       const {
         _setOperationLoading,
@@ -769,6 +813,59 @@ export const useVfsStore = create(
         console.error("Failed to delete nodes:", err);
         _setError("Failed to delete one or more items.");
         await get().fetchNodes(get().currentParentId);
+      } finally {
+        _setOperationLoading(false);
+      }
+    },
+
+    moveNodes: async (ids, targetPath) => {
+      const {
+        _setOperationLoading,
+        _setError,
+        nodes,
+        fs: fsInstance,
+        configuredVfsKey,
+        vfsKey,
+        currentParentId,
+      } = get();
+      if (!fsInstance || configuredVfsKey !== vfsKey) {
+        _setError("Filesystem not ready.");
+        return;
+      }
+      const normalizedTargetPath = normalizePath(targetPath.trim() || "/");
+      _setOperationLoading(true);
+      try {
+        const targetStat = await fsInstance.promises.stat(normalizedTargetPath);
+        if (!targetStat.isDirectory()) {
+          throw new Error(`"${normalizedTargetPath}" is not a folder.`);
+        }
+
+        const nodesToMove = ids.map((id) => nodes[id]).filter(Boolean);
+        for (const node of nodesToMove) {
+          if (node.path === "/") continue;
+          if (
+            node.type === "folder" &&
+            (normalizedTargetPath === node.path ||
+              normalizedTargetPath.startsWith(`${node.path}/`))
+          ) {
+            throw new Error(`Cannot move "${node.name}" into itself.`);
+          }
+          const newPath = buildPath(normalizedTargetPath, node.name);
+          try {
+            await fsInstance.promises.stat(newPath);
+            throw new Error(`"${node.name}" already exists in ${normalizedTargetPath}.`);
+          } catch (statErr: any) {
+            if (statErr.code !== "ENOENT") throw statErr;
+          }
+          await VfsOps.renameOp(node.path, newPath, { fsInstance });
+        }
+
+        get().clearSelection();
+        await get().fetchNodes(currentParentId);
+      } catch (err: any) {
+        console.error("Failed to move nodes:", err);
+        _setError(err.message || "Failed to move one or more items.");
+        await get().fetchNodes(currentParentId);
       } finally {
         _setOperationLoading(false);
       }
@@ -941,6 +1038,12 @@ export const useVfsStore = create(
           storeId,
         },
         {
+          eventName: vfsEvent.createFileRequest,
+          handler: (p: VfsEventPayloads[typeof vfsEvent.createFileRequest]) =>
+            actions.createFile(p.parentId, p.name),
+          storeId,
+        },
+        {
           eventName: vfsEvent.uploadFilesRequest,
           handler: (p: VfsEventPayloads[typeof vfsEvent.uploadFilesRequest]) =>
             actions.uploadFiles(p.parentId, p.files),
@@ -950,6 +1053,12 @@ export const useVfsStore = create(
           eventName: vfsEvent.deleteNodesRequest,
           handler: (p: VfsEventPayloads[typeof vfsEvent.deleteNodesRequest]) =>
             actions.deleteNodes(p.ids),
+          storeId,
+        },
+        {
+          eventName: vfsEvent.moveNodesRequest,
+          handler: (p: VfsEventPayloads[typeof vfsEvent.moveNodesRequest]) =>
+            actions.moveNodes(p.ids, p.targetPath),
           storeId,
         },
         {

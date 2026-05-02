@@ -344,6 +344,52 @@ export const ConversationListControlComponent: React.FC<
     [exportProject]
   );
 
+  const handleMoveConversation = useCallback(
+    async (conversation: Conversation, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const targetName = window.prompt(
+        t(
+          "conversationList.moveConversationPrompt",
+          "Move to project name. Leave blank for no project."
+        ),
+        ""
+      );
+      if (targetName === null) return;
+
+      const trimmedTargetName = targetName.trim();
+      const targetProject = trimmedTargetName
+        ? projects.find(
+            (project) =>
+              project.name.toLowerCase() === trimmedTargetName.toLowerCase()
+          )
+        : null;
+
+      if (trimmedTargetName && !targetProject) {
+        toast.error(
+          t("conversationList.moveConversationProjectNotFound", {
+            projectName: trimmedTargetName,
+            defaultValue: `Project "${trimmedTargetName}" was not found.`,
+          })
+        );
+        return;
+      }
+
+      await updateConversation(conversation.id, {
+        projectId: targetProject?.id ?? null,
+      });
+      if (targetProject) {
+        setExpandedProjects((prev) => new Set(prev).add(targetProject.id));
+      }
+      toast.success(
+        t("conversationList.moveConversationSuccess", {
+          projectName: targetProject?.name ?? "root",
+          defaultValue: `Moved to ${targetProject?.name ?? "root"}.`,
+        })
+      );
+    },
+    [projects, t, updateConversation]
+  );
+
   const repoNameMap = useMemo(() => {
     return new Map((syncRepos || []).map((r) => [r.id, r.name]));
   }, [syncRepos]);
@@ -588,6 +634,7 @@ export const ConversationListControlComponent: React.FC<
                     repoNameMap={repoNameMap}
                     onSelectItem={handleSelectItem}
                     onDeleteItem={handleDeleteItem}
+                    onMoveConversation={handleMoveConversation}
                     onExportConversation={handleExportConversation}
                     onExportProject={handleExportProject}
                     expandedProjects={expandedProjects}

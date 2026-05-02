@@ -17,6 +17,7 @@ import {
   Loader2,
   FileJsonIcon,
   CogIcon,
+  FolderInputIcon,
 } from "lucide-react";
 import { getSyncIndicator } from "@/controls/components/conversation-list/SyncIndicator";
 import type { SidebarItemType } from "@/types/litechat/chat";
@@ -43,6 +44,7 @@ interface ConversationItemProps {
   repoNameMap: Map<string, string>;
   onSelectItem: (id: string, type: SidebarItemType) => void;
   onDeleteItem: (item: SidebarItem, e: React.MouseEvent) => void;
+  onMoveConversation: (item: Conversation, e: React.MouseEvent) => void;
   onExportConversation: (
     id: string,
     format: "json" | "md",
@@ -74,6 +76,7 @@ export const ConversationItemRenderer = memo<ConversationItemProps>(
     repoNameMap,
     onSelectItem,
     onDeleteItem,
+    onMoveConversation,
     onExportConversation,
     onExportProject,
     expandedProjects,
@@ -346,45 +349,54 @@ export const ConversationItemRenderer = memo<ConversationItemProps>(
                   className="h-5 w-5 text-muted-foreground hover:text-foreground"
                 />
               ) : (
-                <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                  <PopoverTrigger asChild>
+                <>
+                  <ActionTooltipButton
+                    tooltipText={t('itemRenderer.moveConversation', 'Move conversation')}
+                    onClick={(e) => onMoveConversation(item as Conversation, e)}
+                    aria-label={t('itemRenderer.moveConversation', 'Move conversation')}
+                    icon={<FolderInputIcon />}
+                    className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                  />
+                  <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                    <PopoverTrigger asChild>
                     <ActionTooltipButton
                       tooltipText={t('itemRenderer.exportConversation')}
                       aria-label={t('itemRenderer.exportItem', { name: displayName })}
                       icon={<DownloadIcon />}
                       className="h-5 w-5 text-muted-foreground hover:text-foreground"
                     />
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-auto p-0.5"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex gap-0.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 px-1.5 text-xs"
-                        onClick={(e) => {
-                          onExportConversation(item.id, "json", e);
-                          setPopoverOpen(false);
-                        }}
-                      >
-                        JSON
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 px-1.5 text-xs"
-                        onClick={(e) => {
-                          onExportConversation(item.id, "md", e);
-                          setPopoverOpen(false);
-                        }}
-                      >
-                        MD
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-auto p-0.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 px-1.5 text-xs"
+                          onClick={(e) => {
+                            onExportConversation(item.id, "json", e);
+                            setPopoverOpen(false);
+                          }}
+                        >
+                          JSON
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 px-1.5 text-xs"
+                          onClick={(e) => {
+                            onExportConversation(item.id, "md", e);
+                            setPopoverOpen(false);
+                          }}
+                        >
+                          MD
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </>
               )}
               <ActionTooltipButton
                 tooltipText={t('itemRenderer.delete', 'Delete')}

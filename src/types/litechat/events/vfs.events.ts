@@ -23,8 +23,10 @@ export const vfsEvent = {
   fetchNodesRequest: "vfs.fetch.nodes.request",
   setCurrentPathRequest: "vfs.set.current.path.request",
   createDirectoryRequest: "vfs.create.directory.request",
+  createFileRequest: "vfs.create.file.request",
   uploadFilesRequest: "vfs.upload.files.request",
   deleteNodesRequest: "vfs.delete.nodes.request",
+  moveNodesRequest: "vfs.move.nodes.request",
   renameNodeRequest: "vfs.rename.node.request",
   downloadFileRequest: "vfs.download.file.request",
   selectFileRequest: "vfs.select.file.request",
@@ -62,8 +64,10 @@ export interface VfsEventPayloads {
   [vfsEvent.fetchNodesRequest]: { parentId?: string | null };
   [vfsEvent.setCurrentPathRequest]: { path: string };
   [vfsEvent.createDirectoryRequest]: { parentId: string | null; name: string };
+  [vfsEvent.createFileRequest]: { parentId: string | null; name: string };
   [vfsEvent.uploadFilesRequest]: { parentId: string | null; files: FileList };
   [vfsEvent.deleteNodesRequest]: { ids: string[] };
+  [vfsEvent.moveNodesRequest]: { ids: string[]; targetPath: string };
   [vfsEvent.renameNodeRequest]: { id: string; newName: string };
   [vfsEvent.downloadFileRequest]: { fileId: string };
   [vfsEvent.selectFileRequest]: { fileId: string };

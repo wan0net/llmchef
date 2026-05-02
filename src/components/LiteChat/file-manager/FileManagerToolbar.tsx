@@ -9,8 +9,13 @@ import {
   ArchiveIcon,
   HomeIcon,
   FolderPlusIcon,
+  FilePlusIcon,
   Loader2Icon,
   GitBranchIcon,
+  FolderSyncIcon,
+  FolderInputIcon,
+  MoveIcon,
+  Trash2Icon,
 } from "lucide-react";
 import type { VfsNode } from "@/types/litechat/vfs";
 import { useTranslation } from "react-i18next";
@@ -26,12 +31,17 @@ interface FileManagerToolbarProps {
   handleNavigateUp: () => void;
   handleRefresh: () => void;
   startCreatingFolder: () => void;
+  handleCreateFile: () => void;
   handleUploadClick: () => void;
   handleFolderUploadClick: () => void;
   handleArchiveUploadClick: () => void;
-  handleRealFolderImport: () => void;
-  handleRealFolderExport: () => void;
-  handleRealFolderSync: () => void;
+  handleConnectProjectFolder: () => void;
+  handleProjectFolderSyncNow: () => void;
+  localFolderName: string | null;
+  localFolderStatus: string | null;
+  selectedCount: number;
+  handleMoveSelected: () => void;
+  handleDeleteSelected: () => void;
   handleDownloadAll: () => void;
   handleCloneClick: () => void;
   isRealFsSyncSupported: boolean;
@@ -54,12 +64,17 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
   handleNavigateUp,
   handleRefresh,
   startCreatingFolder,
+  handleCreateFile,
   handleUploadClick,
   handleFolderUploadClick,
   handleArchiveUploadClick,
-  handleRealFolderImport,
-  handleRealFolderExport,
-  handleRealFolderSync,
+  handleConnectProjectFolder,
+  handleProjectFolderSyncNow,
+  localFolderName,
+  localFolderStatus,
+  selectedCount,
+  handleMoveSelected,
+  handleDeleteSelected,
   handleDownloadAll,
   handleCloneClick,
   isRealFsSyncSupported,
@@ -200,6 +215,72 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              handleCreateFile();
+            }}
+            disabled={isAnyLoading || !!editingPath}
+            className="h-8"
+            title={t("fileManager.toolbar.createNewFile", "Create new file")}
+            type="button"
+          >
+            <FilePlusIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">{t("fileManager.toolbar.file", "File")}</span>{" "}
+          </Button>
+          {selectedCount > 0 && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleMoveSelected();
+                }}
+                disabled={isAnyLoading}
+                className="h-8"
+                title={t("fileManager.toolbar.moveSelected", {
+                  defaultValue: "Move selected files",
+                })}
+                type="button"
+              >
+                <MoveIcon className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">
+                  {t("fileManager.toolbar.moveCount", {
+                    count: selectedCount,
+                    defaultValue: "Move {{count}}",
+                  })}
+                </span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDeleteSelected();
+                }}
+                disabled={isAnyLoading}
+                className="h-8 text-destructive hover:text-destructive"
+                title={t("fileManager.toolbar.deleteSelected", {
+                  defaultValue: "Delete selected files",
+                })}
+                type="button"
+              >
+                <Trash2Icon className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">
+                  {t("fileManager.toolbar.deleteCount", {
+                    count: selectedCount,
+                    defaultValue: "Delete {{count}}",
+                  })}
+                </span>
+              </Button>
+            </>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               handleUploadClick();
             }}
             disabled={isAnyLoading}
@@ -266,15 +347,23 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleRealFolderImport();
+              handleConnectProjectFolder();
             }}
             disabled={isAnyLoading || !isRealFsSyncSupported}
             className="h-8"
-            title={t("fileManager.toolbar.importRealFolder")}
+            title={
+              localFolderName
+                ? t("fileManager.toolbar.changeProjectFolder", "Change local project folder")
+                : t("fileManager.toolbar.connectProjectFolder", "Connect local project folder")
+            }
             type="button"
           >
-            <FolderUpIcon className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">{t("fileManager.toolbar.importFolder")}</span>{" "}
+            <FolderInputIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">
+              {localFolderName
+                ? t("fileManager.toolbar.changeFolder", "Change Folder")
+                : t("fileManager.toolbar.connectFolder", "Connect Folder")}
+            </span>{" "}
           </Button>
           <Button
             variant="outline"
@@ -282,32 +371,28 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleRealFolderExport();
+              handleProjectFolderSyncNow();
             }}
-            disabled={isAnyLoading || !isRealFsSyncSupported}
+            disabled={isAnyLoading || !isRealFsSyncSupported || !localFolderName}
             className="h-8"
-            title={t("fileManager.toolbar.exportRealFolder")}
+            title={t("fileManager.toolbar.syncProjectFolderNow", "Sync local project folder now")}
             type="button"
           >
-            <ArchiveIcon className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">{t("fileManager.toolbar.exportFolder")}</span>{" "}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleRealFolderSync();
-            }}
-            disabled={isAnyLoading || !isRealFsSyncSupported}
-            className="h-8"
-            title={t("fileManager.toolbar.syncRealFolder")}
-            type="button"
-          >
-            <RefreshCwIcon className="h-4 w-4 mr-1" />
+            <FolderSyncIcon className="h-4 w-4 mr-1" />
             <span className="hidden sm:inline">{t("fileManager.toolbar.syncFolder")}</span>{" "}
           </Button>
+          {(localFolderName || localFolderStatus) && (
+            <span
+              className="max-w-[180px] truncate px-2 text-xs text-muted-foreground"
+              title={localFolderStatus || localFolderName || undefined}
+            >
+              {localFolderStatus ||
+                t("fileManager.toolbar.localFolderAutoSync", {
+                  folderName: localFolderName,
+                  defaultValue: "Local: {{folderName}} · 1 min",
+                })}
+            </span>
+          )}
           <Button
             variant="outline"
             size="sm"
