@@ -39,12 +39,35 @@ Many MCP examples are shared as `npx` or `npm exec` commands. LLMChef can import
 
 Package imports are local metadata only. LLMChef does not run package commands, spawn processes, or store environment values. Environment variable names are kept so you can see what a package expects.
 
+## Browser MCP Shim
+
+Compatible package imports can also be installed into the browser MCP shim:
+
+1. Import an `npx`/`npm exec` package snippet.
+2. Review the package metadata.
+3. Click the install action in the imported package row.
+4. LLMChef asks the configured ESM registry/bundler for a browser ESM graph,
+   stores those modules under `/packages/mcp` in the app VFS, and smoke-tests the
+   cached entry module in an isolated Worker.
+
+The default registry/bundler is `https://esm.sh`, and it is contacted only while
+you explicitly install a package. After installation, the cached module graph is
+loaded locally from the VFS. The Worker shim provides a minimal `process`/stdio
+surface for JS packages and disables network APIs, child workers, `importScripts`,
+WebSocket, EventSource, and XHR by default.
+
+This is intentionally narrower than Node. Packages that require native binaries,
+real filesystem access, subprocesses, sockets, Docker, or unrestricted Node
+modules should be treated as Node-only and will not run in the browser shim.
+
 ## Security Model
 
 - MCP endpoints are opt-in and stored locally.
 - Requests are limited by LLMChef's outbound host policy.
 - Authentication secrets are supplied through per-server headers.
 - Package snippets are parsed, not executed.
+- Browser-shim package installation is explicit, cached into VFS, and tested in a
+  Worker with network disabled.
 - Tool responses are bounded by the configured maximum response size.
 - Failed connections use bounded retry settings with visible toast feedback.
 

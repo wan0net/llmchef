@@ -26,6 +26,7 @@ const DEFAULT_PROVIDER_HOSTS: Partial<Record<DbProviderType, string[]>> = {
 };
 
 const installedGuardMarker = Symbol.for("llmchef.outboundFetchGuardInstalled");
+const transientAllowedHosts = new Map<string, number>();
 
 const addUrlHost = (hosts: Set<string>, url: string | null | undefined): void => {
   if (!url) return;
@@ -55,6 +56,10 @@ const isLocalOrSameOriginHost = (host: string): boolean => {
 
 export const getRuntimeAllowedOutboundHosts = (): string[] => {
   const hosts = new Set<string>();
+
+  for (const host of transientAllowedHosts.keys()) {
+    hosts.add(host);
+  }
 
   for (const provider of useProviderStore.getState().dbProviderConfigs) {
     for (const host of DEFAULT_PROVIDER_HOSTS[provider.type] ?? []) {
@@ -91,6 +96,23 @@ export const getRuntimeAllowedOutboundHosts = (): string[] => {
   }
 
   return [...hosts];
+};
+
+export const withTransientAllowedOutboundHost = async <T>(
+  host: string,
+  operation: () => Promise<T>,
+): Promise<T> => {
+  transientAllowedHosts.set(host, (transientAllowedHosts.get(host) ?? 0) + 1);
+  try {
+    return await operation();
+  } finally {
+    const remaining = (transientAllowedHosts.get(host) ?? 1) - 1;
+    if (remaining <= 0) {
+      transientAllowedHosts.delete(host);
+    } else {
+      transientAllowedHosts.set(host, remaining);
+    }
+  }
 };
 
 const inputToUrl = (input: RequestInfo | URL): string => {

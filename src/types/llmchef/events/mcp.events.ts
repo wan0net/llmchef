@@ -1,4 +1,4 @@
-import type { McpPackageImport, McpState, McpServerConfig } from "@/store/mcp.store";
+import type { McpPackageImport, McpPackageRuntimeInstall, McpState, McpServerConfig } from "@/store/mcp.store";
 
 export const mcpEvent = {
   // State Change Events
@@ -7,6 +7,7 @@ export const mcpEvent = {
   serverUpdated: "mcp.server.updated",
   serverDeleted: "mcp.server.deleted",
   packageImportsChanged: "mcp.package.imports.changed",
+  packageRuntimeInstallsChanged: "mcp.package.runtime.installs.changed",
   serverConnectionChanged: "mcp.server.connection.changed",
   toolsChanged: "mcp.tools.changed",
 
@@ -14,6 +15,7 @@ export const mcpEvent = {
   retryAttemptsChanged: "mcp.retry.attempts.changed",
   retryDelayChanged: "mcp.retry.delay.changed",
   connectionTimeoutChanged: "mcp.connection.timeout.changed",
+  packageRuntimeRegistryUrlChanged: "mcp.package.runtime.registry.url.changed",
   maxResponseSizeChanged: "mcp.max.response.size.changed",
 
   // Tool Lifecycle Events for Modding API
@@ -50,6 +52,7 @@ export interface McpEventPayloads {
   [mcpEvent.serverUpdated]: { server: McpServerConfig };
   [mcpEvent.serverDeleted]: { serverId: string };
   [mcpEvent.packageImportsChanged]: { imports: McpPackageImport[] };
+  [mcpEvent.packageRuntimeInstallsChanged]: { installs: McpPackageRuntimeInstall[] };
   [mcpEvent.serverConnectionChanged]: { 
     serverId: string; 
     connected: boolean; 
@@ -64,6 +67,7 @@ export interface McpEventPayloads {
   [mcpEvent.retryAttemptsChanged]: { attempts: number };
   [mcpEvent.retryDelayChanged]: { delay: number };
   [mcpEvent.connectionTimeoutChanged]: { timeout: number };
+  [mcpEvent.packageRuntimeRegistryUrlChanged]: { url: string };
   [mcpEvent.maxResponseSizeChanged]: { size: number };
 
   // Tool Lifecycle Events for Modding API

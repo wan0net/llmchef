@@ -28,6 +28,19 @@ export interface McpPackageImport {
   createdAt: Date;
 }
 
+export interface McpPackageRuntimeInstall {
+  id: string;
+  packageImportId: string;
+  packageName: string;
+  entryUrl: string;
+  registryBaseUrl: string;
+  vfsRoot: string;
+  moduleCount: number;
+  installedAt: Date;
+  runnable: boolean;
+  warnings: string[];
+}
+
 export interface McpServerStatus {
   serverId: string;
   connected: boolean;
@@ -40,6 +53,7 @@ export interface McpServerStatus {
 export interface McpState {
   servers: McpServerConfig[];
   packageImports: McpPackageImport[];
+  packageRuntimeInstalls: McpPackageRuntimeInstall[];
   serverStatuses: Record<string, McpServerStatus>;
   loading: boolean;
   error: string | null;
@@ -47,6 +61,7 @@ export interface McpState {
   retryAttempts: number;
   retryDelay: number;
   connectionTimeout: number;
+  packageRuntimeRegistryUrl: string;
   // Tool response settings
   maxResponseSize: number;
 }
@@ -59,6 +74,7 @@ export interface McpActions {
   deleteServer: (id: string) => void;
   addPackageImports: (imports: Array<Omit<McpPackageImport, 'id' | 'createdAt'>>) => void;
   deletePackageImport: (id: string) => void;
+  upsertPackageRuntimeInstall: (install: McpPackageRuntimeInstall) => void;
   
   // Connection Management
   setServerStatus: (status: McpServerStatus) => void;
@@ -68,6 +84,7 @@ export interface McpActions {
   setRetryAttempts: (attempts: number) => void;
   setRetryDelay: (delay: number) => void;
   setConnectionTimeout: (timeout: number) => void;
+  setPackageRuntimeRegistryUrl: (url: string) => void;
   
   // Tool Response Settings
   setMaxResponseSize: (size: number) => void;
@@ -90,16 +107,19 @@ const DEFAULT_MCP_RETRY_ATTEMPTS = 3;
 const DEFAULT_MCP_RETRY_DELAY = 2000; // 2 seconds
 const DEFAULT_MCP_CONNECTION_TIMEOUT = 10000; // 10 seconds
 const DEFAULT_MCP_MAX_RESPONSE_SIZE = 128000; // 128KB - much more generous default
+const DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL = "https://esm.sh";
 
 const defaultMcpState: McpState = {
   servers: [],
   packageImports: [],
+  packageRuntimeInstalls: [],
   serverStatuses: {},
   loading: false,
   error: null,
   retryAttempts: DEFAULT_MCP_RETRY_ATTEMPTS,
   retryDelay: DEFAULT_MCP_RETRY_DELAY,
   connectionTimeout: DEFAULT_MCP_CONNECTION_TIMEOUT,
+  packageRuntimeRegistryUrl: DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL,
   maxResponseSize: DEFAULT_MCP_MAX_RESPONSE_SIZE,
 };
 
@@ -214,13 +234,39 @@ export const useMcpStore = create(
     deletePackageImport: (id) => {
       set((state) => {
         state.packageImports = state.packageImports.filter((item) => item.id !== id);
+        state.packageRuntimeInstalls = state.packageRuntimeInstalls.filter((item) => item.packageImportId !== id);
       });
 
-      PersistenceService.saveSetting("mcpPackageImports", get().packageImports).catch((error: any) => {
-        console.error("Failed to persist MCP package imports:", error);
+      Promise.all([
+        PersistenceService.saveSetting("mcpPackageImports", get().packageImports),
+        PersistenceService.saveSetting("mcpPackageRuntimeInstalls", get().packageRuntimeInstalls),
+      ]).catch((error: any) => {
+        console.error("Failed to persist MCP package import state:", error);
       });
 
       emitter.emit(mcpEvent.packageImportsChanged, { imports: get().packageImports });
+    },
+
+    upsertPackageRuntimeInstall: (install) => {
+      const normalizedInstall = {
+        ...install,
+        installedAt: install.installedAt ? new Date(install.installedAt) : new Date(),
+      };
+
+      set((state) => {
+        const index = state.packageRuntimeInstalls.findIndex((item) => item.id === normalizedInstall.id);
+        if (index === -1) {
+          state.packageRuntimeInstalls.push(normalizedInstall);
+        } else {
+          state.packageRuntimeInstalls[index] = normalizedInstall;
+        }
+        state.error = null;
+      });
+
+      PersistenceService.saveSetting("mcpPackageRuntimeInstalls", get().packageRuntimeInstalls).catch((error: any) => {
+        console.error("Failed to persist MCP package runtime installs:", error);
+      });
+      emitter.emit(mcpEvent.packageRuntimeInstallsChanged, { installs: get().packageRuntimeInstalls });
     },
 
     // Connection Management Actions
@@ -295,6 +341,32 @@ export const useMcpStore = create(
       emitter.emit(mcpEvent.connectionTimeoutChanged, { timeout: clampedTimeout });
     },
 
+    setPackageRuntimeRegistryUrl: (url: string) => {
+      let normalized: string;
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+          throw new Error("Registry URL must use HTTP(S).");
+        }
+        normalized = `${parsed.protocol}//${parsed.host}`;
+      } catch {
+        set((state) => {
+          state.error = "MCP package registry URL must be a valid HTTP(S) URL.";
+        });
+        return;
+      }
+
+      set((state) => {
+        state.packageRuntimeRegistryUrl = normalized;
+        state.error = null;
+      });
+
+      PersistenceService.saveSetting("mcpPackageRuntimeRegistryUrl", normalized).catch((error: any) => {
+        console.error("Failed to persist MCP package runtime registry URL:", error);
+      });
+      emitter.emit(mcpEvent.packageRuntimeRegistryUrlChanged, { url: normalized });
+    },
+
     setMaxResponseSize: (size: number) => {
       const clampedSize = Math.max(1000, Math.min(10000000, size)); // 1KB to 10MB range
       set((state) => {
@@ -332,16 +404,20 @@ export const useMcpStore = create(
         const [
           servers,
           packageImports,
+          packageRuntimeInstalls,
           retryAttempts,
           retryDelay,
           connectionTimeout,
+          packageRuntimeRegistryUrl,
           maxResponseSize,
         ] = await Promise.all([
           PersistenceService.loadSetting<McpServerConfig[]>("mcpServers", []),
           PersistenceService.loadSetting<McpPackageImport[]>("mcpPackageImports", []),
+          PersistenceService.loadSetting<McpPackageRuntimeInstall[]>("mcpPackageRuntimeInstalls", []),
           PersistenceService.loadSetting<number>("mcpRetryAttempts", DEFAULT_MCP_RETRY_ATTEMPTS),
           PersistenceService.loadSetting<number>("mcpRetryDelay", DEFAULT_MCP_RETRY_DELAY),
           PersistenceService.loadSetting<number>("mcpConnectionTimeout", DEFAULT_MCP_CONNECTION_TIMEOUT),
+          PersistenceService.loadSetting<string>("mcpPackageRuntimeRegistryUrl", DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL),
           PersistenceService.loadSetting<number>("mcpMaxResponseSize", DEFAULT_MCP_MAX_RESPONSE_SIZE),
         ]);
         
@@ -351,9 +427,14 @@ export const useMcpStore = create(
             ...item,
             createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
           }));
+          state.packageRuntimeInstalls = (packageRuntimeInstalls || []).map((item) => ({
+            ...item,
+            installedAt: item.installedAt ? new Date(item.installedAt) : new Date(),
+          }));
           state.retryAttempts = retryAttempts;
           state.retryDelay = retryDelay;
           state.connectionTimeout = connectionTimeout;
+          state.packageRuntimeRegistryUrl = packageRuntimeRegistryUrl || DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL;
           state.maxResponseSize = maxResponseSize;
           state.loading = false;
         });
@@ -361,9 +442,11 @@ export const useMcpStore = create(
         // Emit change events
         emitter.emit(mcpEvent.serversChanged, { servers: servers || [] });
         emitter.emit(mcpEvent.packageImportsChanged, { imports: get().packageImports });
+        emitter.emit(mcpEvent.packageRuntimeInstallsChanged, { installs: get().packageRuntimeInstalls });
         emitter.emit(mcpEvent.retryAttemptsChanged, { attempts: retryAttempts });
         emitter.emit(mcpEvent.retryDelayChanged, { delay: retryDelay });
         emitter.emit(mcpEvent.connectionTimeoutChanged, { timeout: connectionTimeout });
+        emitter.emit(mcpEvent.packageRuntimeRegistryUrlChanged, { url: get().packageRuntimeRegistryUrl });
         emitter.emit(mcpEvent.maxResponseSizeChanged, { size: maxResponseSize });
         
       } catch (error: any) {
@@ -379,10 +462,12 @@ export const useMcpStore = create(
       set((state) => {
         state.servers = [];
         state.packageImports = [];
+        state.packageRuntimeInstalls = [];
         state.serverStatuses = {};
         state.retryAttempts = DEFAULT_MCP_RETRY_ATTEMPTS;
         state.retryDelay = DEFAULT_MCP_RETRY_DELAY;
         state.connectionTimeout = DEFAULT_MCP_CONNECTION_TIMEOUT;
+        state.packageRuntimeRegistryUrl = DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL;
         state.maxResponseSize = DEFAULT_MCP_MAX_RESPONSE_SIZE;
         state.loading = false;
         state.error = null;
@@ -392,9 +477,11 @@ export const useMcpStore = create(
       Promise.all([
         PersistenceService.saveSetting("mcpServers", []),
         PersistenceService.saveSetting("mcpPackageImports", []),
+        PersistenceService.saveSetting("mcpPackageRuntimeInstalls", []),
         PersistenceService.saveSetting("mcpRetryAttempts", DEFAULT_MCP_RETRY_ATTEMPTS),
         PersistenceService.saveSetting("mcpRetryDelay", DEFAULT_MCP_RETRY_DELAY),
         PersistenceService.saveSetting("mcpConnectionTimeout", DEFAULT_MCP_CONNECTION_TIMEOUT),
+        PersistenceService.saveSetting("mcpPackageRuntimeRegistryUrl", DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL),
         PersistenceService.saveSetting("mcpMaxResponseSize", DEFAULT_MCP_MAX_RESPONSE_SIZE),
       ]).catch((error: any) => {
         console.error("Failed to clear MCP settings from storage:", error);
@@ -403,9 +490,11 @@ export const useMcpStore = create(
       // Emit change events
       emitter.emit(mcpEvent.serversChanged, { servers: [] });
       emitter.emit(mcpEvent.packageImportsChanged, { imports: [] });
+      emitter.emit(mcpEvent.packageRuntimeInstallsChanged, { installs: [] });
       emitter.emit(mcpEvent.retryAttemptsChanged, { attempts: DEFAULT_MCP_RETRY_ATTEMPTS });
       emitter.emit(mcpEvent.retryDelayChanged, { delay: DEFAULT_MCP_RETRY_DELAY });
       emitter.emit(mcpEvent.connectionTimeoutChanged, { timeout: DEFAULT_MCP_CONNECTION_TIMEOUT });
+      emitter.emit(mcpEvent.packageRuntimeRegistryUrlChanged, { url: DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL });
       emitter.emit(mcpEvent.maxResponseSizeChanged, { size: DEFAULT_MCP_MAX_RESPONSE_SIZE });
     },
 

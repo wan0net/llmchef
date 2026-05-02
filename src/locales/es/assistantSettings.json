@@ -174,7 +174,21 @@
       "empty": "No package imports yet.",
       "nameColumn": "Name",
       "packageColumn": "Package",
-      "envColumn": "Env keys"
+      "envColumn": "Env keys",
+      "runtimeTitle": "Browser MCP Shim",
+      "runtimeDescription": "Install compatible package imports through a browser ESM runtime, cache them locally, and smoke-test them in an isolated Worker.",
+      "registryLabel": "ESM registry / bundler",
+      "runtimeSafetyNote": "This host is contacted only when you explicitly install a package. Installed modules are stored in the app VFS and run without network access.",
+      "runtimeColumn": "Runtime",
+      "notInstalledStatus": "Not installed",
+      "installedStatus": "Installed ({{modules}} modules)",
+      "installButton": "Install and test in browser shim",
+      "installing": "Installing MCP package",
+      "installSuccess": "MCP package installed",
+      "installSuccessDescription": "Cached {{modules}} modules locally and imported the entry module in the browser shim.",
+      "installError": "MCP package install failed",
+      "installTestWarning": "MCP package installed with runtime warning",
+      "installTestWarningDescription": "The package was cached, but the Worker smoke test did not complete cleanly."
     }
   },
   "template": {

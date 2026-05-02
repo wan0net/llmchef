@@ -9,10 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon, PackagePlusIcon } from "lucide-react";
+import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon, PackagePlusIcon, DownloadIcon, Loader2Icon } from "lucide-react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { z } from "zod";
 import { parseMcpImportInput } from "@/lib/llmchef/mcp-package-import";
+import { installMcpJsRuntimePackage, smokeTestMcpJsRuntimePackage } from "@/lib/llmchef/mcp-js-runtime";
 
 import {
   TabbedLayout,
@@ -67,19 +68,35 @@ function PackageImportsTab() {
   const { t } = useTranslation('assistantSettings');
   const [importText, setImportText] = useState("");
   const [parseError, setParseError] = useState<string | null>(null);
+  const [activeInstallId, setActiveInstallId] = useState<string | null>(null);
+  const [registryInput, setRegistryInput] = useState("");
   const {
     packageImports,
+    packageRuntimeInstalls,
+    packageRuntimeRegistryUrl,
     addPackageImports,
     deletePackageImport,
+    upsertPackageRuntimeInstall,
+    setPackageRuntimeRegistryUrl,
     addServer,
   } = useMcpStore(
     useShallow((state) => ({
       packageImports: state.packageImports,
+      packageRuntimeInstalls: state.packageRuntimeInstalls,
+      packageRuntimeRegistryUrl: state.packageRuntimeRegistryUrl,
       addPackageImports: state.addPackageImports,
       deletePackageImport: state.deletePackageImport,
+      upsertPackageRuntimeInstall: state.upsertPackageRuntimeInstall,
+      setPackageRuntimeRegistryUrl: state.setPackageRuntimeRegistryUrl,
       addServer: state.addServer,
     }))
   );
+
+  const installsByImportId = new Map(packageRuntimeInstalls.map((item) => [item.packageImportId, item]));
+
+  useEffect(() => {
+    setRegistryInput(packageRuntimeRegistryUrl);
+  }, [packageRuntimeRegistryUrl]);
 
   const handleImport = () => {
     try {
@@ -110,6 +127,45 @@ function PackageImportsTab() {
       const message = error instanceof Error ? error.message : "Import failed";
       setParseError(message);
       toast.error(t('mcp.import.error'), { description: message });
+    }
+  };
+
+  const handleInstallAndTest = async (packageImportId: string) => {
+    const packageImport = packageImports.find((item) => item.id === packageImportId);
+    if (!packageImport) return;
+
+    setActiveInstallId(packageImportId);
+    try {
+      toast.loading(t('mcp.import.installing'), { id: `mcp-install-${packageImportId}` });
+      const install = await installMcpJsRuntimePackage({
+        packageImport,
+        registryBaseUrl: packageRuntimeRegistryUrl,
+      });
+      upsertPackageRuntimeInstall(install);
+      const result = await smokeTestMcpJsRuntimePackage(install);
+
+      if (!result.ok) {
+        toast.warning(t('mcp.import.installTestWarning'), {
+          id: `mcp-install-${packageImportId}`,
+          description: result.messages.join("\n") || t('mcp.import.installTestWarningDescription'),
+        });
+        return;
+      }
+
+      toast.success(t('mcp.import.installSuccess'), {
+        id: `mcp-install-${packageImportId}`,
+        description: t('mcp.import.installSuccessDescription', {
+          modules: install.moduleCount,
+        }),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(t('mcp.import.installError'), {
+        id: `mcp-install-${packageImportId}`,
+        description: message,
+      });
+    } finally {
+      setActiveInstallId(null);
     }
   };
 
@@ -157,6 +213,24 @@ function PackageImportsTab() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">{t('mcp.import.runtimeTitle')}</CardTitle>
+          <CardDescription>{t('mcp.import.runtimeDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Label htmlFor="mcp-package-registry">{t('mcp.import.registryLabel')}</Label>
+          <Input
+            id="mcp-package-registry"
+            value={registryInput}
+            onChange={(event) => setRegistryInput(event.target.value)}
+            onBlur={() => setPackageRuntimeRegistryUrl(registryInput)}
+            placeholder="https://esm.sh"
+          />
+          <p className="text-xs text-muted-foreground">{t('mcp.import.runtimeSafetyNote')}</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">{t('mcp.import.importedTitle')}</CardTitle>
           <CardDescription>{t('mcp.import.importedDescription')}</CardDescription>
         </CardHeader>
@@ -170,6 +244,7 @@ function PackageImportsTab() {
                   <TableHead>{t('mcp.import.nameColumn')}</TableHead>
                   <TableHead>{t('mcp.import.packageColumn')}</TableHead>
                   <TableHead>{t('mcp.import.envColumn')}</TableHead>
+                  <TableHead>{t('mcp.import.runtimeColumn')}</TableHead>
                   <TableHead className="text-right">{t('mcp.servers.actionsColumn')}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -181,7 +256,27 @@ function PackageImportsTab() {
                     <TableCell className="text-xs">
                       {item.envKeys.length > 0 ? item.envKeys.join(", ") : "—"}
                     </TableCell>
+                    <TableCell className="text-xs">
+                      {installsByImportId.has(item.id)
+                        ? t('mcp.import.installedStatus', {
+                            modules: installsByImportId.get(item.id)?.moduleCount ?? 0,
+                          })
+                        : t('mcp.import.notInstalledStatus')}
+                    </TableCell>
                     <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleInstallAndTest(item.id)}
+                        disabled={activeInstallId !== null}
+                        title={t('mcp.import.installButton')}
+                      >
+                        {activeInstallId === item.id ? (
+                          <Loader2Icon className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <DownloadIcon className="h-4 w-4" />
+                        )}
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"

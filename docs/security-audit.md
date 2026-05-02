@@ -436,12 +436,19 @@ Current guardrails:
 - HTTP MCP endpoints discovered in imported configs are added disabled by
   default and must be reviewed before use.
 - Local stdio/process MCP bridge support remains removed from the app and docs.
+- Browser-shim installs are explicit and use a transient outbound allowlist for
+  the configured ESM registry/bundler during the install operation only.
+- Installed browser-shim modules are cached under `/packages/mcp` in the app VFS
+  and smoke-tested from local blob URLs in an isolated Worker.
+- The Worker shim disables network APIs, child workers, `importScripts`,
+  WebSocket, EventSource, and XHR by default.
 
 Remaining work:
 
-- If JS-native MCP package execution is added later, route it through an
-  explicit browser sandbox/capability model rather than local process launch.
 - Add a richer preview/review step before imported endpoint drafts are saved.
+- Add package integrity metadata and optional pinning for registry responses.
+- Expand the browser shim only through explicit capabilities, not broad Node
+  compatibility.
 
 ### Service Worker / PWA
 

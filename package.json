@@ -85,6 +85,7 @@
     "date-fns": "^4.1.0",
     "dexie": "^4.0.11",
     "dompurify": "^3.4.1",
+    "es-module-lexer": "^2.1.0",
     "html-to-image": "^1.11.13",
     "i18next": "^25.2.1",
     "immer": "^10.1.1",
