@@ -19,6 +19,12 @@ export interface McpJsRuntimeSmokeResult {
   messages: string[];
 }
 
+export interface McpJsRuntimeToolProbeResult {
+  ok: boolean;
+  tools: string[];
+  messages: string[];
+}
+
 export interface McpJsRuntimeSession {
   worker: Worker;
   sendLine: (line: string) => void;
@@ -108,6 +114,10 @@ export const installMcpJsRuntimePackage = async (
   const installId = await stableInstallId(options.packageImport.packageName, entryUrl);
   const vfsRoot = normalizePath(`${MCP_PACKAGE_CACHE_ROOT}/${installId}`);
   const fsInstance = await useVfsStore.getState().initializeVFS(APP_VFS_KEY, { force: true });
+  const moduleHashes: Record<string, string> = {};
+  for (const moduleRecord of modules.values()) {
+    moduleHashes[moduleRecord.url] = await sha256Hex(moduleRecord.code);
+  }
   const manifest: McpPackageRuntimeInstall = {
     id: installId,
     packageImportId: options.packageImport.id,
@@ -116,6 +126,8 @@ export const installMcpJsRuntimePackage = async (
     registryBaseUrl,
     vfsRoot,
     moduleCount: modules.size,
+    moduleUrls: [...modules.keys()].sort(),
+    moduleHashes,
     installedAt: new Date(),
     runnable: true,
     warnings: [
@@ -186,6 +198,94 @@ export const startMcpJsRuntimeSession = async (
   };
 };
 
+export const probeMcpJsRuntimeTools = async (
+  install: McpPackageRuntimeInstall,
+  timeoutMs = 7000,
+): Promise<McpJsRuntimeToolProbeResult> => {
+  const session = await startMcpJsRuntimeSession(install);
+  const messages: string[] = [];
+  const responses = new Map<number, any>();
+  let initialized = false;
+  let toolsListRequested = false;
+
+  try {
+    return await new Promise((resolve) => {
+      const timeout = window.setTimeout(() => {
+        resolve({
+          ok: false,
+          tools: [],
+          messages: [...messages, "MCP tool probe timed out."],
+        });
+      }, timeoutMs);
+
+      const finish = (result: McpJsRuntimeToolProbeResult) => {
+        window.clearTimeout(timeout);
+        resolve(result);
+      };
+
+      session.worker.onmessage = (event: MessageEvent<{ type: string; message?: string }>) => {
+        const message = event.data?.message ?? "";
+        if (message) messages.push(message);
+        if (event.data?.type === "error") {
+          finish({ ok: false, tools: [], messages });
+          return;
+        }
+        if (event.data?.type === "ready" && !initialized) {
+          initialized = true;
+          session.sendLine(JSON.stringify(createMcpInitializeRequest()));
+          return;
+        }
+        if (event.data?.type !== "stdio") return;
+
+        for (const parsed of parseJsonRpcLines(message)) {
+          if (typeof parsed?.id === "number") responses.set(parsed.id, parsed);
+        }
+
+        if (responses.has(1) && !toolsListRequested) {
+          toolsListRequested = true;
+          session.sendLine(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }));
+          session.sendLine(JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }));
+          return;
+        }
+
+        const toolsResponse = responses.get(2);
+        if (toolsResponse) {
+          if (toolsResponse.error) {
+            finish({
+              ok: false,
+              tools: [],
+              messages: [...messages, `tools/list failed: ${toolsResponse.error.message ?? "unknown error"}`],
+            });
+            return;
+          }
+          const tools = normalizeToolNames(toolsResponse.result?.tools);
+          finish({
+            ok: true,
+            tools,
+            messages: tools.length > 0 ? messages : [...messages, "MCP tools/list returned no tools."],
+          });
+        }
+      };
+    });
+  } finally {
+    session.dispose();
+  }
+};
+
+export const parseJsonRpcLines = (text: string): any[] =>
+  text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+
 
 const fetchModuleGraph = async ({
   entryUrl,
@@ -239,7 +339,9 @@ const readInstalledModuleGraph = async (
   const fsInstance = await useVfsStore.getState().initializeVFS(APP_VFS_KEY, { force: true });
   const manifestBytes = await readFileOp(`${install.vfsRoot}/manifest.json`, { fsInstance, silent: true });
   const manifest = JSON.parse(new TextDecoder().decode(manifestBytes)) as McpPackageRuntimeInstall;
-  const moduleUrls = await readModuleUrlsFromManifestRoot(manifest.vfsRoot);
+  const moduleUrls = manifest.moduleUrls?.length
+    ? manifest.moduleUrls
+    : await readModuleUrlsFromManifestRoot(manifest.vfsRoot);
   const modules = new Map<string, string>();
 
   for (const url of moduleUrls) {
@@ -340,6 +442,31 @@ try {
 }
 `;
 
+const createMcpInitializeRequest = () => ({
+  jsonrpc: "2.0",
+  id: 1,
+  method: "initialize",
+  params: {
+    protocolVersion: "2025-03-26",
+    capabilities: {},
+    clientInfo: {
+      name: "LLMChef Browser MCP Shim",
+      version: "0.1.0",
+    },
+  },
+});
+
+const normalizeToolNames = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((tool) => {
+      if (!tool || typeof tool !== "object") return null;
+      const name = (tool as { name?: unknown }).name;
+      return typeof name === "string" && name.trim() ? name.trim() : null;
+    })
+    .filter((name): name is string => Boolean(name));
+};
+
 const normalizeRegistryBaseUrl = (value: string): string => {
   const url = new URL(value);
   if (url.protocol !== "https:" && url.protocol !== "http:") {
@@ -349,9 +476,13 @@ const normalizeRegistryBaseUrl = (value: string): string => {
 };
 
 const stableInstallId = async (packageName: string, entryUrl: string): Promise<string> => {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${packageName}\n${entryUrl}`));
-  const hash = [...new Uint8Array(digest)].slice(0, 8).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  const hash = (await sha256Hex(`${packageName}\n${entryUrl}`)).slice(0, 16);
   return `${sanitizePackageName(packageName)}-${hash}`;
+};
+
+const sha256Hex = async (value: string): Promise<string> => {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 };
 
 const sanitizePackageName = (value: string): string =>

@@ -5,10 +5,12 @@ import "./index.css";
 import { enableMapSet } from "immer";
 import { PWAService } from "./services/pwa.service";
 import { installOutboundFetchGuard } from "./services/outbound-fetch-guard.service";
+import { installVfsTimeline } from "./lib/llmchef/vfs-timeline";
 import "./i18n/config"; // Initialize i18next
 
 enableMapSet();
 installOutboundFetchGuard();
+installVfsTimeline();
 
 // Initialize PWA service for proper architecture
 PWAService.initialize()

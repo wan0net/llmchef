@@ -9,11 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon, PackagePlusIcon, DownloadIcon, Loader2Icon } from "lucide-react";
+import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon, PackagePlusIcon, DownloadIcon, Loader2Icon, EyeIcon, SearchIcon } from "lucide-react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { z } from "zod";
 import { parseMcpImportInput } from "@/lib/llmchef/mcp-package-import";
-import { installMcpJsRuntimePackage, smokeTestMcpJsRuntimePackage } from "@/lib/llmchef/mcp-js-runtime";
+import { buildEsmPackageEntryUrl, installMcpJsRuntimePackage, probeMcpJsRuntimeTools, smokeTestMcpJsRuntimePackage } from "@/lib/llmchef/mcp-js-runtime";
 
 import {
   TabbedLayout,
@@ -69,6 +69,8 @@ function PackageImportsTab() {
   const [importText, setImportText] = useState("");
   const [parseError, setParseError] = useState<string | null>(null);
   const [activeInstallId, setActiveInstallId] = useState<string | null>(null);
+  const [activeProbeId, setActiveProbeId] = useState<string | null>(null);
+  const [reviewImportId, setReviewImportId] = useState<string | null>(null);
   const [registryInput, setRegistryInput] = useState("");
   const {
     packageImports,
@@ -169,6 +171,70 @@ function PackageImportsTab() {
     }
   };
 
+  const handleProbeTools = async (packageImportId: string) => {
+    const install = installsByImportId.get(packageImportId);
+    if (!install) return;
+
+    setActiveProbeId(packageImportId);
+    try {
+      toast.loading(t('mcp.import.probing'), { id: `mcp-probe-${packageImportId}` });
+      const result = await probeMcpJsRuntimeTools(install);
+      const updatedInstall = {
+        ...install,
+        detectedTools: result.tools,
+        lastProbeAt: new Date(),
+        lastProbeOk: result.ok,
+        lastProbeMessage: result.messages.slice(-3).join("\n"),
+      };
+      upsertPackageRuntimeInstall(updatedInstall);
+
+      if (!result.ok) {
+        toast.warning(t('mcp.import.probeWarning'), {
+          id: `mcp-probe-${packageImportId}`,
+          description: updatedInstall.lastProbeMessage || t('mcp.import.probeWarningDescription'),
+        });
+        return;
+      }
+
+      toast.success(t('mcp.import.probeSuccess'), {
+        id: `mcp-probe-${packageImportId}`,
+        description: t('mcp.import.probeSuccessDescription', { tools: result.tools.length }),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const updatedInstall = {
+        ...install,
+        lastProbeAt: new Date(),
+        lastProbeOk: false,
+        lastProbeMessage: message,
+      };
+      upsertPackageRuntimeInstall(updatedInstall);
+      toast.error(t('mcp.import.probeError'), {
+        id: `mcp-probe-${packageImportId}`,
+        description: message,
+      });
+    } finally {
+      setActiveProbeId(null);
+    }
+  };
+
+  const getReviewFlags = (item: typeof packageImports[number]) => {
+    const flags: string[] = [
+      t('mcp.import.reviewNoProcess'),
+      t('mcp.import.reviewNoEnvValues'),
+    ];
+    if (item.packageName.startsWith("github:") || item.packageName.startsWith("gh:")) {
+      flags.push(t('mcp.import.reviewGithubSpec'));
+    }
+    if (item.args.some((arg) => /\b(fs|filesystem|docker|shell|exec|spawn|socket)\b/i.test(arg))) {
+      flags.push(t('mcp.import.reviewNodeRisk'));
+    }
+    if (item.endpointUrl) {
+      flags.push(t('mcp.import.reviewEndpointDraft'));
+    }
+    return flags;
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -249,44 +315,102 @@ function PackageImportsTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {packageImports.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell className="font-mono text-xs">{item.packageName}</TableCell>
-                    <TableCell className="text-xs">
-                      {item.envKeys.length > 0 ? item.envKeys.join(", ") : "—"}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {installsByImportId.has(item.id)
-                        ? t('mcp.import.installedStatus', {
-                            modules: installsByImportId.get(item.id)?.moduleCount ?? 0,
-                          })
-                        : t('mcp.import.notInstalledStatus')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleInstallAndTest(item.id)}
-                        disabled={activeInstallId !== null}
-                        title={t('mcp.import.installButton')}
-                      >
-                        {activeInstallId === item.id ? (
-                          <Loader2Icon className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <DownloadIcon className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deletePackageImport(item.id)}
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {packageImports.map((item) => {
+                  const install = installsByImportId.get(item.id);
+                  return (
+                    <React.Fragment key={item.id}>
+                      <TableRow>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell className="font-mono text-xs">{item.packageName}</TableCell>
+                        <TableCell className="text-xs">
+                          {item.envKeys.length > 0 ? item.envKeys.join(", ") : "—"}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {install
+                            ? t('mcp.import.installedStatus', {
+                                modules: install.moduleCount,
+                              })
+                            : t('mcp.import.notInstalledStatus')}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setReviewImportId(reviewImportId === item.id ? null : item.id)}
+                            title={t('mcp.import.reviewButton')}
+                          >
+                            <EyeIcon className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleInstallAndTest(item.id)}
+                            disabled={activeInstallId !== null}
+                            title={t('mcp.import.installButton')}
+                          >
+                            {activeInstallId === item.id ? (
+                              <Loader2Icon className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <DownloadIcon className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleProbeTools(item.id)}
+                            disabled={!install || activeProbeId !== null}
+                            title={t('mcp.import.probeButton')}
+                          >
+                            {activeProbeId === item.id ? (
+                              <Loader2Icon className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <SearchIcon className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deletePackageImport(item.id)}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                      {reviewImportId === item.id ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="bg-muted/20">
+                            <div className="grid gap-3 text-xs md:grid-cols-2">
+                              <div className="space-y-1">
+                                <p className="font-medium">{t('mcp.import.reviewTitle')}</p>
+                                <p><span className="text-muted-foreground">{t('mcp.import.entryUrlLabel')}:</span> <span className="font-mono">{buildEsmPackageEntryUrl(packageRuntimeRegistryUrl, item.packageName)}</span></p>
+                                <p><span className="text-muted-foreground">{t('mcp.import.argsLabel')}:</span> <span className="font-mono">{item.args.length > 0 ? item.args.join(" ") : "—"}</span></p>
+                                <p><span className="text-muted-foreground">{t('mcp.import.vfsRootLabel')}:</span> <span className="font-mono">{install?.vfsRoot ?? "—"}</span></p>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex flex-wrap gap-1">
+                                  {getReviewFlags(item).map((flag) => (
+                                    <Badge key={flag} variant="secondary">{flag}</Badge>
+                                  ))}
+                                </div>
+                                {install?.detectedTools?.length ? (
+                                  <p>
+                                    <span className="text-muted-foreground">{t('mcp.import.detectedToolsLabel')}:</span>{" "}
+                                    {install.detectedTools.join(", ")}
+                                  </p>
+                                ) : null}
+                                {install?.lastProbeMessage ? (
+                                  <p className={install.lastProbeOk ? "text-muted-foreground" : "text-destructive"}>
+                                    {install.lastProbeMessage}
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : null}
+                    </React.Fragment>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

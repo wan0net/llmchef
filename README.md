@@ -58,10 +58,11 @@ This repository is the `wan0net/llmchef` fork, renamed and maintained as LLMChef
 ### 🔌 **MCP (Model Context Protocol) Integration**
 - **HTTP MCP Servers**: Connect to external MCP servers via Streamable HTTP with SSE fallback
 - **MCP Package Imports**: Paste common `npx`/`npm exec` examples as local metadata without executing them
-- **Browser MCP Shim**: Install compatible JS package imports into the local VFS and smoke-test them in an isolated Worker
+- **Browser MCP Shim**: Review, install, pin, smoke-test, and probe compatible JS package imports from the local VFS
 - **Automatic Tool Discovery**: Tools from MCP servers are automatically available to the AI
 - **Graceful Error Handling**: Configurable retry logic with exponential backoff
 - **Connection Management**: Real-time status monitoring and manual retry capabilities
+- **Network/VFS Audit Views**: Inspect configured network surfaces and session VFS changes
 - **Secure Authentication**: Support for custom headers and API key authentication
 
 ### ⚙️ **Extensibility & Customization**

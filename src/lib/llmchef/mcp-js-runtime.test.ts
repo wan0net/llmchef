@@ -3,6 +3,7 @@ import { init } from "es-module-lexer";
 import {
   buildEsmPackageEntryUrl,
   packageSpecToEsmPath,
+  parseJsonRpcLines,
   resolveEsmImportSpecifier,
   rewriteEsmImports,
 } from "./mcp-js-runtime";
@@ -45,5 +46,11 @@ describe("mcp-js-runtime", () => {
 
     expect(rewritten).toContain("import x from 'blob:x'");
     expect(rewritten).toContain("export { y } from \"blob:y\"");
+  });
+
+  it("parses newline-delimited JSON-RPC output and ignores logs", () => {
+    expect(parseJsonRpcLines("log line\n{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"tools\":[{\"name\":\"read\"}]}}\n")).toEqual([
+      { jsonrpc: "2.0", id: 2, result: { tools: [{ name: "read" }] } },
+    ]);
   });
 });

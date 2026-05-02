@@ -49,12 +49,17 @@ Compatible package imports can also be installed into the browser MCP shim:
 4. LLMChef asks the configured ESM registry/bundler for a browser ESM graph,
    stores those modules under `/packages/mcp` in the app VFS, and smoke-tests the
    cached entry module in an isolated Worker.
+5. Use the probe action to send MCP `initialize` and `tools/list` over the
+   Worker stdio bridge and store detected tool names with the package install.
 
 The default registry/bundler is `https://esm.sh`, and it is contacted only while
 you explicitly install a package. After installation, the cached module graph is
 loaded locally from the VFS. The Worker shim provides a minimal `process`/stdio
 surface for JS packages and disables network APIs, child workers, `importScripts`,
 WebSocket, EventSource, and XHR by default.
+
+Each install is pinned with the resolved entry URL, cached module URLs, SHA-256
+hashes, module count, install time, last probe status, and VFS root.
 
 This is intentionally narrower than Node. Packages that require native binaries,
 real filesystem access, subprocesses, sockets, Docker, or unrestricted Node

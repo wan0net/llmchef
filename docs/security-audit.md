@@ -440,6 +440,10 @@ Current guardrails:
   the configured ESM registry/bundler during the install operation only.
 - Installed browser-shim modules are cached under `/packages/mcp` in the app VFS
   and smoke-tested from local blob URLs in an isolated Worker.
+- Installed browser-shim modules are pinned with resolved URLs and SHA-256
+  hashes for later review.
+- MCP tool probing sends `initialize` and `tools/list` over the Worker stdio
+  bridge and records detected tool names; it does not enable broad app access.
 - The Worker shim disables network APIs, child workers, `importScripts`,
   WebSocket, EventSource, and XHR by default.
 
@@ -449,6 +453,22 @@ Remaining work:
 - Add package integrity metadata and optional pinning for registry responses.
 - Expand the browser shim only through explicit capabilities, not broad Node
   compatibility.
+
+### Network Surfaces And VFS Timeline
+
+Current guardrails:
+
+- Settings -> Network lists configured remote-capable surfaces separately from
+  the recent outbound request ledger.
+- The network audit export includes configured surfaces, allowed hosts, and
+  recent outbound destinations.
+- The VFS modal includes a session-local timeline and diff summary for reads,
+  writes, and deletes emitted through VFS operations.
+
+Remaining work:
+
+- Persist VFS history snapshots if users want cross-session file timelines.
+- Add per-surface disable/edit actions where the owning store supports it.
 
 ### Service Worker / PWA
 

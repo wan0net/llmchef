@@ -188,7 +188,25 @@
       "installSuccessDescription": "Cached {{modules}} modules locally and imported the entry module in the browser shim.",
       "installError": "MCP package install failed",
       "installTestWarning": "MCP package installed with runtime warning",
-      "installTestWarningDescription": "The package was cached, but the Worker smoke test did not complete cleanly."
+      "installTestWarningDescription": "The package was cached, but the Worker smoke test did not complete cleanly.",
+      "reviewButton": "Review package",
+      "probeButton": "Probe MCP tools",
+      "probing": "Probing MCP tools",
+      "probeSuccess": "MCP tools discovered",
+      "probeSuccessDescription": "Detected {{tools}} tools from the browser shim.",
+      "probeWarning": "MCP probe completed with warning",
+      "probeWarningDescription": "The package imported, but initialize/tools/list did not complete cleanly.",
+      "probeError": "MCP tool probe failed",
+      "reviewTitle": "Install Review",
+      "entryUrlLabel": "Entry URL",
+      "argsLabel": "Args",
+      "vfsRootLabel": "VFS root",
+      "detectedToolsLabel": "Detected tools",
+      "reviewNoProcess": "No local process",
+      "reviewNoEnvValues": "No env values stored",
+      "reviewGithubSpec": "GitHub package spec",
+      "reviewNodeRisk": "Possible Node-only API",
+      "reviewEndpointDraft": "HTTP endpoint draft"
     }
   },
   "template": {

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { FileManager } from "@/components/LLMChef/file-manager/FileManager";
 import { FileManagerBanner } from "@/components/LLMChef/file-manager/FileManagerBanner";
+import { VfsTimelinePanel } from "./VfsTimelinePanel";
 import { toast } from "sonner";
 import type { VfsControlModule } from "@/controls/modules/VfsControlModule";
 import type { ModalProviderProps } from "@/types/llmchef/modding";
@@ -125,6 +126,7 @@ export const VfsModalPanel: React.FC<VfsModalPanelProps> = ({
             selectedItemType={selectedItemType}
           />
         </DialogHeader>
+        <VfsTimelinePanel />
         <div className="flex-grow overflow-hidden">
           <FileManager />
         </div>

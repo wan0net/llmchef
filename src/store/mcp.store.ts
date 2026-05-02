@@ -36,8 +36,14 @@ export interface McpPackageRuntimeInstall {
   registryBaseUrl: string;
   vfsRoot: string;
   moduleCount: number;
+  moduleUrls: string[];
+  moduleHashes: Record<string, string>;
   installedAt: Date;
   runnable: boolean;
+  detectedTools?: string[];
+  lastProbeAt?: Date;
+  lastProbeOk?: boolean;
+  lastProbeMessage?: string;
   warnings: string[];
 }
 
@@ -429,7 +435,10 @@ export const useMcpStore = create(
           }));
           state.packageRuntimeInstalls = (packageRuntimeInstalls || []).map((item) => ({
             ...item,
+            moduleUrls: item.moduleUrls ?? [],
+            moduleHashes: item.moduleHashes ?? {},
             installedAt: item.installedAt ? new Date(item.installedAt) : new Date(),
+            lastProbeAt: item.lastProbeAt ? new Date(item.lastProbeAt) : undefined,
           }));
           state.retryAttempts = retryAttempts;
           state.retryDelay = retryDelay;
