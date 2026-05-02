@@ -34,7 +34,7 @@ Scope:
 - Support importing skill packages from VFS folders. (implemented)
 - Support importing skill packages from Git repos cloned into VFS. (implemented)
 - Define package format:
-  - `.litechat/skills/<slug>/skill.json`
+  - `.llmchef/skills/<slug>/skill.json`
   - `README.md`
   - optional `prompts/`, `agents/`, `workflows/`, `rules/`, `tools/`, `examples/`
 - Install skill assets into existing LLMChef primitives where possible:

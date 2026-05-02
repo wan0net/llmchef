@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { CircleIcon } from "lucide-react";
 import type { UsageDisplayControlModule } from "@/controls/modules/UsageDisplayControlModule";
-import { formatTokenCost } from "@/lib/litechat/ai-helpers";
+import { formatTokenCost } from "@/lib/llmchef/ai-helpers";
 
 interface UsageDisplayControlProps {
   module: UsageDisplayControlModule;

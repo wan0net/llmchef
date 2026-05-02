@@ -4,15 +4,15 @@ import React, { useState, useMemo, useCallback } from "react";
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout";
+} from "@/components/LLMChef/common/TabbedLayout";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SearchIcon, Settings } from "lucide-react";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { uiEvent } from "@/types/litechat/events/ui.events";
-import type { DbRule, DbTag } from "@/types/litechat/rules"; // Import types
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
+import type { DbRule, DbTag } from "@/types/llmchef/rules"; // Import types
 import { useSettingsStore } from "@/store/settings.store";
 import { useTranslation } from "react-i18next";
 

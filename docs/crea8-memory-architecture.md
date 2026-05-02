@@ -17,7 +17,7 @@ version the same source of truth.
 | Class | Purpose | Example |
 | --- | --- | --- |
 | `user` | Stable user preferences and conventions | "Prefer dense link42 operator UI." |
-| `project` | Project facts and current state | "LLMChef deploys at wan0.net/litechat." |
+| `project` | Project facts and current state | "LLMChef deploys at wan0.net/llmchef." |
 | `decision` | Explicit decisions and rationale | "Use crea8 notes as memory source of truth." |
 | `work-log` | Completed work and audit trail | "Added VFS real-folder sync in commit fa63d67." |
 | `skill` | Knowledge owned by or generated through a skill | "Security audit skill checklist." |

@@ -17,7 +17,7 @@ import { useSettingsStore } from "@/store/settings.store";
 import { useVfsStore } from "@/store/vfs.store";
 import { useShallow } from "zustand/react/shallow";
 import { toast } from "sonner";
-import type { Project } from "@/types/litechat/project";
+import type { Project } from "@/types/llmchef/project";
 import { ProjectSettingsPrompt } from "./ProjectSettingsPrompt";
 import { ProjectSettingsParams } from "./ProjectSettingsParams";
 import { ProjectSettingsSync } from "./ProjectSettingsSync";
@@ -28,7 +28,7 @@ import { useConversationStore } from "@/store/conversation.store";
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout";
+} from "@/components/LLMChef/common/TabbedLayout";
 import { cn } from "@/lib/utils";
 import type { ProjectSettingsControlModule } from "@/controls/modules/ProjectSettingsControlModule";
 

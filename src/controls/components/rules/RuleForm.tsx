@@ -1,16 +1,16 @@
-// src/components/LiteChat/settings/rules/RuleForm.tsx
+// src/components/LLMChef/settings/rules/RuleForm.tsx
 // FULL FILE
 import React, { useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { SaveIcon, XIcon, Loader2 } from "lucide-react";
-import type { DbRule, RuleType } from "@/types/litechat/rules";
+import type { DbRule, RuleType } from "@/types/llmchef/rules";
 
-import { TextField } from "@/components/LiteChat/common/form-fields/TextField";
-import { TextareaField } from "@/components/LiteChat/common/form-fields/TextareaField";
-import { SelectField, type SelectFieldOption } from "@/components/LiteChat/common/form-fields/SelectField";
-import { SwitchField } from "@/components/LiteChat/common/form-fields/SwitchField";
+import { TextField } from "@/components/LLMChef/common/form-fields/TextField";
+import { TextareaField } from "@/components/LLMChef/common/form-fields/TextareaField";
+import { SelectField, type SelectFieldOption } from "@/components/LLMChef/common/form-fields/SelectField";
+import { SwitchField } from "@/components/LLMChef/common/form-fields/SwitchField";
 
 interface RuleFormProps {
   initialData?: Partial<DbRule>;

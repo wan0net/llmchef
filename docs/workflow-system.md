@@ -431,7 +431,7 @@ const compiled = await module.compileTemplate(templateId, variables);
 
 #### 1. Extend Type Definitions
 ```typescript
-// In src/types/litechat/workflow.ts
+// In src/types/llmchef/workflow.ts
 export type WorkflowStepType =
   | "prompt"
   | "agent-task"
@@ -668,15 +668,15 @@ localStorage.setItem('workflow:debug', 'true');
 Use browser dev tools to inspect workflow state:
 ```javascript
 // In console
-window.__LITECHAT_STORES__.workflow.getState();
-window.__LITECHAT_STORES__.interaction.getState();
+window.__LLMCHEF_STORES__.workflow.getState();
+window.__LLMCHEF_STORES__.interaction.getState();
 ```
 
 #### Template Validation
 Test template compilation separately:
 ```javascript
 // In console
-await window.__LITECHAT_MODULES__.workflow.compileTemplate(templateId, testData);
+await window.__LLMCHEF_MODULES__.workflow.compileTemplate(templateId, testData);
 ```
 
 ## API Reference

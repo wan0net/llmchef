@@ -1,12 +1,12 @@
-import type { ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
+import type { ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { BlockRenderer, BlockRendererContext } from "@/types/llmchef/canvas/block-renderer";
 import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
 
 const FlowBlockRenderer = createLazyBlockRenderer<any>(
   () =>
-    import("@/components/LiteChat/common/FlowBlockRenderer").then((module) => ({
+    import("@/components/LLMChef/common/FlowBlockRenderer").then((module) => ({
       default: module.FlowBlockRenderer,
     })),
   "Loading flow renderer...",
@@ -174,7 +174,7 @@ Organizational flowchart:
   },
   "nodes": [
     {
-      "id": "litechat",
+      "id": "llmchef",
       "type": "custom",
       "label": "<img src='/icons/128.png' />",
       "style": {
@@ -285,7 +285,7 @@ Organizational flowchart:
   "edges": [
     {
       "id": "e1",
-      "target": "litechat",
+      "target": "llmchef",
       "source": "models",
       "type": "smoothstep",
       "animated": true,
@@ -298,7 +298,7 @@ Organizational flowchart:
     },
     {
       "id": "e2",
-      "target": "litechat",
+      "target": "llmchef",
       "source": "ui",
       "type": "smoothstep",
       "animated": true,
@@ -311,7 +311,7 @@ Organizational flowchart:
     },
     {
       "id": "e3",
-      "target": "litechat",
+      "target": "llmchef",
       "source": "tools",
       "type": "smoothstep",
       "animated": true,
@@ -324,7 +324,7 @@ Organizational flowchart:
     },
     {
       "id": "e4",
-      "target": "litechat",
+      "target": "llmchef",
       "source": "library",
       "type": "smoothstep",
       "animated": true,
@@ -337,7 +337,7 @@ Organizational flowchart:
     },
     {
       "id": "e5",
-      "target": "litechat",
+      "target": "llmchef",
       "source": "ai-race",
       "type": "smoothstep",
       "animated": true,
@@ -350,7 +350,7 @@ Organizational flowchart:
     },
     {
       "id": "e6",
-      "target": "litechat",
+      "target": "llmchef",
       "source": "workflow",
       "type": "smoothstep",
       "animated": true,
@@ -376,7 +376,7 @@ export class FlowBlockRendererModule implements ControlModule {
     // No initialization needed
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

@@ -1,25 +1,25 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { conversationEvent } from "@/types/litechat/events/conversation.events";
-import { syncEvent } from "@/types/litechat/events/sync.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+import { syncEvent } from "@/types/llmchef/events/sync.events";
 import { ManualSyncSidebarControl } from "@/controls/components/git-sync/ManualSyncSidebarControl";
 import { useConversationStore } from "@/store/conversation.store";
-import type { SyncRepo, SyncStatus } from "@/types/litechat/sync";
+import type { SyncRepo, SyncStatus } from "@/types/llmchef/sync";
 import { BulkSyncService } from "@/services/bulk-sync.service";
 
 export class ManualSyncSidebarControlModule implements ControlModule {
   readonly id = "core-manual-git-sync-sidebar";
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   public syncRepos: SyncRepo[] = [];
   public repoInitializationStatus: Record<string, SyncStatus> = {};
   public isSyncing = false;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.loadInitialState();
 
@@ -112,7 +112,7 @@ export class ManualSyncSidebarControlModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

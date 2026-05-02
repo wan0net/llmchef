@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSettingsStore } from "@/store/settings.store";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { settingsEvent } from "@/types/litechat/events/settings.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { settingsEvent } from "@/types/llmchef/events/settings.events";
 import { Separator } from "@/components/ui/separator";
-import { SwitchField } from "@/components/LiteChat/common/form-fields/SwitchField";
+import { SwitchField } from "@/components/LLMChef/common/form-fields/SwitchField";
 import { GlobalModelSelector } from "@/controls/components/global-model-selector/GlobalModelSelector";
 import { toast } from "sonner";
 

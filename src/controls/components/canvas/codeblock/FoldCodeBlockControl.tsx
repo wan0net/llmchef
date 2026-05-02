@@ -1,9 +1,9 @@
 // src/controls/components/canvas/codeblock/FoldCodeBlockControl.tsx
 // NEW FILE
 import React from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { ChevronsUpDownIcon } from "lucide-react";
-import { createCodeblockButtonHandler } from "@/lib/litechat/codeblock-button-utils";
+import { createCodeblockButtonHandler } from "@/lib/llmchef/codeblock-button-utils";
 import { useTranslation } from "react-i18next";
 
 interface FoldCodeBlockControlProps {

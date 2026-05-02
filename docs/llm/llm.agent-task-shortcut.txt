@@ -49,4 +49,4 @@ LLMChef supports advanced agent, task, and shortcut prompt orchestration using a
 ## Key Files
 - Store: `src/store/prompt-template.store.ts`
 - UI: `src/controls/components/prompt/PromptLibraryControl.tsx`, `src/controls/components/workflow/WorkflowBuilder.tsx`
-- Types: `src/types/litechat/prompt-template.ts`
+- Types: `src/types/llmchef/prompt-template.ts`

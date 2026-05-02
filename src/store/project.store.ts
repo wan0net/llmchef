@@ -2,23 +2,23 @@
 // FULL FILE
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import type { Project } from "@/types/litechat/project";
+import type { Project } from "@/types/llmchef/project";
 import { PersistenceService } from "@/services/persistence.service";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
-import { normalizePath } from "@/lib/litechat/file-manager-utils";
+import { normalizePath } from "@/lib/llmchef/file-manager-utils";
 import { useSettingsStore } from "./settings.store";
 import { useProviderStore } from "./provider.store";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import {
   projectEvent,
   ProjectEventPayloads,
-} from "@/types/litechat/events/project.events";
+} from "@/types/llmchef/events/project.events";
 import type {
   RegisteredActionHandler,
   ActionHandler,
-} from "@/types/litechat/control";
-import { conversationEvent } from "@/types/litechat/events/conversation.events";
+} from "@/types/llmchef/control";
+import { conversationEvent } from "@/types/llmchef/events/conversation.events";
 
 interface ProjectState {
   projects: Project[];

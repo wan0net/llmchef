@@ -1,12 +1,12 @@
 // src/controls/modules/GitToolsModule.ts
 // FULL FILE
-import { type ControlModule } from "@/types/litechat/control";
+import { type ControlModule } from "@/types/llmchef/control";
 import {
-  type LiteChatModApi,
+  type LLMChefModApi,
   type ReadonlyChatContextSnapshot,
-} from "@/types/litechat/modding";
+} from "@/types/llmchef/modding";
 import { useSettingsStore } from "@/store/settings.store";
-import * as VfsOps from "@/lib/litechat/vfs-operations";
+import * as VfsOps from "@/lib/llmchef/vfs-operations";
 import { z } from "zod";
 import { Tool } from "ai";
 import type { fs as FsType } from "@zenfs/core"; // Corrected import
@@ -59,11 +59,11 @@ export class GitToolsModule implements ControlModule {
   readonly id = "core-git-tools";
   private unregisterCallbacks: (() => void)[] = [];
 
-  async initialize(_modApi: LiteChatModApi): Promise<void> {
+  async initialize(_modApi: LLMChefModApi): Promise<void> {
     // console.log(`[${this.id}] Initialized.`);
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallbacks.length > 0) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

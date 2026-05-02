@@ -9,7 +9,7 @@ import type {
   AiModelConfig,
   OpenRouterModel,
   ModelListItem,
-} from "@/types/litechat/provider";
+} from "@/types/llmchef/provider";
 import { PersistenceService } from "@/services/persistence.service";
 import {
   DEFAULT_MODELS,
@@ -17,16 +17,16 @@ import {
   splitModelId,
   DEFAULT_SUPPORTED_PARAMS,
   instantiateModelInstance,
-} from "@/lib/litechat/provider-helpers";
+} from "@/lib/llmchef/provider-helpers";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { fetchModelsForProvider } from "@/services/model-fetcher";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import {
   providerEvent,
   ProviderEventPayloads,
-} from "@/types/litechat/events/provider.events";
-import type { RegisteredActionHandler } from "@/types/litechat/control";
+} from "@/types/llmchef/events/provider.events";
+import type { RegisteredActionHandler } from "@/types/llmchef/control";
 
 type FetchStatus = "idle" | "fetching" | "error" | "success";
 const LAST_SELECTION_KEY = "provider:lastModelSelection";

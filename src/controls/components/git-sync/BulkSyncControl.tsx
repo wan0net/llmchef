@@ -12,8 +12,8 @@ import {
   DownloadIcon,
   Upload
 } from "lucide-react";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { syncEvent } from "@/types/litechat/events/sync.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { syncEvent } from "@/types/llmchef/events/sync.events";
 import type { BulkSyncProgress } from "@/services/bulk-sync.service";
 import { cn } from "@/lib/utils";
 import {

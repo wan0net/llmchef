@@ -1,12 +1,12 @@
 // src/controls/components/canvas/QuoteSelectionControl.tsx
 import React from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { QuoteIcon } from "lucide-react";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { SelectionControlContext } from "@/types/litechat/canvas/control";
+import type { SelectionControlContext } from "@/types/llmchef/canvas/control";
 
 interface QuoteSelectionControlProps {
   context: SelectionControlContext;

@@ -34,10 +34,10 @@ LLMChef's UI is built for advanced, event-driven, highly interactive workflows. 
 
 ## Event-Driven UI Patterns
 - **All UI** is event-driven: emits/handles events for state sync, error reporting, and UI updates
-- **TabbedLayout**: (see `src/controls/components/LiteChat/common/TabbedLayout.tsx`)
+- **TabbedLayout**: (see `src/controls/components/LLMChef/common/TabbedLayout.tsx`)
   - Only outermost container is scrollable (no nested scrollbars)
   - Used for workflow builder, prompt library, and other multi-tab UIs
-- **ActionTooltipButton**: (see `src/controls/components/LiteChat/common/ActionTooltipButton.tsx`)
+- **ActionTooltipButton**: (see `src/controls/components/LLMChef/common/ActionTooltipButton.tsx`)
   - Used for all action buttons with tooltips, event-driven actions
 
 ---
@@ -64,5 +64,5 @@ LLMChef's UI is built for advanced, event-driven, highly interactive workflows. 
 ## Key Files
 - Form: `src/hooks/use-formedible.tsx`
 - Workflow: `src/controls/components/workflow/WorkflowBuilder.tsx`, `WorkflowVisualizer.tsx`, `WorkflowRawEditor.tsx`
-- UI: `src/controls/components/LiteChat/common/TabbedLayout.tsx`, `ActionTooltipButton.tsx`
+- UI: `src/controls/components/LLMChef/common/TabbedLayout.tsx`, `ActionTooltipButton.tsx`
 - Error Handling: `src/store/mcp.store.ts`

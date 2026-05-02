@@ -1,16 +1,16 @@
 // src/controls/modules/ProviderSettingsModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
 import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
-import { providerEvent } from "@/types/litechat/events/provider.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
 import i18next from 'i18next';
-import type { ControlModuleConstructor } from '@/types/litechat/control';
+import type { ControlModuleConstructor } from '@/types/llmchef/control';
 
 export class ProviderSettingsModule implements ControlModule {
   readonly id = "core-provider-settings";
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
   private eventUnsubscribers: (() => void)[] = [];
   // No need for notifyComponentUpdate if SettingsProviders fetches its own data
 
@@ -19,7 +19,7 @@ export class ProviderSettingsModule implements ControlModule {
   // public dbProviderConfigs: DbProviderConfig[] = [];
   // public isLoadingProviders = true;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     // No need to load initial state here if sub-components fetch their own
     // this.loadInitialState();
@@ -45,7 +45,7 @@ export class ProviderSettingsModule implements ControlModule {
   //   this.notifyComponentUpdate = cb;
   // };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     const SettingsProviders = createLazySettingTab(() =>
       import("@/controls/components/provider-settings/SettingsProviders").then((module) => ({

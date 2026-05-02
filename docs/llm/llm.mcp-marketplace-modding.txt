@@ -17,7 +17,7 @@ LLMChef supports dynamic tool loading, marketplace integration, and full modding
 ---
 
 ## Marketplace Integration
-- **Files**: `src/services/persistence.service.ts`, `src/lib/litechat/db.ts`
+- **Files**: `src/services/persistence.service.ts`, `src/lib/llmchef/db.ts`
 - **Entities**: MarketplaceSource, MarketplaceIndex, InstalledMarketplaceItem
 - **PersistenceService**: CRUD for all marketplace entities, export/import, cache expiry
 - **Dynamic install**: Marketplace items (tools, templates, rules, MCP servers) can be installed/uninstalled at runtime
@@ -27,7 +27,7 @@ LLMChef supports dynamic tool loading, marketplace integration, and full modding
 
 ## Modding API
 - **File**: `src/modding/api-factory.ts`
-- **Function**: `createModApi(mod)` returns a `LiteChatModApi` instance
+- **Function**: `createModApi(mod)` returns a `LLMChefModApi` instance
   - Register prompt/chat/canvas/selection controls, block renderers, rules, tools, middleware, settings tabs, modal providers
   - Event-driven: All registration/unregistration is via events
   - Provides context snapshot, toast/log helpers, VFS access, and more
@@ -47,5 +47,5 @@ LLMChef supports dynamic tool loading, marketplace integration, and full modding
 
 ## Key Files
 - MCP: `src/controls/modules/McpToolsModule.ts`, `src/store/mcp.store.ts`
-- Marketplace: `src/services/persistence.service.ts`, `src/lib/litechat/db.ts`
+- Marketplace: `src/services/persistence.service.ts`, `src/lib/llmchef/db.ts`
 - Modding: `src/modding/api-factory.ts`

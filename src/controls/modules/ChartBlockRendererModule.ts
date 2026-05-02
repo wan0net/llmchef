@@ -1,12 +1,12 @@
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi, type ModControlRule } from "@/types/litechat/modding";
-import { type BlockRenderer, type BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi, type ModControlRule } from "@/types/llmchef/modding";
+import { type BlockRenderer, type BlockRendererContext } from "@/types/llmchef/canvas/block-renderer";
 import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
 
 const ChartBlockRenderer = createLazyBlockRenderer<any>(
   () =>
-    import("@/components/LiteChat/common/ChartBlockRenderer").then((module) => ({
+    import("@/components/LLMChef/common/ChartBlockRenderer").then((module) => ({
       default: module.ChartBlockRenderer,
     })),
   "Loading chart renderer...",
@@ -126,7 +126,7 @@ export class ChartBlockRendererModule implements ControlModule {
         // No async initialization needed
     }
 
-    register(modApi: LiteChatModApi): void {
+    register(modApi: LLMChefModApi): void {
         const chartRenderer: BlockRenderer = {
             id: this.id,
             supportedLanguages: ["chart", "charts", "graph", "data"],

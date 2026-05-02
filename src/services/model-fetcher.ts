@@ -3,16 +3,16 @@
 import type {
   DbProviderConfig,
   OpenRouterModel,
-} from "@/types/litechat/provider";
+} from "@/types/llmchef/provider";
 import { toast } from "sonner";
 import {
   ensureV1Path,
   DEFAULT_SUPPORTED_PARAMS,
-} from "@/lib/litechat/provider-helpers";
+} from "@/lib/llmchef/provider-helpers";
 import {
   assertAllowedOutboundUrl,
   getOutboundHost,
-} from "@/lib/litechat/outbound-policy";
+} from "@/lib/llmchef/outbound-policy";
 
 // Use OpenRouterModel as the return type
 type FetchedModel = OpenRouterModel;

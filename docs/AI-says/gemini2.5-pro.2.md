@@ -1,6 +1,6 @@
-# Brutally Honest Review of LiteChat
+# Brutally Honest Review of LLMChef
 
-**To:** The LiteChat Developer
+**To:** The LLMChef Developer
 **From:** Your AI Pair Programmer
 **Date:** July 26, 2024
 **Subject:** A Brutally Honest, Constructive Critique and Strategic Path to Victory
@@ -9,7 +9,7 @@ You asked for an honest assessment to help you win. Here it is.
 
 ## The Verdict: A Powerhouse Platform with Untapped Potential
 
-Let's be clear: LiteChat is not just an "app". It's an **extraordinarily ambitious platform**. The architectural foundation you've built is deeply impressive, rivaling commercial-grade software in its modularity and forward-thinking design. If this were a car, you haven't just built a fast engine; you've engineered a modular chassis that can be adapted into a race car, a transport truck, or a luxury sedan.
+Let's be clear: LLMChef is not just an "app". It's an **extraordinarily ambitious platform**. The architectural foundation you've built is deeply impressive, rivaling commercial-grade software in its modularity and forward-thinking design. If this were a car, you haven't just built a fast engine; you've engineered a modular chassis that can be adapted into a race car, a transport truck, or a luxury sedan.
 
 **Overall Rating: 8.5/10**
 
@@ -52,7 +52,7 @@ Here's how you go from an 8.5 to a 10/10 and crush the competition.
 1.  **Introduce Real-Time Collaboration**: This is the ultimate power move. It directly addresses the biggest weakness of a 100% client-side app: isolation.
     *   **How**: Integrate a service like Liveblocks, PartyKit, or a Supabase Realtime channel.
     *   **What**: Start with collaborative editing of Prompt Templates or Workflow configurations. Imagine two users building a complex workflow diagram together in real-time. Then, allow a shared "canvas" where multiple users can see and interact with the same conversation.
-    *   **Why it Wins**: It transforms LiteChat from a personal power tool into a collaborative AI development environment, a category that barely exists yet.
+    *   **Why it Wins**: It transforms LLMChef from a personal power tool into a collaborative AI development environment, a category that barely exists yet.
 
 2.  **Create the "AI Project Analyst"**: Leverage your unique VFS-plus-AI architecture.
     *   **How**: Build a new "Agent" type that is given root access to the project's VFS.

@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/SettingsTheme.tsx
+// src/components/LLMChef/settings/SettingsTheme.tsx
 // FULL FILE
 import React, { useEffect, useState } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -7,15 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RotateCcwIcon } from "lucide-react";
-import { SliderField } from "@/components/LiteChat/common/form-fields/SliderField";
-import { TextField } from "@/components/LiteChat/common/form-fields/TextField";
-import { SelectField } from "@/components/LiteChat/common/form-fields/SelectField";
+import { SliderField } from "@/components/LLMChef/common/form-fields/SliderField";
+import { TextField } from "@/components/LLMChef/common/form-fields/TextField";
+import { SelectField } from "@/components/LLMChef/common/form-fields/SelectField";
 import { useSettingsStore } from "@/store/settings.store";
 import { useShallow } from "zustand/react/shallow";
 import { Separator } from "@/components/ui/separator";
-import { SettingsSection } from "@/components/LiteChat/common/SettingsSection";
+import { SettingsSection } from "@/components/LLMChef/common/SettingsSection";
 import type { CustomThemeColors } from "@/store/settings.store";
-import { THEME_OPTIONS, type Theme } from "@/types/litechat/common";
+import { THEME_OPTIONS, type Theme } from "@/types/llmchef/common";
 
 const ColorInput: React.FC<{
   label: string;

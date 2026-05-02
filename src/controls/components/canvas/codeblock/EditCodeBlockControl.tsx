@@ -1,14 +1,14 @@
 import React, { useState, useCallback } from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { NotebookPenIcon, SaveIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { canvasEvent } from "@/types/litechat/events/canvas.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { canvasEvent } from "@/types/llmchef/events/canvas.events";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 // Re-export InlineCodeEditor for backward compatibility
-export { InlineCodeEditor } from "@/components/LiteChat/common/CodeEditor";
+export { InlineCodeEditor } from "@/components/LLMChef/common/CodeEditor";
 
 interface EditCodeBlockControlProps {
   interactionId?: string;

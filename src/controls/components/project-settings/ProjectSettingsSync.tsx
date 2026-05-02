@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/ProjectSettingsSync.tsx
+// src/components/LLMChef/settings/ProjectSettingsSync.tsx
 
 import React, { useEffect } from "react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
@@ -12,8 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { SyncRepo } from "@/types/litechat/sync";
-import { FieldMetaMessages } from "@/components/LiteChat/common/form-fields/FieldMetaMessages";
+import type { SyncRepo } from "@/types/llmchef/sync";
+import { FieldMetaMessages } from "@/components/LLMChef/common/form-fields/FieldMetaMessages";
 import { Loader2, SaveIcon } from "lucide-react";
 
 interface ProjectSettingsSyncProps {

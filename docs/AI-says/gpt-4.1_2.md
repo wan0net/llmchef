@@ -1,7 +1,7 @@
-# Brutally Honest Analysis of LiteChat
+# Brutally Honest Analysis of LLMChef
 
 ## Executive Summary
-LiteChat is an ambitious, highly modular, and technically sophisticated client-side chat/AI platform. Its architecture is modern and extensible, but there are areas where it could be more competitive, more user-centric, and more innovative. Below is a no-nonsense, constructive critique with actionable recommendations.
+LLMChef is an ambitious, highly modular, and technically sophisticated client-side chat/AI platform. Its architecture is modern and extensible, but there are areas where it could be more competitive, more user-centric, and more innovative. Below is a no-nonsense, constructive critique with actionable recommendations.
 
 ---
 
@@ -21,7 +21,7 @@ LiteChat is an ambitious, highly modular, and technically sophisticated client-s
 - **Testing Hooks**: The codebase is structured for testability, with clear separation of concerns.
 
 ### 3. **Extensibility & Modding**
-- **Modding API**: The LiteChatModApi is a real differentiator for hackability and third-party innovation.
+- **Modding API**: The LLMChefModApi is a real differentiator for hackability and third-party innovation.
 - **Block Renderer Plugins**: The ability to add new block types (charts, diagrams, etc.) is a major plus.
 - **Control Rules**: The distinction between user and control rules is clever and enables safe system-level guidance.
 
@@ -51,7 +51,7 @@ LiteChat is an ambitious, highly modular, and technically sophisticated client-s
 - **Mobile UX**: While spacing is handled, some advanced features (e.g., workflow builder, file manager) may not be fully optimized for touch/mobile.
 
 ### 3. **Competitive Edge**
-- **AI Differentiation**: Many competitors now offer AI tool/plugin systems. LiteChat's edge is technical, but not always obvious to end-users. More "wow" features are needed.
+- **AI Differentiation**: Many competitors now offer AI tool/plugin systems. LLMChef's edge is technical, but not always obvious to end-users. More "wow" features are needed.
 - **No Real-Time Collaboration**: Lacks Google Docs-style multi-user editing or chat. This is a major feature in modern chat/AI tools.
 - **Limited Non-Technical Onboarding**: The platform is a dream for power users, but less so for non-technical or casual users.
 
@@ -104,4 +104,4 @@ LiteChat is an ambitious, highly modular, and technically sophisticated client-s
 ---
 
 ## Final Thoughts
-LiteChat is a technical powerhouse with a unique architecture and a clear vision for extensibility. To win a competition, double down on onboarding, collaboration, and "wow" features that make the technical strengths obvious and delightful to all users—not just power users. The foundation is world-class; now make it irresistible.
+LLMChef is a technical powerhouse with a unique architecture and a clear vision for extensibility. To win a competition, double down on onboarding, collaboration, and "wow" features that make the technical strengths obvious and delightful to all users—not just power users. The foundation is world-class; now make it irresistible.

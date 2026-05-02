@@ -61,7 +61,7 @@ app:
 database:
   host: "localhost"
   port: 5432
-  name: "litechat_db"
+  name: "llmchef_db"
 ```
 ````
 
@@ -320,7 +320,7 @@ The canvas provides extensible controls for interacting with messages and conten
 
 ```typescript
 // Register canvas control in a Control Module
-register(modApi: LiteChatModApi): void {
+register(modApi: LLMChefModApi): void {
   this.unregisterCallback = modApi.registerCanvasControl({
     id: this.id,
     type: "interaction",
@@ -475,7 +475,7 @@ const streamProcessor = {
 
 2. **Register in Module**:
    ```typescript
-   register(modApi: LiteChatModApi): void {
+   register(modApi: LLMChefModApi): void {
      modApi.registerCanvasControl({
        id: "my-control",
        type: "interaction",

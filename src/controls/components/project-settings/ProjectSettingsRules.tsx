@@ -3,7 +3,7 @@
 import React, { useMemo, useCallback } from "react";
 import { Label } from "@/components/ui/label";
 import { ProjectDefaultRuleSelector } from "./ProjectDefaultRuleSelector";
-import type { DbRule } from "@/types/litechat/rules"; // Import DbRule
+import type { DbRule } from "@/types/llmchef/rules"; // Import DbRule
 
 interface ProjectSettingsRulesProps {
   defaultRuleIds: string[] | null;

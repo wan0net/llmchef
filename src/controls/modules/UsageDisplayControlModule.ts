@@ -1,27 +1,27 @@
 // src/controls/modules/UsageDisplayControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
-import { inputEvent } from "@/types/litechat/events/input.events";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { uiEvent } from "@/types/litechat/events/ui.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
+import { inputEvent } from "@/types/llmchef/events/input.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
 import { UsageDisplayControl } from "@/controls/components/usage-display/UsageDisplayControl";
 import { useProviderStore } from "@/store/provider.store";
 import { useInputStore } from "@/store/input.store";
 import { useInteractionStore } from "@/store/interaction.store";
-import type { Interaction } from "@/types/litechat/interaction";
+import type { Interaction } from "@/types/llmchef/interaction";
 import type { AttachedFileMetadata } from "@/store/input.store";
-import type { PromptTurnObject } from "@/types/litechat/prompt";
+import type { PromptTurnObject } from "@/types/llmchef/prompt";
 import { PromptCompilationService } from "@/services/prompt-compilation.service";
 import {
   createAiModelConfig,
   splitModelId,
-} from "@/lib/litechat/provider-helpers";
-import { calculateTokenCost } from "@/lib/litechat/prompt-util";
-import { buildCurrentPromptTurnData } from "@/lib/litechat/ai-helpers";
+} from "@/lib/llmchef/provider-helpers";
+import { calculateTokenCost } from "@/lib/llmchef/prompt-util";
+import { buildCurrentPromptTurnData } from "@/lib/llmchef/ai-helpers";
 
 const BYTES_PER_TOKEN_ESTIMATE = 1.5;
 
@@ -46,7 +46,7 @@ export class UsageDisplayControlModule implements ControlModule {
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
   // @ts-expect-error I never remember what to do for that, no ! AI ! `_` prefix does not fix !
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   public currentInputText = "";
   public historyTokens = 0;
@@ -58,7 +58,7 @@ export class UsageDisplayControlModule implements ControlModule {
   private estimationDebounceTimer: NodeJS.Timeout | null = null;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.loadInitialState();
     this.updateContextLength();
@@ -358,7 +358,7 @@ export class UsageDisplayControlModule implements ControlModule {
     }
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

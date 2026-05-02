@@ -20,14 +20,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Workflow, Plus, Save, GitFork, Edit } from "lucide-react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
-import type { WorkflowStep, WorkflowTemplate } from "@/types/litechat/workflow";
+import type { WorkflowStep, WorkflowTemplate } from "@/types/llmchef/workflow";
 import { WorkflowStepCard } from "./WorkflowStepCard";
 import { WorkflowList } from "./WorkflowList";
 import { WorkflowVisualizer } from "./WorkflowVisualizer";
@@ -43,7 +43,7 @@ import {
 import { useFormedible } from "@/hooks/use-formedible";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useControlRegistryStore } from "@/store/control.store";
-import { TabbedLayout } from "@/components/LiteChat/common/TabbedLayout";
+import { TabbedLayout } from "@/components/LLMChef/common/TabbedLayout";
 import { PersistenceService } from "@/services/persistence.service";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";

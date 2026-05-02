@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { X, ChevronDown } from "lucide-react";
-import type { PromptTemplate } from "@/types/litechat/prompt-template";
+import type { PromptTemplate } from "@/types/llmchef/prompt-template";
 
 interface FollowUpSelectorProps {
   selectedFollowUps: string[];

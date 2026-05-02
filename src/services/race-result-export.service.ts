@@ -3,8 +3,8 @@
 // Service for exporting race interaction results to HTML files in a ZIP
 
 import JSZip from "jszip";
-import type { Interaction } from "@/types/litechat/interaction";
-import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
+import type { Interaction } from "@/types/llmchef/interaction";
+import { assertAllowedOutboundUrl } from "@/lib/llmchef/outbound-policy";
 
 interface RaceResultData {
   modelName: string;
@@ -30,7 +30,7 @@ export class RaceResultExportService {
    */
   private static getWorkingLLMChefApiScript(): string {
     return `
-        const litechatTarget = document.getElementById('litechat-target');
+        const llmchefTarget = document.getElementById('llmchef-target');
         async function loadModules(moduleConfigs) {
             const loadedModules = {};
             const loadPromises = {};
@@ -74,7 +74,7 @@ export class RaceResultExportService {
             await Promise.all(moduleConfigs.map(config => loadSingleModule(config)));
             return loadedModules;
         }
-        window.litechat = {
+        window.llmchef = {
             utils: {
                 log: (...args) => console.log(...args),
                 toast: (message) => alert(message),
@@ -83,7 +83,7 @@ export class RaceResultExportService {
                 loadModules,
                 loadModule: async (url, name, key, importMap) => (await loadModules([{url, name, globalKey: key, importMap}]))[key || name],
             },
-            target: litechatTarget,
+            target: llmchefTarget,
             emit: (eventName, payload) => window.dispatchEvent(new CustomEvent(eventName, { detail: payload })),
         };
     `;
@@ -344,7 +344,7 @@ export class RaceResultExportService {
       : "";
 
     // LLMChef API implementation for the exported files (EXACT COPY FROM WORKING get-results.js)
-    const litechatApiScript = this.getWorkingLLMChefApiScript();
+    const llmchefApiScript = this.getWorkingLLMChefApiScript();
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -409,7 +409,7 @@ export class RaceResultExportService {
               data.runnableCode
                 ? `
                 <div id="preview" class="tab-content active">
-                    <div id="litechat-target" class="w-full min-h-[600px] bg-muted/50 rounded-lg p-4 border border-border"></div>
+                    <div id="llmchef-target" class="w-full min-h-[600px] bg-muted/50 rounded-lg p-4 border border-border"></div>
                 </div>
             `
                 : ""
@@ -460,7 +460,7 @@ export class RaceResultExportService {
           data.runnableCode
             ? `
         // --- LLMCHEF MOCK API ---
-        ${litechatApiScript}
+        ${llmchefApiScript}
 
         // --- EXECUTE CODE ---
         try {
@@ -476,7 +476,7 @@ export class RaceResultExportService {
                                      ?.replace(/'/g, "\\'")
                                      .replace(/\n/g, "\\n")}</code></pre>' +
                                    '<p class="text-blue-600 text-sm mt-2">Python execution not available in exported HTML. Code is displayed above.</p>';
-                document.getElementById('litechat-target').appendChild(codeDiv);
+                document.getElementById('llmchef-target').appendChild(codeDiv);
             `
             }
         } catch (error) {
@@ -484,7 +484,7 @@ export class RaceResultExportService {
             const errorDiv = document.createElement('div');
             errorDiv.className = 'p-4 text-red-600 bg-red-100 border border-red-200 rounded-md';
             errorDiv.textContent = 'Execution Error: ' + error.message;
-            document.getElementById('litechat-target').appendChild(errorDiv);
+            document.getElementById('llmchef-target').appendChild(errorDiv);
         }
         `
             : ""

@@ -1,11 +1,11 @@
 // src/services/interaction.service.ts
 // FULL FILE
-import type { PromptObject, PromptTurnObject } from "@/types/litechat/prompt";
+import type { PromptObject, PromptTurnObject } from "@/types/llmchef/prompt";
 import type {
   Interaction,
   InteractionStatus,
   InteractionType,
-} from "@/types/litechat/interaction";
+} from "@/types/llmchef/interaction";
 import { AIService, AIServiceCallbacks } from "./ai.service";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useControlRegistryStore } from "@/store/control.store";
@@ -15,12 +15,12 @@ import { useVfsStore } from "@/store/vfs.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { usePromptStateStore } from "@/store/prompt.store";
 import { PersistenceService } from "./persistence.service";
-import { runMiddleware, getContextSnapshot } from "@/lib/litechat/ai-helpers";
+import { runMiddleware, getContextSnapshot } from "@/lib/llmchef/ai-helpers";
 import {
   splitModelId,
   instantiateModelInstance,
-} from "@/lib/litechat/provider-helpers";
-import { emitter } from "@/lib/litechat/event-emitter";
+} from "@/lib/llmchef/provider-helpers";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -28,8 +28,8 @@ import {
   type ToolImplementation,
   ModMiddlewareHook,
   type ReadonlyChatContextSnapshot,
-} from "@/types/litechat/modding";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
+} from "@/types/llmchef/modding";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
 import {
   type Tool,
   type ToolCallPart,
@@ -42,10 +42,10 @@ import {
   stepCountIs,
 } from "ai";
 import type { fs } from "@zenfs/core";
-import { conversationEvent } from "@/types/litechat/events/conversation.events";
-import { vfsEvent } from "@/types/litechat/events/vfs.events";
-import { canvasEvent,} from "@/types/litechat/events/canvas.events";
-import { providerEvent } from "@/types/litechat/events/provider.events";
+import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+import { vfsEvent } from "@/types/llmchef/events/vfs.events";
+import { canvasEvent,} from "@/types/llmchef/events/canvas.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
 import { ConversationService } from "@/services/conversation.service";
 import { PromptEnhancementService } from "@/services/prompt-enhancement.service";
 

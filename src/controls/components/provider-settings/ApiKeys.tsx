@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/ApiKeys.tsx
+// src/components/LLMChef/settings/ApiKeys.tsx
 // FULL FILE
 import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,14 +11,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Trash2Icon, Loader2, PlusIcon, EditIcon } from "lucide-react";
-import type { DbApiKey, DbProviderType } from "@/types/litechat/provider";
+import type { DbApiKey, DbProviderType } from "@/types/llmchef/provider";
 import { useShallow } from "zustand/react/shallow";
 import { useProviderStore } from "@/store/provider.store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 // Import the new form component
-import { ApiKeyForm } from "@/components/LiteChat/common/ApiKeysForm";
+import { ApiKeyForm } from "@/components/LLMChef/common/ApiKeysForm";
 
 const SettingsApiKeysComponent: React.FC = () => {
   const { apiKeys, addApiKey, updateApiKey, deleteApiKey, isLoading } = useProviderStore(

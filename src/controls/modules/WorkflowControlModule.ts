@@ -1,22 +1,22 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { workflowEvent } from "@/types/litechat/events/workflow.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { workflowEvent } from "@/types/llmchef/events/workflow.events";
 import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 
-import type { WorkflowTemplate } from "@/types/litechat/workflow";
+import type { WorkflowTemplate } from "@/types/llmchef/workflow";
 import { useInteractionStore } from "@/store/interaction.store";
-import { promptTemplateEvent } from "@/types/litechat/events/prompt-template.events";
-import type { PromptTemplate } from "@/types/litechat/prompt-template";
+import { promptTemplateEvent } from "@/types/llmchef/events/prompt-template.events";
+import type { PromptTemplate } from "@/types/llmchef/prompt-template";
 import { useProviderStore } from "@/store/provider.store";
-import type { AiModelConfig, ModelListItem } from "@/types/litechat/provider";
-import { providerEvent } from "@/types/litechat/events/provider.events";
+import type { AiModelConfig, ModelListItem } from "@/types/llmchef/provider";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
 import { usePromptTemplateStore } from "@/store/prompt-template.store";
 import { PersistenceService } from "@/services/persistence.service";
 import { toast } from "sonner";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import { useControlRegistryStore } from "@/store/control.store";
-import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 
 const WorkflowBuilder = createLazyControlComponent<any>(
   () =>
@@ -28,7 +28,7 @@ const WorkflowBuilder = createLazyControlComponent<any>(
 
 export class WorkflowControlModule implements ControlModule {
   readonly id = "core-workflow-control";
-  private modApi: LiteChatModApi | null = null;
+  private modApi: LLMChefModApi | null = null;
   private eventUnsubscribers: (() => void)[] = [];
   private notifyComponentUpdate: (() => void) | null = null;
 
@@ -38,7 +38,7 @@ export class WorkflowControlModule implements ControlModule {
   public allTemplates: PromptTemplate[] = [];
   public workflows: WorkflowTemplate[] = [];
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApi = modApi;
 
     // Get initial provider state
@@ -410,7 +410,7 @@ export class WorkflowControlModule implements ControlModule {
     }
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApi = modApi;
 
     // Register text trigger namespaces

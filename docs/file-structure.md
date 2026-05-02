@@ -5,7 +5,7 @@ This document provides a comprehensive reference for LLMChef's project organizat
 ## Project Root
 
 ```
-liteChat/
+llmchef/
 ├── docs/                        # Developer documentation
 ├── public/                      # Static assets and manifest
 ├── src/                         # Source code
@@ -45,7 +45,7 @@ src/
 ```
 src/components/
 ├── LLMChef/                   # Main application components
-│   ├── LiteChat.tsx           # Primary orchestrator component
+│   ├── LLMChef.tsx           # Primary orchestrator component
 │   ├── canvas/                # Conversation display area
 │   │   ├── ChatCanvas.tsx     # Main conversation container
 │   │   ├── InteractionCard.tsx # Individual message display
@@ -170,7 +170,7 @@ src/services/
 
 ```
 src/lib/
-├── litechat/                  # Core LLMChef utilities
+├── llmchef/                  # Core LLMChef utilities
 │   ├── initialization.ts     # App startup and module initialization
 │   ├── event-emitter.ts      # Central event bus
 │   ├── db.ts                 # Dexie database schema
@@ -188,7 +188,7 @@ src/lib/
 
 ```
 src/types/
-├── litechat/                  # LLMChef-specific types
+├── llmchef/                  # LLMChef-specific types
 │   ├── events/                # Event definitions
 │   │   ├── app.events.ts      # Application lifecycle events
 │   │   ├── conversation.events.ts # Conversation events
@@ -241,7 +241,7 @@ src/hooks/
 
 ### Module Registration Flow
 1. `App.tsx` - Defines `controlModulesToRegister` array
-2. `LiteChat.tsx` - Calls `performFullInitialization`
+2. `LLMChef.tsx` - Calls `performFullInitialization`
 3. `initialization.ts` - Handles module instantiation and registration
 4. Control modules register UI components via ModApi
 5. Component wrappers render registered controls
@@ -261,7 +261,7 @@ src/hooks/
 5. Components react to state changes
 
 ### VFS Context Flow
-1. `LiteChat.tsx` - Determines VFS context based on selection
+1. `LLMChef.tsx` - Determines VFS context based on selection
 2. `vfs.store.ts` - Manages VFS initialization and switching
 3. `vfs-operations.ts` - Low-level file operations
 4. `file-manager/` components - UI for file operations
@@ -294,14 +294,14 @@ import { create } from 'zustand';
 
 // Internal components
 import { Button } from '@/components/ui/button';
-import { ChatCanvas } from '@/components/LiteChat/canvas/ChatCanvas';
+import { ChatCanvas } from '@/components/LLMChef/canvas/ChatCanvas';
 
 // Services and utilities
 import { PersistenceService } from '@/services/persistence.service';
-import { emitter } from '@/lib/litechat/event-emitter';
+import { emitter } from '@/lib/llmchef/event-emitter';
 
 // Types
-import type { Conversation } from '@/types/litechat/chat';
+import type { Conversation } from '@/types/llmchef/chat';
 ```
 
 ### Directory Guidelines

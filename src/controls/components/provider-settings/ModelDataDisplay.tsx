@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/ModelDataDisplay.tsx
+// src/components/LLMChef/settings/ModelDataDisplay.tsx
 // FULL FILE
 import React, { useMemo, useCallback } from "react";
 import { useProviderStore } from "@/store/provider.store";
@@ -16,7 +16,7 @@ import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { splitModelId } from "@/lib/litechat/provider-helpers";
+import { splitModelId } from "@/lib/llmchef/provider-helpers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ExternalLinkIcon } from "lucide-react";

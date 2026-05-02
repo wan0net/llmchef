@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/SettingsGeneral.tsx
+// src/components/LLMChef/settings/SettingsGeneral.tsx
 import React, { useEffect } from "react";
 import { RotateCcwIcon } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.store";
@@ -12,10 +12,10 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 // Import new form field primitives
-import { SwitchField } from "@/components/LiteChat/common/form-fields/SwitchField";
-import { SliderField } from "@/components/LiteChat/common/form-fields/SliderField";
-import { NumberField } from "@/components/LiteChat/common/form-fields/NumberField";
-import { TextField } from "@/components/LiteChat/common/form-fields/TextField";
+import { SwitchField } from "@/components/LLMChef/common/form-fields/SwitchField";
+import { SliderField } from "@/components/LLMChef/common/form-fields/SliderField";
+import { NumberField } from "@/components/LLMChef/common/form-fields/NumberField";
+import { TextField } from "@/components/LLMChef/common/form-fields/TextField";
 
 const SettingsGeneralComponent: React.FC = () => {
   const { t } = useTranslation('settings');

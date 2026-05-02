@@ -1,5 +1,5 @@
-import { type ControlModule, type ControlModuleConstructor } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule, type ControlModuleConstructor } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
 import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import i18next from "i18next";
 
@@ -15,7 +15,7 @@ export class NetworkLedgerSettingsModule implements ControlModule {
     // Settings tab only.
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

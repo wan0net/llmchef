@@ -1,14 +1,14 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
 import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { usePromptTemplateStore } from "@/store/prompt-template.store";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
 import { useInteractionStore } from "@/store/interaction.store";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
-import type { PromptFormData, CompiledPrompt } from "@/types/litechat/prompt-template";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
+import type { PromptFormData, CompiledPrompt } from "@/types/llmchef/prompt-template";
 import { useControlRegistryStore } from "@/store/control.store";
-import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 
 const PromptLibraryControl = createLazyControlComponent<any>(
   () =>
@@ -24,9 +24,9 @@ export class PromptLibraryControlModule implements ControlModule {
   private eventUnsubscribers: (() => void)[] = [];
   private notifyComponentUpdate: (() => void) | null = null;
   private isStreaming = false;
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.isStreaming = useInteractionStore.getState().status === "streaming";
 
@@ -65,7 +65,7 @@ export class PromptLibraryControlModule implements ControlModule {
     this.modApiRef?.emit(promptEvent.setInputTextRequest, { text: compiled.content });
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

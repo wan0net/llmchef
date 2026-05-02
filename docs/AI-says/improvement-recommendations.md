@@ -1,4 +1,4 @@
-# LiteChat: Competition-Winning Improvement Recommendations
+# LLMChef: Competition-Winning Improvement Recommendations
 
 **Focus**: Specific, Actionable Improvements for Competition Success
 **Timeline**: 6 days to competition submission
@@ -118,7 +118,7 @@ const ModMarketplace: React.FC = () => {
       "id": "advanced-charts",
       "name": "Advanced Chart Renderer",
       "description": "Enhanced charting with D3.js integration",
-      "githubUrl": "https://github.com/litechat/mod-advanced-charts",
+      "githubUrl": "https://github.com/llmchef/mod-advanced-charts",
       "category": "block-renderer",
       "screenshots": ["/screenshots/charts.png"]
     },
@@ -126,7 +126,7 @@ const ModMarketplace: React.FC = () => {
       "id": "code-execution",
       "name": "Code Execution Engine",
       "description": "Run JavaScript and Python code securely",
-      "githubUrl": "https://github.com/litechat/mod-code-execution",
+      "githubUrl": "https://github.com/llmchef/mod-code-execution",
       "category": "tool"
     }
   ]
@@ -203,14 +203,14 @@ const detectProjectType = async (fs: FileSystem): Promise<ProjectType> => {
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
-  const provider = new LiteChatViewProvider(context.extensionUri);
+  const provider = new LLMChefViewProvider(context.extensionUri);
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider('litechat.chatView', provider)
+    vscode.window.registerWebviewViewProvider('llmchef.chatView', provider)
   );
 
-  // Command to send selected code to LiteChat
-  const sendToLiteChat = vscode.commands.registerCommand('litechat.sendCode', () => {
+  // Command to send selected code to LLMChef
+  const sendToLLMChef = vscode.commands.registerCommand('llmchef.sendCode', () => {
     const editor = vscode.window.activeTextEditor;
     if (editor) {
       const selection = editor.document.getText(editor.selection);
@@ -218,7 +218,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  context.subscriptions.push(sendToLiteChat);
+  context.subscriptions.push(sendToLLMChef);
 }
 ```
 
@@ -262,7 +262,7 @@ const TutorialSteps = [
   {
     target: '[data-tutorial="vfs-demo"]',
     title: "Upload Some Files",
-    content: "LiteChat can read and work with your files directly."
+    content: "LLMChef can read and work with your files directly."
   }
 ];
 ```
@@ -409,13 +409,13 @@ const demoProjectSetup = {
 ### **Competitive Positioning**
 
 #### **vs. ChatGPT/Claude**
-"While they're great for general conversation, LiteChat is built specifically for development workflows with codebase understanding."
+"While they're great for general conversation, LLMChef is built specifically for development workflows with codebase understanding."
 
 #### **vs. Continue.dev/Cursor**
-"Unlike IDE extensions limited to single files, LiteChat understands your entire project structure."
+"Unlike IDE extensions limited to single files, LLMChef understands your entire project structure."
 
 #### **vs. LibreChat/Open WebUI**
-"While they replicate ChatGPT's interface, LiteChat reimagines AI for developers with modular architecture."
+"While they replicate ChatGPT's interface, LLMChef reimagines AI for developers with modular architecture."
 
 ---
 

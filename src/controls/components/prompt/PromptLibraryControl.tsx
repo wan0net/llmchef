@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/hover-card";
 import { usePromptTemplateStore } from "@/store/prompt-template.store";
 import { useShallow } from "zustand/react/shallow";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { uiEvent } from "@/types/litechat/events/ui.events";
-import { parseVariableValue } from "@/lib/litechat/prompt-util";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
+import { parseVariableValue } from "@/lib/llmchef/prompt-util";
 
 import { toast } from "sonner";
 // Forward declare the module type to avoid circular import issues
@@ -37,7 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFormedible } from "@/hooks/use-formedible";
-import type { PromptTemplate, PromptFormData } from "@/types/litechat/prompt-template";
+import type { PromptTemplate, PromptFormData } from "@/types/llmchef/prompt-template";
 
 interface PromptLibraryControlProps {
   module: PromptLibraryControlModule;

@@ -10,17 +10,17 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import type { CustomSettingTab } from "@/types/litechat/modding";
+import type { CustomSettingTab } from "@/types/llmchef/modding";
 import { useShallow } from "zustand/react/shallow";
 import { useModStore } from "@/store/mod.store";
 // Removed unused useUIStateStore import
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout";
+} from "@/components/LLMChef/common/TabbedLayout";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { ModalProviderProps } from "@/types/litechat/modding";
+import type { ModalProviderProps } from "@/types/llmchef/modding";
 import { useTranslation } from "react-i18next";
 
 interface SettingsModalProps extends ModalProviderProps {

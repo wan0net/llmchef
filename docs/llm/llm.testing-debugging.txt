@@ -46,7 +46,7 @@ LLMChef is designed for robust, event-driven testing and debugging. All major fl
 ---
 
 ## Key Files
-- Events: `src/types/litechat/events/`
+- Events: `src/types/llmchef/events/`
 - Stores: `src/store/`
 - Modding: `src/modding/api-factory.ts`
 - UI: `src/controls/components/workflow/WorkflowRawEditor.tsx`, `src/hooks/use-formedible.tsx`

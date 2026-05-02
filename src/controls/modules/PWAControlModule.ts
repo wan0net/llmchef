@@ -1,21 +1,21 @@
-import type { ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
+import type { ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
 import { PWAService } from "@/services/pwa.service";
-import { PWAUpdateNotification } from "@/components/LiteChat/common/PWAUpdateNotification";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { pwaEvent } from "@/types/litechat/events/pwa.events";
+import { PWAUpdateNotification } from "@/components/LLMChef/common/PWAUpdateNotification";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { pwaEvent } from "@/types/llmchef/events/pwa.events";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon, RotateCcw } from "lucide-react";
 import React from "react";
 import i18next from "i18next";
-import type { ControlModuleConstructor } from "@/types/litechat/control";
+import type { ControlModuleConstructor } from "@/types/llmchef/control";
 
 export class PWAControlModule implements ControlModule {
   readonly id = "core-pwa-control";
   private unregisterCallbacks: (() => void)[] = [];
   private pwaService: PWAService | null = null;
 
-  async initialize(_modApi: LiteChatModApi): Promise<void> {
+  async initialize(_modApi: LLMChefModApi): Promise<void> {
     this.pwaService = PWAService.getInstance();
 
     // Initialize PWA service
@@ -27,7 +27,7 @@ export class PWAControlModule implements ControlModule {
     console.log(`[${this.id}] PWA Control Module initialized.`);
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallbacks.length > 0) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;
@@ -329,7 +329,7 @@ export class PWAControlModule implements ControlModule {
           React.createElement(
             "p",
             { className: "text-sm text-muted-foreground" },
-            "Progressive Web App (PWA) features enable LiteChat to work offline and receive automatic updates. When an update is available, you'll see a notification with the option to install it immediately or postpone it."
+            "Progressive Web App (PWA) features enable LLMChef to work offline and receive automatic updates. When an update is available, you'll see a notification with the option to install it immediately or postpone it."
           )
         )
       );

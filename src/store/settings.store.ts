@@ -4,16 +4,16 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { PersistenceService } from "@/services/persistence.service";
 import { toast } from "sonner";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import {
   settingsEvent,
   SettingsEventPayloads,
-} from "@/types/litechat/events/settings.events";
-import { controlRegistryEvent } from "@/types/litechat/events/control.registry.events";
-import type { RegisteredActionHandler } from "@/types/litechat/control";
+} from "@/types/llmchef/events/settings.events";
+import { controlRegistryEvent } from "@/types/llmchef/events/control.registry.events";
+import type { RegisteredActionHandler } from "@/types/llmchef/control";
 import { BUNDLED_SYSTEM_PROMPT } from "virtual:system-prompt";
 import { useControlRegistryStore } from "./control.store";
-import type { Theme } from "@/types/litechat/common";
+import type { Theme } from "@/types/llmchef/common";
 
 export interface CustomThemeColors {
   background?: string;

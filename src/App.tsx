@@ -1,12 +1,12 @@
 // src/App.tsx
 // FULL FILE
 import { useEffect, useState } from "react";
-import { LiteChat } from "@/components/LiteChat/LiteChat";
+import { LLMChef } from "@/components/LLMChef/LLMChef";
 import { LandingPage } from "@/components/LandingPage";
-import { PrismThemeLoader } from "@/components/LiteChat/common/PrismThemeLoader";
-import { ThemeManager } from "@/components/LiteChat/common/ThemeManager";
-import { ErrorBoundary } from "@/components/LiteChat/common/ErrorBoundary";
-import type { ControlModuleConstructor } from "@/types/litechat/control";
+import { PrismThemeLoader } from "@/components/LLMChef/common/PrismThemeLoader";
+import { ThemeManager } from "@/components/LLMChef/common/ThemeManager";
+import { ErrorBoundary } from "@/components/LLMChef/common/ErrorBoundary";
+import type { ControlModuleConstructor } from "@/types/llmchef/control";
 
 // Import ALL Control Module classes
 import { ConversationListControlModule } from "@/controls/modules/ConversationListControlModule";
@@ -215,7 +215,7 @@ function App() {
       <PrismThemeLoader />
       <div className="h-screen bg-background text-foreground flex flex-col">
         <main className="flex-grow overflow-hidden">
-          <LiteChat controls={controlModulesToRegister} />
+          <LLMChef controls={controlModulesToRegister} />
         </main>
       </div>
     </ErrorBoundary>

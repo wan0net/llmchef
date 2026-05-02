@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/tooltip";
 import { RulesControlDialogContent } from "./RulesControlDialogContent";
 import type { RulesControlModule } from "@/controls/modules/RulesControlModule";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { settingsEvent } from "@/types/litechat/events/settings.events";
-import { controlRegistryEvent } from "@/types/litechat/events/control.registry.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { settingsEvent } from "@/types/llmchef/events/settings.events";
+import { controlRegistryEvent } from "@/types/llmchef/events/control.registry.events";
 import { useSettingsStore } from "@/store/settings.store";
 import { useTranslation } from "react-i18next";
 

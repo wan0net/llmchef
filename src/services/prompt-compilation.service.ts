@@ -1,27 +1,27 @@
 // src/services/prompt-compilation.service.ts
 // Central service for compiling prompts to eliminate duplication
 
-import type { PromptTurnObject, PromptObject } from "@/types/litechat/prompt";
-import type { ResolvedRuleContent } from "@/types/litechat/prompt";
-import type { Crea8MemoryNoteRef } from "@/types/litechat/crea8-memory";
+import type { PromptTurnObject, PromptObject } from "@/types/llmchef/prompt";
+import type { ResolvedRuleContent } from "@/types/llmchef/prompt";
+import type { Crea8MemoryNoteRef } from "@/types/llmchef/crea8-memory";
 import type { AttachedFileMetadata } from "@/store/input.store";
-import type { Interaction } from "@/types/litechat/interaction";
+import type { Interaction } from "@/types/llmchef/interaction";
 import type { ModelMessage, TextPart, ImagePart } from "ai";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useProjectStore } from "@/store/project.store";
 import { usePromptStateStore } from "@/store/prompt.store";
 import { useConversationStore } from "@/store/conversation.store";
 import { useControlRegistryStore } from "@/store/control.store";
-import { buildHistoryMessages } from "@/lib/litechat/ai-helpers";
-import { processFileMetaToUserContent } from "@/lib/litechat/ai-helpers";
-import * as VfsOps from "@/lib/litechat/vfs-operations";
-import { createCrea8VfsConnector } from "@/lib/litechat/crea8-vfs-connector";
-import { resolveCrea8MemoryPromptContext } from "@/lib/litechat/crea8-prompt-context";
+import { buildHistoryMessages } from "@/lib/llmchef/ai-helpers";
+import { processFileMetaToUserContent } from "@/lib/llmchef/ai-helpers";
+import * as VfsOps from "@/lib/llmchef/vfs-operations";
+import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
+import { resolveCrea8MemoryPromptContext } from "@/lib/llmchef/crea8-prompt-context";
 import { useVfsStore } from "@/store/vfs.store";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { vfsEvent } from "@/types/litechat/events/vfs.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { vfsEvent } from "@/types/llmchef/events/vfs.events";
 import { toast } from "sonner";
-import { cleanPromptParameters } from "@/lib/litechat/prompt-parameters";
+import { cleanPromptParameters } from "@/lib/llmchef/prompt-parameters";
 
 export class PromptCompilationService {
   /**

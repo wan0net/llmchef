@@ -1,6 +1,6 @@
 import { registerSW } from "virtual:pwa-register";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { pwaEvent } from "@/types/litechat/events/pwa.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { pwaEvent } from "@/types/llmchef/events/pwa.events";
 import { toast } from "sonner";
 
 export class PWAService {

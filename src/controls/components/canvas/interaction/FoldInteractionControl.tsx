@@ -1,7 +1,7 @@
 // src/controls/components/canvas/interaction/FoldInteractionControl.tsx
 // NEW FILE
 import React from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 

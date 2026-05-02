@@ -9,7 +9,7 @@ LLMChef provides comprehensive AI integration supporting multiple providers, str
 - **AIService** ([`src/services/ai.service.ts`](../src/services/ai.service.ts)) - Low-level AI SDK integration
 - **InteractionService** ([`src/services/interaction.service.ts`](../src/services/interaction.service.ts)) - High-level conversation management
 - **ProviderStore** ([`src/store/provider.store.ts`](../src/store/provider.store.ts)) - Provider and model configuration
-- **Provider Helpers** ([`src/lib/litechat/provider-helpers.ts`](../src/lib/litechat/provider-helpers.ts)) - Model instantiation utilities
+- **Provider Helpers** ([`src/lib/llmchef/provider-helpers.ts`](../src/lib/llmchef/provider-helpers.ts)) - Model instantiation utilities
 
 ### AI SDK Integration
 

@@ -1,13 +1,13 @@
-import { type ControlModule } from "@/types/litechat/control";
+import { type ControlModule } from "@/types/llmchef/control";
 import {
-  type LiteChatModApi,
-} from "@/types/litechat/modding";
+  type LLMChefModApi,
+} from "@/types/llmchef/modding";
 import { useMcpStore, type McpServerConfig } from "@/store/mcp.store";
-import { mcpEvent } from "@/types/litechat/events/mcp.events";
+import { mcpEvent } from "@/types/llmchef/events/mcp.events";
 import { experimental_createMCPClient } from "ai";
 import { Tool } from "ai";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { assertAllowedOutboundUrl } from "@/lib/llmchef/outbound-policy";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -31,11 +31,11 @@ export class McpToolsModule implements ControlModule {
   private unregisterCallbacks: (() => void)[] = [];
   private mcpToolUnregisterCallbacks: (() => void)[] = []; // Track MCP tool registrations for cleanup
   public mcpClients: Map<string, McpClient> = new Map(); // Make public for access
-  private modApi?: LiteChatModApi;
+  private modApi?: LLMChefModApi;
   private connectionAttempts: Map<string, number> = new Map();
   private retryTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApi = modApi;
 
 

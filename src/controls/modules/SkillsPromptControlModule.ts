@@ -3,11 +3,11 @@ import { createLazyControlComponent } from "@/controls/components/LazyControlCom
 import {
   buildSkillPromptContext,
   skillPromptRefs,
-} from "@/lib/litechat/skill-prompt-context";
+} from "@/lib/llmchef/skill-prompt-context";
 import { useSkillStore } from "@/store/skill.store";
-import type { ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { Skill } from "@/types/litechat/skill";
+import type { ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { Skill } from "@/types/llmchef/skill";
 
 const SkillsPromptControl = createLazyControlComponent<any>(
   () =>
@@ -62,7 +62,7 @@ export class SkillsPromptControlModule implements ControlModule {
     return "ready";
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

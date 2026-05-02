@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ModelSelector } from "@/controls/components/global-model-selector/ModelSelector";
 import { useProviderStore } from "@/store/provider.store";
 import { useShallow } from "zustand/react/shallow";
-import { FieldMetaMessages } from "@/components/LiteChat/common/form-fields/FieldMetaMessages";
+import { FieldMetaMessages } from "@/components/LLMChef/common/form-fields/FieldMetaMessages";
 import { Loader2, SaveIcon } from "lucide-react";
 
 interface ProjectSettingsPromptProps {

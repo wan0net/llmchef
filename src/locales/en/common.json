@@ -1,6 +1,6 @@
 {
   "initializingLLMChef": "Initializing LLMChef...",
-  "liteChatMenu": "LLMChef Menu",
+  "llmChefMenu": "LLMChef Menu",
   "closeMenu": "Close menu",
   "openMenu": "Open menu",
   "loadingMenu": "Loading menu...",

@@ -5,10 +5,10 @@ import type {
   MarketplaceIndex, 
   MarketplaceItem, 
   MarketplacePackage 
-} from "@/types/litechat/marketplace";
-import { emitter } from "@/lib/litechat/event-emitter";
+} from "@/types/llmchef/marketplace";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import { PersistenceService } from "./persistence.service";
-import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
+import { assertAllowedOutboundUrl } from "@/lib/llmchef/outbound-policy";
 
 export class MarketplaceService {
   private static instance: MarketplaceService;

@@ -87,7 +87,7 @@
     "consoleOutput": "CONSOLE OUTPUT:",
     "noOutput": "No output",
     "preview": "PREVIEW:",
-    "noPreviewContent": "No preview content. Use DOM manipulation or litechat.target to add elements here."
+    "noPreviewContent": "No preview content. Use DOM manipulation or llmchef.target to add elements here."
   },
   "mermaidBlock": {
     "header": "MERMAID",
@@ -121,6 +121,6 @@
     "output": "PYTHON OUTPUT:",
     "noOutput": "No output",
     "preview": "PREVIEW:",
-    "noPreviewContent": "No preview content. Use plt.show() or litechat.target.appendChild(element) to add content here."
+    "noPreviewContent": "No preview content. Use plt.show() or llmchef.target.appendChild(element) to add content here."
   }
 }

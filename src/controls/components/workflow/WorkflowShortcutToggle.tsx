@@ -1,9 +1,9 @@
 import React from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { workflowEvent } from "@/types/litechat/events/workflow.events";
-import { emitter } from "@/lib/litechat/event-emitter";
-import type { WorkflowTemplate } from "@/types/litechat/workflow";
+import { workflowEvent } from "@/types/llmchef/events/workflow.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import type { WorkflowTemplate } from "@/types/llmchef/workflow";
 
 interface WorkflowShortcutToggleProps {
   workflow: WorkflowTemplate;

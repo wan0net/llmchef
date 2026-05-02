@@ -12,8 +12,8 @@ import {
   Position,
 } from '@xyflow/react';
 import { cn } from '@/lib/utils';
-import type { WorkflowTemplate, WorkflowStep } from '@/types/litechat/workflow';
-import { getTreeLayout } from '@/lib/litechat/tree-layout';
+import type { WorkflowTemplate, WorkflowStep } from '@/types/llmchef/workflow';
+import { getTreeLayout } from '@/lib/llmchef/tree-layout';
 
 import '@xyflow/react/dist/style.css';
 

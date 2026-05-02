@@ -20,7 +20,7 @@ import {
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout"; // Adjusted path
+} from "@/components/LLMChef/common/TabbedLayout"; // Adjusted path
 import { toast } from "sonner";
 import type { StructuredOutputControlModule } from "@/controls/modules/StructuredOutputControlModule"; // Import module type
 

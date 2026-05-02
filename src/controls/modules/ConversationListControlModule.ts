@@ -1,14 +1,14 @@
 // src/controls/modules/ConversationListControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
 import { ConversationListControlComponent } from "@/controls/components/conversation-list/ConversationListControlComponent";
 import { ConversationListIconRenderer } from "@/controls/components/conversation-list/IconRenderer";
 import { useConversationStore } from "@/store/conversation.store";
 import { useProjectStore } from "@/store/project.store";
-import { conversationEvent } from "@/types/litechat/events/conversation.events";
-import { projectEvent } from "@/types/litechat/events/project.events";
+import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+import { projectEvent } from "@/types/llmchef/events/project.events";
 
 export class ConversationListControlModule implements ControlModule {
   readonly id = "core-conversation-list";
@@ -20,7 +20,7 @@ export class ConversationListControlModule implements ControlModule {
   private projectsLoading = true;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.conversationsLoading = useConversationStore.getState().isLoading;
     this.projectsLoading = useProjectStore.getState().isLoading;
     this.updateCombinedLoadingState();
@@ -86,7 +86,7 @@ export class ConversationListControlModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(
         `[${this.id}] Module "${this.id}" already registered. Skipping.`

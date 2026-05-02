@@ -26,7 +26,7 @@ import type { Crea8MemoryControlModule } from "@/controls/modules/Crea8MemoryCon
 import type {
   Crea8MemoryNoteRef,
   Crea8MemorySearchResult,
-} from "@/types/litechat/crea8-memory";
+} from "@/types/llmchef/crea8-memory";
 
 interface Crea8MemoryControlProps {
   module: Crea8MemoryControlModule;

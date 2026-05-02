@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { NotebookPenIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { canvasEvent } from "@/types/litechat/events/canvas.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { canvasEvent } from "@/types/llmchef/events/canvas.events";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 

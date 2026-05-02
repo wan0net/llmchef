@@ -206,7 +206,7 @@ services:
 **Container won't start:**
 ```bash
 # Check logs
-docker-compose logs litechat
+docker-compose logs llmchef
 docker-compose logs mcp-bridge
 
 # Check container status
@@ -255,7 +255,7 @@ COPY docker/httpd.conf .
 ```yaml
 # Add to docker-compose.yml
 services:
-  litechat:
+  llmchef:
     # ... other config
     deploy:
       resources:
@@ -295,7 +295,7 @@ networks:
     driver: bridge
 
 services:
-  litechat:
+  llmchef:
     networks:
       - llmchef-network
 

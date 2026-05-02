@@ -8,16 +8,16 @@ authoritative_source_url: https://github.com/wan0net/llmchef
 
 client_side_architecture: All application logic, data storage, and AI API interactions occur directly within the user's browser. No backend server is required for core functionality. Data persistence relies on IndexedDB.
 modularity: Functionality is broken down into independent units:
-  - UI Components (`src/components/LiteChat/`): Responsible for rendering.
+  - UI Components (`src/components/LLMChef/`): Responsible for rendering.
   - Zustand Stores (`src/store/`): Manage specific slices of application state.
   - Services (`src/services/`): Encapsulate business logic (AI calls, persistence, mod loading, VFS ops).
   - Controls (`PromptControl`, `ChatControl`): Self-contained UI/logic units registered via `ControlRegistryStore`.
-event_driven: `mitt` emitter (`src/lib/litechat/event-emitter.ts`) facilitates decoupled communication between components, stores, and mods using standardized events (`src/types/litechat/modding.ts` -> `ModEvent`).
-middleware_pipeline: Allows mods/controls to intercept and modify data at key points (e.g., prompt submission, AI response chunk processing) via hooks registered in `ControlRegistryStore` (`src/types/litechat/modding.ts` -> `ModMiddlewareHook`). Middleware functions run in a defined order.
+event_driven: `mitt` emitter (`src/lib/llmchef/event-emitter.ts`) facilitates decoupled communication between components, stores, and mods using standardized events (`src/types/llmchef/modding.ts` -> `ModEvent`).
+middleware_pipeline: Allows mods/controls to intercept and modify data at key points (e.g., prompt submission, AI response chunk processing) via hooks registered in `ControlRegistryStore` (`src/types/llmchef/modding.ts` -> `ModMiddlewareHook`). Middleware functions run in a defined order.
 state_management: Zustand (`src/store/`) with Immer middleware for immutable updates. Stores are modular (e.g., `ConversationStore`, `InteractionStore`, `ProviderStore`, `VfsStore`). State updates often trigger persistence calls via `PersistenceService`.
-persistence: Dexie.js (`src/lib/litechat/db.ts`) provides a robust wrapper around IndexedDB. `PersistenceService` (`src/services/persistence.service.ts`) centralizes all DB interactions (CRUD operations for conversations, interactions, projects, mods, settings, providers, keys, sync repos). Handles DB schema versioning and upgrades.
-virtual_file_system_vfs: Uses ZenFS (`@zenfs/core`, `@zenfs/dom`) with an IndexedDB backend (`src/lib/litechat/vfs-operations.ts`, `src/store/vfs.store.ts`). Provides a file system abstraction within the browser. UI is handled by `FileManager` (`src/components/LiteChat/file-manager/`).
-git_integration: Uses `isomorphic-git` (`src/lib/litechat/vfs-operations.ts`) to perform Git operations (init, clone, commit, pull, push, status) directly on folders within the VFS. Requires user configuration (`gitUserName`, `gitUserEmail` in `SettingsStore`).
+persistence: Dexie.js (`src/lib/llmchef/db.ts`) provides a robust wrapper around IndexedDB. `PersistenceService` (`src/services/persistence.service.ts`) centralizes all DB interactions (CRUD operations for conversations, interactions, projects, mods, settings, providers, keys, sync repos). Handles DB schema versioning and upgrades.
+virtual_file_system_vfs: Uses ZenFS (`@zenfs/core`, `@zenfs/dom`) with an IndexedDB backend (`src/lib/llmchef/vfs-operations.ts`, `src/store/vfs.store.ts`). Provides a file system abstraction within the browser. UI is handled by `FileManager` (`src/components/LLMChef/file-manager/`).
+git_integration: Uses `isomorphic-git` (`src/lib/llmchef/vfs-operations.ts`) to perform Git operations (init, clone, commit, pull, push, status) directly on folders within the VFS. Requires user configuration (`gitUserName`, `gitUserEmail` in `SettingsStore`).
 conversation_sync: Leverages VFS/Git. Linked conversations are saved as JSON (`{conversation, interactions}`) within a configured Git repository (`SyncRepo` managed by `ConversationStore`). Manual sync triggers pull/commit/push operations via `VfsOps`.
 
 
@@ -29,7 +29,7 @@ src/
 ├── index.css               # Global styles, Tailwind directives, theme variables
 ├── components/
 │   ├── LLMChef/           # Core LLMChef components
-│   │   ├── LiteChat.tsx    # Main orchestrator component
+│   │   ├── LLMChef.tsx    # Main orchestrator component
 │   │   ├── canvas/         # Components for displaying conversation history
 │   │   │   ├── ChatCanvas.tsx
 │   │   │   ├── InteractionCard.tsx
@@ -75,10 +75,10 @@ src/
 │   │       ├── SettingsDataManagement.tsx
 │   │       └── SettingsMods.tsx
 │   └── ui/                 # Base shadcn/ui components (button, input, etc.)
-├── hooks/litechat/         # Custom hooks specific to LLMChef features
+├── hooks/llmchef/         # Custom hooks specific to LLMChef features
 │   ├── useConversationListControl.tsx # Registers the core conversation list
 │   └── useItemEditing.tsx             # Hook for inline editing in lists
-├── lib/litechat/           # Core library code, utilities, non-React logic
+├── lib/llmchef/           # Core library code, utilities, non-React logic
 │   ├── db.ts               # Dexie database definition and setup
 │   ├── event-emitter.ts    # mitt event emitter instance
 │   ├── file-manager-utils.ts # Path manipulation, formatting utilities
@@ -86,7 +86,7 @@ src/
 │   ├── useMarkdownParser.ts# Hook for parsing markdown (used in canvas)
 │   └── vfs-operations.ts   # VFS & Git operations implementation (ZenFS, isomorphic-git)
 ├── modding/                # Mod loading and API factory
-│   ├── api-factory.ts      # Creates the LiteChatModApi instance for mods
+│   ├── api-factory.ts      # Creates the LLMChefModApi instance for mods
 │   └── loader.ts           # Loads and executes mod scripts
 ├── services/               # Business logic, external interactions
 │   ├── ai.service.ts       # Handles AI SDK interactions, streaming, tool calls
@@ -102,7 +102,7 @@ src/
 │   ├── settings.store.ts   # Manages global application settings
 │   ├── ui.store.ts         # Manages transient UI state (modals, loading, errors, focus)
 │   └── vfs.store.ts        # Manages VFS state (nodes, current path, selection)
-└── types/litechat/         # TypeScript type definitions for the application
+└── types/llmchef/         # TypeScript type definitions for the application
     ├── chat.ts
     ├── common.ts
     ├── control.ts          # (Duplicate of store file? Verify/remove if needed)
@@ -184,13 +184,13 @@ ControlRegistryStore (`src/store/control.store.ts`):
   - State: `promptControls`, `chatControls`, `middlewareRegistry`, `tools`.
   - Purpose: Central registry for dynamically added UI controls, middleware functions, and AI tools.
   - Key Actions: `register*`, `unregister*`, `getMiddlewareForHook`, `getRegisteredTools`.
-  - Interactions: Populated by core registration hooks (e.g., `useConversationListControlRegistration`) and mods via `LiteChatModApi`. Read by `PromptWrapper`, `ChatControlWrapper`, `AIService`, `runMiddleware`.
+  - Interactions: Populated by core registration hooks (e.g., `useConversationListControlRegistration`) and mods via `LLMChefModApi`. Read by `PromptWrapper`, `ChatControlWrapper`, `AIService`, `runMiddleware`.
 
 ModStore (`src/store/mod.store.ts`):
   - State: `dbMods`, `loadedMods`, `modSettingsTabs`, `isLoading`, `error`.
   - Purpose: Manages mod definitions stored in the DB and the runtime instances loaded by `ModLoader`. Stores custom settings tabs registered by mods.
   - Key Actions: `loadDbMods`, `addDbMod`, `updateDbMod`, `deleteDbMod`, `setLoadedMods`, `_addSettingsTab`, `_removeSettingsTab`.
-  - Interactions: Reads/writes `DbMod` via `PersistenceService`. `setLoadedMods` called by `ModLoader`. `_addSettingsTab`/`_removeSettingsTab` called by mods via `LiteChatModApi`.
+  - Interactions: Reads/writes `DbMod` via `PersistenceService`. `setLoadedMods` called by `ModLoader`. `_addSettingsTab`/`_removeSettingsTab` called by mods via `LLMChefModApi`.
 
 UIStateStore (`src/store/ui.store.ts`):
   - State: `isChatControlPanelOpen`, `isPromptControlPanelOpen`, `isSidebarCollapsed`, `globalLoading`, `globalError`, `focusInputOnNextRender`.
@@ -219,25 +219,25 @@ adding_setting:
   3. Add Action: Create setter action (e.g., `setMySetting: (value: T) => void`).
   4. Implement Action: Use `set({ mySetting: value });` and `PersistenceService.saveSetting('mySetting', value);`.
   5. Update Load: Add `PersistenceService.loadSetting('mySetting', defaultValue)` call in `loadSettings` action and update the `set` call there.
-  6. Add UI: Modify relevant component in `src/components/LiteChat/settings/` to display and control the new setting, calling the setter action.
+  6. Add UI: Modify relevant component in `src/components/LLMChef/settings/` to display and control the new setting, calling the setter action.
 
 adding_prompt_control:
-  1. Create Component: Build the React component for the control's UI (`src/components/LiteChat/prompt/control/MyControl.tsx`).
+  1. Create Component: Build the React component for the control's UI (`src/components/LLMChef/prompt/control/MyControl.tsx`).
   2. Create Registration Hook: Create `useMyControlRegistration.tsx`.
      - Import `useControlRegistryStore`.
      - Use `useEffect` to call `registerPromptControl` on mount.
      - Define the `PromptControl` object (id, order, show?, renderer?, triggerRenderer?, getParameters?, getMetadata?, clearOnSubmit?).
      - Return the unregister function from `useEffect`.
-  3. Integrate: Render the registration hook component (e.g., `<UseMyControlRegistration />`) within `LiteChat.tsx`.
+  3. Integrate: Render the registration hook component (e.g., `<UseMyControlRegistration />`) within `LLMChef.tsx`.
 
 adding_chat_control:
-  1. Create Component: Build the React component (`src/components/LiteChat/chat/control/MyChatControl.tsx`).
+  1. Create Component: Build the React component (`src/components/LLMChef/chat/control/MyChatControl.tsx`).
   2. Create Registration Hook: Create `useMyChatControlRegistration.tsx`.
      - Import `useControlRegistryStore`.
      - Use `useEffect` to call `registerChatControl`.
      - Define the `ChatControl` object (id, order, panel, renderer?, iconRenderer?, show?).
      - Return the unregister function.
-  3. Integrate: Render the registration hook component within `LiteChat.tsx`.
+  3. Integrate: Render the registration hook component within `LLMChef.tsx`.
 
 adding_middleware (via Mod):
   1. Mod Script: Inside the mod's main function (`modApi`):
@@ -256,8 +256,8 @@ adding_middleware (via Mod):
      ```
 
 adding_vfs_feature:
-  1. UI Component: Modify components in `src/components/LiteChat/file-manager/` (e.g., add button to `FileManagerToolbar`, add action to `FileManagerRow` context menu).
-  2. VFS Operation: Implement the core logic in `src/lib/litechat/vfs-operations.ts` using `fs` (ZenFS) or `git` (isomorphic-git). Include `toast` feedback.
+  1. UI Component: Modify components in `src/components/LLMChef/file-manager/` (e.g., add button to `FileManagerToolbar`, add action to `FileManagerRow` context menu).
+  2. VFS Operation: Implement the core logic in `src/lib/llmchef/vfs-operations.ts` using `fs` (ZenFS) or `git` (isomorphic-git). Include `toast` feedback.
   3. Store Action: Add an action in `src/store/vfs.store.ts` that calls the new `VfsOps` function. This action should handle `_setOperationLoading` and `_setError`.
   4. Connect UI: Call the new `VfsStore` action from the UI component's event handler.
   5. State Update: Ensure the `VfsStore` action updates relevant state (`nodes`, `childrenMap`) after the operation, often by calling `fetchNodes`.
@@ -265,7 +265,7 @@ adding_vfs_feature:
 
 ## Troubleshooting Tips
 
-dexie_errors: Check DB schema versions in `src/lib/litechat/db.ts`. Ensure `@zenfs/dom` IndexedDB backend is configured correctly (`vfs-operations.ts`). Use browser devtools (Application -> IndexedDB) to inspect `LiteChatDatabase_Rewrite_v1` and VFS stores (`litechat_vfs_*`). Clear DBs if corruption is suspected.
+dexie_errors: Check DB schema versions in `src/lib/llmchef/db.ts`. Ensure `@zenfs/dom` IndexedDB backend is configured correctly (`vfs-operations.ts`). Use browser devtools (Application -> IndexedDB) to inspect `LLMChefDatabase_Rewrite_v1` and VFS stores (`llmchef_vfs_*`). Clear DBs if corruption is suspected.
 zustand_errors: Use Redux DevTools extension. Ensure Immer mutations are valid (don't return from `set` callback unless replacing whole state). Check selector dependencies (`useShallow` or create granular selectors).
 vfs_git_errors: Check CORS proxy setup if using remotes. Ensure `gitUserName`/`gitUserEmail` are set in Settings -> Git. Check browser console for detailed errors from `isomorphic-git` or `ZenFS`. Check network tab for failed HTTP requests during clone/pull/push.
 ai_errors: Verify API Keys/Base URLs in Settings -> Providers. Check Network tab for API request details (headers, body, response). Check AI provider status pages. Log the exact `PromptObject` payload in `AIService` before the `streamText` call.

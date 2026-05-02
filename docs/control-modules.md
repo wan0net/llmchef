@@ -15,21 +15,21 @@ A Control Module is a self-contained unit that:
 
 ### Module Interface
 
-All control modules implement the `ControlModule` interface defined in [`src/types/litechat/control.ts`](../src/types/litechat/control.ts):
+All control modules implement the `ControlModule` interface defined in [`src/types/llmchef/control.ts`](../src/types/llmchef/control.ts):
 
 ```typescript
 export interface ControlModule {
   readonly id: string;
   readonly dependencies?: string[];
-  initialize(modApi: LiteChatModApi): Promise<void>;
-  register(modApi: LiteChatModApi): void;
-  destroy(modApi: LiteChatModApi): void;
+  initialize(modApi: LLMChefModApi): Promise<void>;
+  register(modApi: LLMChefModApi): void;
+  destroy(modApi: LLMChefModApi): void;
 }
 ```
 
 ## Module Lifecycle
 
-The lifecycle is managed by [`src/lib/litechat/initialization.ts`](../src/lib/litechat/initialization.ts) in the following order:
+The lifecycle is managed by [`src/lib/llmchef/initialization.ts`](../src/lib/llmchef/initialization.ts) in the following order:
 
 ### 1. Instantiation
 All `ControlModuleConstructor`s listed in [`src/App.tsx`](../src/App.tsx) are instantiated:
@@ -51,7 +51,7 @@ Each module's `initialize(modApi)` method is called in dependency order:
 
 ```typescript
 // Example from AutoTitleControlModule
-async initialize(modApi: LiteChatModApi): Promise<void> {
+async initialize(modApi: LLMChefModApi): Promise<void> {
   this.modApiRef = modApi;
 
   // Subscribe to events
@@ -70,7 +70,7 @@ Each module's `register(modApi)` method is called after all modules are initiali
 
 ```typescript
 // Example from AutoTitleControlModule
-register(modApi: LiteChatModApi): void {
+register(modApi: LLMChefModApi): void {
   this.unregisterCallback = modApi.registerPromptControl({
     id: this.id,
     component: AutoTitleControlTrigger,
@@ -107,7 +107,7 @@ Handle application configuration through settings tabs.
 export class GeneralSettingsModule implements ControlModule {
   readonly id = "core-settings-general";
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallback = modApi.registerSettingsTab({
       id: "general",
       title: "General",
@@ -125,7 +125,7 @@ Add UI elements to the prompt input area.
 
 ```typescript
 export class AutoTitleControlModule implements ControlModule {
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallback = modApi.registerPromptControl({
       id: this.id,
       component: AutoTitleControlTrigger,
@@ -152,7 +152,7 @@ The Prompt Library Control Module allows users to create, manage, and apply reus
 ```typescript
 export class PromptLibraryControlModule implements ControlModule {
   readonly id = "core-prompt-library";
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   public compileTemplate = async (templateId: string, formData: PromptFormData): Promise<CompiledPrompt> => {
     const { compilePromptTemplate } = usePromptTemplateStore.getState();
@@ -166,7 +166,7 @@ export class PromptLibraryControlModule implements ControlModule {
     this.modApiRef?.emit(promptEvent.setInputTextRequest, { text: compiled.content });
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     this.unregisterCallback = modApi.registerPromptControl({
       id: this.id,
@@ -224,7 +224,7 @@ Add UI elements to chat areas (sidebar, header, modals).
 
 ```typescript
 export class ConversationListControlModule implements ControlModule {
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallback = modApi.registerChatControl({
       id: this.id,
       panel: "sidebar",
@@ -242,7 +242,7 @@ Register AI tools and their implementations.
 
 ```typescript
 export class VfsToolsModule implements ControlModule {
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     // Register multiple VFS-related tools
     this.unregisterCallbacks.push(
       modApi.registerTool("vfs_read_file", readFileToolDefinition, readFileImplementation),
@@ -260,7 +260,7 @@ Handle interactions within the chat canvas (message actions, code block controls
 
 ```typescript
 export class CopyActionControlModule implements ControlModule {
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallback = modApi.registerCanvasControl({
       id: this.id,
       type: "interaction",
@@ -360,9 +360,9 @@ const controlModulesToRegister: ControlModuleConstructor[] = [
 ### UI Rendering
 Registered controls are rendered by wrapper components:
 
-- **Prompt Controls**: [`src/components/LiteChat/prompt/PromptControlWrapper.tsx`](../src/components/LiteChat/prompt/PromptControlWrapper.tsx)
-- **Chat Controls**: [`src/components/LiteChat/chat/ChatControlWrapper.tsx`](../src/components/LiteChat/chat/ChatControlWrapper.tsx)
-- **Canvas Controls**: [`src/components/LiteChat/canvas/InteractionCard.tsx`](../src/components/LiteChat/canvas/InteractionCard.tsx)
+- **Prompt Controls**: [`src/components/LLMChef/prompt/PromptControlWrapper.tsx`](../src/components/LLMChef/prompt/PromptControlWrapper.tsx)
+- **Chat Controls**: [`src/components/LLMChef/chat/ChatControlWrapper.tsx`](../src/components/LLMChef/chat/ChatControlWrapper.tsx)
+- **Canvas Controls**: [`src/components/LLMChef/canvas/InteractionCard.tsx`](../src/components/LLMChef/canvas/InteractionCard.tsx)
 
 ## Dependencies
 
@@ -374,7 +374,7 @@ export class DependentModule implements ControlModule {
   readonly id = "dependent-module";
   readonly dependencies = ["core-settings-general", "core-provider-settings"];
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     // This module initializes after its dependencies
   }
 }
@@ -384,7 +384,7 @@ export class DependentModule implements ControlModule {
 The initialization system uses topological sorting to resolve dependencies:
 
 ```typescript
-// From src/lib/litechat/initialization.ts
+// From src/lib/llmchef/initialization.ts
 function resolveDependencyOrder(modules: ControlModule[]): ControlModule[] | null {
   // Implements topological sort with cycle detection
   // Returns null if circular dependencies are detected
@@ -459,21 +459,21 @@ setEnabled(enabled: boolean): void {
 ### 1. Create Module Class
 ```typescript
 // src/controls/modules/MyFeatureModule.ts
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
 
 export class MyFeatureModule implements ControlModule {
   readonly id = "core-my-feature";
   private unregisterCallback: (() => void) | null = null;
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     // Subscribe to relevant events
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     // Register UI components, tools, etc.
   }
 
@@ -519,7 +519,7 @@ const controlModulesToRegister: ControlModuleConstructor[] = [
 Modules can conditionally register components based on state:
 
 ```typescript
-register(modApi: LiteChatModApi): void {
+register(modApi: LLMChefModApi): void {
   const shouldRegister = this.checkCondition();
   if (shouldRegister) {
     this.unregisterCallback = modApi.registerPromptControl(/* ... */);

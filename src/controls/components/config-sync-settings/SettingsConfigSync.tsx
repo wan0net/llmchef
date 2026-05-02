@@ -23,7 +23,7 @@ import { useConversationStore } from "@/store/conversation.store";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { configSyncService } from "@/services/config-sync.service";
-import type { SyncStatus } from "@/types/litechat/sync";
+import type { SyncStatus } from "@/types/llmchef/sync";
 import { useTranslation } from "react-i18next";
 import { useFormedible } from "@/hooks/use-formedible";
 import { fs } from "@zenfs/core";

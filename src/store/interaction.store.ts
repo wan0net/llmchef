@@ -2,15 +2,15 @@
 // FULL FILE
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import type { Interaction } from "@/types/litechat/interaction";
+import type { Interaction } from "@/types/llmchef/interaction";
 import { PersistenceService } from "@/services/persistence.service";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import {
   interactionEvent,
   InteractionEventPayloads,
-} from "@/types/litechat/events/interaction.events";
+} from "@/types/llmchef/events/interaction.events";
 import { toast } from "sonner";
-import type { RegisteredActionHandler } from "@/types/litechat/control";
+import type { RegisteredActionHandler } from "@/types/llmchef/control";
 
 export interface InteractionState {
   interactions: Interaction[];

@@ -1,4 +1,4 @@
-import type { AiModelConfig } from "@/types/litechat/provider";
+import type { AiModelConfig } from "@/types/llmchef/provider";
 import { experimental_generateImage as generateImage } from "ai";
 import { toast } from "sonner";
 

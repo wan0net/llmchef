@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ParameterControlModule } from "@/controls/modules/ParameterControlModule";
 
-import { NumberField } from "@/components/LiteChat/common/form-fields/NumberField";
-import { SliderField } from "@/components/LiteChat/common/form-fields/SliderField";
+import { NumberField } from "@/components/LLMChef/common/form-fields/NumberField";
+import { SliderField } from "@/components/LLMChef/common/form-fields/SliderField";
 import { useTranslation } from "react-i18next";
 
 interface ParameterControlComponentProps {

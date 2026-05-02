@@ -1,7 +1,7 @@
 // src/controls/components/file/FileControlPanel.tsx
 // NEW FILE
 import React, { useState, useEffect } from "react";
-import { FilePreviewRenderer } from "@/components/LiteChat/common/FilePreviewRenderer";
+import { FilePreviewRenderer } from "@/components/LLMChef/common/FilePreviewRenderer";
 import { cn } from "@/lib/utils";
 import type { FileControlModule } from "@/controls/modules/FileControlModule"; // Import module type
 

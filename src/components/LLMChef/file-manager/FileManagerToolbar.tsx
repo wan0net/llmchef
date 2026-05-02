@@ -1,0 +1,447 @@
+// src/components/LLMChef/file-manager/FileManagerToolbar.tsx
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import {
+  FolderUpIcon,
+  FileUpIcon,
+  RefreshCwIcon,
+  ArchiveIcon,
+  HomeIcon,
+  FolderPlusIcon,
+  FilePlusIcon,
+  Loader2Icon,
+  GitBranchIcon,
+  FolderSyncIcon,
+  FolderInputIcon,
+  MoveIcon,
+  Trash2Icon,
+} from "lucide-react";
+import type { VfsNode } from "@/types/llmchef/vfs";
+import { useTranslation } from "react-i18next";
+
+interface FileManagerToolbarProps {
+  currentPath: string;
+  isAnyLoading: boolean;
+  isOperationLoading: boolean;
+  entries: VfsNode[];
+  editingPath: string | null;
+  creatingFolder: boolean;
+  handleNavigateHome: () => void;
+  handleNavigateUp: () => void;
+  handleRefresh: () => void;
+  startCreatingFolder: () => void;
+  handleCreateFile: () => void;
+  handleUploadClick: () => void;
+  handleFolderUploadClick: () => void;
+  handleArchiveUploadClick: () => void;
+  handleConnectProjectFolder: () => void;
+  handleProjectFolderSyncNow: () => void;
+  localFolderName: string | null;
+  localFolderStatus: string | null;
+  selectedCount: number;
+  handleMoveSelected: () => void;
+  handleDeleteSelected: () => void;
+  handleDownloadAll: () => void;
+  handleCloneClick: () => void;
+  isRealFsSyncSupported: boolean;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  folderInputRef: React.RefObject<HTMLInputElement | null>;
+  archiveInputRef: React.RefObject<HTMLInputElement | null>;
+  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleArchiveChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  gitRepoStatus: Record<string, boolean>;
+}
+
+export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
+  currentPath,
+  isAnyLoading,
+  isOperationLoading,
+  entries,
+  editingPath,
+  creatingFolder,
+  handleNavigateHome,
+  handleNavigateUp,
+  handleRefresh,
+  startCreatingFolder,
+  handleCreateFile,
+  handleUploadClick,
+  handleFolderUploadClick,
+  handleArchiveUploadClick,
+  handleConnectProjectFolder,
+  handleProjectFolderSyncNow,
+  localFolderName,
+  localFolderStatus,
+  selectedCount,
+  handleMoveSelected,
+  handleDeleteSelected,
+  handleDownloadAll,
+  handleCloneClick,
+  isRealFsSyncSupported,
+  fileInputRef,
+  folderInputRef,
+  archiveInputRef,
+  handleFileChange,
+  handleArchiveChange,
+  gitRepoStatus,
+}) => {
+  const { t } = useTranslation("vfs");
+  return (
+    <>
+      {/* Hidden Inputs */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        multiple
+        disabled={isAnyLoading}
+      />
+      <input
+        type="file"
+        ref={folderInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        {...{
+          webkitdirectory: "true",
+          mozdirectory: "true",
+          directory: "true",
+        }}
+        disabled={isAnyLoading}
+      />
+      <input
+        type="file"
+        ref={archiveInputRef}
+        onChange={handleArchiveChange}
+        className="hidden"
+        accept=".zip"
+        disabled={isAnyLoading}
+      />
+
+      {/* Toolbar */}
+      <div className="flex items-center gap-1 p-2 border-b border-border flex-shrink-0 flex-wrap">
+        {/* Navigation */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleNavigateHome();
+            }}
+            disabled={currentPath === "/" || isAnyLoading}
+            title={t("fileManager.toolbar.goToRootDir")}
+            className="h-8 w-8"
+            type="button"
+          >
+            <HomeIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleNavigateUp();
+            }}
+            disabled={currentPath === "/" || isAnyLoading}
+            title={t("fileManager.toolbar.goUpOneLevel")}
+            className="h-8 w-8"
+            type="button"
+          >
+            <FolderUpIcon className="h-4 w-4" />
+          </Button>
+          <span
+            className="text-sm font-mono text-muted-foreground truncate flex-shrink min-w-0 px-2 py-1 rounded bg-muted/50 max-w-[150px] sm:max-w-xs md:max-w-sm lg:max-w-md" // Adjusted max-width for mobile
+            title={currentPath}
+          >
+            {currentPath}
+          </span>
+        </div>
+
+        {/* Spacer */}
+        <div className="flex-grow" />
+
+        {/* Actions */}
+        <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
+          {" "}
+          {/* Added justify-end */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleRefresh();
+            }}
+            disabled={isAnyLoading} // Disable on any loading
+            title={t("fileManager.toolbar.refreshCurrentDir")}
+            className="h-8 w-8"
+            type="button"
+          >
+            {/* Show spinner only for FS operations, not all loading */}
+            {isOperationLoading ? (
+              <Loader2Icon className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCwIcon className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              startCreatingFolder();
+            }}
+            disabled={isAnyLoading || creatingFolder || !!editingPath}
+            className="h-8"
+            title={t("fileManager.toolbar.createNewFolder")}
+            type="button"
+          >
+            {/* Spinner logic remains the same */}
+            {isOperationLoading && creatingFolder ? (
+              <Loader2Icon className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <FolderPlusIcon className="h-4 w-4 mr-1" />
+            )}
+            <span className="hidden sm:inline">{t("fileManager.toolbar.folder")}</span>{" "}
+            {/* Hide text on small screens */}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleCreateFile();
+            }}
+            disabled={isAnyLoading || !!editingPath}
+            className="h-8"
+            title={t("fileManager.toolbar.createNewFile", "Create new file")}
+            type="button"
+          >
+            <FilePlusIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">{t("fileManager.toolbar.file", "File")}</span>{" "}
+          </Button>
+          {selectedCount > 0 && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleMoveSelected();
+                }}
+                disabled={isAnyLoading}
+                className="h-8"
+                title={t("fileManager.toolbar.moveSelected", {
+                  defaultValue: "Move selected files",
+                })}
+                type="button"
+              >
+                <MoveIcon className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">
+                  {t("fileManager.toolbar.moveCount", {
+                    count: selectedCount,
+                    defaultValue: "Move {{count}}",
+                  })}
+                </span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDeleteSelected();
+                }}
+                disabled={isAnyLoading}
+                className="h-8 text-destructive hover:text-destructive"
+                title={t("fileManager.toolbar.deleteSelected", {
+                  defaultValue: "Delete selected files",
+                })}
+                type="button"
+              >
+                <Trash2Icon className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">
+                  {t("fileManager.toolbar.deleteCount", {
+                    count: selectedCount,
+                    defaultValue: "Delete {{count}}",
+                  })}
+                </span>
+              </Button>
+            </>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleUploadClick();
+            }}
+            disabled={isAnyLoading}
+            className="h-8"
+            title={t("fileManager.toolbar.uploadFiles")}
+            type="button"
+          >
+            {/* Spinner logic remains the same */}
+            {isOperationLoading ? (
+              <Loader2Icon className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <FileUpIcon className="h-4 w-4 mr-1" />
+            )}
+            <span className="hidden sm:inline">{t("fileManager.toolbar.files")}</span>{" "}
+            {/* Hide text on small screens */}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleFolderUploadClick();
+            }}
+            disabled={isAnyLoading}
+            className="h-8"
+            title={t("fileManager.toolbar.uploadFolder")}
+            type="button"
+          >
+            {/* Spinner logic remains the same */}
+            {isOperationLoading ? (
+              <Loader2Icon className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <FolderUpIcon className="h-4 w-4 mr-1" />
+            )}
+            <span className="hidden sm:inline">{t("fileManager.toolbar.folder")}</span>{" "}
+            {/* Hide text on small screens */}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleArchiveUploadClick();
+            }}
+            disabled={isAnyLoading}
+            className="h-8"
+            title={t("fileManager.toolbar.uploadAndExtractZip")}
+            type="button"
+          >
+            {/* Spinner logic remains the same */}
+            {isOperationLoading ? (
+              <Loader2Icon className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <ArchiveIcon className="h-4 w-4 mr-1" />
+            )}
+            <span className="hidden sm:inline">{t("fileManager.toolbar.zip")}</span>{" "}
+            {/* Hide text on small screens */}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleConnectProjectFolder();
+            }}
+            disabled={isAnyLoading || !isRealFsSyncSupported}
+            className="h-8"
+            title={
+              localFolderName
+                ? t("fileManager.toolbar.changeProjectFolder", "Change local project folder")
+                : t("fileManager.toolbar.connectProjectFolder", "Connect local project folder")
+            }
+            type="button"
+          >
+            <FolderInputIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">
+              {localFolderName
+                ? t("fileManager.toolbar.changeFolder", "Change Folder")
+                : t("fileManager.toolbar.connectFolder", "Connect Folder")}
+            </span>{" "}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleProjectFolderSyncNow();
+            }}
+            disabled={isAnyLoading || !isRealFsSyncSupported || !localFolderName}
+            className="h-8"
+            title={t("fileManager.toolbar.syncProjectFolderNow", "Sync local project folder now")}
+            type="button"
+          >
+            <FolderSyncIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">{t("fileManager.toolbar.syncFolder")}</span>{" "}
+          </Button>
+          {(localFolderName || localFolderStatus) && (
+            <span
+              className="max-w-[180px] truncate px-2 text-xs text-muted-foreground"
+              title={localFolderStatus || localFolderName || undefined}
+            >
+              {localFolderStatus ||
+                t("fileManager.toolbar.localFolderAutoSync", {
+                  folderName: localFolderName,
+                  defaultValue: "Local: {{folderName}} · 1 min",
+                })}
+            </span>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleCloneClick();
+            }}
+            disabled={isAnyLoading}
+            className="h-8"
+            title={t("fileManager.toolbar.cloneRepository")}
+            type="button"
+          >
+            <GitBranchIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">{t("fileManager.toolbar.cloneRepository")}</span>{" "}
+          </Button>
+          {/* Git Operations Button (conditionally rendered) */}
+          {entries.some((entry) => gitRepoStatus[entry.path]) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => e.preventDefault()} // Placeholder, actual menu in dropdown
+              disabled={isAnyLoading}
+              className="h-8"
+              title={t("fileManager.toolbar.gitOperations")}
+              type="button"
+            >
+              <GitBranchIcon className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">{t("fileManager.toolbar.gitOperations")}</span>{" "}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleDownloadAll();
+            }}
+            disabled={isAnyLoading || entries.length === 0}
+            className="h-8"
+            title={t("fileManager.toolbar.downloadAll")}
+            type="button"
+          >
+            <ArchiveIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">{t("fileManager.toolbar.downloadAll")}</span>{" "}
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+};

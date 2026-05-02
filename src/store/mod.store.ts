@@ -6,16 +6,16 @@ import type {
   DbMod,
   ModState as ModStoreState,
   ModActions as ModStoreActions,
-} from "@/types/litechat/modding";
+} from "@/types/llmchef/modding";
 import { PersistenceService } from "@/services/persistence.service";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { modEvent, ModEventPayloads } from "@/types/litechat/events/mod.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { modEvent, ModEventPayloads } from "@/types/llmchef/events/mod.events";
 import type {
   RegisteredActionHandler,
   ActionHandler,
-} from "@/types/litechat/control";
+} from "@/types/llmchef/control";
 
 export const useModStore = create(
   immer<ModStoreState & ModStoreActions>((set, get) => ({

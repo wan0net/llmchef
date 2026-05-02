@@ -1,22 +1,22 @@
 // src/controls/modules/FileControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { inputEvent } from "@/types/litechat/events/input.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { inputEvent } from "@/types/llmchef/events/input.events";
 import { FileControlTrigger } from "@/controls/components/file/FileControlTrigger";
 import { FileControlPanel } from "@/controls/components/file/FileControlPanel";
 import { useInputStore } from "@/store/input.store";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useProviderStore } from "@/store/provider.store";
-import { isLikelyTextFile } from "@/lib/litechat/file-extensions";
+import { isLikelyTextFile } from "@/lib/llmchef/file-extensions";
 import { toast } from "sonner";
 import type { AttachedFileMetadata } from "@/store/input.store";
 import { nanoid } from "nanoid";
 import { useControlRegistryStore } from "@/store/control.store";
-import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 
 const MAX_FILE_SIZE_MB = 20;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -25,7 +25,7 @@ export class FileControlModule implements ControlModule {
   readonly id = "core-file-attachment";
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   private isStreaming = false;
   private modelSupportsNonText = true;
@@ -33,7 +33,7 @@ export class FileControlModule implements ControlModule {
 
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.isStreaming = useInteractionStore.getState().status === "streaming";
     this.attachedFiles = useInputStore.getState().attachedFilesMetadata;
@@ -111,7 +111,7 @@ export class FileControlModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

@@ -6,8 +6,8 @@ The prompt system in LLMChef is a modular, event-driven architecture for managin
 ---
 
 ## Core Types & Interfaces
-- **PromptTemplate, PromptVariable, CompiledPrompt**: `src/types/litechat/prompt-template.ts`
-- **PromptObject, PromptTurnObject**: `src/types/litechat/prompt.ts`
+- **PromptTemplate, PromptVariable, CompiledPrompt**: `src/types/llmchef/prompt-template.ts`
+- **PromptObject, PromptTurnObject**: `src/types/llmchef/prompt.ts`
 - **PromptFormData**: `{ [key: string]: any }` (see above)
 
 ---
@@ -24,7 +24,7 @@ The prompt system in LLMChef is a modular, event-driven architecture for managin
 ---
 
 ## Prompt Compilation Logic
-- **Core function**: `compilePromptTemplate(template, formData)` in `src/lib/litechat/prompt-util.ts`
+- **Core function**: `compilePromptTemplate(template, formData)` in `src/lib/llmchef/prompt-util.ts`
   - Validates required variables, applies defaults, fills placeholders
   - Serializes arrays/objects, supports flexible spacing in placeholders
   - Returns `{ content, selectedTools, selectedRules }`
@@ -83,9 +83,9 @@ The prompt system in LLMChef is a modular, event-driven architecture for managin
 ---
 
 ## Key Files
-- Types: `src/types/litechat/prompt-template.ts`, `src/types/litechat/prompt.ts`
+- Types: `src/types/llmchef/prompt-template.ts`, `src/types/llmchef/prompt.ts`
 - Store: `src/store/prompt-template.store.ts`
-- Util: `src/lib/litechat/prompt-util.ts`
+- Util: `src/lib/llmchef/prompt-util.ts`
 - UI: `src/controls/components/prompt/PromptLibraryControl.tsx`, `RacePromptControl.tsx`, `ImprovePromptControl.tsx`
 - Module: `src/controls/modules/PromptLibraryControlModule.ts`
 

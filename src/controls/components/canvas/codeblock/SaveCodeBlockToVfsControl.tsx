@@ -1,19 +1,19 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
-import { FilePreviewDialog } from "@/components/LiteChat/file-manager/FilePreviewDialog";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
+import { FilePreviewDialog } from "@/components/LLMChef/file-manager/FilePreviewDialog";
 import {
   buildCodeBlockVfsPath,
   mimeTypeForCodeBlock,
-} from "@/lib/litechat/code-block-vfs";
+} from "@/lib/llmchef/code-block-vfs";
 import {
   inferFilePreviewDescriptor,
   type FilePreviewDescriptor,
-} from "@/lib/litechat/file-preview";
-import { basename } from "@/lib/litechat/file-manager-utils";
-import * as VfsOps from "@/lib/litechat/vfs-operations";
+} from "@/lib/llmchef/file-preview";
+import { basename } from "@/lib/llmchef/file-manager-utils";
+import * as VfsOps from "@/lib/llmchef/vfs-operations";
 import { useVfsStore } from "@/store/vfs.store";
-import { vfsEvent } from "@/types/litechat/events/vfs.events";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { vfsEvent } from "@/types/llmchef/events/vfs.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import { EyeIcon, Loader2Icon, SaveIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";

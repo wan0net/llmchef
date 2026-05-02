@@ -14,9 +14,9 @@ The Block Renderer System allows you to:
 
 ### Core Components
 
-1. **BlockRenderer Interface** (`src/types/litechat/canvas/block-renderer.ts`)
+1. **BlockRenderer Interface** (`src/types/llmchef/canvas/block-renderer.ts`)
 2. **BlockRendererService** (`src/services/block-renderer.service.ts`)
-3. **UniversalBlockRenderer** (`src/components/LiteChat/common/UniversalBlockRenderer.tsx`)
+3. **UniversalBlockRenderer** (`src/components/LLMChef/common/UniversalBlockRenderer.tsx`)
 4. **Control Modules** for registering renderers
 
 ### How It Works
@@ -32,9 +32,9 @@ The Block Renderer System allows you to:
 
 ```typescript
 // src/controls/modules/MyCustomRendererModule.ts
-import type { ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
+import type { ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { BlockRenderer, BlockRendererContext } from "@/types/llmchef/canvas/block-renderer";
 import React from "react";
 
 export class MyCustomRendererModule implements ControlModule {
@@ -45,7 +45,7 @@ export class MyCustomRendererModule implements ControlModule {
     // Setup if needed
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     const customRenderer: BlockRenderer = {
       id: this.id,
       supportedLanguages: ["mylang", "custom"], // Languages this renderer handles
@@ -220,7 +220,7 @@ const multiLangRenderer: BlockRenderer = {
 Register renderers based on settings or conditions:
 
 ```typescript
-register(modApi: LiteChatModApi): void {
+register(modApi: LLMChefModApi): void {
   const enableAdvancedRendering = this.getAdvancedRenderingSetting();
 
   if (enableAdvancedRendering) {

@@ -1,7 +1,7 @@
 // src/controls/components/data-settings/SettingsDataTabbed.tsx
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { TabbedLayout } from "@/components/LiteChat/common/TabbedLayout";
+import { TabbedLayout } from "@/components/LLMChef/common/TabbedLayout";
 import { SettingsDataManagement } from "./SettingsDataManagement";
 import { SettingsConfigSync } from "../config-sync-settings/SettingsConfigSync";
 import { SettingsCrea8Memory } from "./SettingsCrea8Memory";

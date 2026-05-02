@@ -9,11 +9,11 @@ import type {
   ContentExtractionResult,
   CachedSearchResult,
   SearchQualityMetrics
-} from '../types/litechat/websearch';
+} from '../types/llmchef/websearch';
 import { load } from 'cheerio';
 import { useSettingsStore } from '@/store/settings.store';
 import { toast } from 'sonner';
-import { assertAllowedOutboundUrl } from '@/lib/litechat/outbound-policy';
+import { assertAllowedOutboundUrl } from '@/lib/llmchef/outbound-policy';
 
 export class WebSearchService {
   private static readonly DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';

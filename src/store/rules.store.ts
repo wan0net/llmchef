@@ -2,19 +2,19 @@
 // FULL FILE
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import type { DbRule, DbTag, DbTagRuleLink } from "@/types/litechat/rules";
+import type { DbRule, DbTag, DbTagRuleLink } from "@/types/llmchef/rules";
 import { PersistenceService } from "@/services/persistence.service";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import {
   rulesEvent,
   RulesEventPayloads,
-} from "@/types/litechat/events/rules.events";
+} from "@/types/llmchef/events/rules.events";
 import type {
   RegisteredActionHandler,
   ActionHandler,
-} from "@/types/litechat/control";
+} from "@/types/llmchef/control";
 
 interface RulesState {
   rules: DbRule[];

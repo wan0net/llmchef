@@ -9,7 +9,7 @@ require 'socket'
 # Parse command line arguments
 options = {port: 3000, host: false}
 OptionParser.new do |opts|
-  opts.banner = "Usage: ruby litechat_server.rb [PORT] [options]"
+  opts.banner = "Usage: ruby llmchef_server.rb [PORT] [options]"
   opts.on("--host", "Allow external connections") { |v| options[:host] = v }
 end.parse!
 

@@ -1,9 +1,9 @@
-import { emitter } from "@/lib/litechat/event-emitter";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
 import { InteractionService } from "@/services/interaction.service";
 import { useInteractionStore } from "@/store/interaction.store";
-import { buildHistoryMessages } from "@/lib/litechat/ai-helpers";
-import type { PromptObject, PromptTurnObject } from "@/types/litechat/prompt";
+import { buildHistoryMessages } from "@/lib/llmchef/ai-helpers";
+import type { PromptObject, PromptTurnObject } from "@/types/llmchef/prompt";
 import type { ModelMessage, TextPart } from "ai";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";

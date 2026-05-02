@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useProviderStore } from "@/store/provider.store";
-import type { DbProviderConfig } from "@/types/litechat/provider";
+import type { DbProviderConfig } from "@/types/llmchef/provider";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import { ProviderRow } from "./SettingsProviderRow";
@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout";
+} from "@/components/LLMChef/common/TabbedLayout";
 import { GlobalModelOrganizer } from "./GlobalModelOrganizer";
 import { ModelDataDisplay } from "./ModelDataDisplay";
 import { SettingsApiKeys } from "./ApiKeys";

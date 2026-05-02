@@ -25,7 +25,7 @@ import {
   Palette,
   ArrowUpDown,
 } from "lucide-react";
-import type { ModelListItem } from "@/types/litechat/provider";
+import type { ModelListItem } from "@/types/llmchef/provider";
 import { useTranslation } from "react-i18next";
 
 interface ModelSelectorProps {

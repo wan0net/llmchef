@@ -531,7 +531,7 @@ For production MCP server deployments:
   "description": "Third-party service integration",
   "headers": {
     "Authorization": "Bearer integration-token",
-    "X-Client-ID": "litechat-client"
+    "X-Client-ID": "llmchef-client"
   }
 }
 ```

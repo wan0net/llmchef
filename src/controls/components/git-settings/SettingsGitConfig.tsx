@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/SettingsGitConfig.tsx
+// src/components/LLMChef/settings/SettingsGitConfig.tsx
 
 import React, { useEffect } from "react";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useSettingsStore } from "@/store/settings.store";
 import { useShallow } from "zustand/react/shallow";
-import { SettingsSection } from "@/components/LiteChat/common/SettingsSection";
+import { SettingsSection } from "@/components/LLMChef/common/SettingsSection";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { z } from "zod";
 import { toast } from "sonner";

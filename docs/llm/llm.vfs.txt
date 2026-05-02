@@ -1,7 +1,7 @@
 # LLMChef Virtual File System (VFS) Architecture (for LLMs)
 
 ## Overview
-- Browser-based VFS using ZenFS with IndexedDB backend (see `src/lib/litechat/vfs-operations.ts`)
+- Browser-based VFS using ZenFS with IndexedDB backend (see `src/lib/llmchef/vfs-operations.ts`)
 - All VFS operations run in a dedicated worker for performance
 - Supports multiple VFS contexts: project, orphan, sync repos
 
@@ -11,7 +11,7 @@
   - **Orphan VFS**: `vfsKey = "orphan"` — for conversations without projects
   - **Sync VFS**: `vfsKey = "sync_repos"` — for Git repositories
 
-## Core Operations (see `src/lib/litechat/vfs-operations.ts`)
+## Core Operations (see `src/lib/llmchef/vfs-operations.ts`)
 - `initializeFsOp(vfsKey: string): Promise<typeof fs | null>` — initialize VFS for context
 - `writeFileOp(path: string, content: ArrayBuffer | string, opts?)`
 - `readFileOp(path: string, opts?)`
@@ -41,6 +41,6 @@
 - To add new VFS state or actions, update `vfs.store.ts` and register new event handlers
 
 ## For LLMs: To reason about or extend VFS, reference:
-- `src/lib/litechat/vfs-operations.ts`
+- `src/lib/llmchef/vfs-operations.ts`
 - `src/store/vfs.store.ts`
-- `src/types/litechat/events/vfs.events.ts`
+- `src/types/llmchef/events/vfs.events.ts`

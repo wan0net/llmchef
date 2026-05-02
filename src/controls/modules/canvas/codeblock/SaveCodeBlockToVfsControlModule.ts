@@ -1,7 +1,7 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { CanvasControlRenderContext } from "@/types/litechat/canvas/control";
+import { type ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 import { SaveCodeBlockToVfsControl } from "@/controls/components/canvas/codeblock/SaveCodeBlockToVfsControl";
 
 export class SaveCodeBlockToVfsControlModule implements ControlModule {
@@ -9,7 +9,7 @@ export class SaveCodeBlockToVfsControlModule implements ControlModule {
 
   async initialize(): Promise<void> {}
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     modApi.registerCanvasControl({
       id: this.id,
       type: "codeblock",

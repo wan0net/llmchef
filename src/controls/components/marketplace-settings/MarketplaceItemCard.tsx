@@ -3,15 +3,15 @@
 import React from "react";
 import { useMarketplaceStore } from "@/store/marketplace.store";
 import { useShallow } from "zustand/react/shallow";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { marketplaceEvent } from "@/types/litechat/events/marketplace.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { marketplaceEvent } from "@/types/llmchef/events/marketplace.events";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, ExternalLink, FileText, Bot, Workflow, Server, Settings, Archive } from "lucide-react";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
-import type { MarketplaceItem } from "@/types/litechat/marketplace";
+import type { MarketplaceItem } from "@/types/llmchef/marketplace";
 
 interface MarketplaceItemCardProps {
   item: MarketplaceItem;

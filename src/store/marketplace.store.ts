@@ -4,20 +4,20 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import { PersistenceService } from "@/services/persistence.service";
 import {
   marketplaceEvent,
   type MarketplaceEventPayloads,
-} from "@/types/litechat/events/marketplace.events";
+} from "@/types/llmchef/events/marketplace.events";
 import type {
   MarketplaceSource,
   MarketplaceIndex,
   MarketplaceItem,
   MarketplaceItemType,
   InstalledMarketplaceItem,
-} from "@/types/litechat/marketplace";
-import type { RegisteredActionHandler } from "@/types/litechat/control";
+} from "@/types/llmchef/marketplace";
+import type { RegisteredActionHandler } from "@/types/llmchef/control";
 
 interface MarketplaceState {
   // Marketplace sources

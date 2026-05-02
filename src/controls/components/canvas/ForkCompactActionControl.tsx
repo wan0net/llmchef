@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { Axe } from "lucide-react";
 import { toast } from "sonner";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { canvasEvent } from "@/types/litechat/events/canvas.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { canvasEvent } from "@/types/llmchef/events/canvas.events";
 import { ModelSelector } from "@/controls/components/global-model-selector/ModelSelector";
-import type { ModelListItem } from "@/types/litechat/provider";
+import type { ModelListItem } from "@/types/llmchef/provider";
 import { useTranslation } from "react-i18next";
 
 interface ForkCompactActionControlProps {

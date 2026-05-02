@@ -3,13 +3,13 @@ import { useProviderStore } from "@/store/provider.store";
 import { useInteractionStore } from "@/store/interaction.store";
 import { AIService } from "@/services/ai.service";
 import { PersistenceService } from "@/services/persistence.service";
-import { splitModelId, instantiateModelInstance } from "@/lib/litechat/provider-helpers";
+import { splitModelId, instantiateModelInstance } from "@/lib/llmchef/provider-helpers";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
-import type { Interaction } from "@/types/litechat/interaction";
-import type { PromptTurnObject } from "@/types/litechat/prompt";
+import type { Interaction } from "@/types/llmchef/interaction";
+import type { PromptTurnObject } from "@/types/llmchef/prompt";
 import { interpolateColor } from "@/lib/utils";
-import { redactSecrets } from "@/lib/litechat/redaction";
+import { redactSecrets } from "@/lib/llmchef/redaction";
 
 export interface CodeSecurityResult {
   score: number;

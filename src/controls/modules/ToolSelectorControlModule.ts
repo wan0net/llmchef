@@ -1,23 +1,23 @@
 // src/controls/modules/ToolSelectorControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { uiEvent } from "@/types/litechat/events/ui.events";
-import { settingsEvent } from "@/types/litechat/events/settings.events";
-import { controlRegistryEvent } from "@/types/litechat/events/control.registry.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
+import { settingsEvent } from "@/types/llmchef/events/settings.events";
+import { controlRegistryEvent } from "@/types/llmchef/events/control.registry.events";
 import { ToolSelectorTrigger } from "@/controls/components/tool-selector/ToolSelectorTrigger";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useProviderStore } from "@/store/provider.store";
 import { useConversationStore } from "@/store/conversation.store";
 import { useControlRegistryStore } from "@/store/control.store";
 import { useSettingsStore } from "@/store/settings.store";
-import type { SidebarItemType } from "@/types/litechat/chat";
+import type { SidebarItemType } from "@/types/llmchef/chat";
 import { AIService } from "@/services/ai.service";
-import { splitModelId, instantiateModelInstance } from "@/lib/litechat/provider-helpers";
-import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+import { splitModelId, instantiateModelInstance } from "@/lib/llmchef/provider-helpers";
+import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 
 export class ToolSelectorControlModule implements ControlModule {
   readonly id = "core-tool-selector";
@@ -36,7 +36,7 @@ export class ToolSelectorControlModule implements ControlModule {
 
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.loadInitialState();
     this.updateVisibility();
@@ -270,9 +270,9 @@ export class ToolSelectorControlModule implements ControlModule {
     }
   };
 
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

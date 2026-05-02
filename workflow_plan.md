@@ -1,14 +1,14 @@
-# LiteChat Workflow Feature: Development Plan
+# LLMChef Workflow Feature: Development Plan
 
 ## 1. Overview & Goals
 
-This document outlines the development plan for a new "Workflow" feature in LiteChat, designed to chain multiple AI prompts, tasks, and other actions into a sequential, automated process.
+This document outlines the development plan for a new "Workflow" feature in LLMChef, designed to chain multiple AI prompts, tasks, and other actions into a sequential, automated process.
 
 ### High-Level Goals
 - **Sequential Task Execution**: Chain multiple prompts, agent tasks, and other actions.
 - **Structured Data Passing**: Use the output of one step as the input for the next.
 - **Human in the Loop (HITL)**: Allow for steps that pause the workflow for manual user intervention.
-- **Architectural Consistency**: Strictly follow LiteChat's established patterns of event-driven orchestration and parent-child interaction relationships.
+- **Architectural Consistency**: Strictly follow LLMChef's established patterns of event-driven orchestration and parent-child interaction relationships.
 - **Foundation for Future Features**: This engine will be robust enough to eventually replace the `Race-Combine` feature.
 
 ## 2. Architecture
@@ -45,7 +45,7 @@ Workflows will be represented in the chat canvas using the existing `Interaction
 
 ### Phase 3: Workflow Service (Orchestrator)
 - **Task**: Implement the core workflow execution logic for starting, pausing, resuming, and completing workflows.
-- **Files**: `services/workflow.service.ts` (new), `components/LiteChat/LiteChat.tsx`.
+- **Files**: `services/workflow.service.ts` (new), `components/LLMChef/LLMChef.tsx`.
 - **Status**: ✅ **DONE**
 
 ### Phase 4: Workflow Builder UI & Module
@@ -55,7 +55,7 @@ Workflows will be represented in the chat canvas using the existing `Interaction
 
 ### Phase 5: Workflow Execution UI
 - **Task**: Render the running workflow and the HITL controls in the chat canvas.
-- **Files**: `components/LiteChat/canvas/InteractionCard.tsx`, `components/LiteChat/canvas/interaction/WorkflowStatusDisplay.tsx` (new), `components/LiteChat/canvas/interaction/HumanInTheLoopControl.tsx` (new).
+- **Files**: `components/LLMChef/canvas/InteractionCard.tsx`, `components/LLMChef/canvas/interaction/WorkflowStatusDisplay.tsx` (new), `components/LLMChef/canvas/interaction/HumanInTheLoopControl.tsx` (new).
 - **Status**: ✅ **DONE**
 
 ### Phase 6: Structured Output & Data Passing

@@ -1,8 +1,8 @@
 // src/controls/modules/canvas/ExplainSelectionControlModule.ts
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { SelectionControlContext } from "@/types/litechat/canvas/control";
+import { type ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { SelectionControlContext } from "@/types/llmchef/canvas/control";
 import { ExplainSelectionControl } from "@/controls/components/canvas/ExplainSelectionControl";
 
 export class ExplainSelectionControlModule implements ControlModule {
@@ -10,9 +10,9 @@ export class ExplainSelectionControlModule implements ControlModule {
 
   private unregisterCallback: (() => void) | null = null;
 
-  async initialize(_modApi: LiteChatModApi): Promise<void> {}
+  async initialize(_modApi: LLMChefModApi): Promise<void> {}
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

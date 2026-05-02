@@ -1,12 +1,12 @@
 // src/controls/modules/SystemPromptControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { uiEvent } from "@/types/litechat/events/ui.events";
-import { projectEvent } from "@/types/litechat/events/project.events";
-import { settingsEvent } from "@/types/litechat/events/settings.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
+import { projectEvent } from "@/types/llmchef/events/project.events";
+import { settingsEvent } from "@/types/llmchef/events/settings.events";
 import { SystemPromptControlTrigger } from "@/controls/components/system-prompt/SystemPromptControlTrigger";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useProjectStore } from "@/store/project.store";
@@ -18,14 +18,14 @@ export class SystemPromptControlModule implements ControlModule {
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
   // @ts-expect-error ts not seeing properly, @AI KEEP IT OR FIX !
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   public turnSystemPromptValue = "";
   public effectiveSystemPrompt: string | null | undefined = null;
   public isStreaming = false;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.isStreaming = useInteractionStore.getState().status === "streaming";
     this.updateEffectivePrompt();
@@ -99,7 +99,7 @@ export class SystemPromptControlModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

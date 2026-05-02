@@ -2,7 +2,7 @@
 // FULL FILE
 import type {
   DbMod,
-  LiteChatModApi,
+  LLMChefModApi,
   ReadonlyChatContextSnapshot,
   CustomSettingTab,
   ToolImplementation,
@@ -12,11 +12,11 @@ import type {
   ModChatControl,
   ModalProvider,
   ModControlRule,
-} from "@/types/litechat/modding";
-import type { ChatControl as CoreChatControlFromTypes } from "@/types/litechat/chat";
-import type { PromptControl as CorePromptControlFromTypes } from "@/types/litechat/prompt";
-import type { CanvasControl as CoreCanvasControlFromTypes, SelectionControl } from "@/types/litechat/canvas/control";
-import type { BlockRenderer } from "@/types/litechat/canvas/block-renderer";
+} from "@/types/llmchef/modding";
+import type { ChatControl as CoreChatControlFromTypes } from "@/types/llmchef/chat";
+import type { PromptControl as CorePromptControlFromTypes } from "@/types/llmchef/prompt";
+import type { CanvasControl as CoreCanvasControlFromTypes, SelectionControl } from "@/types/llmchef/canvas/control";
+import type { BlockRenderer } from "@/types/llmchef/canvas/block-renderer";
 
 import { Tool } from "ai";
 import { useInteractionStore } from "@/store/interaction.store";
@@ -24,21 +24,21 @@ import { useConversationStore } from "@/store/conversation.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { useProviderStore } from "@/store/provider.store";
 import { useModStore } from "@/store/mod.store";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import { toast } from "sonner";
 import type { z } from "zod";
-import { splitModelId } from "@/lib/litechat/provider-helpers";
+import { splitModelId } from "@/lib/llmchef/provider-helpers";
 import { useVfsStore } from "@/store/vfs.store";
 import type { fs } from "@zenfs/core";
-import { controlRegistryEvent } from "@/types/litechat/events/control.registry.events";
-import { blockRendererEvent } from "@/types/litechat/events/block-renderer.events";
+import { controlRegistryEvent } from "@/types/llmchef/events/control.registry.events";
+import { blockRendererEvent } from "@/types/llmchef/events/block-renderer.events";
 
-export function createModApi(mod: DbMod): LiteChatModApi {
+export function createModApi(mod: DbMod): LLMChefModApi {
   const modId = mod.id;
   const modName = mod.name;
   const unsubscribers: (() => void)[] = [];
 
-  const api: LiteChatModApi = {
+  const api: LLMChefModApi = {
     modId,
     modName,
     registerPromptControl: (control: ModPromptControl) => {
@@ -150,8 +150,8 @@ export function createModApi(mod: DbMod): LiteChatModApi {
       callback: (
         payload: any
       ) =>
-        | import("@/types/litechat/modding").ModMiddlewareReturnMap[H]
-        | Promise<import("@/types/litechat/modding").ModMiddlewareReturnMap[H]>
+        | import("@/types/llmchef/modding").ModMiddlewareReturnMap[H]
+        | Promise<import("@/types/llmchef/modding").ModMiddlewareReturnMap[H]>
     ) => {
       emitter.emit(controlRegistryEvent.registerMiddlewareRequest, {
         hookName,

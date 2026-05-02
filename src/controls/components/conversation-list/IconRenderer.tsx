@@ -1,4 +1,4 @@
-// src/components/LiteChat/chat/control/ConversationListIconRenderer.tsx
+// src/components/LLMChef/chat/control/ConversationListIconRenderer.tsx
 // FULL FILE
 import React from "react";
 import { MessageSquareTextIcon, FolderIcon, Loader2 } from "lucide-react";

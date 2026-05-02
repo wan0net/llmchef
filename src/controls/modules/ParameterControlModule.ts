@@ -1,13 +1,13 @@
 // src/controls/modules/ParameterControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
+import { type ControlModule } from "@/types/llmchef/control";
 
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { settingsEvent } from "@/types/litechat/events/settings.events";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { promptEvent as promptStateEvent } from "@/types/litechat/events/prompt.events";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { settingsEvent } from "@/types/llmchef/events/settings.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { promptEvent as promptStateEvent } from "@/types/llmchef/events/prompt.events";
 import { ParameterControlTrigger } from "@/controls/components/parameter/ParameterControlTrigger";
 import { useSettingsStore } from "@/store/settings.store";
 import { useInteractionStore } from "@/store/interaction.store";
@@ -16,15 +16,15 @@ import { usePromptStateStore } from "@/store/prompt.store";
 import {
   createAiModelConfig,
   splitModelId,
-} from "@/lib/litechat/provider-helpers";
+} from "@/lib/llmchef/provider-helpers";
 import { useControlRegistryStore } from "@/store/control.store";
-import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 
 export class ParameterControlModule implements ControlModule {
   readonly id = "core-parameters";
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   public temperature: number | null = null;
   public topP: number | null = null;
@@ -45,7 +45,7 @@ export class ParameterControlModule implements ControlModule {
   public supportedParams = new Set<string>();
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.loadInitialState();
     this.updateSupportedParams();
@@ -232,7 +232,7 @@ export class ParameterControlModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

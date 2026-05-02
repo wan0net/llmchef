@@ -1,4 +1,4 @@
-import { PYODIDE_VERSION_URL } from "@/lib/litechat/constants";
+import { PYODIDE_VERSION_URL } from "@/lib/llmchef/constants";
 
 // Global pyodide instance for reuse
 let pyodidePromise: Promise<any> | null = null;

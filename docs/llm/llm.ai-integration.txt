@@ -45,4 +45,4 @@
 - `src/store/provider.store.ts`
 - `src/services/model-fetcher.ts`
 - `src/services/ai-image-generation.service.ts`
-- `src/types/litechat/provider.ts` (for model/provider types)
+- `src/types/llmchef/provider.ts` (for model/provider types)

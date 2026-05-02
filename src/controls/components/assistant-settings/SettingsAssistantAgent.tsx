@@ -4,11 +4,11 @@ import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Edit, Plus } from "lucide-react";
-import type { PromptTemplate } from "@/types/litechat/prompt-template";
+import type { PromptTemplate } from "@/types/llmchef/prompt-template";
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout";
+} from "@/components/LLMChef/common/TabbedLayout";
 import { TemplateFormBase, BaseTemplateFormData } from "./common/TemplateFormBase";
 import { TemplateList } from "./common/TemplateList";
 

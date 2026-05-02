@@ -2,34 +2,34 @@
 // FULL FILE
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import type { Conversation, SidebarItemType } from "@/types/litechat/chat";
-import type { SyncRepo, SyncStatus } from "@/types/litechat/sync";
-import type { Project } from "@/types/litechat/project";
+import type { Conversation, SidebarItemType } from "@/types/llmchef/chat";
+import type { SyncRepo, SyncStatus } from "@/types/llmchef/sync";
+import type { Project } from "@/types/llmchef/project";
 import { PersistenceService } from "@/services/persistence.service";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
-import { normalizePath } from "@/lib/litechat/file-manager-utils";
+import { normalizePath } from "@/lib/llmchef/file-manager-utils";
 import {
   initializeOrSyncRepoLogic,
   syncConversationLogic,
 } from "@/services/sync.service";
 import { ImportExportService } from "@/services/import-export.service";
-import { SYNC_VFS_KEY } from "@/lib/litechat/constants";
+import { SYNC_VFS_KEY } from "@/lib/llmchef/constants";
 import type { fs } from "@zenfs/core";
-import * as VfsOps from "@/lib/litechat/vfs-operations";
-import { emitter } from "@/lib/litechat/event-emitter";
+import * as VfsOps from "@/lib/llmchef/vfs-operations";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import {
   conversationEvent,
   ConversationEventPayloads,
-} from "@/types/litechat/events/conversation.events";
-import { syncEvent } from "@/types/litechat/events/sync.events";
+} from "@/types/llmchef/events/conversation.events";
+import { syncEvent } from "@/types/llmchef/events/sync.events";
 import type {
   RegisteredActionHandler,
   ActionHandler,
-} from "@/types/litechat/control";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { vfsEvent, VfsEventPayloads } from "@/types/litechat/events/vfs.events";
-import { uiEvent } from "@/types/litechat/events/ui.events";
+} from "@/types/llmchef/control";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { vfsEvent, VfsEventPayloads } from "@/types/llmchef/events/vfs.events";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
 import { useVfsStore } from "./vfs.store";
 import { BulkSyncService } from "@/services/bulk-sync.service";
 

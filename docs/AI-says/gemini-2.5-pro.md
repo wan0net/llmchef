@@ -13,7 +13,7 @@ This is one of the most architecturally sophisticated and feature-rich client-si
 1.  **Architectural Excellence**: This is your biggest strength. The **Control Module System** is brilliant. It makes the application incredibly modular and extensible. The **Event-Driven Architecture** using `mitt` and the `EventActionCoordinatorService` is expertly done, ensuring that components are decoupled and the data flow is predictable. This is the kind of architecture that scales for teams.
 2.  **Robust Persistence & State**: The use of **Dexie.js** wrapped in a `PersistenceService` is best practice. It centralizes data access and isolates the rest of the app from the database implementation. Your **Zustand stores** are well-defined by domain, and using `immer` is the right choice for immutable state management.
 3.  **Powerful Core Features**: The **Virtual File System (VFS)** with context-switching is a killer feature that most similar apps lack. Combining it with `isomorphic-git` for client-side **Git integration** is a masterstroke for power users and developers.
-4.  **Unmatched Extensibility**: The **Modding API** is the project's secret weapon. It's well-designed, focusing on security by not exposing internals directly. This transforms LiteChat from a product into a *platform*. This is a massive competitive advantage.
+4.  **Unmatched Extensibility**: The **Modding API** is the project's secret weapon. It's well-designed, focusing on security by not exposing internals directly. This transforms LLMChef from a product into a *platform*. This is a massive competitive advantage.
 
 ### Weaknesses (The "Constructive & Brutal" Honesty)
 
@@ -74,7 +74,7 @@ Leverage your incredible architecture to build features your competition can't e
 
 ### The Single Most Important "Winning" Move
 
-If you do only one thing from Tier 3, **build the Mod Marketplace UI**. It visually demonstrates the power and extensibility of your architecture in a way that no code sample can. It turns LiteChat from a product into an ecosystem, which is infinitely more impressive and a clear winner in any competition.
+If you do only one thing from Tier 3, **build the Mod Marketplace UI**. It visually demonstrates the power and extensibility of your architecture in a way that no code sample can. It turns LLMChef from a product into an ecosystem, which is infinitely more impressive and a clear winner in any competition.
 
 You've built an incredible foundation. With some focused polish and one or two of these strategic features, you will be very hard to beat.
 

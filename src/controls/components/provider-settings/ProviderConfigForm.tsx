@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/ProviderConfigForm.tsx
+// src/components/LLMChef/settings/ProviderConfigForm.tsx
 import React, { useCallback, useEffect, useRef } from "react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { z } from "zod";
@@ -6,7 +6,7 @@ import type {
   DbProviderConfig,
   DbApiKey,
   DbProviderType,
-} from "@/types/litechat/provider";
+} from "@/types/llmchef/provider";
 import { Label } from "@/components/ui/label";
 
 import { ApiKeySelector } from "./ApiKeySelector";
@@ -16,18 +16,18 @@ import {
   requiresBaseURL,
   supportsModelFetching,
   PROVIDER_TYPES,
-} from "@/lib/litechat/provider-helpers";
+} from "@/lib/llmchef/provider-helpers";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Loader2, SaveIcon, XIcon } from "lucide-react";
 
-import { TextField } from "@/components/LiteChat/common/form-fields/TextField";
+import { TextField } from "@/components/LLMChef/common/form-fields/TextField";
 import {
   SelectField,
   type SelectFieldOption,
-} from "@/components/LiteChat/common/form-fields/SelectField";
-import { SwitchField } from "@/components/LiteChat/common/form-fields/SwitchField";
-import { FieldMetaMessages } from "@/components/LiteChat/common/form-fields/FieldMetaMessages"; // For direct use with ApiKeySelector
+} from "@/components/LLMChef/common/form-fields/SelectField";
+import { SwitchField } from "@/components/LLMChef/common/form-fields/SwitchField";
+import { FieldMetaMessages } from "@/components/LLMChef/common/form-fields/FieldMetaMessages"; // For direct use with ApiKeySelector
 
 export type ProviderFormData = Pick<
   DbProviderConfig,

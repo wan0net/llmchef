@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { SearchIcon, Brain, Globe, Wrench, Image as ImageIcon, Palette } from "lucide-react";
-import type { OpenRouterModel } from "@/types/litechat/provider";
+import type { OpenRouterModel } from "@/types/llmchef/provider";
 import { cn } from "@/lib/utils";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ModelFilterControls } from "@/controls/components/common/ModelFilterControls";

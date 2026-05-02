@@ -1,10 +1,10 @@
 // src/controls/modules/ModSettingsModule.ts
 // FULL FILE
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
 import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import { useSettingsStore } from "@/store/settings.store";
-import { settingsEvent } from "@/types/litechat/events/settings.events";
+import { settingsEvent } from "@/types/llmchef/events/settings.events";
 
 const SettingsMods = createLazySettingTab(() =>
   import("@/controls/components/mod-settings/SettingsMods").then((module) => ({
@@ -18,7 +18,7 @@ export class ModSettingsModule implements ControlModule {
   private eventUnsubscribers: (() => void)[] = [];
   private isVisible = false;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     // Tab is visible when advanced settings is enabled (since mods is an advanced feature)
     this.isVisible = useSettingsStore.getState().enableAdvancedSettings;
 
@@ -47,7 +47,7 @@ export class ModSettingsModule implements ControlModule {
     }
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

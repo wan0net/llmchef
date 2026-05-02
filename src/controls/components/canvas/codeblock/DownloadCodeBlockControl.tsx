@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { DownloadIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";

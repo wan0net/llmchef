@@ -1,7 +1,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CodeEditor } from '@/components/LiteChat/common/CodeEditor';
+import { CodeEditor } from '@/components/LLMChef/common/CodeEditor';
 import { VariableManager } from '@/controls/components/assistant-settings/common/VariableManager';
 import type { BaseStepConfigProps } from './BaseStepConfig';
 

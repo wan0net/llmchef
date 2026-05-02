@@ -50,8 +50,8 @@ LLMChef follows a modular, event-driven architecture designed for extensibility 
 
 2. **Key Entry Points**
    - [`src/App.tsx`](../src/App.tsx) - Control module registration and app setup
-   - [`src/components/LiteChat/LiteChat.tsx`](../src/components/LiteChat/LiteChat.tsx) - Main application component
-   - [`src/lib/litechat/initialization.ts`](../src/lib/litechat/initialization.ts) - Startup sequence and initialization
+   - [`src/components/LLMChef/LLMChef.tsx`](../src/components/LLMChef/LLMChef.tsx) - Main application component
+   - [`src/lib/llmchef/initialization.ts`](../src/lib/llmchef/initialization.ts) - Startup sequence and initialization
 
 3. **Core Concepts to Understand**
    - **Control Modules**: How UI features are encapsulated and registered
@@ -95,7 +95,7 @@ LLMChef follows a modular, event-driven architecture designed for extensibility 
 4. Implement `initialize()`, `register()`, and `destroy()` lifecycle methods
 
 ### Adding New Events
-1. Define event names in [`src/types/litechat/events/`](../src/types/litechat/events/)
+1. Define event names in [`src/types/llmchef/events/`](../src/types/llmchef/events/)
 2. Add payload types to appropriate `EventPayloads` interface
 3. Update `ModEventPayloadMap` for event emitter typing
 4. Emit events from appropriate components/services

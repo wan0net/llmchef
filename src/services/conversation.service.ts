@@ -4,7 +4,7 @@ import type {
   PromptObject,
   PromptTurnObject,
   ResolvedRuleContent,
-} from "@/types/litechat/prompt";
+} from "@/types/llmchef/prompt";
 import { InteractionService } from "./interaction.service";
 import { PromptCompilationService } from "./prompt-compilation.service";
 import { useInteractionStore } from "@/store/interaction.store";
@@ -14,23 +14,23 @@ import { useVfsStore } from "@/store/vfs.store";
 import {
   buildHistoryMessages,
   processFileMetaToUserContent,
-} from "@/lib/litechat/ai-helpers";
+} from "@/lib/llmchef/ai-helpers";
 import type { ModelMessage, ImagePart, TextPart } from "ai";
 import { toast } from "sonner";
-import { cleanPromptParameters } from "@/lib/litechat/prompt-parameters";
+import { cleanPromptParameters } from "@/lib/llmchef/prompt-parameters";
 import type { AttachedFileMetadata } from "@/store/input.store";
 import type { fs as FsType } from "@zenfs/core";
 import { useConversationStore } from "@/store/conversation.store";
-import type { DbRule } from "@/types/litechat/rules";
+import type { DbRule } from "@/types/llmchef/rules";
 import { useSettingsStore } from "@/store/settings.store";
 import { nanoid } from "nanoid";
-import * as VfsOps from "@/lib/litechat/vfs-operations";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { vfsEvent, VfsEventPayloads } from "@/types/litechat/events/vfs.events";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
+import * as VfsOps from "@/lib/llmchef/vfs-operations";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { vfsEvent, VfsEventPayloads } from "@/types/llmchef/events/vfs.events";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
 import { PersistenceService } from "@/services/persistence.service";
-import type { Interaction } from "@/types/litechat/interaction";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
+import type { Interaction } from "@/types/llmchef/interaction";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
 
 export const ConversationService = {
   async submitPrompt(turnData: PromptTurnObject): Promise<void> {

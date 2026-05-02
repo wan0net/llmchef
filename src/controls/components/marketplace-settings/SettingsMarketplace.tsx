@@ -3,8 +3,8 @@
 import React, { useEffect } from "react";
 import { useMarketplaceStore } from "@/store/marketplace.store";
 import { useShallow } from "zustand/react/shallow";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { marketplaceEvent } from "@/types/litechat/events/marketplace.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { marketplaceEvent } from "@/types/llmchef/events/marketplace.events";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";

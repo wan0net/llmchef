@@ -1,16 +1,16 @@
 // src/controls/modules/VfsControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { uiEvent, UiEventPayloads } from "@/types/litechat/events/ui.events";
-import { vfsEvent } from "@/types/litechat/events/vfs.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { uiEvent, UiEventPayloads } from "@/types/llmchef/events/ui.events";
+import { vfsEvent } from "@/types/llmchef/events/vfs.events";
 import { VfsTriggerButton } from "@/controls/components/vfs/VfsTriggerButton";
 import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { useVfsStore } from "@/store/vfs.store";
 import { useConversationStore } from "@/store/conversation.store";
 import { useControlRegistryStore } from "@/store/control.store";
-import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 import { nanoid } from "nanoid";
 
 const VfsModalPanel = createLazyControlComponent<any>(
@@ -26,12 +26,12 @@ export class VfsControlModule implements ControlModule {
   public readonly modalId = "core-vfs-modal-panel";
   private unregisterCallbacks: (() => void)[] = [];
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   private notifyTriggerUpdate: (() => void) | null = null;
   private isModalOpenByManager: boolean = false;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.updateVfsKeyBasedOnContext(); // Initial key update
 
@@ -131,7 +131,7 @@ export class VfsControlModule implements ControlModule {
     this.notifyTriggerUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallbacks.length > 0) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

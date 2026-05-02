@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import type { WorkflowStep } from '@/types/litechat/workflow';
+import type { WorkflowStep } from '@/types/llmchef/workflow';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { PromptTemplate } from '@/types/litechat/prompt-template';
-import type { ModelListItem } from '@/types/litechat/provider';
+import type { PromptTemplate } from '@/types/llmchef/prompt-template';
+import type { ModelListItem } from '@/types/llmchef/provider';
 import { ModelSelector } from '@/controls/components/global-model-selector/ModelSelector';
 import { ChevronDown, ChevronRight, Trash2, GripVertical, ArrowUp, ArrowDown, ChevronsUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ActionTooltipButton } from '@/components/LiteChat/common/ActionTooltipButton';
+import { ActionTooltipButton } from '@/components/LLMChef/common/ActionTooltipButton';
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CodeEditor } from '@/components/LiteChat/common/CodeEditor';
+import { CodeEditor } from '@/components/LLMChef/common/CodeEditor';
 import { VariableManager } from '@/controls/components/assistant-settings/common/VariableManager';
 
 interface WorkflowStepCardProps {

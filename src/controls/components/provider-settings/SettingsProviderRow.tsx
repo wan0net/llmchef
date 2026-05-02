@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/SettingsProviderRow.tsx
+// src/components/LLMChef/settings/SettingsProviderRow.tsx
 // FULL FILE
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 // Import OpenRouterModel for allAvailableModels state
@@ -6,7 +6,7 @@ import type {
   DbProviderConfig,
   DbApiKey,
   OpenRouterModel,
-} from "@/types/litechat/provider";
+} from "@/types/llmchef/provider";
 import { toast } from "sonner";
 import { ProviderRowViewMode } from "./SettingsProviderRowView";
 import { ProviderRowEditMode } from "./SettingsProviderRowEdit";

@@ -11,17 +11,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { FileManager } from "@/components/LiteChat/file-manager/FileManager";
-import { FileManagerBanner } from "@/components/LiteChat/file-manager/FileManagerBanner";
+import { FileManager } from "@/components/LLMChef/file-manager/FileManager";
+import { FileManagerBanner } from "@/components/LLMChef/file-manager/FileManagerBanner";
 import { toast } from "sonner";
 import type { VfsControlModule } from "@/controls/modules/VfsControlModule";
-import type { ModalProviderProps } from "@/types/litechat/modding";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { vfsEvent } from "@/types/litechat/events/vfs.events";
-import { inputEvent } from "@/types/litechat/events/input.events";
-import { conversationEvent } from "@/types/litechat/events/conversation.events";
-import type { VfsEventPayloads } from "@/types/litechat/events/vfs.events";
-import type { SidebarItemType } from "@/types/litechat/chat";
+import type { ModalProviderProps } from "@/types/llmchef/modding";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { vfsEvent } from "@/types/llmchef/events/vfs.events";
+import { inputEvent } from "@/types/llmchef/events/input.events";
+import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+import type { VfsEventPayloads } from "@/types/llmchef/events/vfs.events";
+import type { SidebarItemType } from "@/types/llmchef/chat";
 import { useVfsStore } from "@/store/vfs.store";
 import { useTranslation } from "react-i18next";
 

@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/SettingsDataManagement.tsx
+// src/components/LLMChef/settings/SettingsDataManagement.tsx
 // FULL FILE
 import React, { useRef, useState, useCallback } from "react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";

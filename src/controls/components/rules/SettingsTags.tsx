@@ -6,7 +6,7 @@ import { PlusIcon } from "lucide-react";
 import { TagForm } from "./TagForm";
 import { TagsList } from "./TagsList";
 import { TagRuleLinker } from "./TagRuleLinker";
-import type { DbTag, DbRule } from "@/types/litechat/rules";
+import type { DbTag, DbRule } from "@/types/llmchef/rules";
 import { Separator } from "@/components/ui/separator";
 import type { RulesControlModule } from "@/controls/modules/RulesControlModule";
 import { useTranslation } from "react-i18next";

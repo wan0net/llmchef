@@ -2,29 +2,29 @@
 // FULL FILE
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import {
   controlRegistryEvent,
   ControlRegistryEventPayloads,
-} from "@/types/litechat/events/control.registry.events";
+} from "@/types/llmchef/events/control.registry.events";
 import {
   blockRendererEvent,
   BlockRendererEventPayloads,
-} from "@/types/litechat/events/block-renderer.events";
+} from "@/types/llmchef/events/block-renderer.events";
 import type {
   ControlState as ControlStateInterface,
   ControlActions as ControlActionsInterface,
   RegisteredActionHandler,
   CanvasControl as CoreCanvasControlAliased, // Added alias
-} from "@/types/litechat/control";
-import type { SelectionControl } from "@/types/litechat/canvas/control";
+} from "@/types/llmchef/control";
+import type { SelectionControl } from "@/types/llmchef/canvas/control";
 import type {
   ModalProvider,
   ModMiddlewareHookName,
   ToolImplementation,
-} from "@/types/litechat/modding";
+} from "@/types/llmchef/modding";
 import type { Tool } from "ai";
-import type { TriggerNamespace } from "@/types/litechat/text-triggers";
+import type { TriggerNamespace } from "@/types/llmchef/text-triggers";
 
 export const useControlRegistryStore = create(
   immer<ControlStateInterface & ControlActionsInterface>((set, get) => ({

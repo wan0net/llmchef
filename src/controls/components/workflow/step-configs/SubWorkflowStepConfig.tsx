@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { PersistenceService } from '@/services/persistence.service';
 import type { BaseStepConfigProps } from './BaseStepConfig';
-import type { WorkflowTemplate } from '@/types/litechat/workflow';
+import type { WorkflowTemplate } from '@/types/llmchef/workflow';
 
 export const SubWorkflowStepConfig: React.FC<BaseStepConfigProps> = ({
   step,

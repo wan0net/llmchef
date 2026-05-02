@@ -1,12 +1,12 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { CanvasControlRenderContext } from "@/types/litechat/canvas/control";
+import { type ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 import { EditResponseControl } from "@/controls/components/canvas/EditResponseControl";
 import { useInteractionStore } from "@/store/interaction.store";
-import { canvasEvent } from "@/types/litechat/events/canvas.events";
+import { canvasEvent } from "@/types/llmchef/events/canvas.events";
 import { PersistenceService } from "@/services/persistence.service";
-import type { Interaction } from "@/types/litechat/interaction";
+import type { Interaction } from "@/types/llmchef/interaction";
 import { nanoid } from "nanoid";
 
 export class EditResponseControlModule implements ControlModule {
@@ -14,7 +14,7 @@ export class EditResponseControlModule implements ControlModule {
 
   private eventUnsubscribers: (() => void)[] = [];
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     // Listen for edit response requests
     const unsubEditResponse = modApi.on(
       canvasEvent.editResponseRequest,
@@ -137,7 +137,7 @@ export class EditResponseControlModule implements ControlModule {
     }
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     modApi.registerCanvasControl({
       id: this.id,
       type: "interaction",

@@ -1,34 +1,34 @@
 // src/controls/modules/RulesControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule,  type ControlModuleConstructor } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { rulesEvent } from "@/types/litechat/events/rules.events";
-import { controlRegistryEvent } from "@/types/litechat/events/control.registry.events";
-import { uiEvent } from "@/types/litechat/events/ui.events";
+import { type ControlModule,  type ControlModuleConstructor } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { rulesEvent } from "@/types/llmchef/events/rules.events";
+import { controlRegistryEvent } from "@/types/llmchef/events/control.registry.events";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
 import { RulesControlTrigger } from "@/controls/components/rules/RulesControlTrigger";
 import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
-import type { DbRule, DbTag } from "@/types/litechat/rules";
-import type { ResolvedRuleContent } from "@/types/litechat/prompt";
-import type { ModControlRule } from "@/types/litechat/modding";
+import type { DbRule, DbTag } from "@/types/llmchef/rules";
+import type { ResolvedRuleContent } from "@/types/llmchef/prompt";
+import type { ModControlRule } from "@/types/llmchef/modding";
 import { useControlRegistryStore } from "@/store/control.store";
 import { useSettingsStore } from "@/store/settings.store";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import { toast } from "sonner";
 import { AIService } from "@/services/ai.service";
 import {
   splitModelId,
   instantiateModelInstance,
-} from "@/lib/litechat/provider-helpers";
+} from "@/lib/llmchef/provider-helpers";
 import { useProviderStore } from "@/store/provider.store";
 import { useInteractionStore } from "@/store/interaction.store";
 import { PersistenceService } from "@/services/persistence.service";
 import { nanoid } from "nanoid";
-import type { Interaction } from "@/types/litechat/interaction";
-import type { PromptTurnObject } from "@/types/litechat/prompt";
+import type { Interaction } from "@/types/llmchef/interaction";
+import type { PromptTurnObject } from "@/types/llmchef/prompt";
 import i18next from "i18next";
-import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 
 const SettingsRulesAndTags = createLazyControlComponent<any>(() =>
   import("@/controls/components/rules/SettingsRulesAndTags").then((module) => ({
@@ -42,7 +42,7 @@ export class RulesControlModule implements ControlModule {
   private unregisterPromptControlCallback: (() => void) | null = null;
   private unregisterSettingsTabCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   private allRules: DbRule[] = [];
   private allTags: DbTag[] = [];
@@ -56,7 +56,7 @@ export class RulesControlModule implements ControlModule {
   private notifyComponentUpdate: (() => void) | null = null;
   private notifySettingsComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.isStreaming = modApi.getContextSnapshot().isStreaming;
 
@@ -340,7 +340,7 @@ export class RulesControlModule implements ControlModule {
     this.notifySettingsComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
 
     // Register text trigger namespaces with the control registry

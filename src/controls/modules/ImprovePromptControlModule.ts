@@ -1,10 +1,10 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
 import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
-import type { ModelListItem } from "@/types/litechat/provider";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
+import type { ModelListItem } from "@/types/llmchef/provider";
 import { PromptEnhancementService } from "@/services/prompt-enhancement.service";
 import { useProviderStore } from "@/store/provider.store";
 
@@ -20,7 +20,7 @@ export class ImprovePromptControlModule implements ControlModule {
   public readonly id = "improve-prompt-control";
   private eventUnsubscribers: (() => void)[] = [];
   // @ts-expect-error - Used in destroy method for cleanup
-  private modApi: LiteChatModApi | null = null;
+  private modApi: LLMChefModApi | null = null;
   private notifyComponentUpdate: (() => void) | null = null;
 
   // Provider state
@@ -30,7 +30,7 @@ export class ImprovePromptControlModule implements ControlModule {
   // Prompt state
   public currentPromptText = "";
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApi = modApi;
 
     // Initialize the enhancement service
@@ -131,7 +131,7 @@ export class ImprovePromptControlModule implements ControlModule {
     return this.currentPromptText;
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     modApi.registerPromptControl({
       id: this.id,
       status: () => "ready",

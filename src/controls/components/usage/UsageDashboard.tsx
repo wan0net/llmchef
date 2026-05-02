@@ -4,8 +4,8 @@
 import React, { useState, useMemo } from "react";
 import { useProviderStore } from "@/store/provider.store";
 import { PersistenceService } from "@/services/persistence.service";
-import { calculateTokenCost } from "@/lib/litechat/prompt-util";
-import { formatTokenCost } from "@/lib/litechat/ai-helpers";
+import { calculateTokenCost } from "@/lib/llmchef/prompt-util";
+import { formatTokenCost } from "@/lib/llmchef/ai-helpers";
 import {
   ChartContainer,
   ChartTooltip,
@@ -27,7 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import type { ChartConfig } from "@/components/ui/chart";
-import type { Interaction } from "@/types/litechat/interaction";
+import type { Interaction } from "@/types/llmchef/interaction";
 
 // Chart configuration for consistent styling
 const chartConfig: ChartConfig = {

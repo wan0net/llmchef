@@ -3,21 +3,21 @@
 import {
   type DbMod,
   type ModInstance,
-  type LiteChatModApi,
-} from "@/types/litechat/modding";
-import { modEvent } from "@/types/litechat/events/mod.events";
-import { appEvent } from "@/types/litechat/events/app.events";
+  type LLMChefModApi,
+} from "@/types/llmchef/modding";
+import { modEvent } from "@/types/llmchef/events/mod.events";
+import { appEvent } from "@/types/llmchef/events/app.events";
 import { createModApi } from "./api-factory";
 import { toast } from "sonner";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { assertAllowedOutboundUrl } from "@/lib/llmchef/outbound-policy";
 
 export async function loadMods(dbMods: DbMod[]): Promise<ModInstance[]> {
   const enabledMods = dbMods.filter((mod) => mod.enabled);
   const instances = await Promise.all(
     enabledMods.map(async (mod): Promise<ModInstance> => {
       let scriptContent = mod.scriptContent,
-        modApi: LiteChatModApi | null = null,
+        modApi: LLMChefModApi | null = null,
         instanceError: Error | string | null = null;
       try {
         modApi = createModApi(mod);

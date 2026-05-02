@@ -1,4 +1,4 @@
-# LiteChat: Brutal Honest Competition Assessment
+# LLMChef: Brutal Honest Competition Assessment
 
 **Date**: January 2025
 **Assessment Purpose**: Competition Strategy & Winning Recommendations
@@ -202,13 +202,13 @@ Competition judges care about:
 ### **Demo Script (2 minutes)**
 1. **Hook** (0-15s): "What if AI could read your entire codebase?"
 2. **Problem** (15-30s): Current AI tools don't understand project context
-3. **Solution** (30-90s): Demo LiteChat's codebase integration
+3. **Solution** (30-90s): Demo LLMChef's codebase integration
 4. **Differentiation** (90-105s): Show modding system and local-first approach
 5. **Call to Action** (105-120s): "The future of AI-powered development"
 
 ### **Positioning Statement**
 ```
-"LiteChat transforms AI from a conversation tool into a true development
+"LLMChef transforms AI from a conversation tool into a true development
 partner that understands your entire codebase, respects your privacy,
 and integrates seamlessly into your workflow."
 ```

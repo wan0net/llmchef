@@ -1,13 +1,13 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { CanvasControlRenderContext } from "@/types/litechat/canvas/control";
+import { type ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 import { ForkCompactActionControl } from "@/controls/components/canvas/ForkCompactActionControl";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useProviderStore } from "@/store/provider.store";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import type { ModelListItem } from "@/types/litechat/provider";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import type { ModelListItem } from "@/types/llmchef/provider";
 
 export class ForkCompactActionControlModule implements ControlModule {
   readonly id = "core-canvas-fork-compact-action";
@@ -19,7 +19,7 @@ export class ForkCompactActionControlModule implements ControlModule {
   public globallyEnabledModels: ModelListItem[] = [];
   public isLoadingProviders = true;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
 
     // Initialize state from provider store
     const initialProviderState = useProviderStore.getState();
@@ -98,7 +98,7 @@ export class ForkCompactActionControlModule implements ControlModule {
     this.notifyComponentUpdate = callback;
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     modApi.registerCanvasControl({
       id: this.id,
       type: "interaction",

@@ -2,12 +2,12 @@
 // FULL FILE
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import {
   promptEvent,
   PromptEventPayloads,
-} from "@/types/litechat/events/prompt.events";
-import type { RegisteredActionHandler } from "@/types/litechat/control";
+} from "@/types/llmchef/events/prompt.events";
+import type { RegisteredActionHandler } from "@/types/llmchef/control";
 
 // State for the *next* prompt submission
 export interface PromptState {

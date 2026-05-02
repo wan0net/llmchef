@@ -1,7 +1,7 @@
-import type { ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
-import { CodeBlockRenderer } from "@/components/LiteChat/common/CodeBlockRenderer";
+import type { ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { BlockRenderer, BlockRendererContext } from "@/types/llmchef/canvas/block-renderer";
+import { CodeBlockRenderer } from "@/components/LLMChef/common/CodeBlockRenderer";
 import React from "react";
 
 export class CodeBlockRendererModule implements ControlModule {
@@ -12,7 +12,7 @@ export class CodeBlockRendererModule implements ControlModule {
     // No initialization needed
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

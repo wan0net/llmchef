@@ -1,17 +1,17 @@
 // src/services/config-sync.service.ts
 
-import type { SyncRepo, SyncStatus } from "@/types/litechat/sync";
-import * as VfsOps from "@/lib/litechat/vfs-operations";
-import { normalizePath, joinPath } from "@/lib/litechat/file-manager-utils";
+import type { SyncRepo, SyncStatus } from "@/types/llmchef/sync";
+import * as VfsOps from "@/lib/llmchef/vfs-operations";
+import { normalizePath, joinPath } from "@/lib/llmchef/file-manager-utils";
 import { toast } from "sonner";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import type { fs as FsType } from "@zenfs/core";
 import { useSettingsStore } from "@/store/settings.store";
 import { PersistenceService } from "@/services/persistence.service";
 
-const CONFIG_DIR = ".litechat/config";
+const CONFIG_DIR = ".llmchef/config";
 const SYNC_REPO_BASE_DIR = "/synced_repos";
-const CONFIG_FILE = "litechat-config.json";
+const CONFIG_FILE = "llmchef-config.json";
 
 export interface ConfigData {
   settings: any;

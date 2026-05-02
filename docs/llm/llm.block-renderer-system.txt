@@ -6,9 +6,9 @@ The Block Renderer System in LLMChef is a modular, extensible architecture for r
 ---
 
 ## Core Architecture
-- **BlockRenderer Interface**: `src/types/litechat/canvas/block-renderer.ts`
+- **BlockRenderer Interface**: `src/types/llmchef/canvas/block-renderer.ts`
 - **BlockRendererService**: `src/services/block-renderer.service.ts`
-- **UniversalBlockRenderer**: `src/components/LiteChat/common/UniversalBlockRenderer.tsx`
+- **UniversalBlockRenderer**: `src/components/LLMChef/common/UniversalBlockRenderer.tsx`
 - **Control Modules**: Register all block renderers (see `src/controls/modules/`)
 - **StreamingContentView**: Renders all blocks via UniversalBlockRenderer
 
@@ -26,7 +26,7 @@ The Block Renderer System in LLMChef is a modular, extensible architecture for r
 ---
 
 ## UniversalBlockRenderer
-- **File**: `src/components/LiteChat/common/UniversalBlockRenderer.tsx`
+- **File**: `src/components/LLMChef/common/UniversalBlockRenderer.tsx`
 - **Usage**: All code blocks, diagrams, and special content are rendered through this component
 - **Error Handling**: Catches renderer errors, falls back to simple rendering
 - **Integration**: Used in `StreamingContentView`, canvas, and all block display areas
@@ -76,9 +76,9 @@ The Block Renderer System in LLMChef is a modular, extensible architecture for r
 ---
 
 ## Key Files
-- Types: `src/types/litechat/canvas/block-renderer.ts`
+- Types: `src/types/llmchef/canvas/block-renderer.ts`
 - Service: `src/services/block-renderer.service.ts`
-- Universal: `src/components/LiteChat/common/UniversalBlockRenderer.tsx`
+- Universal: `src/components/LLMChef/common/UniversalBlockRenderer.tsx`
 - Modules: `src/controls/modules/` (all *BlockRendererModule.ts)
 - Example: `src/controls/modules/example/ExampleBlockRendererModule.ts`
-- Usage: `src/components/LiteChat/canvas/StreamingContentView.tsx`
+- Usage: `src/components/LLMChef/canvas/StreamingContentView.tsx`

@@ -1,7 +1,7 @@
-// src/components/LiteChat/project-settings/ProjectDefaultRuleSelector.tsx
+// src/components/LLMChef/project-settings/ProjectDefaultRuleSelector.tsx
 // FULL FILE
 import React, { useState, useMemo } from "react";
-import type { DbRule } from "@/types/litechat/rules";
+import type { DbRule } from "@/types/llmchef/rules";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";

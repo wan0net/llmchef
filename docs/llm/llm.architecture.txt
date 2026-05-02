@@ -4,7 +4,7 @@
 
 - **Frontend**: React 19, TypeScript, Tailwind CSS, shadcn/ui
 - **State Management**: Zustand + Immer
-- **Event System**: mitt (see `src/types/litechat/events/`)
+- **Event System**: mitt (see `src/types/llmchef/events/`)
 - **Build System**: Vite
 - **Forms**: TanStack Form (see `src/hooks/use-formedible.tsx`)
 - **Database**: Dexie.js (IndexedDB)
@@ -15,7 +15,7 @@
 ## Entry Points
 - `src/main.tsx`: App entry, Immer, i18n, PWA, renders `<App />`
 - `src/App.tsx`: Registers all Control Modules, renders `<LLMChef controls={...} />`
-- `src/components/LiteChat/LiteChat.tsx`: Initializes modules, event system, context-aware event emission, dynamic UI
+- `src/components/LLMChef/LLMChef.tsx`: Initializes modules, event system, context-aware event emission, dynamic UI
 
 ## Project Structure (src/)
 - `components/`: UI, LLMChef, canvas, chat, prompt, file-manager, common, ui (shadcn)
@@ -32,7 +32,7 @@
 ## For LLMs: Always reference these files for high-level context before deeper reasoning.
 - `src/main.tsx`
 - `src/App.tsx`
-- `src/components/LiteChat/LiteChat.tsx`
+- `src/components/LLMChef/LLMChef.tsx`
 
 ---
 
@@ -49,7 +49,7 @@
 - **Why important:** This is the glue for the event-driven architecture—LLMs must understand how all stores/actions are wired up at runtime.
 
 ### Initialization & Dependency Management
-- **File:** `src/lib/litechat/initialization.ts`
+- **File:** `src/lib/llmchef/initialization.ts`
 - **Purpose:** Handles full app initialization, module instantiation, dependency resolution, core data loading, and phased startup.
 - **How it works:**
   - Resolves module dependencies and sorts modules for correct init order.

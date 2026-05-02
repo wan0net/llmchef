@@ -1,13 +1,13 @@
 # LLMChef Review
 
-LLMChef is now positioned as a fork of LiteChat with a CyberChef-style operating model: after the first download, the default app should run locally and only talk to explicitly configured LLM/provider endpoints or user-enabled integrations.
+LLMChef is now positioned as a fork of LLMChef with a CyberChef-style operating model: after the first download, the default app should run locally and only talk to explicitly configured LLM/provider endpoints or user-enabled integrations.
 
 ## Security Review
 
 - Default runtime resources are local-first. Generated exports, prompt examples, and app metadata avoid loading LLMChef assets from GitHub Pages.
 - Markdown, Mermaid, and generated diagram HTML are sanitized before rendering. These remain high-risk surfaces because they intentionally render model/user-provided content.
 - Outbound traffic is concentrated in provider calls, provider model-list fetches, optional image providers, optional DuckDuckGo proxy search, optional MCP bridge usage, sync/marketplace URLs configured by the user, and package/update checks.
-- Model-list fetching, optional web search/content extraction, marketplace downloads, remote mod scripts, MCP HTTP/bridge calls, OpenRouter endpoint metadata, race-export stylesheet capture, and Formedible location lookups now pass through `src/lib/litechat/outbound-policy.ts`, which blocks non-HTTP(S) URLs, enforces known provider hosts for model-list requests, and keeps an in-memory destination log shown in Settings -> Network.
+- Model-list fetching, optional web search/content extraction, marketplace downloads, remote mod scripts, MCP HTTP/bridge calls, OpenRouter endpoint metadata, race-export stylesheet capture, and Formedible location lookups now pass through `src/lib/llmchef/outbound-policy.ts`, which blocks non-HTTP(S) URLs, enforces known provider hosts for model-list requests, and keeps an in-memory destination log shown in Settings -> Network.
 - A runtime fetch guard is installed at startup to catch provider SDK and other indirect `fetch` calls. Same-origin and local loopback requests are allowed; remote hosts must come from configured providers, service URLs, MCP servers, marketplace sources, remote mods, or sync repositories. Settings -> Network lists both the session ledger and the configured remote host set.
 - `docs/local-release.md` documents the local bundle flow. `npm run vendor:pyodide` vendors Pyodide into `public/pyodide/...` before build so runnable Python can work without any CDN or PyPI fallback.
 - The Strudel beat control prompt now avoids remote sample-pack guidance and asks for local-first, self-contained patterns.

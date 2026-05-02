@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/SettingsGit.tsx
+// src/components/LLMChef/settings/SettingsGit.tsx
 
 import React, { useMemo } from "react";
 import { SettingsGitConfig } from "./SettingsGitConfig";
@@ -6,7 +6,7 @@ import { SettingsGitSyncRepos } from "./SettingsGitSyncRepos";
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout";
+} from "@/components/LLMChef/common/TabbedLayout";
 import { useTranslation } from "react-i18next";
 
 const SettingsGitComponent: React.FC = () => {

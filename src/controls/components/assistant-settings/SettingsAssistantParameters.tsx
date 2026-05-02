@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { toast } from "sonner";
-import { NumberField } from "@/components/LiteChat/common/form-fields/NumberField";
-import { SliderField } from "@/components/LiteChat/common/form-fields/SliderField";
+import { NumberField } from "@/components/LLMChef/common/form-fields/NumberField";
+import { SliderField } from "@/components/LLMChef/common/form-fields/SliderField";
 // ParameterControlComponent is for prompt-time overrides, not global settings.
 // We will replicate its relevant UI parts here for global settings.
 

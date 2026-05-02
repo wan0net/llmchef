@@ -1,6 +1,6 @@
 # LLMChef
 
-This repository is the `wan0net/llmchef` fork of LiteChat. The upstream project lives at `DimitriGilbert/LiteChat`; fork-specific docs and release links in this repository point to the `wan0net` GitHub repo and GitHub Pages deployment.
+This repository is the `wan0net/llmchef` fork, renamed and maintained as LLMChef. Fork-specific docs and release links in this repository point to the `wan0net` GitHub repo and GitHub Pages deployment.
 
 **LLMChef** is a modular, extensible, and privacy-focused AI chat application designed for power users, developers, and teams. It supports multiple AI providers, advanced prompt engineering, project-based organization, and powerful developer features like virtual file systems, Git integration, and a comprehensive modding system.
 

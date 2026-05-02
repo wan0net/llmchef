@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSkillStore } from "@/store/skill.store";
-import type { Skill, SkillPackageFile } from "@/types/litechat/skill";
-import { normalizeSkillSlug } from "@/lib/litechat/skill-package";
-import { reviewSkillForInstall } from "@/lib/litechat/skill-install-review";
-import { findSkillPackagesInVfs } from "@/lib/litechat/skill-vfs-import";
+import type { Skill, SkillPackageFile } from "@/types/llmchef/skill";
+import { normalizeSkillSlug } from "@/lib/llmchef/skill-package";
+import { reviewSkillForInstall } from "@/lib/llmchef/skill-install-review";
+import { findSkillPackagesInVfs } from "@/lib/llmchef/skill-vfs-import";
 import { useVfsStore } from "@/store/vfs.store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,7 +49,7 @@ export const SettingsSkills: React.FC = () => {
   const [draft, setDraft] = useState<DraftSkill>(EMPTY_DRAFT);
   const [isCreating, setIsCreating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [vfsImportPath, setVfsImportPath] = useState("/.litechat/skills");
+  const [vfsImportPath, setVfsImportPath] = useState("/.llmchef/skills");
   const [isImportingFromVfs, setIsImportingFromVfs] = useState(false);
 
   const {
@@ -121,7 +121,7 @@ export const SettingsSkills: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${skill.slug}.litechat-skill.json`;
+      link.download = `${skill.slug}.llmchef-skill.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -314,7 +314,7 @@ export const SettingsSkills: React.FC = () => {
             </div>
             <p className="text-xs text-muted-foreground">
               Use a skill folder, a folder containing skill folders, or a cloned
-              repo with `.litechat/skills/&lt;slug&gt;/skill.json`.
+              repo with `.llmchef/skills/&lt;slug&gt;/skill.json`.
             </p>
             <div className="grid gap-2">
               <Label htmlFor="skill-vfs-path">VFS Path</Label>
@@ -322,7 +322,7 @@ export const SettingsSkills: React.FC = () => {
                 id="skill-vfs-path"
                 value={vfsImportPath}
                 onChange={(event) => setVfsImportPath(event.target.value)}
-                placeholder="/repo or /.litechat/skills"
+                placeholder="/repo or /.llmchef/skills"
                 className="font-mono text-xs"
               />
             </div>

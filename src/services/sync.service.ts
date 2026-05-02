@@ -1,16 +1,16 @@
 // src/services/sync.service.ts
 // FULL FILE
-import type { Conversation } from "@/types/litechat/chat";
-import type { SyncRepo, SyncStatus } from "@/types/litechat/sync";
-import type { Interaction } from "@/types/litechat/interaction";
-import * as VfsOps from "@/lib/litechat/vfs-operations";
+import type { Conversation } from "@/types/llmchef/chat";
+import type { SyncRepo, SyncStatus } from "@/types/llmchef/sync";
+import type { Interaction } from "@/types/llmchef/interaction";
+import * as VfsOps from "@/lib/llmchef/vfs-operations";
 import { PersistenceService } from "@/services/persistence.service";
-import { normalizePath, joinPath } from "@/lib/litechat/file-manager-utils";
+import { normalizePath, joinPath } from "@/lib/llmchef/file-manager-utils";
 import { toast } from "sonner";
 import { useInteractionStore } from "@/store/interaction.store";
 import type { fs as FsType } from "@zenfs/core";
 
-const CONVERSATION_DIR = ".litechat/conversations";
+const CONVERSATION_DIR = ".llmchef/conversations";
 const SYNC_REPO_BASE_DIR = "/synced_repos";
 
 /**

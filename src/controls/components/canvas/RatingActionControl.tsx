@@ -1,8 +1,8 @@
 // src/controls/components/canvas/RatingActionControl.tsx
 // FULL FILE
 import React from "react";
-import { InteractionRating } from "@/components/LiteChat/canvas/interaction/InteractionRating";
-import type { CanvasControlRenderContext } from "@/types/litechat/canvas/control";
+import { InteractionRating } from "@/components/LLMChef/canvas/interaction/InteractionRating";
+import type { CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 
 interface RatingActionControlProps {
   context: CanvasControlRenderContext;

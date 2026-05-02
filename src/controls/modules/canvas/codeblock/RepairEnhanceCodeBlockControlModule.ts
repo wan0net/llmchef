@@ -1,26 +1,26 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { CanvasControlRenderContext } from "@/types/litechat/canvas/control";
+import { type ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 import {
   RepairEnhanceCodeBlockControl,
   type RepairEnhanceCodeBlockControlProps,
 } from "@/controls/components/canvas/codeblock/RepairEnhanceCodeBlockControl";
-import { canvasEvent } from "@/types/litechat/events/canvas.events";
+import { canvasEvent } from "@/types/llmchef/events/canvas.events";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useProviderStore } from "@/store/provider.store";
 import { usePromptStateStore } from "@/store/prompt.store";
 import { nanoid } from "nanoid";
-import type { Interaction } from "@/types/litechat/interaction";
+import type { Interaction } from "@/types/llmchef/interaction";
 import {
   instantiateModelInstance,
   splitModelId,
-} from "@/lib/litechat/provider-helpers";
+} from "@/lib/llmchef/provider-helpers";
 import { toast } from "sonner";
 import MarkdownIt from "markdown-it";
 import { AIService } from "@/services/ai.service";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
 import { JS_RUNNABLE_CONTROL_PROMPT } from "@/controls/modules/JsRunnableBlockRendererModule";
 import { PYTHON_RUNNABLE_CONTROL_PROMPT } from "@/controls/modules/PythonRunnableBlockRendererModule";
 import { MERMAID_CONTROL_PROMPT } from "@/controls/modules/MermaidBlockRendererModule";
@@ -38,7 +38,7 @@ export class UniversalRepairEnhanceControlModule implements ControlModule {
 
   private eventUnsubscribers: (() => void)[] = [];
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     const unsubRepairEnhance = modApi.on(
       canvasEvent.repairEnhanceCodeBlockRequest,
       async (payload) => {
@@ -80,7 +80,7 @@ export class UniversalRepairEnhanceControlModule implements ControlModule {
 
     const baseSystem = `You are an expert ${language} developer. ${taskDescription} Return ONLY the corrected code without any explanations, markdown formatting, or additional text.`;
 
-    // Use specific, imported LiteChat control prompts ONLY for their designated languages.
+    // Use specific, imported LLMChef control prompts ONLY for their designated languages.
     switch (language) {
       case "runjs":
         systemPrompt = JS_RUNNABLE_CONTROL_PROMPT;
@@ -444,7 +444,7 @@ ${contextPrompt}`;
     });
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     modApi.registerCanvasControl({
       id: this.id,
       type: "codeblock",

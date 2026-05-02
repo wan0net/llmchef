@@ -311,9 +311,9 @@ type ModEventPayloadMap =
 interface ControlModule {
   readonly id: string
   readonly dependencies?: string[]
-  initialize(modApi: LiteChatModApi): Promise<void>
-  register(modApi: LiteChatModApi): void
-  destroy(modApi: LiteChatModApi): void
+  initialize(modApi: LLMChefModApi): Promise<void>
+  register(modApi: LLMChefModApi): void
+  destroy(modApi: LLMChefModApi): void
 }
 ```
 
@@ -385,7 +385,7 @@ interface DbMod {
 interface ModInstance {
   id: string
   name: string
-  api: LiteChatModApi
+  api: LLMChefModApi
   error?: Error | string | null
 }
 ```
@@ -393,7 +393,7 @@ interface ModInstance {
 ### 2. Mod API
 
 ```typescript
-interface LiteChatModApi {
+interface LLMChefModApi {
   // Event system
   eventEmitter: EventEmitter<ModEventPayloadMap>
 

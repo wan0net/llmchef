@@ -2,7 +2,7 @@
 // FULL FILE
 // React import removed as it's not used directly in this component's logic
 // import React from "react";
-import type { CanvasControlRenderContext } from "@/types/litechat/canvas/control";
+import type { CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 import { Button } from "@/components/ui/button";
 import { SmileIcon } from "lucide-react";
 import { toast } from "sonner";

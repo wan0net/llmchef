@@ -1,4 +1,4 @@
-import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
+import type { BlockRenderer, BlockRendererContext } from "@/types/llmchef/canvas/block-renderer";
 import { useControlRegistryStore } from "@/store/control.store";
 
 export class BlockRendererService {

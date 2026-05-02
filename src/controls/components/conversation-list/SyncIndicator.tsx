@@ -1,4 +1,4 @@
-// src/components/LiteChat/chat/control/conversation-list/SyncIndicator.tsx
+// src/components/LLMChef/chat/control/conversation-list/SyncIndicator.tsx
 import React from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { SyncStatus } from "@/types/litechat/sync";
+import type { SyncStatus } from "@/types/llmchef/sync";
 import i18next from "i18next";
 
 // Helper to get sync icon and tooltip

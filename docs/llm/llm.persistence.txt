@@ -6,7 +6,7 @@ LLMChef uses a browser-based Dexie.js (IndexedDB) database for all persistence: 
 ---
 
 ## Database Schema
-- **File**: `src/lib/litechat/db.ts`
+- **File**: `src/lib/llmchef/db.ts`
 - **Database**: `LLMChefDatabase` (Dexie v12)
 - **Tables**:
   - `conversations`, `interactions`, `mods`, `appState`, `providerConfigs`, `apiKeys`, `syncRepos`, `projects`, `rules`, `tags`, `tagRuleLinks`, `promptTemplates`, `workflows`, `marketplaceSources`, `marketplaceIndexes`, `installedMarketplaceItems`
@@ -73,6 +73,6 @@ LLMChef uses a browser-based Dexie.js (IndexedDB) database for all persistence: 
 ---
 
 ## Key Files
-- Schema: `src/lib/litechat/db.ts`
+- Schema: `src/lib/llmchef/db.ts`
 - Service: `src/services/persistence.service.ts`
-- Types: `src/types/litechat/`
+- Types: `src/types/llmchef/`

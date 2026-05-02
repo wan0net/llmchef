@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
+import { assertAllowedOutboundUrl } from "@/lib/llmchef/outbound-policy";
 
 // Built-in search providers
 const builtInProviders = {

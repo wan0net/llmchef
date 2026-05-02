@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { usePromptTemplateStore } from '@/store/prompt-template.store';
-import type { PromptFormData, CompiledPrompt } from '@/types/litechat/prompt-template';
+import type { PromptFormData, CompiledPrompt } from '@/types/llmchef/prompt-template';
 
 interface UsePromptCompilationOptions {
   onCompilationError?: (error: Error) => void;

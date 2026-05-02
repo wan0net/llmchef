@@ -1,8 +1,8 @@
 # LLMChef Utilities, i18n/Locales, and Control Modules (for LLMs)
 
-## 1. Utilities & Helpers (`src/lib/litechat/`)
+## 1. Utilities & Helpers (`src/lib/llmchef/`)
 
-LLMChef's `lib/litechat/` directory contains core utilities and helpers for AI, VFS, workflow, provider, prompt, and event logic. Key files:
+LLMChef's `lib/llmchef/` directory contains core utilities and helpers for AI, VFS, workflow, provider, prompt, and event logic. Key files:
 
 - **ai-helpers.ts**: Formatting, context snapshot, prompt turn building, file content filtering, history message building. Used for prompt orchestration and AI context management.
 - **provider-helpers.ts**: Model/provider ID helpers, instantiation of model instances for OpenAI, Google, OpenRouter, Ollama, etc. Used by provider settings, AI orchestration, and prompt compilation.
@@ -38,7 +38,7 @@ LLMChef uses i18next for full localization. Key files:
 - Add all required namespace JSON files (copy from `en/` as a template).
 - Import new files in `resources.ts` and add to the `resources` object.
 - i18next will auto-detect and use the new language if configured.
-- Control modules can register additional translations at runtime (see `initializeControlModules` in `lib/litechat/initialization.ts`).
+- Control modules can register additional translations at runtime (see `initializeControlModules` in `lib/llmchef/initialization.ts`).
 
 **Integration:**
 - All UI, modules, and settings use i18n keys for labels, tooltips, and messages.
@@ -58,7 +58,7 @@ Control Modules are the core extension mechanism for UI, block rendering, prompt
 - **Example/Custom Modules**: Example modules for custom controls, block renderers, or UI.
 
 **Registration & Lifecycle:**
-- Modules are instantiated and initialized in dependency order (`initializeControlModules` in `lib/litechat/initialization.ts`).
+- Modules are instantiated and initialized in dependency order (`initializeControlModules` in `lib/llmchef/initialization.ts`).
 - Each module implements `initialize(modApi)`, `register(modApi)`, and `destroy()`.
 - Modules can register settings tabs, block renderers, prompt/canvas/chat controls, tools, rules, event handlers, and translations.
 - Unregister logic is required for cleanup.
@@ -72,10 +72,10 @@ Control Modules are the core extension mechanism for UI, block rendering, prompt
 
 **Key Files:**
 - Control modules: `src/controls/modules/` (one file per module)
-- Module interface: `src/types/litechat/control.ts`
-- Initialization: `src/lib/litechat/initialization.ts`
+- Module interface: `src/types/llmchef/control.ts`
+- Initialization: `src/lib/llmchef/initialization.ts`
 - i18n: `src/i18n/`, `src/locales/`, `resources.ts`
-- Utilities: `src/lib/litechat/`
+- Utilities: `src/lib/llmchef/`
 
 ---
 

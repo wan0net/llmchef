@@ -1,14 +1,14 @@
 // src/controls/modules/OpenRouterProviderControlModule.ts
 import React from "react";
-import { type ControlModule, type ControlModuleConstructor } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { conversationEvent } from "@/types/litechat/events/conversation.events";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
+import { type ControlModule, type ControlModuleConstructor } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
 import { OpenRouterProviderControlTrigger } from "@/controls/components/openrouter/OpenRouterProviderControlTrigger";
 import { useProviderStore } from "@/store/provider.store";
-import { splitModelId } from "@/lib/litechat/provider-helpers";
-import { assertAllowedOutboundUrl } from "@/lib/litechat/outbound-policy";
+import { splitModelId } from "@/lib/llmchef/provider-helpers";
+import { assertAllowedOutboundUrl } from "@/lib/llmchef/outbound-policy";
 import { toast } from "sonner";
 
 interface OpenRouterEndpointsResponse {
@@ -35,7 +35,7 @@ export class OpenRouterProviderControlModule implements ControlModule {
   private shouldShowControl = false;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     const context = modApi.getContextSnapshot();
     this.isStreaming = context.isStreaming;
     
@@ -168,7 +168,7 @@ export class OpenRouterProviderControlModule implements ControlModule {
     }
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
 
     if (!this.unregisterPromptControlCallback) {
       this.unregisterPromptControlCallback = modApi.registerPromptControl({

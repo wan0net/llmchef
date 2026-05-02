@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/SettingsMods.tsx
+// src/components/LLMChef/settings/SettingsMods.tsx
 import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import type { DbMod, ModInstance } from "@/types/litechat/modding";
+import type { DbMod, ModInstance } from "@/types/llmchef/modding";
 import {
   Tooltip,
   TooltipContent,

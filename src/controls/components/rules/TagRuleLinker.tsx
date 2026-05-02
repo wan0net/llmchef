@@ -1,8 +1,8 @@
-// src/components/LiteChat/settings/tags/TagRuleLinker.tsx
+// src/components/LLMChef/settings/tags/TagRuleLinker.tsx
 // FULL FILE
 import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { Label } from "@/components/ui/label";
-import type { DbRule, DbTag } from "@/types/litechat/rules";
+import type { DbRule, DbTag } from "@/types/llmchef/rules";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown, XIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";

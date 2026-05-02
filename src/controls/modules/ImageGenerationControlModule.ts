@@ -1,17 +1,17 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
 import { ImageGenerationTrigger } from "@/controls/components/image-generation/ImageGenerationTrigger";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
 import { useProviderStore } from "@/store/provider.store";
 import { useInteractionStore } from "@/store/interaction.store";
 
 export class ImageGenerationControlModule implements ControlModule {
   readonly id = "core-image-generation";
 
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
   private isImageGenerationEnabled: boolean | null = null;
   private unregisterCallback: (() => void) | null = null;
   private notifyComponentUpdate: (() => void) | null = null;
@@ -19,7 +19,7 @@ export class ImageGenerationControlModule implements ControlModule {
   private isVisible = false;
   private isStreaming = false;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.isImageGenerationEnabled = null; // Default to null (not set)
     this.isStreaming = useInteractionStore.getState().status === "streaming";
@@ -87,7 +87,7 @@ export class ImageGenerationControlModule implements ControlModule {
   //   });
   // }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

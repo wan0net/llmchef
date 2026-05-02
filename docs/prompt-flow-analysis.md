@@ -8,7 +8,7 @@ This document provides a comprehensive analysis of how prompts flow through the 
 
 ### 1. User Input Phase (`InputArea.tsx`)
 
-**Location**: `src/components/LiteChat/prompt/InputArea.tsx`
+**Location**: `src/components/LLMChef/prompt/InputArea.tsx`
 
 - User types in the textarea
 - Text triggers are parsed for **UI suggestions only** (autocomplete)
@@ -27,7 +27,7 @@ const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
 
 ### 2. Prompt Submission Trigger (`PromptWrapper.tsx`)
 
-**Location**: `src/components/LiteChat/prompt/PromptWrapper.tsx`
+**Location**: `src/components/LLMChef/prompt/PromptWrapper.tsx`
 
 When user presses Enter or clicks submit:
 

@@ -3,15 +3,15 @@ import { immer } from "zustand/middleware/immer";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { PersistenceService } from "@/services/persistence.service";
-import { createMemoryProposal } from "@/lib/litechat/crea8-memory";
-import { applyMemoryProposalToConnector } from "@/lib/litechat/crea8-memory-write";
+import { createMemoryProposal } from "@/lib/llmchef/crea8-memory";
+import { applyMemoryProposalToConnector } from "@/lib/llmchef/crea8-memory-write";
 import type {
   Crea8MemoryConnector,
   Crea8MemoryProposal,
   Crea8MemoryProposalStatus,
   Crea8MemoryScope,
   Crea8MemorySourceRef,
-} from "@/types/litechat/crea8-memory";
+} from "@/types/llmchef/crea8-memory";
 
 interface Crea8MemoryState {
   proposals: Crea8MemoryProposal[];

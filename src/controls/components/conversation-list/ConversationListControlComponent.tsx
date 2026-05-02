@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusIcon, FolderPlusIcon, SearchIcon, DownloadIcon } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
-import type { SidebarItemType } from "@/types/litechat/chat";
+import type { SidebarItemType } from "@/types/llmchef/chat";
 import {
   Tooltip,
   TooltipContent,
@@ -24,10 +24,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import type { Project } from "@/types/litechat/project";
-import type { Conversation } from "@/types/litechat/chat";
+import type { Project } from "@/types/llmchef/project";
+import type { Conversation } from "@/types/llmchef/chat";
 import { ConversationItemRenderer } from "./ItemRenderer";
-import { useItemEditing } from "@/hooks/litechat/useItemEditing";
+import { useItemEditing } from "@/hooks/llmchef/useItemEditing";
 import type { ConversationListControlModule } from "@/controls/modules/ConversationListControlModule";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ScrollArea } from "@/components/ui/scroll-area";

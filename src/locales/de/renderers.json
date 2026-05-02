@@ -87,7 +87,7 @@
     "consoleOutput": "KONSOLEN-AUSGABE:",
     "noOutput": "Keine Ausgabe",
     "preview": "VORSCHAU:",
-    "noPreviewContent": "Kein Vorschaubereich. Verwenden Sie DOM-Manipulation oder litechat.target, um hier Elemente hinzuzufügen."
+    "noPreviewContent": "Kein Vorschaubereich. Verwenden Sie DOM-Manipulation oder llmchef.target, um hier Elemente hinzuzufügen."
   },
   "mermaidBlock": {
     "header": "MERMAID",
@@ -121,6 +121,6 @@
     "output": "PYTHON-AUSGABE:",
     "noOutput": "Keine Ausgabe",
     "preview": "VORSCHAU:",
-    "noPreviewContent": "Kein Vorschaubereich. Verwenden Sie plt.show() oder litechat.target.appendChild(element), um hier Inhalte hinzuzufügen."
+    "noPreviewContent": "Kein Vorschaubereich. Verwenden Sie plt.show() oder llmchef.target.appendChild(element), um hier Inhalte hinzuzufügen."
   }
 }

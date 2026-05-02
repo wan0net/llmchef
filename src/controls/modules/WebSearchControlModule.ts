@@ -1,11 +1,11 @@
 // src/controls/modules/WebSearchControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { promptEvent as promptStateEvent } from "@/types/litechat/events/prompt.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { promptEvent as promptStateEvent } from "@/types/llmchef/events/prompt.events";
 import { WebSearchControlTrigger } from "@/controls/components/web-search/WebSearchControlTrigger";
 import { useProviderStore } from "@/store/provider.store";
 import { useInteractionStore } from "@/store/interaction.store";
@@ -15,14 +15,14 @@ export class WebSearchControlModule implements ControlModule {
   readonly id = "core-web-search";
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   public webSearchEnabled: boolean | null = null;
   public isStreaming = false;
   public isVisible = true;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.webSearchEnabled = usePromptStateStore.getState().webSearchEnabled;
     this.isStreaming = useInteractionStore.getState().status === "streaming";
@@ -88,7 +88,7 @@ export class WebSearchControlModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

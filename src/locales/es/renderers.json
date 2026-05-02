@@ -87,7 +87,7 @@
     "consoleOutput": "SALIDA DE CONSOLA:",
     "noOutput": "Sin salida",
     "preview": "VISTA PREVIA:",
-    "noPreviewContent": "No hay contenido de vista previa. Use la manipulación del DOM o litechat.target para agregar elementos aquí."
+    "noPreviewContent": "No hay contenido de vista previa. Use la manipulación del DOM o llmchef.target para agregar elementos aquí."
   },
   "mermaidBlock": {
     "header": "MERMAID",
@@ -121,6 +121,6 @@
     "output": "SALIDA DE PYTHON:",
     "noOutput": "Sin salida",
     "preview": "VISTA PREVIA:",
-    "noPreviewContent": "No hay contenido de vista previa. Use plt.show() o litechat.target.appendChild(element) para agregar contenido aquí."
+    "noPreviewContent": "No hay contenido de vista previa. Use plt.show() o llmchef.target.appendChild(element) para agregar contenido aquí."
   }
 }

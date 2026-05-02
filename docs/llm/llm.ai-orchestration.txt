@@ -69,5 +69,5 @@ LLMChef's AI engine is a modular, event-driven orchestration of:
 - `src/services/persistence.service.ts`
 - `src/services/websearch.service.ts`
 - `src/services/block-renderer.service.ts`
-- All event domains in `src/types/litechat/events/`
+- All event domains in `src/types/llmchef/events/`
 - All relevant stores in `src/store/`

@@ -1,18 +1,18 @@
 // src/services/persistence.service.ts
 // FULL FILE
-import { db } from "@/lib/litechat/db";
-import type { Conversation } from "@/types/litechat/chat";
-import type { Interaction } from "@/types/litechat/interaction";
-import type { DbMod } from "@/types/litechat/modding";
-import type { DbProviderConfig, DbApiKey } from "@/types/litechat/provider";
-import type { SyncRepo } from "@/types/litechat/sync";
-import type { Project } from "@/types/litechat/project";
-import type { DbRule, DbTag, DbTagRuleLink } from "@/types/litechat/rules";
-import type { DbPromptTemplate, PromptTemplate } from "@/types/litechat/prompt-template";
-import type { DbSkill, Skill } from "@/types/litechat/skill";
-import type { Crea8MemoryProposal } from "@/types/litechat/crea8-memory";
-import type { DbAppState, DbCrea8MemoryProposal, DbWorkflow } from "@/lib/litechat/db";
-import type { WorkflowTemplate } from "@/types/litechat/workflow";
+import { db } from "@/lib/llmchef/db";
+import type { Conversation } from "@/types/llmchef/chat";
+import type { Interaction } from "@/types/llmchef/interaction";
+import type { DbMod } from "@/types/llmchef/modding";
+import type { DbProviderConfig, DbApiKey } from "@/types/llmchef/provider";
+import type { SyncRepo } from "@/types/llmchef/sync";
+import type { Project } from "@/types/llmchef/project";
+import type { DbRule, DbTag, DbTagRuleLink } from "@/types/llmchef/rules";
+import type { DbPromptTemplate, PromptTemplate } from "@/types/llmchef/prompt-template";
+import type { DbSkill, Skill } from "@/types/llmchef/skill";
+import type { Crea8MemoryProposal } from "@/types/llmchef/crea8-memory";
+import type { DbAppState, DbCrea8MemoryProposal, DbWorkflow } from "@/lib/llmchef/db";
+import type { WorkflowTemplate } from "@/types/llmchef/workflow";
 import type { FullExportOptions } from "./import-export.service";
 import type { 
   DbMarketplaceSource, 
@@ -22,7 +22,7 @@ import type {
   MarketplaceIndex,
   InstalledMarketplaceItem,
   MarketplacePackage
-} from "@/types/litechat/marketplace";
+} from "@/types/llmchef/marketplace";
 import { nanoid } from "nanoid";
 
 // Helper function to ensure date fields are Date objects

@@ -1,17 +1,17 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { promptTemplateEvent } from "@/types/litechat/events/prompt-template.events";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { promptTemplateEvent } from "@/types/llmchef/events/prompt-template.events";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
 import type {
   PromptTemplate,
   PromptFormData,
   CompiledPrompt,
-} from "@/types/litechat/prompt-template";
+} from "@/types/llmchef/prompt-template";
 import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { usePromptTemplateStore } from "@/store/prompt-template.store";
 import { useControlRegistryStore } from "@/store/control.store";
-import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 
 const AgentControl = createLazyControlComponent<any>(
   () =>
@@ -26,7 +26,7 @@ export class AgentControlModule implements ControlModule {
   private unregisterPromptControlCallback: (() => void) | null = null;
   private unregisterCallback?: () => void;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   private allTemplates: PromptTemplate[] = [];
   private isLoadingTemplates = true;
@@ -39,7 +39,7 @@ export class AgentControlModule implements ControlModule {
   // Auto-clear setting
   private autoClearEnabled = false;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
 
     // Load templates on initialization
@@ -255,7 +255,7 @@ export class AgentControlModule implements ControlModule {
     this.modApiRef?.emit(promptTemplateEvent.loadPromptTemplatesRequest, {});
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
 
     // Register text trigger namespaces

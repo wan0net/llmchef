@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/SettingsGitSyncRepos.tsx
+// src/components/LLMChef/settings/SettingsGitSyncRepos.tsx
 
 import React, { useState, useCallback, useEffect } from "react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
@@ -28,18 +28,18 @@ import {
   AlertCircleIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { SyncRepo } from "@/types/litechat/sync";
+import type { SyncRepo } from "@/types/llmchef/sync";
 import { useShallow } from "zustand/react/shallow";
 import { useConversationStore } from "@/store/conversation.store";
 import { useSettingsStore } from "@/store/settings.store";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { conversationEvent } from "@/types/litechat/events/conversation.events";
-import { syncEvent } from "@/types/litechat/events/sync.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+import { syncEvent } from "@/types/llmchef/events/sync.events";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
-import { FieldMetaMessages } from "@/components/LiteChat/common/form-fields/FieldMetaMessages";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
+import { FieldMetaMessages } from "@/components/LLMChef/common/form-fields/FieldMetaMessages";
 import { BulkSyncControl } from "@/controls/components/git-sync/BulkSyncControl";
 import { BulkSyncService } from "@/services/bulk-sync.service";
 import { useTranslation } from "react-i18next";

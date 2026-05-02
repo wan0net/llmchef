@@ -1,7 +1,7 @@
 // src/services/event-action-coordinator.service.ts
 // FULL FILE
-import { emitter } from "@/lib/litechat/event-emitter";
-import type { RegisteredActionHandler } from "@/types/litechat/control";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import type { RegisteredActionHandler } from "@/types/llmchef/control";
 
 // Import ALL store hooks
 import { useSettingsStore } from "@/store/settings.store";

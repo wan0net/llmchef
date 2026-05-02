@@ -6,7 +6,7 @@ The workflow engine in LLMChef enables multi-step, event-driven orchestration of
 ---
 
 ## Workflow Template Structure
-- **WorkflowTemplate**: (see `src/types/litechat/workflow.ts`)
+- **WorkflowTemplate**: (see `src/types/llmchef/workflow.ts`)
   - `id`, `name`, `description`, `steps[]`, `triggerPrompt`, `triggerType`, `triggerRef`, etc.
   - Each step: `WorkflowStep` (type, name, templateId, transformMappings, parallelOn, subWorkflowTemplateId, etc.)
 
@@ -41,7 +41,7 @@ The workflow engine in LLMChef enables multi-step, event-driven orchestration of
 
 ## Flow Visualization
 - **Flow content**: Embedded in stream buffer as markdown+flow block
-- **Flow generator**: `WorkflowFlowGenerator` (see `src/lib/litechat/workflow-flow-generator.ts`)
+- **Flow generator**: `WorkflowFlowGenerator` (see `src/lib/llmchef/workflow-flow-generator.ts`)
 - **Status updates**: `_updateStepStatusInFlow`, `_addStepOutputToFlow`, `_finalizeFlowVisualization`
 
 ---
@@ -57,7 +57,7 @@ The workflow engine in LLMChef enables multi-step, event-driven orchestration of
 ---
 
 ## Event Integration
-- **Events**: `workflowEvent.*`, `interactionEvent.*` (see `src/types/litechat/events/`)
+- **Events**: `workflowEvent.*`, `interactionEvent.*` (see `src/types/llmchef/events/`)
 - **Stores**: `useWorkflowStore`, `useInteractionStore`, etc. (see `src/store/`)
 - **UI**: Workflow builder, visualizer, and step config components (see `src/controls/components/workflow/`)
 
@@ -74,6 +74,6 @@ The workflow engine in LLMChef enables multi-step, event-driven orchestration of
 
 ## Key Files
 - Engine: `src/services/workflow.service.ts`
-- Types: `src/types/litechat/workflow.ts`, `src/types/litechat/prompt-template.ts`, `src/types/litechat/prompt.ts`
-- Flow: `src/lib/litechat/workflow-flow-generator.ts`
+- Types: `src/types/llmchef/workflow.ts`, `src/types/llmchef/prompt-template.ts`, `src/types/llmchef/prompt.ts`
+- Flow: `src/lib/llmchef/workflow-flow-generator.ts`
 - UI: `src/controls/components/workflow/`, `src/controls/modules/WorkflowBlockRendererModule.ts`

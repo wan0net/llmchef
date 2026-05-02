@@ -7,18 +7,18 @@ import {
   VfsFile,
   VfsDirectory,
   FileSystemEntry,
-} from "@/types/litechat/vfs";
-import { normalizePath, buildPath } from "@/lib/litechat/file-manager-utils";
+} from "@/types/llmchef/vfs";
+import { normalizePath, buildPath } from "@/lib/llmchef/file-manager-utils";
 import { toast } from "sonner";
 import { fs } from "@zenfs/core";
-import * as VfsOps from "@/lib/litechat/vfs-operations";
+import * as VfsOps from "@/lib/llmchef/vfs-operations";
 import { nanoid } from "nanoid";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { vfsEvent, VfsEventPayloads } from "@/types/litechat/events/vfs.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { vfsEvent, VfsEventPayloads } from "@/types/llmchef/events/vfs.events";
 import type {
   RegisteredActionHandler,
   ActionHandler,
-} from "@/types/litechat/control";
+} from "@/types/llmchef/control";
 
 interface VfsState {
   nodes: Record<string, VfsNode>;

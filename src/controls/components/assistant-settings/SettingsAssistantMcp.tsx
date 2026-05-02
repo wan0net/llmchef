@@ -16,7 +16,7 @@ import { z } from "zod";
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout";
+} from "@/components/LLMChef/common/TabbedLayout";
 import {
   Table,
   TableBody,

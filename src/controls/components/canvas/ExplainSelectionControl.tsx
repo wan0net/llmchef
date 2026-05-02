@@ -1,12 +1,12 @@
 // src/controls/components/canvas/ExplainSelectionControl.tsx
 import React from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { InfoIcon } from "lucide-react";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { canvasEvent } from "@/types/litechat/events/canvas.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { canvasEvent } from "@/types/llmchef/events/canvas.events";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { SelectionControlContext } from "@/types/litechat/canvas/control";
+import type { SelectionControlContext } from "@/types/llmchef/canvas/control";
 
 interface ExplainSelectionControlProps {
   context: SelectionControlContext;

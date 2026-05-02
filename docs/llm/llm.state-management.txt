@@ -54,4 +54,4 @@ export const useExampleStore = create(
 ## For LLMs: To reason about or extend state management, reference:
 - `src/store/` (for all stores)
 - `src/services/event-action-coordinator.service.ts`
-- `src/types/litechat/events/` (for event domains)
+- `src/types/llmchef/events/` (for event domains)

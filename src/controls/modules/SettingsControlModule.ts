@@ -1,9 +1,9 @@
 // src/controls/modules/SettingsControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { uiEvent } from "@/types/litechat/events/ui.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
 import { SettingsTriggerComponent } from "@/controls/components/settings/SettingsTriggerComponent";
 import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 
@@ -20,9 +20,9 @@ export class SettingsControlModule implements ControlModule {
   public readonly modalId = "settingsModal"; // Unique ID for the settings modal
   private unregisterChatControlCallback: (() => void) | null = null;
   private unregisterModalProviderCallback: (() => void) | null = null;
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
   }
 
@@ -40,7 +40,7 @@ export class SettingsControlModule implements ControlModule {
     });
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (
       this.unregisterChatControlCallback &&

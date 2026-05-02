@@ -426,12 +426,12 @@ const processedPrompt = await ConversationService.processPrompt(
 
 ## Modding API
 
-### LiteChatModApi Interface
+### LLMChefModApi Interface
 
 The modding API provides controlled access to LLMChef's functionality.
 
 ```typescript
-interface LiteChatModApi {
+interface LLMChefModApi {
   // Event system access
   eventEmitter: EventEmitter<ModEventPayloadMap>
 
@@ -474,7 +474,7 @@ interface LiteChatModApi {
 ```typescript
 // Example mod implementation
 class ExampleMod {
-  constructor(private api: LiteChatModApi) {}
+  constructor(private api: LLMChefModApi) {}
 
   async initialize() {
     // Register a chat control
@@ -510,7 +510,7 @@ class ExampleMod {
 }
 
 // Mod registration
-export default function createMod(api: LiteChatModApi) {
+export default function createMod(api: LLMChefModApi) {
   return new ExampleMod(api)
 }
 ```
@@ -591,7 +591,7 @@ const projectId = generateId('project')
 ### Type Guards
 
 ```typescript
-import { isVfsFile, isVfsDirectory } from '@/types/litechat/vfs'
+import { isVfsFile, isVfsDirectory } from '@/types/llmchef/vfs'
 
 // VFS node type checking
 if (isVfsFile(node)) {

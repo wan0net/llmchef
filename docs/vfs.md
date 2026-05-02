@@ -8,12 +8,12 @@ LLMChef implements a browser-based Virtual File System using ZenFS with IndexedD
 The VFS is built on ZenFS (`@zenfs/core`) with IndexedDB backend (`@zenfs/dom`):
 
 ```typescript
-// VFS initialization in src/lib/litechat/vfs-operations.ts
+// VFS initialization in src/lib/llmchef/vfs-operations.ts
 export const initializeFsOp = async (vfsKey: string): Promise<typeof fs | null> => {
   try {
     const vfsConf = {
       backend: IndexedDB,
-      name: `litechat_vfs_${vfsKey}`,
+      name: `llmchef_vfs_${vfsKey}`,
     };
     await configureSingle(vfsConf);
     return fs;
@@ -84,7 +84,7 @@ type VfsNode = VfsFile | VfsDirectory;
 The main LLMChef component manages VFS context switching based on UI state:
 
 ```typescript
-// In LiteChat.tsx - Context switching logic
+// In LLMChef.tsx - Context switching logic
 useEffect(() => {
   // Determine context based on selected item
   let currentProjectId: string | null = null;
@@ -114,7 +114,7 @@ useEffect(() => {
 ## File Operations
 
 ### Core VFS Operations
-All file operations are implemented in [`src/lib/litechat/vfs-operations.ts`](../src/lib/litechat/vfs-operations.ts):
+All file operations are implemented in [`src/lib/llmchef/vfs-operations.ts`](../src/lib/llmchef/vfs-operations.ts):
 
 #### Directory Operations
 ```typescript
@@ -268,7 +268,7 @@ createDirectory: async (parentId: string | null, name: string) => {
 ## File Management UI
 
 ### FileManager Components
-The VFS UI is implemented in [`src/components/LiteChat/file-manager/`](../src/components/LiteChat/file-manager/):
+The VFS UI is implemented in [`src/components/LLMChef/file-manager/`](../src/components/LLMChef/file-manager/):
 
 #### Core Components
 - **FileManager.tsx**: Main container managing VFS state and operations
@@ -282,7 +282,7 @@ VFS integrates with the control system through:
 ```typescript
 // VfsControlModule registers file selection UI
 export class VfsControlModule implements ControlModule {
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallbacks.push(
       modApi.registerPromptControl({
         id: this.id,

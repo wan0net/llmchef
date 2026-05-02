@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/AddProviderForm.tsx
+// src/components/LLMChef/settings/AddProviderForm.tsx
 // FULL FILE
 import React, { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
@@ -6,13 +6,13 @@ import type {
   DbProviderConfig,
   DbProviderType,
   DbApiKey,
-} from "@/types/litechat/provider";
+} from "@/types/llmchef/provider";
 import {
   supportsModelFetching,
   PROVIDER_TYPES,
   requiresApiKey,
   DEFAULT_PROVIDER_TYPE,
-} from "@/lib/litechat/provider-helpers";
+} from "@/lib/llmchef/provider-helpers";
 import { ProviderConfigForm, ProviderFormData } from "./ProviderConfigForm"; // Import the shared form
 
 interface AddProviderFormProps {

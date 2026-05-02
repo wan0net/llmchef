@@ -23,7 +23,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getSyncIndicator } from "@/controls/components/conversation-list/SyncIndicator";
-import type { SyncStatus } from "@/types/litechat/sync";
+import type { SyncStatus } from "@/types/llmchef/sync";
 import type { GitSyncControlModule } from "@/controls/modules/GitSyncControlModule";
 import { useTranslation } from "react-i18next";
 

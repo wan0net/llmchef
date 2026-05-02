@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import type { WorkflowRun, WorkflowRunStatus } from "@/types/litechat/workflow";
-import type { RegisteredActionHandler } from "@/types/litechat/control";
-import { workflowEvent, type WorkflowEventPayloads } from "@/types/litechat/events/workflow.events";
-// import { emitter } from "@/lib/litechat/event-emitter";
+import type { WorkflowRun, WorkflowRunStatus } from "@/types/llmchef/workflow";
+import type { RegisteredActionHandler } from "@/types/llmchef/control";
+import { workflowEvent, type WorkflowEventPayloads } from "@/types/llmchef/events/workflow.events";
+// import { emitter } from "@/lib/llmchef/event-emitter";
 
 export interface WorkflowState {
   activeRun: WorkflowRun | null;

@@ -3,12 +3,12 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { nanoid } from "nanoid";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import {
   inputEvent,
   InputEventPayloads,
-} from "@/types/litechat/events/input.events";
-import type { RegisteredActionHandler } from "@/types/litechat/control";
+} from "@/types/llmchef/events/input.events";
+import type { RegisteredActionHandler } from "@/types/llmchef/control";
 
 // Define a unified structure for attached file metadata
 export interface AttachedFileMetadata {

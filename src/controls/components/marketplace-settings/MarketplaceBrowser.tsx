@@ -3,8 +3,8 @@
 import React from "react";
 import { useMarketplaceStore } from "@/store/marketplace.store";
 import { useShallow } from "zustand/react/shallow";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { marketplaceEvent } from "@/types/litechat/events/marketplace.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { marketplaceEvent } from "@/types/llmchef/events/marketplace.events";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +17,7 @@ import {
 import { Search, Filter, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { MarketplaceItemCard } from "./MarketplaceItemCard";
-import type { MarketplaceItemType } from "@/types/litechat/marketplace";
+import type { MarketplaceItemType } from "@/types/llmchef/marketplace";
 
 export const MarketplaceBrowser: React.FC = () => {
   const { t } = useTranslation('settings');

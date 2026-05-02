@@ -43,11 +43,11 @@ src/
 │   │   └── example/        # Example modules for reference
 │   └── components/         # Module-specific components
 ├── hooks/                  # React hooks
-│   ├── litechat/          # LLMChef-specific hooks
+│   ├── llmchef/          # LLMChef-specific hooks
 │   ├── use-formedible.tsx # TanStack Form abstraction (DO NOT USE react-hook-form)
 │   └── use-prompt-compilation.tsx # Template compilation hook
 ├── lib/                    # Core libraries and utilities
-│   └── litechat/          # Core LLMChef functionality
+│   └── llmchef/          # Core LLMChef functionality
 ├── modding/               # Modding system implementation
 ├── services/              # Business logic services
 │   ├── ai.service.ts      # AI integration and streaming
@@ -56,7 +56,7 @@ src/
 │   └── conversation.service.ts # Conversation management
 ├── store/                 # Zustand state stores
 ├── types/                 # TypeScript type definitions
-│   └── litechat/         # LLMChef-specific types
+│   └── llmchef/         # LLMChef-specific types
 │       ├── events/        # Event definitions
 │       ├── canvas/        # Canvas and block renderer types
 │       └── middleware/    # Middleware types
@@ -74,9 +74,9 @@ The Control Module System is LLMChef's core architectural pattern. Each UI featu
 interface ControlModule {
   readonly id: string;
   readonly dependencies?: string[];
-  initialize(modApi: LiteChatModApi): Promise<void>;
-  register(modApi: LiteChatModApi): void;
-  destroy(modApi: LiteChatModApi): void;
+  initialize(modApi: LLMChefModApi): Promise<void>;
+  register(modApi: LLMChefModApi): void;
+  destroy(modApi: LLMChefModApi): void;
 }
 ```
 
@@ -96,7 +96,7 @@ Register settings tabs in the main settings interface:
 export class GeneralSettingsModule implements ControlModule {
   readonly id = "core-settings-general";
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallback = modApi.registerSettingsTab({
       id: "general",
       title: "General",
@@ -115,7 +115,7 @@ export class ParameterControlModule implements ControlModule {
   private turnEnabled = false;
   private temperature: number | null = null;
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallback = modApi.registerPromptControl({
       id: this.id,
       triggerRenderer: () => React.createElement(ParameterControlTrigger, { module: this }),
@@ -137,7 +137,7 @@ Add UI to chat areas (sidebar, header, modals):
 
 ```typescript
 export class ConversationListControlModule implements ControlModule {
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallback = modApi.registerChatControl({
       id: this.id,
       panel: "sidebar",
@@ -153,7 +153,7 @@ Register AI tools available during conversations:
 
 ```typescript
 export class VfsToolsModule implements ControlModule {
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallbacks.push(
       modApi.registerTool("vfs_read_file", readFileToolDefinition, readFileImplementation),
       modApi.registerTool("vfs_write_file", writeFileToolDefinition, writeFileImplementation),
@@ -169,7 +169,7 @@ Handle interactions within chat canvas:
 
 ```typescript
 export class CopyActionControlModule implements ControlModule {
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallback = modApi.registerCanvasControl({
       id: this.id,
       type: "interaction",
@@ -190,7 +190,7 @@ Extend code block rendering with specialized visualizations:
 
 ```typescript
 export class MermaidBlockRendererModule implements ControlModule {
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     const mermaidRenderer: BlockRenderer = {
       id: this.id,
       supportedLanguages: ["mermaid"],
@@ -279,7 +279,7 @@ interface BlockRendererContext {
 export class CustomRendererModule implements ControlModule {
   readonly id = "my-custom-renderer";
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     const customRenderer: BlockRenderer = {
       id: this.id,
       supportedLanguages: ["mylang", "custom"],
@@ -307,7 +307,7 @@ Central event bus using mitt:
 
 ```typescript
 import mitt, { type Emitter, type EventType } from "mitt";
-import type { ModEventPayloadMap } from "@/types/litechat/modding";
+import type { ModEventPayloadMap } from "@/types/llmchef/modding";
 
 export const emitter: Emitter<ModEventPayloadMap & Record<EventType, any>> =
   mitt<ModEventPayloadMap & Record<EventType, any>>();
@@ -543,7 +543,7 @@ VFS operates with different contexts:
 - **Orphan VFS**: `vfsKey = "orphan"` - For conversations without projects
 - **Sync VFS**: `vfsKey = "sync_repos"` - For Git repositories
 
-### VFS Operations (`src/lib/litechat/vfs-operations.ts`)
+### VFS Operations (`src/lib/llmchef/vfs-operations.ts`)
 
 Core filesystem operations:
 
@@ -552,7 +552,7 @@ Core filesystem operations:
 export const initializeFsOp = async (vfsKey: string): Promise<typeof fs | null> => {
   const vfsConf = {
     backend: IndexedDB,
-    name: `litechat_vfs_${vfsKey}`,
+    name: `llmchef_vfs_${vfsKey}`,
   };
   await configureSingle(vfsConf);
   return fs;
@@ -768,7 +768,7 @@ this.unregisterCallback = modApi.registerTool(
 
 LLMChef provides browser-based Git operations using isomorphic-git with comprehensive sync capabilities.
 
-### Git Operations (`src/lib/litechat/vfs-git-operations.ts`)
+### Git Operations (`src/lib/llmchef/vfs-git-operations.ts`)
 
 ```typescript
 // Clone repository with authentication
@@ -798,7 +798,7 @@ export const commitOp = async (
     message,
     author: {
       name: options?.author?.name ?? "LLMChef User",
-      email: options?.author?.email ?? "user@litechat.local",
+      email: options?.author?.email ?? "user@llmchef.local",
     },
   });
 };
@@ -810,7 +810,7 @@ Conversations are synced as JSON files in repositories:
 
 ```
 repository/
-├── .litechat/
+├── .llmchef/
 │   └── conversations/
 │       ├── conv-123.json
 │       ├── conv-456.json
@@ -823,7 +823,7 @@ Git operations available as AI tools through GitToolsModule:
 
 ```typescript
 export class GitToolsModule implements ControlModule {
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.unregisterCallbacks.push(
       modApi.registerTool("git_status", gitStatusTool, gitStatusImplementation),
       modApi.registerTool("git_add", gitAddTool, gitAddImplementation),
@@ -908,12 +908,12 @@ useEffect(() => {
 
 LLMChef provides a secure modding system allowing external extensions while maintaining system integrity.
 
-### LiteChatModApi Interface
+### LLMChefModApi Interface
 
 Controlled API for mod interactions:
 
 ```typescript
-interface LiteChatModApi {
+interface LLMChefModApi {
   readonly modId: string;
   readonly modName: string;
 
@@ -956,7 +956,7 @@ interface LiteChatModApi {
 ### Mod Creation Pattern
 
 ```typescript
-function createMyMod(modApi: LiteChatModApi) {
+function createMyMod(modApi: LLMChefModApi) {
   let internalState = { enabled: true };
 
   // Register components with proper cleanup
@@ -994,9 +994,9 @@ export class MyControlModule implements ControlModule {
 
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
 
     // Subscribe to events for state management
@@ -1006,7 +1006,7 @@ export class MyControlModule implements ControlModule {
     this.eventUnsubscribers.push(unsubscribe);
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;
@@ -1044,7 +1044,7 @@ const controlModulesToRegister: ControlModuleConstructor[] = [
 
 1. **Define Event Names**:
 ```typescript
-// src/types/litechat/events/my-domain.events.ts
+// src/types/llmchef/events/my-domain.events.ts
 export const myDomainEvent = {
   dataChanged: "my-domain.data.changed",
   loadDataRequest: "my-domain.load.data.request",
@@ -1061,7 +1061,7 @@ export interface MyDomainEventPayloads {
 
 3. **Update ModEventPayloadMap**:
 ```typescript
-// src/types/litechat/modding.ts
+// src/types/llmchef/modding.ts
 export interface ModEventPayloadMap extends
   // ... existing payloads
   MyDomainEventPayloads

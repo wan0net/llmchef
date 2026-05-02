@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { LandPlot } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -26,11 +26,11 @@ import {
   Image as ImageIcon,
   Palette,
 } from "lucide-react";
-import type { ModelListItem } from "@/types/litechat/provider";
+import type { ModelListItem } from "@/types/llmchef/provider";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useShallow } from "zustand/react/shallow";
 import { ModelSelector } from "@/controls/components/global-model-selector/ModelSelector";
-import { TabbedLayout } from "@/components/LiteChat/common/TabbedLayout";
+import { TabbedLayout } from "@/components/LLMChef/common/TabbedLayout";
 import { nanoid } from "nanoid";
 
 type CapabilityFilter =

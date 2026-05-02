@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-LiteChat currently has **architectural debt** in how it handles "composite interactions" - interactions that consist of a main interaction plus multiple child interactions:
+LLMChef currently has **architectural debt** in how it handles "composite interactions" - interactions that consist of a main interaction plus multiple child interactions:
 
 ### Current Problematic Patterns
 
@@ -444,4 +444,4 @@ This refactor resolves multiple architectural debt issues:
 - **Consistent UX**: Unified design across all composite types
 - **Feature Completeness**: Full workflow visualization, race progress, pause/resume
 
-This comprehensive refactor provides the proper foundation for composite interactions while resolving existing architectural debt and setting up LiteChat for future extensibility. 
+This comprehensive refactor provides the proper foundation for composite interactions while resolving existing architectural debt and setting up LLMChef for future extensibility.

@@ -1,7 +1,7 @@
 import React from 'react';
-import type { WorkflowStep } from '@/types/litechat/workflow';
-import type { PromptTemplate } from '@/types/litechat/prompt-template';
-import type { ModelListItem } from '@/types/litechat/provider';
+import type { WorkflowStep } from '@/types/llmchef/workflow';
+import type { PromptTemplate } from '@/types/llmchef/prompt-template';
+import type { ModelListItem } from '@/types/llmchef/provider';
 
 export interface BaseStepConfigProps {
   step: WorkflowStep;

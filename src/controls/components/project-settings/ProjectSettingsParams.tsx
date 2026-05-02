@@ -1,4 +1,4 @@
-// src/components/LiteChat/project-settings/ProjectSettingsParams.tsx
+// src/components/LLMChef/project-settings/ProjectSettingsParams.tsx
 // REFACTORED to render fields for a parent TanStack Form - Addressing linter errors
 
 import React from "react";

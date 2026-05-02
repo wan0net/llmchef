@@ -1,20 +1,20 @@
 // src/controls/modules/AutoTitleControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
 import {
   interactionEvent,
-} from "@/types/litechat/events/interaction.events";
-import { uiEvent } from "@/types/litechat/events/ui.events";
-import { settingsEvent } from "@/types/litechat/events/settings.events";
+} from "@/types/llmchef/events/interaction.events";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
+import { settingsEvent } from "@/types/llmchef/events/settings.events";
 import { AutoTitleControlTrigger } from "@/controls/components/auto-title/AutoTitleControlTrigger";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { useConversationStore } from "@/store/conversation.store";
 import { InteractionService } from "@/services/interaction.service";
 import { nanoid } from "nanoid";
-import type { PromptObject, PromptTurnObject } from "@/types/litechat/prompt";
+import type { PromptObject, PromptTurnObject } from "@/types/llmchef/prompt";
 import { toast } from "sonner";
 
 export class AutoTitleControlModule implements ControlModule {
@@ -31,7 +31,7 @@ export class AutoTitleControlModule implements ControlModule {
   private isUpdatingTitle = false;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.turnAutoTitleEnabled = false;
     this.isStreaming = useInteractionStore.getState().status === "streaming";
     this.globalAutoTitleEnabled = useSettingsStore.getState().autoTitleEnabled;
@@ -261,7 +261,7 @@ export class AutoTitleControlModule implements ControlModule {
     }
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

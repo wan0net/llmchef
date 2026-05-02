@@ -4,7 +4,7 @@ import type {
   TriggerParseResult, 
   TriggerExecutionContext, 
   TriggerNamespace 
-} from '@/types/litechat/text-triggers';
+} from '@/types/llmchef/text-triggers';
 import { useControlRegistryStore } from '@/store/control.store';
 
 export class TextTriggerParserService {

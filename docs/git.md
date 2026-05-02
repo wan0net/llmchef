@@ -7,7 +7,7 @@ LLMChef provides comprehensive Git integration enabling version control workflow
 ### Core Components
 
 - **Git Tools Module** ([`src/controls/modules/GitToolsModule.ts`](../src/controls/modules/GitToolsModule.ts)) - AI tools for Git operations
-- **VFS Git Operations** ([`src/lib/litechat/vfs-git-operations.ts`](../src/lib/litechat/vfs-git-operations.ts)) - Git operations on VFS
+- **VFS Git Operations** ([`src/lib/llmchef/vfs-git-operations.ts`](../src/lib/llmchef/vfs-git-operations.ts)) - Git operations on VFS
 - **Conversation Sync** - Links conversations to Git repositories
 - **Sync VFS** - Dedicated `sync_repos` Virtual File System for Git operations
 
@@ -100,7 +100,7 @@ Conversations are synchronized as JSON files within the repository:
 
 ```
 repository/
-├── .litechat/
+├── .llmchef/
 │   └── conversations/
 │       ├── conv-123.json
 │       ├── conv-456.json

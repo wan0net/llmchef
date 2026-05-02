@@ -1,13 +1,13 @@
-I'll give you a thorough, honest assessment of LiteChat. Let me first examine the current state of your project comprehensively.
+I'll give you a thorough, honest assessment of LLMChef. Let me first examine the current state of your project comprehensively.
 Read file: README.md
 Read file: package.json
-Read file: src/components/LiteChat/LiteChat.tsx
+Read file: src/components/LLMChef/LLMChef.tsx
 Ran tool
 Search files...
 Ran tool
-Now I'll provide you with a comprehensive, brutally honest assessment of LiteChat:
+Now I'll provide you with a comprehensive, brutally honest assessment of LLMChef:
 
-## Brutally Honest Assessment of LiteChat
+## Brutally Honest Assessment of LLMChef
 
 ### 🎯 **Overall Rating: 8/10** - Impressive but needs strategic focus
 
@@ -55,7 +55,7 @@ Looking at your features vs. competitors:
 - **"Git integration"** - Niche feature, limited appeal
 - **"Modding system"** - Complex, appeals to <1% of users
 
-**Missing killer feature**: What makes someone choose LiteChat over ChatGPT's web interface?
+**Missing killer feature**: What makes someone choose LLMChef over ChatGPT's web interface?
 
 ### **3. User Experience Gaps (6/10)**
 - **Complex onboarding** - Too many concepts (projects, rules, tags, VFS, etc.)

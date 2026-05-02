@@ -1,4 +1,4 @@
-Absolutely! Here’s a brutally honest, constructive review of your LiteChat project, based on the codebase, architecture, and documentation I’ve seen. I’ll cover strengths, weaknesses, and actionable suggestions for both code quality and product direction.
+Absolutely! Here’s a brutally honest, constructive review of your LLMChef project, based on the codebase, architecture, and documentation I’ve seen. I’ll cover strengths, weaknesses, and actionable suggestions for both code quality and product direction.
 
 ---
 

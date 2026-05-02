@@ -1,18 +1,18 @@
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import {
   workflowEvent,
   type WorkflowEventPayloads,
   createWorkflowEventMetadata,
-} from "@/types/litechat/events/workflow.events";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import type { Interaction } from "@/types/litechat/interaction";
+} from "@/types/llmchef/events/workflow.events";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import type { Interaction } from "@/types/llmchef/interaction";
 import { useWorkflowStore } from "@/store/workflow.store";
-import type { WorkflowRun, WorkflowStep, WorkflowTemplate } from "@/types/litechat/workflow";
-import { WorkflowError } from "@/types/litechat/workflow";
+import type { WorkflowRun, WorkflowStep, WorkflowTemplate } from "@/types/llmchef/workflow";
+import { WorkflowError } from "@/types/llmchef/workflow";
 import { nanoid } from "nanoid";
-import { compilePromptTemplate } from "@/lib/litechat/prompt-util";
-import type { CompiledPrompt } from "@/types/litechat/prompt-template";
-import type { PromptTurnObject, PromptObject } from "@/types/litechat/prompt";
+import { compilePromptTemplate } from "@/lib/llmchef/prompt-util";
+import type { CompiledPrompt } from "@/types/llmchef/prompt-template";
+import type { PromptTurnObject, PromptObject } from "@/types/llmchef/prompt";
 import { useInteractionStore } from "@/store/interaction.store";
 import { PersistenceService } from "./persistence.service";
 import { usePromptStateStore } from "@/store/prompt.store";
@@ -22,11 +22,11 @@ import { useProjectStore } from "@/store/project.store";
 import { useProviderStore } from "@/store/provider.store";
 import { useControlRegistryStore } from "@/store/control.store";
 import { useConversationStore } from "@/store/conversation.store";
-import { getContextSnapshot } from "@/lib/litechat/ai-helpers";
-import { WorkflowFlowGenerator } from "@/lib/litechat/workflow-flow-generator";
-import type { StepStatus } from "@/types/litechat/flow";
+import { getContextSnapshot } from "@/lib/llmchef/ai-helpers";
+import { WorkflowFlowGenerator } from "@/lib/llmchef/workflow-flow-generator";
+import type { StepStatus } from "@/types/llmchef/flow";
 import { CodeExecutionService } from "./code-execution.service";
-import type { PromptTemplateType } from "@/types/litechat/prompt-template";
+import type { PromptTemplateType } from "@/types/llmchef/prompt-template";
 
 // Flow content manipulation types for better type safety
 interface FlowContentUpdate {

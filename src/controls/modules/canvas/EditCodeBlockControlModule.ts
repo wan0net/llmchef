@@ -1,14 +1,14 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
+import { type ControlModule } from "@/types/llmchef/control";
 import type {
-  LiteChatModApi,
+  LLMChefModApi,
   CanvasControlRenderContext,
-} from "@/types/litechat/modding";
+} from "@/types/llmchef/modding";
 import { EditCodeBlockControl } from "@/controls/components/canvas/codeblock/EditCodeBlockControl";
-import { canvasEvent } from "@/types/litechat/events/canvas.events";
+import { canvasEvent } from "@/types/llmchef/events/canvas.events";
 import { useInteractionStore } from "@/store/interaction.store";
 import { nanoid } from "nanoid";
-import type { Interaction } from "@/types/litechat/interaction";
+import type { Interaction } from "@/types/llmchef/interaction";
 import { PersistenceService } from "@/services/persistence.service";
 import MarkdownIt from "markdown-it";
 
@@ -24,7 +24,7 @@ export class EditCodeBlockControlModule implements ControlModule {
 
   private eventUnsubscribers: (() => void)[] = [];
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     // Listen for edit code block requests
     const unsubEditCodeBlock = modApi.on(
       canvasEvent.editCodeBlockRequest,
@@ -298,7 +298,7 @@ export class EditCodeBlockControlModule implements ControlModule {
     }
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     modApi.registerCanvasControl({
       id: this.id,
       type: "codeblock",

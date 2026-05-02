@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { PersistenceService } from "@/services/persistence.service";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { mcpEvent } from "@/types/litechat/events/mcp.events";
-import type { RegisteredActionHandler } from "@/types/litechat/control";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { mcpEvent } from "@/types/llmchef/events/mcp.events";
+import type { RegisteredActionHandler } from "@/types/llmchef/control";
 
 export interface McpServerConfig {
   id: string;

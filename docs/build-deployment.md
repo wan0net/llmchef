@@ -512,7 +512,7 @@ VITE_USER_CONFIG_FILE=prod-config.json bin/builder --release v1.0.0 --docker-rep
 version: '3.8'
 
 services:
-  litechat:
+  llmchef:
     build: .
     ports:
       - "${LLMCHEF_PORT:-8080}:3000"
@@ -523,7 +523,7 @@ services:
       - mcp-bridge
 
   # Alternative: Use pre-built image from Docker Hub
-  # litechat-hub:
+  # llmchef-hub:
   #   image: myuser/llmchef:latest
   #   ports:
   #     - "${LLMCHEF_PORT:-8080}:3000"
@@ -561,7 +561,7 @@ services:
       - ./nginx/proxy.conf:/etc/nginx/conf.d/default.conf
       - ./ssl:/etc/nginx/ssl
     depends_on:
-      - litechat
+      - llmchef
     restart: unless-stopped
 ```
 

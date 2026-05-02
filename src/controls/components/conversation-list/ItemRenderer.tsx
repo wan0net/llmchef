@@ -20,15 +20,15 @@ import {
   FolderInputIcon,
 } from "lucide-react";
 import { getSyncIndicator } from "@/controls/components/conversation-list/SyncIndicator";
-import type { SidebarItemType } from "@/types/litechat/chat";
-import type { SyncStatus } from "@/types/litechat/sync";
-import type { Project } from "@/types/litechat/project";
-import type { Conversation } from "@/types/litechat/chat";
+import type { SidebarItemType } from "@/types/llmchef/chat";
+import type { SyncStatus } from "@/types/llmchef/sync";
+import type { Project } from "@/types/llmchef/project";
+import type { Conversation } from "@/types/llmchef/chat";
 import { SidebarItem } from "@/store/conversation.store";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { toast } from "sonner";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { uiEvent } from "@/types/litechat/events/ui.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
 import { useTranslation } from "react-i18next";
 import {
   Popover,

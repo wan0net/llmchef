@@ -27,11 +27,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFormedible } from "@/hooks/use-formedible";
-import type { PromptTemplate, PromptFormData } from "@/types/litechat/prompt-template";
-import LiteChatIcon from "@/components/LiteChat/common/icons/LiteChatIcon";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { uiEvent } from "@/types/litechat/events/ui.events";
-import { parseVariableValue } from "@/lib/litechat/prompt-util";
+import type { PromptTemplate, PromptFormData } from "@/types/llmchef/prompt-template";
+import LLMChefIcon from "@/components/LLMChef/common/icons/LLMChefIcon";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
+import { parseVariableValue } from "@/lib/llmchef/prompt-util";
 
 // Forward declare the module type to avoid circular import issues
 interface AgentControlModule {
@@ -668,7 +668,7 @@ export const AgentControl: React.FC<AgentControlProps> = ({ module }) => {
               className="h-8 w-8 p-0"
               title={hasActiveAgent ? `Active Agent: ${currentAgent?.name || 'Unknown'}` : "Select Agent"}
             >
-              <LiteChatIcon className="h-4 w-4" />
+              <LLMChefIcon className="h-4 w-4" />
             </Button>
           </HoverCardTrigger>
           <HoverCardContent className="w-80 p-0" align="start">
@@ -746,7 +746,7 @@ export const AgentControl: React.FC<AgentControlProps> = ({ module }) => {
           className="h-8 w-8 p-0"
           title={hasActiveAgent ? `Active Agent: ${currentAgent?.name || 'Unknown'}` : "Select Agent"}
         >
-          <LiteChatIcon className="h-4 w-4" />
+          <LLMChefIcon className="h-4 w-4" />
         </Button>
       )}
 

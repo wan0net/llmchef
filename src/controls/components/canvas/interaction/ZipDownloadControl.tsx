@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo } from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { ArchiveIcon } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
-import { useMarkdownParser, UniversalBlockData } from "@/lib/litechat/useMarkdownParser";
-import type { CanvasControlRenderContext } from "@/types/litechat/canvas/control";
+import { useMarkdownParser, UniversalBlockData } from "@/lib/llmchef/useMarkdownParser";
+import type { CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 import { useTranslation } from "react-i18next";
 
 interface ZipDownloadControlProps {

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X, Pen } from "lucide-react";
-import type { PromptVariable } from "@/types/litechat/prompt-template";
+import type { PromptVariable } from "@/types/llmchef/prompt-template";
 
 interface VariableManagerProps {
   variables: PromptVariable[];

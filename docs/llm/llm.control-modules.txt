@@ -1,21 +1,21 @@
 # LLMChef Control Module System (for LLMs)
 
 ## Core Interfaces & Types
-- **ControlModule interface**: `src/types/litechat/control.ts`
+- **ControlModule interface**: `src/types/llmchef/control.ts`
   - `id: string` — unique module ID
   - `dependencies?: string[]` — optional dependency list
-  - `initialize(modApi: LiteChatModApi): Promise<void>` — async setup, event subscriptions
-  - `register(modApi: LiteChatModApi): void` — register UI/tools/rules
-  - `destroy(modApi: LiteChatModApi): void` — cleanup
+  - `initialize(modApi: LLMChefModApi): Promise<void>` — async setup, event subscriptions
+  - `register(modApi: LLMChefModApi): void` — register UI/tools/rules
+  - `destroy(modApi: LLMChefModApi): void` — cleanup
   - `getTextTriggerNamespaces?(): TriggerNamespace[]` — (optional) for text triggers
 - **ControlModuleConstructor**: class with static `translations` property for i18n
-- **LiteChatModApi**: `src/types/litechat/modding.ts` — API for module registration, event, tool, and rule integration
+- **LLMChefModApi**: `src/types/llmchef/modding.ts` — API for module registration, event, tool, and rule integration
 - **Prompt/Chat/Canvas/Block Controls**: see `ModPromptControl`, `ModChatControl`, `CoreCanvasControlFromTypes`, `BlockRenderer`
 - **Control Rules**: `ModControlRule` (type: "control", alwaysOn, moduleId)
 
 ## Module Registration
 - All modules are registered in strict order in `src/App.tsx` via `controlModulesToRegister: ControlModuleConstructor[]`
-- Initialization and registration handled in `src/components/LiteChat/LiteChat.tsx` via `performFullInitialization`
+- Initialization and registration handled in `src/components/LLMChef/LLMChef.tsx` via `performFullInitialization`
 - Each module must implement the ControlModule interface
 
 ## Module Types
@@ -28,7 +28,7 @@
 
 ## Block Renderer Modules (see `src/controls/modules/`)
 - **All implement ControlModule, register a BlockRenderer, and often a control rule**
-- **BlockRenderer interface**: `src/types/litechat/canvas/block-renderer.ts`
+- **BlockRenderer interface**: `src/types/llmchef/canvas/block-renderer.ts`
   - `id: string`
   - `supportedLanguages?: string[]` (undefined = fallback)
   - `priority?: number` (higher = more specific)
@@ -65,7 +65,7 @@ export class MermaidBlockRendererModule implements ControlModule {
   private unregisterCallback?: () => void;
   private unregisterRuleCallback?: () => void;
   async initialize(): Promise<void> {}
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     const mermaidBlockRenderer: BlockRenderer = {
       id: this.id,
       supportedLanguages: ["mermaid"],
@@ -88,7 +88,7 @@ export class MermaidBlockRendererModule implements ControlModule {
 ```
 
 ## For LLMs: To extend or reason about modules, always reference:
-- `src/types/litechat/control.ts`
-- `src/types/litechat/modding.ts`
+- `src/types/llmchef/control.ts`
+- `src/types/llmchef/modding.ts`
 - `src/controls/modules/` (for module examples)
 - `src/App.tsx` (for registration order)

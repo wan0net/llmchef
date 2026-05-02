@@ -11,7 +11,7 @@ import { z } from "zod";
 import type {
   PromptTemplate,
   PromptVariable,
-} from "@/types/litechat/prompt-template";
+} from "@/types/llmchef/prompt-template";
 import { ToolSelectorForm } from "@/controls/components/tool-selector/ToolSelectorForm";
 import { RulesControlDialogContent } from "@/controls/components/rules/RulesControlDialogContent";
 import { useRulesStore } from "@/store/rules.store";

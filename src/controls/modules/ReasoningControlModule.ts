@@ -1,30 +1,30 @@
 // src/controls/modules/ReasoningControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { promptEvent as promptStateEvent } from "@/types/litechat/events/prompt.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { promptEvent as promptStateEvent } from "@/types/llmchef/events/prompt.events";
 import { ReasoningControlTrigger } from "@/controls/components/reasoning/ReasoningControlTrigger";
 import { useProviderStore } from "@/store/provider.store";
 import { useInteractionStore } from "@/store/interaction.store";
 import { usePromptStateStore } from "@/store/prompt.store";
 import { useControlRegistryStore } from "@/store/control.store";
-import type { TriggerNamespace, TriggerExecutionContext } from "@/types/litechat/text-triggers";
+import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 
 export class ReasoningControlModule implements ControlModule {
   readonly id = "core-reasoning";
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   public reasoningEnabled: boolean | null = null;
   public isStreaming = false;
   public isVisible = true;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.reasoningEnabled = usePromptStateStore.getState().reasoningEnabled;
     this.isStreaming = useInteractionStore.getState().status === "streaming";
@@ -89,7 +89,7 @@ export class ReasoningControlModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

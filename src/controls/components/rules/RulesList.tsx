@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/rules/RulesList.tsx
+// src/components/LLMChef/settings/rules/RulesList.tsx
 // FULL FILE
 import React from "react";
 import {
@@ -12,9 +12,9 @@ import {
 import { Edit2Icon, Trash2Icon, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import type { DbRule } from "@/types/litechat/rules";
+import type { DbRule } from "@/types/llmchef/rules";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 
 interface RulesListProps {
   rules: DbRule[];

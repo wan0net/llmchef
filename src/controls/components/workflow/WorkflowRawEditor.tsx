@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { CodeEditor } from '@/components/LiteChat/common/CodeEditor';
-import type { WorkflowTemplate } from '@/types/litechat/workflow';
+import { CodeEditor } from '@/components/LLMChef/common/CodeEditor';
+import type { WorkflowTemplate } from '@/types/llmchef/workflow';
 import { toast } from 'sonner';
-import { validateWorkflow } from '@/lib/litechat/workflow-validation';
+import { validateWorkflow } from '@/lib/llmchef/workflow-validation';
 
 interface WorkflowRawEditorProps {
   workflow: WorkflowTemplate;

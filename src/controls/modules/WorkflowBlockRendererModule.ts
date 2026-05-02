@@ -1,12 +1,12 @@
-import type { ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
+import type { ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { BlockRenderer, BlockRendererContext } from "@/types/llmchef/canvas/block-renderer";
 import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
 
 const WorkflowBlockRenderer = createLazyBlockRenderer<any>(
   () =>
-    import("@/components/LiteChat/common/WorkflowBlockRenderer").then((module) => ({
+    import("@/components/LLMChef/common/WorkflowBlockRenderer").then((module) => ({
       default: module.WorkflowBlockRenderer,
     })),
   "Loading workflow renderer...",
@@ -197,7 +197,7 @@ export class WorkflowBlockRendererModule implements ControlModule {
     // No initialization needed
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

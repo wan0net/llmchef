@@ -1,7 +1,7 @@
 // src/controls/components/project-settings/ProjectDefaultTagSelector.tsx
 // FULL FILE
 import React, { useState, useMemo } from "react";
-import type { DbTag, DbRule } from "@/types/litechat/rules"; // Import DbRule
+import type { DbTag, DbRule } from "@/types/llmchef/rules"; // Import DbRule
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";

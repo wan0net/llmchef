@@ -1,11 +1,11 @@
 // src/controls/components/canvas/codeblock/CopyCodeBlockControl.tsx
 // FULL FILE
 import React, { useState, useCallback } from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { ClipboardIcon, CheckIcon } from "lucide-react";
 // import { toast } from "sonner"; // Removed, feedback will be handled by event listener or globally
-import { emitter } from "@/lib/litechat/event-emitter"; // Added
-import { canvasEvent } from "@/types/litechat/events/canvas.events"; // Added
+import { emitter } from "@/lib/llmchef/event-emitter"; // Added
+import { canvasEvent } from "@/types/llmchef/events/canvas.events"; // Added
 import { useTranslation } from "react-i18next";
 
 interface CopyCodeBlockControlProps {

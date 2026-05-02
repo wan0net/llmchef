@@ -1,12 +1,12 @@
 // src/controls/modules/ProjectSettingsControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
 import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
-import { uiEvent } from "@/types/litechat/events/ui.events";
-import { rulesEvent } from "@/types/litechat/events/rules.events";
-import type { DbRule, DbTag, DbTagRuleLink } from "@/types/litechat/rules";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
+import { rulesEvent } from "@/types/llmchef/events/rules.events";
+import type { DbRule, DbTag, DbTagRuleLink } from "@/types/llmchef/rules";
 
 const ProjectSettingsModal = createLazyControlComponent<any>(
   () =>
@@ -20,14 +20,14 @@ export class ProjectSettingsControlModule implements ControlModule {
   readonly id = "core-project-settings";
   public readonly modalId = "projectSettingsModal";
   private unregisterModalProviderCallback: (() => void) | null = null;
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
   private eventUnsubscribers: (() => void)[] = [];
 
   private allRules: DbRule[] = [];
   private allTags: DbTag[] = [];
   private tagRuleLinks: { tagId: string; ruleId: string }[] = [];
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
 
     const unsubRules = modApi.on(rulesEvent.dataLoaded, (payload) => {
@@ -70,7 +70,7 @@ export class ProjectSettingsControlModule implements ControlModule {
     });
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterModalProviderCallback) {
       console.warn(`[${this.id}] Modal provider already registered. Skipping.`);

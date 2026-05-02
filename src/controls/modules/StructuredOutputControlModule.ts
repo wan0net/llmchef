@@ -1,10 +1,10 @@
 // src/controls/modules/StructuredOutputControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import { promptEvent as promptStateEvent } from "@/types/litechat/events/prompt.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import { promptEvent as promptStateEvent } from "@/types/llmchef/events/prompt.events";
 import { VisibleStructuredOutputControl } from "@/controls/components/structured-output/VisibleStructuredOutputControl";
 import { useProviderStore } from "@/store/provider.store";
 import { usePromptStateStore } from "@/store/prompt.store";
@@ -13,13 +13,13 @@ export class StructuredOutputControlModule implements ControlModule {
   readonly id = "core-structured-output";
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   public structuredOutputJson: string | null = null;
   public isVisible = true;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.structuredOutputJson =
       usePromptStateStore.getState().structuredOutputJson;
@@ -77,7 +77,7 @@ export class StructuredOutputControlModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

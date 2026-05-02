@@ -1,21 +1,21 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
 import { createLazyControlComponent } from "@/controls/components/LazyControlComponent";
 import { useProviderStore } from "@/store/provider.store";
 import { useInteractionStore } from "@/store/interaction.store";
-import { providerEvent } from "@/types/litechat/events/provider.events";
-import type { ModelListItem } from "@/types/litechat/provider";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
+import type { ModelListItem } from "@/types/llmchef/provider";
 import { InteractionService } from "@/services/interaction.service";
 import { PersistenceService } from "@/services/persistence.service";
 import { toast } from "sonner";
-import type { PromptTurnObject, PromptObject } from "@/types/litechat/prompt";
-import { ModMiddlewareHook } from "@/types/litechat/middleware.types";
-import type { Interaction } from "@/types/litechat/interaction";
+import type { PromptTurnObject, PromptObject } from "@/types/llmchef/prompt";
+import { ModMiddlewareHook } from "@/types/llmchef/middleware.types";
+import type { Interaction } from "@/types/llmchef/interaction";
 
 import { nanoid } from "nanoid";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
 
 const RacePromptControl = createLazyControlComponent<any>(
   () =>
@@ -31,7 +31,7 @@ export class RacePromptControlModule implements ControlModule {
   public readonly id = "race-prompt-control";
   private eventUnsubscribers: (() => void)[] = [];
   // @ts-expect-error meh, do not care laaah
-  private modApi: LiteChatModApi | null = null;
+  private modApi: LLMChefModApi | null = null;
   private notifyComponentUpdate: (() => void) | null = null;
 
   // Race state
@@ -58,7 +58,7 @@ export class RacePromptControlModule implements ControlModule {
   public globallyEnabledModels: ModelListItem[] = [];
   public isLoadingProviders = false;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApi = modApi;
 
     // Get initial provider state
@@ -920,7 +920,7 @@ ${raceResponses}`;
 
 
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     modApi.registerPromptControl({
       id: this.id,
       status: () => "ready",

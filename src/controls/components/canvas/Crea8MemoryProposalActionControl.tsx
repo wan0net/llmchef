@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { useCrea8MemoryStore } from "@/store/crea8-memory.store";
-import type { Interaction } from "@/types/litechat/interaction";
+import type { Interaction } from "@/types/llmchef/interaction";
 import { BookMarkedIcon } from "lucide-react";
 import { toast } from "sonner";
 

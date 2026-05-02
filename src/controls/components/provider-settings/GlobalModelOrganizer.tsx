@@ -26,9 +26,9 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import { SortableModelItem } from "@/components/LiteChat/common/SortableModelItem";
-import type { ModelListItem } from "@/types/litechat/provider";
-import { combineModelId } from "@/lib/litechat/provider-helpers";
+import { SortableModelItem } from "@/components/LLMChef/common/SortableModelItem";
+import type { ModelListItem } from "@/types/llmchef/provider";
+import { combineModelId } from "@/lib/llmchef/provider-helpers";
 import { ModelFilterControls } from "@/controls/components/common/ModelFilterControls";
 
 interface GlobalModelOrganizerProps {

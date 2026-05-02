@@ -696,7 +696,7 @@ const storesWithActionHandlers = [
 ```
 
 ### 4. Define Events
-Create event definitions in [`src/types/litechat/events/`](../src/types/litechat/events/):
+Create event definitions in [`src/types/llmchef/events/`](../src/types/llmchef/events/):
 
 ```typescript
 // my-feature.events.ts

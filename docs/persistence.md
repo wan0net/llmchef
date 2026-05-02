@@ -5,7 +5,7 @@ LLMChef uses a robust client-side persistence system built on IndexedDB with Dex
 ## Database Architecture
 
 ### Dexie.js Wrapper
-The database schema is defined in [`src/lib/litechat/db.ts`](../src/lib/litechat/db.ts):
+The database schema is defined in [`src/lib/llmchef/db.ts`](../src/lib/llmchef/db.ts):
 
 ```typescript
 class LLMChefDatabase extends Dexie {

@@ -1,12 +1,12 @@
-import type { ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
+import type { ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { BlockRenderer, BlockRendererContext } from "@/types/llmchef/canvas/block-renderer";
 import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
 
 const FormedibleBlockRenderer = createLazyBlockRenderer<any>(
   () =>
-    import("@/components/LiteChat/common/FormedibleBlockRenderer").then((module) => ({
+    import("@/components/LLMChef/common/FormedibleBlockRenderer").then((module) => ({
       default: module.FormedibleBlockRenderer,
     })),
   "Loading form renderer...",
@@ -111,7 +111,7 @@ export class FormedibleBlockRendererModule implements ControlModule {
     // No initialization needed
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

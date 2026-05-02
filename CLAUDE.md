@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## LiteChat Development Commands
+## LLMChef Development Commands
 
 ### Development
 
@@ -20,7 +20,7 @@ npm run deploy             # Deploy to GitHub Pages (gh-pages -d dist)
 npm run to2web             # Build, release, and deploy to web
 npm run mcp-proxy          # Start MCP bridge service (node bin/mcp-bridge.js)
 npm run serve              # Build and serve with http-server on LLMCHEF_PORT (default: 5173)
-npm run update             # Git pull, npm install, and serve (respects LITECHAT_ORIGIN and LITECHAT_BRANCH)
+npm run update             # Git pull, npm install, and serve (respects LLMCHEF_ORIGIN and LLMCHEF_BRANCH)
 ```
 
 **⚠️ CRITICAL: NEVER run `npm run serve` or start any servers - user has their own dev environment running!**
@@ -39,7 +39,7 @@ docker-compose up -d
 
 ## Architecture Overview
 
-LiteChat is a 100% client-side AI chat application built with a modular, event-driven architecture designed for extensibility and privacy.
+LLMChef is a 100% client-side AI chat application built with a modular, event-driven architecture designed for extensibility and privacy.
 
 ### Core Technology Stack
 
@@ -52,7 +52,7 @@ LiteChat is a 100% client-side AI chat application built with a modular, event-d
 
 ### Modular Control System
 
-LiteChat uses a sophisticated control module architecture with three scopes:
+LLMChef uses a sophisticated control module architecture with three scopes:
 
 1. **PromptControls**: Input area extensions and prompt manipulation
 2. **ChatControls**: Sidebar panels, headers, and general UI controls
@@ -74,7 +74,7 @@ LiteChat uses a sophisticated control module architecture with three scopes:
 
 All inter-system communication uses a centralized event emitter with strongly-typed events:
 
-- **Event Types**: Organized in `src/types/litechat/events/` by domain
+- **Event Types**: Organized in `src/types/llmchef/events/` by domain
 - **Event Coordinator**: `EventActionCoordinatorService` automatically binds store actions to events
 - **Store Integration**: Stores emit events on state changes and expose `getRegisteredActionHandlers()`
 
@@ -147,7 +147,7 @@ Safe, controlled extension interface:
 
    ```typescript
    export class ExampleControlModule implements ControlModule {
-     register(modApi: LiteChatModApi): void {
+     register(modApi: LLMChefModApi): void {
        this.unregisterCallback = modApi.registerPromptControl({
          id: "example-control",
          component: ExampleComponent,
@@ -179,12 +179,12 @@ Safe, controlled extension interface:
 
 ### File Organization
 
-- `src/components/LiteChat/`: Core UI components
+- `src/components/LLMChef/`: Core UI components
 - `src/controls/`: Control modules and components
 - `src/services/`: Business logic services
 - `src/store/`: State management
-- `src/types/litechat/`: TypeScript definitions
-- `src/lib/litechat/`: Utility functions
+- `src/types/llmchef/`: TypeScript definitions
+- `src/lib/llmchef/`: Utility functions
 - `src/locales/`: Internationalization files
 - `docs/`: Comprehensive documentation
 

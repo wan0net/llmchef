@@ -1,9 +1,9 @@
 // src/controls/modules/canvas/RegenerateActionControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { CanvasControlRenderContext } from "@/types/litechat/canvas/control";
+import { type ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 import { RegenerateActionControl } from "@/controls/components/canvas/RegenerateActionControl";
 // import { ConversationService } from "@/services/conversation.service"; // No longer directly calling this
 // import { toast } from "sonner"; // Feedback handled by service or component event listeners
@@ -12,9 +12,9 @@ import { useInteractionStore } from "@/store/interaction.store"; // To check glo
 export class RegenerateActionControlModule implements ControlModule {
   readonly id = "core-canvas-regenerate-action";
 
-  async initialize(_modApi: LiteChatModApi): Promise<void> {}
+  async initialize(_modApi: LLMChefModApi): Promise<void> {}
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     modApi.registerCanvasControl({
       id: this.id,
       type: "interaction",
@@ -63,5 +63,5 @@ export class RegenerateActionControlModule implements ControlModule {
       },
     });
   }
-  destroy(_modApi: LiteChatModApi): void {}
+  destroy(_modApi: LLMChefModApi): void {}
 }

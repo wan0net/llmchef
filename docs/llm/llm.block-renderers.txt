@@ -2,11 +2,11 @@
 
 ## Overview
 - Extensible system for rendering code blocks by language/type.
-- Core logic in `src/services/block-renderer.service.ts` and `src/components/LiteChat/common/UniversalBlockRenderer.tsx`.
+- Core logic in `src/services/block-renderer.service.ts` and `src/components/LLMChef/common/UniversalBlockRenderer.tsx`.
 - Block renderers are registered by Control Modules (see `src/controls/modules/`).
 
 ## BlockRenderer Interface
-- Defined in `src/types/litechat/canvas/block-renderer.ts`:
+- Defined in `src/types/llmchef/canvas/block-renderer.ts`:
   - `id: string`
   - `supportedLanguages?: string[]` — e.g., ["mermaid"], ["js", "typescript"], undefined = fallback
   - `priority?: number` — higher = more specific
@@ -49,7 +49,7 @@
   4. (Optional) Register a control rule for AI guidance
 
 ## For LLMs: To reason about or extend block rendering, reference:
-- `src/types/litechat/canvas/block-renderer.ts`
+- `src/types/llmchef/canvas/block-renderer.ts`
 - `src/services/block-renderer.service.ts`
-- `src/components/LiteChat/common/UniversalBlockRenderer.tsx`
+- `src/components/LLMChef/common/UniversalBlockRenderer.tsx`
 - `src/controls/modules/` (for renderer modules)

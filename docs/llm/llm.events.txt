@@ -1,12 +1,12 @@
 # LLMChef Event System (for LLMs)
 
 ## Event Emitter
-- Central event bus using mitt (see `src/lib/litechat/event-emitter.ts`)
-- Typed via `ModEventPayloadMap` (see `src/types/litechat/modding.ts`)
+- Central event bus using mitt (see `src/lib/llmchef/event-emitter.ts`)
+- Typed via `ModEventPayloadMap` (see `src/types/llmchef/modding.ts`)
 - Used for all inter-module/store/component communication
 
 ## Event Typing
-- All events are strongly typed via payload maps in `src/types/litechat/events/`
+- All events are strongly typed via payload maps in `src/types/llmchef/events/`
 - Each domain (settings, provider, rules, conversation, etc.) defines:
   - `eventName: string` constants (e.g., `settingsEvent.themeChanged`)
   - `EventPayloads` interface mapping event names to payload types
@@ -17,7 +17,7 @@
 - **Action Request Events**: Request that an action be performed (e.g., `settingsEvent.setThemeRequest`)
 - **Other**: Progress, error, workflow, tool, UI, VFS, etc.
 
-## Event Files (see `src/types/litechat/events/`)
+## Event Files (see `src/types/llmchef/events/`)
 - `settings.events.ts`, `provider.events.ts`, `rules.events.ts`, `conversation.events.ts`, `project.events.ts`, `interaction.events.ts`, `prompt.events.ts`, `block-renderer.events.ts`, `mcp.events.ts`, `workflow.events.ts`, `websearch.events.ts`, `canvas.events.ts`, `ui.events.ts`, etc.
 - Each file exports:
   - `event` object (event names)
@@ -30,12 +30,12 @@
 
 ## Extension Pattern
 - To add a new event domain:
-  1. Create `src/types/litechat/events/<domain>.events.ts`
+  1. Create `src/types/llmchef/events/<domain>.events.ts`
   2. Export event names and payload types
   3. Add to `ModEventPayloadMap` in `modding.ts`
 - To handle events in a store/module, register action handlers (see `getRegisteredActionHandlers` in stores)
 
 ## For LLMs: To reason about or extend the event system, reference:
-- `src/lib/litechat/event-emitter.ts`
-- `src/types/litechat/modding.ts` (for ModEventPayloadMap)
-- `src/types/litechat/events/` (for all event domains)
+- `src/lib/llmchef/event-emitter.ts`
+- `src/types/llmchef/modding.ts` (for ModEventPayloadMap)
+- `src/types/llmchef/events/` (for all event domains)

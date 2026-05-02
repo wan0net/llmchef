@@ -1,16 +1,16 @@
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { workflowEvent } from "@/types/litechat/events/workflow.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { workflowEvent } from "@/types/llmchef/events/workflow.events";
 import { WorkflowControlFooter } from "@/controls/components/workflow/WorkflowControlFooter";
 
 export class WorkflowDisplayModule implements ControlModule {
   readonly id = "core-workflow-display";
-  private modApi: LiteChatModApi | null = null;
+  private modApi: LLMChefModApi | null = null;
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApi = modApi;
 
     // Subscribe to workflow events to trigger re-renders
@@ -39,7 +39,7 @@ export class WorkflowDisplayModule implements ControlModule {
     this.modApi?.emit(workflowEvent.cancelRequest, { runId });
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApi = modApi;
     this.unregisterCallback = modApi.registerChatControl({
       id: this.id,

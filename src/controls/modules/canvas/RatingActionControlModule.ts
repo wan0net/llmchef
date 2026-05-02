@@ -1,19 +1,19 @@
 // src/controls/modules/canvas/RatingActionControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
+import { type ControlModule } from "@/types/llmchef/control";
 import type {
-  LiteChatModApi,
+  LLMChefModApi,
   CanvasControlRenderContext,
-} from "@/types/litechat/modding";
-import { CompactInteractionRating } from "@/components/LiteChat/canvas/interaction/CompactInteractionRating";
+} from "@/types/llmchef/modding";
+import { CompactInteractionRating } from "@/components/LLMChef/canvas/interaction/CompactInteractionRating";
 
 export class RatingActionControlModule implements ControlModule {
   readonly id = "core-canvas-rating-action";
 
-  async initialize(_modApi: LiteChatModApi): Promise<void> {}
+  async initialize(_modApi: LLMChefModApi): Promise<void> {}
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     modApi.registerCanvasControl({
       id: this.id,
       type: "interaction",
@@ -29,5 +29,5 @@ export class RatingActionControlModule implements ControlModule {
       },
     });
   }
-  destroy(_modApi: LiteChatModApi): void {}
+  destroy(_modApi: LLMChefModApi): void {}
 }

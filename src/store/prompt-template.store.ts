@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { nanoid } from "nanoid";
-import { emitter } from "@/lib/litechat/event-emitter";
+import { emitter } from "@/lib/llmchef/event-emitter";
 import { toast } from "sonner";
 import { PersistenceService } from "@/services/persistence.service";
-import type { PromptTemplate, CompiledPrompt, PromptFormData, PromptTemplateType } from "@/types/litechat/prompt-template";
-import type { RegisteredActionHandler } from "@/types/litechat/control";
-import { promptTemplateEvent } from "@/types/litechat/events/prompt-template.events";
-import { compilePromptTemplate as compileUtil } from '@/lib/litechat/prompt-util';
+import type { PromptTemplate, CompiledPrompt, PromptFormData, PromptTemplateType } from "@/types/llmchef/prompt-template";
+import type { RegisteredActionHandler } from "@/types/llmchef/control";
+import { promptTemplateEvent } from "@/types/llmchef/events/prompt-template.events";
+import { compilePromptTemplate as compileUtil } from '@/lib/llmchef/prompt-util';
 
 interface PromptTemplateState {
   promptTemplates: PromptTemplate[];

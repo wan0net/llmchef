@@ -1,12 +1,12 @@
-import type { ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
-import type { BlockRenderer, BlockRendererContext } from "@/types/litechat/canvas/block-renderer";
+import type { ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
+import type { BlockRenderer, BlockRendererContext } from "@/types/llmchef/canvas/block-renderer";
 import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
 
 const PythonRunnableBlockRenderer = createLazyBlockRenderer<any>(
   () =>
-    import("@/components/LiteChat/common/PythonRunnableBlockRenderer").then((module) => ({
+    import("@/components/LLMChef/common/PythonRunnableBlockRenderer").then((module) => ({
       default: module.PythonRunnableBlockRenderer,
     })),
   "Loading Python renderer...",
@@ -18,30 +18,30 @@ export const PYTHON_RUNNABLE_CONTROL_PROMPT = `# Python Scientific Computing Env
 You have access to an enhanced Pyodide environment with numpy, pandas, matplotlib, and the full LLMChef API.
 
 ## Available Context
-- \`litechat\` — The LLMChef API object with utilities and VFS operations.
-- \`litechat.target\` — **THE DOM ELEMENT ITSELF** - Use direct DOM manipulation for visualizations, UI output, etc.
+- \`llmchef\` — The LLMChef API object with utilities and VFS operations.
+- \`llmchef.target\` — **THE DOM ELEMENT ITSELF** - Use direct DOM manipulation for visualizations, UI output, etc.
 - Scientific Python stack: numpy, pandas, matplotlib, scipy, sklearn, etc.
 - \`js\` module — For DOM and browser interop (e.g., \`
 from js import document\`).
 
 ## LLMChef API Reference
-You can use the following methods on \`litechat\`:
+You can use the following methods on \`llmchef\`:
 
 ### Utilities
-- \`litechat.utils.log(level, *args)\` — Log messages that will be captured in the console output (level: 'info', 'warn', 'error')
-- \`litechat.utils.toast(type, message)\` — Show toast notifications (type: 'success', 'error', 'info', 'warning')
+- \`llmchef.utils.log(level, *args)\` — Log messages that will be captured in the console output (level: 'info', 'warn', 'error')
+- \`llmchef.utils.toast(type, message)\` — Show toast notifications (type: 'success', 'error', 'info', 'warning')
 
 ### Event System
-- \`litechat.emit(eventName, payload)\` — Emit events to the LLMChef system
+- \`llmchef.emit(eventName, payload)\` — Emit events to the LLMChef system
 
 ### VFS (File System)
-- \`litechat.getVfsInstance(vfsKey)\` — Get VFS instance ('orphan' is the default)
+- \`llmchef.getVfsInstance(vfsKey)\` — Get VFS instance ('orphan' is the default)
 
 ### DOM Target
-- \`litechat.target\` — The DOM element for rendering content and UI
+- \`llmchef.target\` — The DOM element for rendering content and UI
 
 ## DOM Manipulation - USE THIS APPROACH!
-**ALWAYS use direct DOM operations on the \`litechat.target\` element. This is THE PRIMARY METHOD for rendering content.**
+**ALWAYS use direct DOM operations on the \`llmchef.target\` element. This is THE PRIMARY METHOD for rendering content.**
 
 ### Basic DOM Operations
 \`\`\`runpy
@@ -58,12 +58,12 @@ target.appendChild(heading)
 button = document.createElement('button')
 button.textContent = 'Click me!'
 def on_click(event):
-    litechat.utils.log('info', 'Button clicked!')
+    llmchef.utils.log('info', 'Button clicked!')
     # You can use alert from js if needed
 button.addEventListener('click', on_click)
 target.appendChild(button)
 
-litechat.utils.log('info', 'DOM elements created and appended')
+llmchef.utils.log('info', 'DOM elements created and appended')
 \`\`\`
 ### Complex DOM Structures
 \`\`\`runpy
@@ -95,7 +95,7 @@ button.addEventListener('click', on_click)
 container.appendChild(button)
 
 target.appendChild(container)
-litechat.utils.log('info', 'Complex DOM structure created')
+llmchef.utils.log('info', 'Complex DOM structure created')
 \`\`\`
 
 ### Canvas/WebGL Example
@@ -116,7 +116,7 @@ ctx.fillStyle = '#4ecdc4'
 ctx.beginPath()
 ctx.arc(300, 150, 50, 0, 2 * 3.14159)
 ctx.fill()
-litechat.utils.log('info', 'Canvas with shapes created')
+llmchef.utils.log('info', 'Canvas with shapes created')
 \`\`\`
 
 ### Data Visualization Example
@@ -140,7 +140,7 @@ for value in data:
     bar.appendChild(label)
     chart.appendChild(bar)
 target.appendChild(chart)
-litechat.utils.log('info', 'Interactive bar chart created')
+llmchef.utils.log('info', 'Interactive bar chart created')
 \`\`\`
 
 ### Reading Files and DOM Display
@@ -151,14 +151,14 @@ from js import document
 target.replaceChildren()
 
 async def main():
-    vfs = await litechat.getVfsInstance('project-123')
+    vfs = await llmchef.getVfsInstance('project-123')
     content = await vfs.promises.readFile('/data.txt', 'utf8')
 
     pre = document.createElement('pre')
     pre.className = 'bg-gray-50 p-3 rounded-lg overflow-auto font-mono'
     pre.textContent = content
     target.appendChild(pre)
-    litechat.utils.log('info', 'File content displayed in DOM')
+    llmchef.utils.log('info', 'File content displayed in DOM')
 
 asyncio.run(main())
 \`\`\`
@@ -177,13 +177,13 @@ export class PythonRunnableBlockRendererModule implements ControlModule {
   readonly id = "core-block-renderer-runnable-python";
   private unregisterCallback?: () => void;
   private unregisterRuleCallback?: () => void;
-  private modApiRef?: LiteChatModApi;
+  private modApiRef?: LLMChefModApi;
 
   async initialize(): Promise<void> {
     // No initialization needed
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;
@@ -235,8 +235,8 @@ export class PythonRunnableBlockRendererModule implements ControlModule {
     if (!this.modApiRef) {
       throw new Error("Module not initialized with modApi");
     }
-    // Create a custom litechat API that matches the control rule prompt
-    const customLitechatApi = {
+    // Create a custom llmchef API that matches the control rule prompt
+    const customLLMChefApi = {
       utils: {
         log: (level: 'info' | 'warn' | 'error', ...args: any[]) => {
           const formatted = args.map(arg => {
@@ -266,7 +266,7 @@ export class PythonRunnableBlockRendererModule implements ControlModule {
       target: previewElement
     };
     return {
-      litechat: customLitechatApi,
+      llmchef: customLLMChefApi,
       target: previewElement
     };
   }

@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/assistant/SettingsAssistantPrompt.tsx
+// src/components/LLMChef/settings/assistant/SettingsAssistantPrompt.tsx
 // FULL FILE
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";

@@ -215,7 +215,7 @@ Required guardrails:
 
 Files:
 
-- `src/components/LiteChat/common/JsRunnableBlockRenderer.tsx`
+- `src/components/LLMChef/common/JsRunnableBlockRenderer.tsx`
 
 Risk:
 
@@ -236,11 +236,11 @@ Required guardrails:
 
 Files found via audit scan include:
 
-- `src/components/LiteChat/canvas/StreamingContentView.tsx`
-- `src/components/LiteChat/canvas/UserPromptDisplay.tsx`
-- `src/components/LiteChat/canvas/interaction/AssistantResponse.tsx`
-- `src/components/LiteChat/common/MermaidBlockRenderer.tsx`
-- `src/components/LiteChat/common/FlowBlockRenderer.tsx`
+- `src/components/LLMChef/canvas/StreamingContentView.tsx`
+- `src/components/LLMChef/canvas/UserPromptDisplay.tsx`
+- `src/components/LLMChef/canvas/interaction/AssistantResponse.tsx`
+- `src/components/LLMChef/common/MermaidBlockRenderer.tsx`
+- `src/components/LLMChef/common/FlowBlockRenderer.tsx`
 - `src/components/ui/chart.tsx`
 
 Risk:
@@ -258,13 +258,13 @@ Sink inventory:
 
 | File | Source | Sanitizer status | Risk | Next action |
 | --- | --- | --- | --- | --- |
-| `src/components/LiteChat/common/FlowBlockRenderer.tsx` | Flow node labels with embedded image/SVG markup | Uses `DOMPurify.sanitize` with a narrow tag/attribute allowlist | Medium | Add regression tests for blocked event handlers, scripts, and external references. |
-| `src/components/LiteChat/common/MermaidBlockRenderer.tsx` | Mermaid-generated SVG | Sanitizes Mermaid SVG output with DOMPurify SVG profiles before insertion | Low | Keep regression coverage around script/event-handler payloads if diagram rendering changes. |
+| `src/components/LLMChef/common/FlowBlockRenderer.tsx` | Flow node labels with embedded image/SVG markup | Uses `DOMPurify.sanitize` with a narrow tag/attribute allowlist | Medium | Add regression tests for blocked event handlers, scripts, and external references. |
+| `src/components/LLMChef/common/MermaidBlockRenderer.tsx` | Mermaid-generated SVG | Sanitizes Mermaid SVG output with DOMPurify SVG profiles before insertion | Low | Keep regression coverage around script/event-handler payloads if diagram rendering changes. |
 | `src/components/ui/chart.tsx` | Local chart CSS variables | App-generated CSS string from chart config | Low | Validate chart color values if chart config can ever come from model/file input. |
-| `src/components/LiteChat/canvas/interaction/AssistantResponse.tsx` | Parsed assistant markdown HTML | Parser output is sanitized by `parseMarkdownContent`; auto-loading media tags are forbidden | Low | Keep markdown sanitizer tests for scripts, event handlers, link attributes, and external media tags. |
-| `src/components/LiteChat/canvas/UserPromptDisplay.tsx` | Parsed user markdown HTML | Parser output is sanitized by `parseMarkdownContent`; auto-loading media tags are forbidden | Low | Keep markdown sanitizer tests for pasted/file-sourced content. |
-| `src/components/LiteChat/canvas/StreamingContentView.tsx` | Parsed streaming markdown and disabled-streaming fallback | Parser output is sanitized; disabled-streaming fallback now renders plaintext | Low | Keep fallback plaintext unless a sanitizer is applied at the fallback renderer. |
-| `src/components/LiteChat/common/JsRunnableBlockRenderer.tsx` | QuickJS preview `innerHTML` bridge | Sanitizes assigned HTML with DOMPurify before inserting into the app DOM | Medium | Runnable JS remains user-approved code execution; keep local DOM bridge APIs minimal. |
+| `src/components/LLMChef/canvas/interaction/AssistantResponse.tsx` | Parsed assistant markdown HTML | Parser output is sanitized by `parseMarkdownContent`; auto-loading media tags are forbidden | Low | Keep markdown sanitizer tests for scripts, event handlers, link attributes, and external media tags. |
+| `src/components/LLMChef/canvas/UserPromptDisplay.tsx` | Parsed user markdown HTML | Parser output is sanitized by `parseMarkdownContent`; auto-loading media tags are forbidden | Low | Keep markdown sanitizer tests for pasted/file-sourced content. |
+| `src/components/LLMChef/canvas/StreamingContentView.tsx` | Parsed streaming markdown and disabled-streaming fallback | Parser output is sanitized; disabled-streaming fallback now renders plaintext | Low | Keep fallback plaintext unless a sanitizer is applied at the fallback renderer. |
+| `src/components/LLMChef/common/JsRunnableBlockRenderer.tsx` | QuickJS preview `innerHTML` bridge | Sanitizes assigned HTML with DOMPurify before inserting into the app DOM | Medium | Runnable JS remains user-approved code execution; keep local DOM bridge APIs minimal. |
 
 ### Skills And Imported Packages
 
@@ -300,7 +300,7 @@ Files:
 Current guardrails:
 
 - User must explicitly choose a directory through File System Access API.
-- `.git`, `.env`, `.env.local`, `.litechat`, `node_modules`, and `.DS_Store`
+- `.git`, `.env`, `.env.local`, `.llmchef`, `node_modules`, and `.DS_Store`
   are ignored.
 - Sync is non-destructive: it does not delete local disk or VFS files.
 - Newer/equal destination files are skipped.
@@ -364,7 +364,7 @@ Files:
 
 - `src/store/provider.store.ts`
 - `src/services/persistence.service.ts`
-- `src/components/LiteChat/common/ApiKeysForm.tsx`
+- `src/components/LLMChef/common/ApiKeysForm.tsx`
 
 Risk:
 

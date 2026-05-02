@@ -1,14 +1,14 @@
 // src/controls/modules/VfsToolsModule.ts
 // FULL FILE
-import { type ControlModule } from "@/types/litechat/control";
+import { type ControlModule } from "@/types/llmchef/control";
 import {
-  type LiteChatModApi,
+  type LLMChefModApi,
   type ReadonlyChatContextSnapshot,
-} from "@/types/litechat/modding";
-import * as VfsOps from "@/lib/litechat/vfs-operations";
+} from "@/types/llmchef/modding";
+import * as VfsOps from "@/lib/llmchef/vfs-operations";
 import { z } from "zod";
 import { Tool } from "ai";
-import { normalizePath, joinPath } from "@/lib/litechat/file-manager-utils";
+import { normalizePath, joinPath } from "@/lib/llmchef/file-manager-utils";
 
 const listFilesSchema = z.object({
   path: z
@@ -61,12 +61,12 @@ export class VfsToolsModule implements ControlModule {
   readonly id = "core-vfs-tools";
   private unregisterCallbacks: (() => void)[] = [];
 
-  async initialize(_modApi: LiteChatModApi): Promise<void> {
+  async initialize(_modApi: LLMChefModApi): Promise<void> {
     // modApi parameter is available here if needed for initialization logic
     console.log(`[${this.id}] Initialized.`);
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallbacks.length > 0) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

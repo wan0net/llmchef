@@ -1,20 +1,20 @@
 // src/controls/modules/GitSyncControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { conversationEvent } from "@/types/litechat/events/conversation.events";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { uiEvent } from "@/types/litechat/events/ui.events";
-import { syncEvent } from "@/types/litechat/events/sync.events";
-import { settingsEvent } from "@/types/litechat/events/settings.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
+import { syncEvent } from "@/types/llmchef/events/sync.events";
+import { settingsEvent } from "@/types/llmchef/events/settings.events";
 import { GitSyncControlTrigger } from "@/controls/components/git-sync/GitSyncControlTrigger";
 import { createLazySettingTab } from "@/controls/components/settings/LazySettingTab";
 import { useConversationStore } from "@/store/conversation.store";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useSettingsStore } from "@/store/settings.store";
-import type { SyncRepo, SyncStatus } from "@/types/litechat/sync";
-import type { SidebarItemType } from "@/types/litechat/chat";
+import type { SyncRepo, SyncStatus } from "@/types/llmchef/sync";
+import type { SidebarItemType } from "@/types/llmchef/chat";
 import { BulkSyncService } from "@/services/bulk-sync.service";
 import i18next from "i18next";
 
@@ -29,7 +29,7 @@ export class GitSyncControlModule implements ControlModule {
   private unregisterPromptControlCallback: (() => void) | null = null;
   private unregisterSettingsTabCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   public selectedItemId: string | null = null;
   public selectedItemType: SidebarItemType | null = null;
@@ -41,7 +41,7 @@ export class GitSyncControlModule implements ControlModule {
   public bulkSyncProgress: any = null;
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     this.loadInitialState();
 
@@ -264,7 +264,7 @@ export class GitSyncControlModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (!this.unregisterPromptControlCallback) {
       this.unregisterPromptControlCallback = modApi.registerPromptControl({

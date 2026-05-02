@@ -1,9 +1,9 @@
 import { useConversationStore } from "@/store/conversation.store";
 import { toast } from "sonner";
-import type { Conversation } from "@/types/litechat/chat";
-import type { SyncRepo } from "@/types/litechat/sync";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { syncEvent } from "@/types/litechat/events/sync.events";
+import type { Conversation } from "@/types/llmchef/chat";
+import type { SyncRepo } from "@/types/llmchef/sync";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { syncEvent } from "@/types/llmchef/events/sync.events";
 
 export interface BulkSyncProgress {
   totalRepos: number;

@@ -3,12 +3,12 @@ import { immer } from "zustand/middleware/immer";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { PersistenceService } from "@/services/persistence.service";
-import type { Skill, SkillInstallState } from "@/types/litechat/skill";
+import type { Skill, SkillInstallState } from "@/types/llmchef/skill";
 import {
   parseSkillPackage,
   serializeSkillPackage,
   validateSkillManifest,
-} from "@/lib/litechat/skill-package";
+} from "@/lib/llmchef/skill-package";
 
 interface SkillState {
   skills: Skill[];

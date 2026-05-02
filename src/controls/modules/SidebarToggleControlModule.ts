@@ -1,19 +1,19 @@
 // src/controls/modules/SidebarToggleControlModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
 import { SidebarToggleControlComponent } from "@/controls/components/sidebar-toggle/SidebarToggleControlComponent";
 import { useUIStateStore } from "@/store/ui.store";
-import { uiEvent } from "@/types/litechat/events/ui.events";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
 
 export class SidebarToggleControlModule implements ControlModule {
   readonly id = "core-sidebar-toggle";
   private unregisterCallback: (() => void) | null = null;
   private notifyComponentUpdate: (() => void) | null = null;
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
   }
 
@@ -36,7 +36,7 @@ export class SidebarToggleControlModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

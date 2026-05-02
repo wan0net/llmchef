@@ -1,21 +1,21 @@
 // src/controls/modules/GlobalModelSelectorModule.ts
 // FULL FILE
 import React from "react";
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import type { ModelListItem } from "@/types/litechat/provider";
-import { interactionEvent } from "@/types/litechat/events/interaction.events";
-import { providerEvent } from "@/types/litechat/events/provider.events";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import type { ModelListItem } from "@/types/llmchef/provider";
+import { interactionEvent } from "@/types/llmchef/events/interaction.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
 import { GlobalModelSelector } from "@/controls/components/global-model-selector/GlobalModelSelector";
 import { useProviderStore } from "@/store/provider.store"; // For getState in event handlers
 import { useInteractionStore } from "@/store/interaction.store"; // For getState in event handlers
-import { promptEvent as promptStateEvent } from "@/types/litechat/events/prompt.events";
+import { promptEvent as promptStateEvent } from "@/types/llmchef/events/prompt.events";
 
 export class GlobalModelSelectorModule implements ControlModule {
   readonly id = "core-global-model-selector";
   private unregisterCallback: (() => void) | null = null;
   private eventUnsubscribers: (() => void)[] = [];
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
   public selectedModelId: string | null = null;
   public isStreaming = false;
@@ -23,7 +23,7 @@ export class GlobalModelSelectorModule implements ControlModule {
   public globallyEnabledModels: ModelListItem[] = []; // Start empty
   private notifyComponentUpdate: (() => void) | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
 
     // Set initial loading and selected model (which might be null)
@@ -155,7 +155,7 @@ export class GlobalModelSelectorModule implements ControlModule {
     this.notifyComponentUpdate = cb;
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     this.modApiRef = modApi;
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);

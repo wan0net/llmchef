@@ -9,7 +9,7 @@ The modding system uses a controlled API approach where:
 
 - **No Direct Access**: Mods cannot directly access internal stores, components, or services
 - **Event-Driven Integration**: All interactions happen through the event system
-- **Controlled Interface**: `LiteChatModApi` provides a stable, versioned interface
+- **Controlled Interface**: `LLMChefModApi` provides a stable, versioned interface
 - **Safe Execution**: Mods run in controlled environments with error boundaries
 
 ### Core Components
@@ -19,11 +19,11 @@ The modding system uses a controlled API approach where:
 3. **Mod Store** ([`src/store/mod.store.ts`](../src/store/mod.store.ts)) - Manages mod state
 4. **Control Registry** - Registers mod-contributed components
 
-## LiteChatModApi Interface
+## LLMChefModApi Interface
 
 ### Core API Structure
 ```typescript
-interface LiteChatModApi {
+interface LLMChefModApi {
   // Metadata
   readonly modId: string;
   readonly modName: string;
@@ -562,7 +562,7 @@ const loadMod = async (dbMod: DbMod) => {
 ### Content Security
 ```typescript
 // Script execution with restrictions
-const executeMod = (scriptContent: string, modApi: LiteChatModApi) => {
+const executeMod = (scriptContent: string, modApi: LLMChefModApi) => {
   // Create isolated execution context
   const modContext = {
     React: { createElement: React.createElement },
@@ -677,7 +677,7 @@ modApi.registerTool('long-operation', schema, async (params, context) => {
 ### API Versioning
 ```typescript
 // Future API versioning support
-interface ModApiV2 extends LiteChatModApi {
+interface ModApiV2 extends LLMChefModApi {
   readonly apiVersion: '2.0';
 
   // New capabilities

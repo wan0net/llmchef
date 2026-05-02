@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/tags/TagsList.tsx
+// src/components/LLMChef/settings/tags/TagsList.tsx
 // FULL FILE
 import React from "react";
 import {
@@ -10,9 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Edit2Icon, Trash2Icon, Loader2 } from "lucide-react";
-import type { DbTag, DbRule } from "@/types/litechat/rules";
+import type { DbTag, DbRule } from "@/types/llmchef/rules";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 
 interface TagsListProps {
   tags: DbTag[];

@@ -1,17 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckIcon, RefreshCwIcon, TrashIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
-import { SettingsSection } from "@/components/LiteChat/common/SettingsSection";
+import { SettingsSection } from "@/components/LLMChef/common/SettingsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { createCrea8VfsConnector } from "@/lib/litechat/crea8-vfs-connector";
+import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
 import { useCrea8MemoryStore } from "@/store/crea8-memory.store";
 import { useVfsStore } from "@/store/vfs.store";
 import type {
   Crea8MemoryProposal,
   Crea8MemoryProposalStatus,
-} from "@/types/litechat/crea8-memory";
+} from "@/types/llmchef/crea8-memory";
 
 const statusBadgeVariant = (status: Crea8MemoryProposalStatus) => {
   if (status === "accepted") return "default";

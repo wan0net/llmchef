@@ -8,8 +8,8 @@ import {
   getOutboundHost,
   isOutboundHostAllowed,
   recordOutboundRequest,
-} from "@/lib/litechat/outbound-policy";
-import type { DbProviderType } from "@/types/litechat/provider";
+} from "@/lib/llmchef/outbound-policy";
+import type { DbProviderType } from "@/types/llmchef/provider";
 
 const DEFAULT_PROVIDER_HOSTS: Partial<Record<DbProviderType, string[]>> = {
   openai: ["api.openai.com"],

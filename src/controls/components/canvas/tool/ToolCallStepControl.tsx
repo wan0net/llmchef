@@ -1,7 +1,7 @@
 import React from "react";
 import type { ToolCallPart, ToolResultPart } from "ai";
-import { ToolCallDisplay } from "@/components/LiteChat/canvas/tool/CallDisplay";
-import { ToolResultDisplay } from "@/components/LiteChat/canvas/tool/ResultDisplay";
+import { ToolCallDisplay } from "@/components/LLMChef/canvas/tool/CallDisplay";
+import { ToolResultDisplay } from "@/components/LLMChef/canvas/tool/ResultDisplay";
 
 interface ToolCallStepControlProps {
   interactionId: string; // ID of the parent interaction

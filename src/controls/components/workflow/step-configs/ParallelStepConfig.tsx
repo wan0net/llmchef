@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import type { BaseStepConfigProps } from './BaseStepConfig';
-import type { WorkflowStep } from '@/types/litechat/workflow';
+import type { WorkflowStep } from '@/types/llmchef/workflow';
 
 export const ParallelStepConfig: React.FC<BaseStepConfigProps> = ({
   step,

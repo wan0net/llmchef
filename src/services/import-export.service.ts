@@ -1,15 +1,15 @@
 // src/services/import-export.service.ts
 // FULL FILE
-import type { Conversation } from "@/types/litechat/chat";
-import type { Interaction } from "@/types/litechat/interaction";
-import type { Project } from "@/types/litechat/project";
+import type { Conversation } from "@/types/llmchef/chat";
+import type { Interaction } from "@/types/llmchef/interaction";
+import type { Project } from "@/types/llmchef/project";
 import {
   PersistenceService,
   type FullExportData,
 } from "@/services/persistence.service";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
-import { formatBytes } from "@/lib/litechat/file-manager-utils";
+import { formatBytes } from "@/lib/llmchef/file-manager-utils";
 import { format } from "date-fns";
 import { useConversationStore } from "@/store/conversation.store";
 import { useProjectStore } from "@/store/project.store";
@@ -243,14 +243,14 @@ export class ImportExportService {
         const exportData = { conversation, interactions };
         const jsonString = JSON.stringify(exportData, null, 2);
         blob = new Blob([jsonString], { type: "application/json" });
-        filename = `litechat_conversation_${safeTitle}_${conversationId.substring(0, 6)}.json`;
+        filename = `llmchef_conversation_${safeTitle}_${conversationId.substring(0, 6)}.json`;
       } else if (format === "md") {
         const mdString = formatInteractionsToMarkdown(
           conversation,
           interactions,
         );
         blob = new Blob([mdString], { type: "text/markdown" });
-        filename = `litechat_conversation_${safeTitle}_${conversationId.substring(0, 6)}.md`;
+        filename = `llmchef_conversation_${safeTitle}_${conversationId.substring(0, 6)}.md`;
       } else {
         throw new Error("Invalid export format specified.");
       }
@@ -320,7 +320,7 @@ export class ImportExportService {
       const blob = new Blob([jsonString], { type: "application/json" });
       const safeName =
         rootProject.name.replace(/[^a-z0-9]/gi, "_").toLowerCase() || "project";
-      const filename = `litechat_project_${safeName}_${projectId.substring(0, 6)}.json`;
+      const filename = `llmchef_project_${safeName}_${projectId.substring(0, 6)}.json`;
 
       triggerDownload(blob, filename);
       toast.success(`Project "${rootProject.name}" exported.`);
@@ -344,7 +344,7 @@ export class ImportExportService {
       }
       const jsonString = JSON.stringify(exportData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
-      const filename = `litechat_all_conversations_export_${new Date().toISOString().split("T")[0]}.json`;
+      const filename = `llmchef_all_conversations_export_${new Date().toISOString().split("T")[0]}.json`;
       triggerDownload(blob, filename);
       toast.success("All conversations exported.");
     } catch (error) {
@@ -368,7 +368,7 @@ export class ImportExportService {
       const jsonString = JSON.stringify(exportData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const timestamp = format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-      const filename = `litechat_full_config_${timestamp}.json`;
+      const filename = `llmchef_full_config_${timestamp}.json`;
       triggerDownload(blob, filename);
       toast.success("Full configuration exported successfully.");
     } catch (error) {
@@ -397,7 +397,7 @@ export class ImportExportService {
       const jsonString = JSON.stringify(exportData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const timestamp = format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-      const filename = `litechat_prompt_templates_${timestamp}.json`;
+      const filename = `llmchef_prompt_templates_${timestamp}.json`;
       
       triggerDownload(blob, filename);
       toast.success(`Exported ${regularTemplates.length} prompt templates.`);
@@ -426,7 +426,7 @@ export class ImportExportService {
       const jsonString = JSON.stringify(exportData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const timestamp = format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-      const filename = `litechat_agents_${timestamp}.json`;
+      const filename = `llmchef_agents_${timestamp}.json`;
       
       triggerDownload(blob, filename);
       toast.success(`Exported ${agents.length} agents with ${tasks.length} tasks.`);
@@ -452,7 +452,7 @@ export class ImportExportService {
       const jsonString = JSON.stringify(exportData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const timestamp = format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-      const filename = `litechat_mcp_servers_${timestamp}.json`;
+      const filename = `llmchef_mcp_servers_${timestamp}.json`;
       
       triggerDownload(blob, filename);
       toast.success(`Exported ${mcpServers.length} MCP server configurations.`);
@@ -608,7 +608,7 @@ export class ImportExportService {
       const jsonString = JSON.stringify(exportData, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const timestamp = format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-      const filename = `litechat_workflows_${timestamp}.json`;
+      const filename = `llmchef_workflows_${timestamp}.json`;
       
       triggerDownload(blob, filename);
       toast.success(`Exported ${workflows.length} workflows.`);

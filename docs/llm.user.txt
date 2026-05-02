@@ -98,7 +98,7 @@ Each project can override global settings:
 1. **Setup Repositories**: Settings → Git → Sync Repositories
 2. **Add Repository**: Provide Git URL and credentials (use personal access tokens)
 3. **Link Conversations**: Associate conversations with repositories
-4. **Sync**: Conversations saved as JSON files in `.litechat/conversations/`
+4. **Sync**: Conversations saved as JSON files in `.llmchef/conversations/`
 
 ### Code Block Features
 - **Filepath Headers**: Code blocks show file paths when specified

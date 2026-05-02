@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/tags/TagForm.tsx
+// src/components/LLMChef/settings/tags/TagForm.tsx
 // FULL FILE
 import React, { useEffect } from "react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SaveIcon, XIcon, Loader2 } from "lucide-react";
-import type { DbTag } from "@/types/litechat/rules";
-import { FieldMetaMessages } from "@/components/LiteChat/common/form-fields/FieldMetaMessages";
+import type { DbTag } from "@/types/llmchef/rules";
+import { FieldMetaMessages } from "@/components/LLMChef/common/form-fields/FieldMetaMessages";
 
 interface TagFormProps {
   initialData?: Partial<DbTag>;

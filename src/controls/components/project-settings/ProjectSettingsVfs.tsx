@@ -1,15 +1,15 @@
-// src/components/LiteChat/project-settings/ProjectSettingsVfs.tsx
+// src/components/LLMChef/project-settings/ProjectSettingsVfs.tsx
 
 import React, { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 // import { Button } from "@/components/ui/button";
 // import { AlertCircleIcon } from "lucide-react";
 // import { toast } from "sonner";
-import { FileManager } from "@/components/LiteChat/file-manager/FileManager";
+import { FileManager } from "@/components/LLMChef/file-manager/FileManager";
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout";
+} from "@/components/LLMChef/common/TabbedLayout";
 import { cn } from "@/lib/utils";
 
 interface ProjectSettingsVfsProps {

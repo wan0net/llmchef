@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -11,13 +11,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { TabbedLayout } from "@/components/LiteChat/common/TabbedLayout";
+import { TabbedLayout } from "@/components/LLMChef/common/TabbedLayout";
 import { ModelSelector } from "@/controls/components/global-model-selector/ModelSelector";
-import type { ModelListItem } from "@/types/litechat/provider";
+import type { ModelListItem } from "@/types/llmchef/provider";
 import { useInteractionStore } from "@/store/interaction.store";
 import { useShallow } from "zustand/react/shallow";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
 import { useFormedible } from "@/hooks/use-formedible";
 import { z } from "zod";
 

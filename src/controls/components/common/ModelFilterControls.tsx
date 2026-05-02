@@ -12,9 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { cn } from "@/lib/utils";
-import { DbProviderConfig } from "@/types/litechat/provider";
+import { DbProviderConfig } from "@/types/llmchef/provider";
 import { useTranslation } from "react-i18next";
 
 type CapabilityFilter = "reasoning" | "webSearch" | "tools" | "multimodal";

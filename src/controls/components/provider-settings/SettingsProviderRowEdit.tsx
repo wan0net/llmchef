@@ -1,8 +1,8 @@
-// src/components/LiteChat/settings/SettingsProviderRowEdit.tsx
+// src/components/LLMChef/settings/SettingsProviderRowEdit.tsx
 // FULL FILE
 import React, { useCallback, useMemo } from "react";
 // Import OpenRouterModel for the allAvailableModels prop
-import type { DbApiKey, OpenRouterModel } from "@/types/litechat/provider";
+import type { DbApiKey, OpenRouterModel } from "@/types/llmchef/provider";
 // import { Button } from "@/components/ui/button";
 // import { SaveIcon, XIcon, Loader2 } from "lucide-react";
 // import { Separator } from "@/components/ui/separator";

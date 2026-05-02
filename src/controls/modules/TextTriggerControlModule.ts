@@ -1,10 +1,10 @@
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
 import { TextTriggerParserService } from "@/services/text-trigger-parser.service";
 import { useSettingsStore } from "@/store/settings.store";
 // import { useControlRegistryStore } from "@/store/control.store";
-import { controlRegistryEvent } from "@/types/litechat/events/control.registry.events";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
+import { controlRegistryEvent } from "@/types/llmchef/events/control.registry.events";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
 
 export class TextTriggerControlModule implements ControlModule {
   readonly id = "core-text-triggers";
@@ -12,7 +12,7 @@ export class TextTriggerControlModule implements ControlModule {
   private eventUnsubscribers: (() => void)[] = [];
   public parserService: TextTriggerParserService | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     const settings = useSettingsStore.getState();
     this.parserService = new TextTriggerParserService(
       settings.textTriggerStartDelimiter,
@@ -29,7 +29,7 @@ export class TextTriggerControlModule implements ControlModule {
     this.eventUnsubscribers.push(unsubscribeNamespaceChanges);
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

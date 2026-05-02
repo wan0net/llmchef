@@ -1,13 +1,13 @@
 import React from "react";
 import { Crea8MemoryControl } from "@/controls/components/crea8-memory/Crea8MemoryControl";
-import { createCrea8VfsConnector } from "@/lib/litechat/crea8-vfs-connector";
+import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
 import { useVfsStore } from "@/store/vfs.store";
-import type { ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
+import type { ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
 import type {
   Crea8MemoryNoteRef,
   Crea8MemorySearchResult,
-} from "@/types/litechat/crea8-memory";
+} from "@/types/llmchef/crea8-memory";
 
 export class Crea8MemoryControlModule implements ControlModule {
   readonly id = "core-crea8-memory";
@@ -100,7 +100,7 @@ export class Crea8MemoryControlModule implements ControlModule {
     return "ready";
   };
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(`[${this.id}] Already registered. Skipping.`);
       return;

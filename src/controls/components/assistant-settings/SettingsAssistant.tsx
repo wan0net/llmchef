@@ -9,7 +9,7 @@ import { useShallow } from "zustand/react/shallow";
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout";
+} from "@/components/LLMChef/common/TabbedLayout";
 import { SettingsAssistantPrompt } from "./SettingsAssistantPrompt";
 import { SettingsAssistantParameters } from "./SettingsAssistantParameters";
 import { SettingsAssistantTools } from "./SettingsAssistantTools";

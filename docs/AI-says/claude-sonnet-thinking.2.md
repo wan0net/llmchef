@@ -1,4 +1,4 @@
-Looking at LiteChat with a critical eye for an open source competition, I'll give you the brutal honesty you're asking for, followed by actionable suggestions to maximize your chances of winning.
+Looking at LLMChef with a critical eye for an open source competition, I'll give you the brutal honesty you're asking for, followed by actionable suggestions to maximize your chances of winning.
 
 ## Brutal Honest Assessment
 
@@ -137,7 +137,7 @@ interface ProjectTemplate {
 Script outline:
 0:00-0:15 - Hook: "What if AI could actually read your entire codebase?"
 0:15-0:45 - Problem: Show frustration with current AI chat limitations
-0:45-1:30 - Solution: Demo LiteChat's unique features
+0:45-1:30 - Solution: Demo LLMChef's unique features
 1:30-2:00 - Benefits: Show real productivity gains
 2:00-2:15 - Call to action: "Try it now - no signup required"
 ```
@@ -231,7 +231,7 @@ interface Integration {
 
 ### **Your Winning Narrative:**
 ```
-"LiteChat transforms AI from a conversation tool into a true development
+"LLMChef transforms AI from a conversation tool into a true development
 partner that understands your entire codebase, respects your privacy,
 and integrates seamlessly into your workflow."
 ```

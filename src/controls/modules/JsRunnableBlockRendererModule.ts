@@ -1,15 +1,15 @@
-import type { ControlModule } from "@/types/litechat/control";
-import type { LiteChatModApi } from "@/types/litechat/modding";
+import type { ControlModule } from "@/types/llmchef/control";
+import type { LLMChefModApi } from "@/types/llmchef/modding";
 import type {
   BlockRenderer,
   BlockRendererContext,
-} from "@/types/litechat/canvas/block-renderer";
+} from "@/types/llmchef/canvas/block-renderer";
 import { createLazyBlockRenderer } from "@/controls/components/block-renderers/LazyBlockRenderer";
 import React from "react";
 
 const JsRunnableBlockRenderer = createLazyBlockRenderer<any>(
   () =>
-    import("@/components/LiteChat/common/JsRunnableBlockRenderer").then((module) => ({
+    import("@/components/LLMChef/common/JsRunnableBlockRenderer").then((module) => ({
       default: module.JsRunnableBlockRenderer,
     })),
   "Loading JavaScript renderer...",
@@ -28,55 +28,55 @@ export const JS_RUNNABLE_CONTROL_PROMPT = `# JavaScript Runnable Block Environme
 You have access to a full JavaScript execution environment with the following context:
 
 ## Available Context
-- \`litechat\` — The LLMChef API object with utilities and VFS operations.
-- \`litechat.target\` — **THE DOM ELEMENT ITSELF** - Use direct DOM manipulation for performance and versatility.
+- \`llmchef\` — The LLMChef API object with utilities and VFS operations.
+- \`llmchef.target\` — **THE DOM ELEMENT ITSELF** - Use direct DOM manipulation for performance and versatility.
 
 ## LLMChef API Reference
-You can use the following methods on \`litechat\`:
+You can use the following methods on \`llmchef\`:
 
 ### Utilities
-- \`litechat.utils.log(level, ...args)\` — Log messages that will be captured in the console output (level: 'info', 'warn', 'error')
-- \`litechat.utils.toast(type, message)\` — Show toast notifications (type: 'success', 'error', 'info', 'warning')
-- \`litechat.utils.loadModule(url, name, globalKey?, importMap?)\` — Dynamically import a same-origin ES module with optional import map support
-- \`litechat.utils.loadModules(moduleConfigs)\` — Load multiple ES modules with dependency and import map support
-- \`litechat.utils.loadScript(src)\` — Dynamically load a same-origin script via <script src="...">. Returns a promise that resolves when loaded. Tracks loaded scripts for cleanup.
+- \`llmchef.utils.log(level, ...args)\` — Log messages that will be captured in the console output (level: 'info', 'warn', 'error')
+- \`llmchef.utils.toast(type, message)\` — Show toast notifications (type: 'success', 'error', 'info', 'warning')
+- \`llmchef.utils.loadModule(url, name, globalKey?, importMap?)\` — Dynamically import a same-origin ES module with optional import map support
+- \`llmchef.utils.loadModules(moduleConfigs)\` — Load multiple ES modules with dependency and import map support
+- \`llmchef.utils.loadScript(src)\` — Dynamically load a same-origin script via <script src="...">. Returns a promise that resolves when loaded. Tracks loaded scripts for cleanup.
 
 ### Event System
-- \`litechat.emit(eventName, payload)\` — Emit events to the LLMChef system
+- \`llmchef.emit(eventName, payload)\` — Emit events to the LLMChef system
 
 ### VFS (File System)
-- \`litechat.getVfsInstance(vfsKey)\` — Get VFS instance ('orphan' is the default)
+- \`llmchef.getVfsInstance(vfsKey)\` — Get VFS instance ('orphan' is the default)
 
 ### DOM Target
-- \`litechat.target\` — The DOM element for rendering content and UI
+- \`llmchef.target\` — The DOM element for rendering content and UI
 
 ## DOM Manipulation - USE THIS APPROACH!
-**ALWAYS use direct DOM operations on the \`litechat.target\` element. This is THE PRIMARY METHOD for rendering content.**
+**ALWAYS use direct DOM operations on the \`llmchef.target\` element. This is THE PRIMARY METHOD for rendering content.**
 
 ### Basic DOM Operations
 \`\`\`runjs
 // Clear the target
-litechat.target.replaceChildren();
+llmchef.target.replaceChildren();
 
 // Create and append elements
 const heading = document.createElement('h3');
 heading.textContent = 'Hello from DOM!';
 heading.className = 'text-blue-500';
-litechat.target.appendChild(heading);
+llmchef.target.appendChild(heading);
 
 // Create interactive elements
 const button = document.createElement('button');
 button.textContent = 'Click me!';
 button.onclick = () => alert('DOM manipulation rocks!');
-litechat.target.appendChild(button);
+llmchef.target.appendChild(button);
 
-litechat.utils.log('info', 'DOM elements created and appended');
+llmchef.utils.log('info', 'DOM elements created and appended');
 \`\`\`
 
 ### Complex DOM Structures
 \`\`\`runjs
 // Clear target first
-litechat.target.replaceChildren();
+llmchef.target.replaceChildren();
 
 // Create a container
 const container = document.createElement('div');
@@ -107,16 +107,16 @@ button.onclick = () => {
 container.appendChild(button);
 
 // Append to target
-litechat.target.appendChild(container);
+llmchef.target.appendChild(container);
 
-litechat.utils.log('info', 'Complex DOM structure created');
+llmchef.utils.log('info', 'Complex DOM structure created');
 \`\`\`
 
 ### Module Loading Examples
 \`\`\`runjs
 // Example 1: Loading a simple module
 try {
-    const lodash = await litechat.utils.loadModule(
+    const lodash = await llmchef.utils.loadModule(
         '/vendor/lodash/lodash.esm.js',
         'lodash'
     );
@@ -125,9 +125,9 @@ try {
     const numbers = [1, 2, 3, 4, 5];
     const doubled = lodash.map(numbers, n => n * 2);
     
-    litechat.utils.log('info', 'Doubled numbers:', doubled);
+    llmchef.utils.log('info', 'Doubled numbers:', doubled);
 } catch (error) {
-    litechat.utils.toast('error', 'Failed to load lodash');
+    llmchef.utils.toast('error', 'Failed to load lodash');
 }
 \`\`\`
 
@@ -136,14 +136,14 @@ try {
 async function loadMultipleModules() {
     try {
         const [d3, moment] = await Promise.all([
-            litechat.utils.loadModule('/vendor/d3/d3.esm.js', 'D3'),
-            litechat.utils.loadModule('/vendor/moment/moment.esm.js', 'moment')
+            llmchef.utils.loadModule('/vendor/d3/d3.esm.js', 'D3'),
+            llmchef.utils.loadModule('/vendor/moment/moment.esm.js', 'moment')
         ]);
         
-        litechat.utils.log('info', 'Both modules loaded successfully');
+        llmchef.utils.log('info', 'Both modules loaded successfully');
         // Use modules here
     } catch (error) {
-        litechat.utils.toast('error', 'Failed to load modules');
+        llmchef.utils.toast('error', 'Failed to load modules');
     }
 }
 
@@ -153,14 +153,14 @@ loadMultipleModules();
 ### Three.js with OrbitControls Example
 \`\`\`runjs
 // Clear any previous content
-litechat.target.replaceChildren();
+llmchef.target.replaceChildren();
 
 async function createThreeJSScene() {
     try {
-        litechat.utils.log('info', '🚀 Starting Three.js scene creation...');
+        llmchef.utils.log('info', '🚀 Starting Three.js scene creation...');
         
         // Load the modules with proper import map configuration
-        const modules = await litechat.utils.loadModules([
+        const modules = await llmchef.utils.loadModules([
             {
                 url: '/vendor/three/three.module.js',
                 name: 'THREE',
@@ -197,7 +197,7 @@ async function createThreeJSScene() {
         info.textContent = 'Drag to rotate, scroll to zoom';
         container.appendChild(info);
         
-        litechat.target.appendChild(container);
+        llmchef.target.appendChild(container);
 
         // Three.js scene setup
         const scene = new THREE.Scene();
@@ -275,27 +275,27 @@ async function createThreeJSScene() {
         }
 
         animate();
-        litechat.utils.log('info', '🎉 SUCCESS! Three.js scene with animated cubes is displaying!');
+        llmchef.utils.log('info', '🎉 SUCCESS! Three.js scene with animated cubes is displaying!');
         
     } catch (error) {
-        litechat.utils.log('error', '❌ FAILED to create scene:', error.message);
+        llmchef.utils.log('error', '❌ FAILED to create scene:', error.message);
         const errorDiv = document.createElement('div');
         errorDiv.className = 'p-4 text-red-600 bg-red-100 border border-red-200 rounded-md';
         errorDiv.textContent = \`Error: \${error.message}\`;
-        litechat.target.appendChild(errorDiv);
+        llmchef.target.appendChild(errorDiv);
     }
 }
 createThreeJSScene();
 \`\`\`
 
 ## IMPORTANT PRINCIPLES:
-1. **ALWAYS use \`litechat.target.appendChild()\`, \`litechat.target.replaceChildren()\`, etc.**
+1. **ALWAYS use \`llmchef.target.appendChild()\`, \`llmchef.target.replaceChildren()\`, etc.**
 2. **Create elements with \`document.createElement()\`**
 3. **Use Tailwind utility classes via \`className\` for styling**
 4. **Add event listeners directly: \`element.onclick = () => {...}\`**, prevent defaults when target is focused but release them on blur so your output is usable but do not lock LLMChef usage.
 5. **Avoid innerHTML/outerHTML - use DOM methods for performance**
-6. **Use \`litechat.target.replaceChildren()\` to clear content before adding new content**
-7. **For external libraries, use \`litechat.utils.load...\` method to load your script, module or mapped modules !**
+6. **Use \`llmchef.target.replaceChildren()\` to clear content before adding new content**
+7. **For external libraries, use \`llmchef.utils.load...\` method to load your script, module or mapped modules !**
 
 You are encouraged to use the full browser environment (DOM, Canvas, WebGL, Web APIs) with direct DOM manipulation for maximum performance and versatility. Focus on creating interactive, performant visualizations and UI components.
 `;
@@ -304,13 +304,13 @@ export class JsRunnableBlockRendererModule implements ControlModule {
   readonly id = "core-block-renderer-runnable-js";
   private unregisterCallback?: () => void;
   private unregisterRuleCallback?: () => void;
-  private modApiRef?: LiteChatModApi;
+  private modApiRef?: LLMChefModApi;
 
   async initialize(): Promise<void> {
     // No initialization needed
   }
 
-  register(modApi: LiteChatModApi): void {
+  register(modApi: LLMChefModApi): void {
     if (this.unregisterCallback) {
       console.warn(
         `[JsRunnableBlockRendererModule] Already registered. Skipping.`
@@ -370,8 +370,8 @@ export class JsRunnableBlockRendererModule implements ControlModule {
       throw new Error("Module not initialized with modApi");
     }
 
-    // Create a custom litechat API that matches the control rule prompt
-    const customLitechatApi = {
+    // Create a custom llmchef API that matches the control rule prompt
+    const customLLMChefApi = {
       // Utilities with log capture
       utils: {
         log: (level: "info" | "warn" | "error", ...args: any[]) => {
@@ -580,22 +580,22 @@ export class JsRunnableBlockRendererModule implements ControlModule {
             const script = document.createElement('script');
             script.src = src;
             script.async = true;
-            script.dataset.litechatRunnableScript = "true";
+            script.dataset.llmchefRunnableScript = "true";
             script.onload = () => resolve();
             script.onerror = (e) => {
               const errorMessage = e instanceof Error ? e.message : String(e);
               reject(new Error(`Failed to load script: ${src} - ${errorMessage}`));
             };
             document.head.appendChild(script);
-            customLitechatApi.utils.loadedScriptElements.push(script);
+            customLLMChefApi.utils.loadedScriptElements.push(script);
           });
         },
 
         clearLoadedScripts: () => {
-          customLitechatApi.utils.loadedScriptElements.forEach(script => {
+          customLLMChefApi.utils.loadedScriptElements.forEach(script => {
             if (script.parentNode) script.parentNode.removeChild(script);
           });
-          customLitechatApi.utils.loadedScriptElements.length = 0;
+          customLLMChefApi.utils.loadedScriptElements.length = 0;
         },
       },
       // Event system
@@ -611,7 +611,7 @@ export class JsRunnableBlockRendererModule implements ControlModule {
     };
 
     return {
-      litechat: customLitechatApi,
+      llmchef: customLLMChefApi,
       target: previewElement, // Keep backward compatibility
     };
   }

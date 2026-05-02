@@ -1,9 +1,9 @@
 // src/controls/components/canvas/RaceResultExportControl.tsx
 import React from "react";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 import { DownloadIcon } from "lucide-react";
-import { emitter } from "@/lib/litechat/event-emitter";
-import { canvasEvent } from "@/types/litechat/events/canvas.events";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { canvasEvent } from "@/types/llmchef/events/canvas.events";
 import { useTranslation } from "react-i18next";
 
 interface RaceResultExportControlProps {

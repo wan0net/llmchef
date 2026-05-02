@@ -6,7 +6,7 @@ import { SettingsTags } from "@/controls/components/rules/SettingsTags";
 import {
   TabbedLayout,
   TabDefinition,
-} from "@/components/LiteChat/common/TabbedLayout";
+} from "@/components/LLMChef/common/TabbedLayout";
 import type { RulesControlModule } from "@/controls/modules/RulesControlModule";
 import { useTranslation } from "react-i18next";
 

@@ -39,13 +39,13 @@ The Runnable Blocks settings tab follows the AssistantSettingsModule pattern:
 
 ## Enhanced Context API
 
-When code is executed in runnable blocks, a `litechat` object is available globally with the following structure:
+When code is executed in runnable blocks, a `llmchef` object is available globally with the following structure:
 
 ```javascript
 // Available in both JavaScript and Python blocks
-litechat = {
+llmchef = {
   // ModApi access for full LLMChef integration
-  modApi: LiteChatModApi,
+  modApi: LLMChefModApi,
 
   // Context snapshot for current state
   context: {
@@ -189,15 +189,15 @@ Return only the numeric score.
 
 ```js
 // Log current context information
-console.log("Current conversation:", litechat.context.selectedConversationId);
-console.log("Current model:", litechat.context.selectedModelId);
-console.log("Current theme:", litechat.context.theme);
+console.log("Current conversation:", llmchef.context.selectedConversationId);
+console.log("Current model:", llmchef.context.selectedModelId);
+console.log("Current theme:", llmchef.context.theme);
 
 // Show a toast notification
-litechat.utils.toast("success", "Hello from runnable JavaScript!");
+llmchef.utils.toast("success", "Hello from runnable JavaScript!");
 
 // Generate a unique ID
-const myId = litechat.utils.generateId();
+const myId = llmchef.utils.generateId();
 console.log("Generated ID:", myId);
 ```
 
@@ -205,10 +205,10 @@ console.log("Generated ID:", myId);
 
 ```js
 // Get current VFS instance
-const vfsKey = litechat.vfs.getCurrentVfsKey();
+const vfsKey = llmchef.vfs.getCurrentVfsKey();
 console.log("Current VFS key:", vfsKey);
 
-const fs = await litechat.vfs.getInstance(vfsKey);
+const fs = await llmchef.vfs.getInstance(vfsKey);
 if (fs) {
   // List files in current directory
   try {
@@ -224,7 +224,7 @@ if (fs) {
 
 ```js
 // Create a preview target for dynamic content
-const preview = litechat.preview.createTarget("my-chart");
+const preview = llmchef.preview.createTarget("my-chart");
 
 // Generate some data visualization
 const chartHtml = `
@@ -256,13 +256,13 @@ preview.render(chartHtml);
 
 ```js
 // Listen for conversation changes
-const unsubscribe = litechat.utils.on('conversation.selected.item.changed', (payload) => {
+const unsubscribe = llmchef.utils.on('conversation.selected.item.changed', (payload) => {
   console.log('Conversation changed to:', payload.itemId);
-  litechat.utils.toast("info", `Switched to conversation: ${payload.itemId}`);
+  llmchef.utils.toast("info", `Switched to conversation: ${payload.itemId}`);
 });
 
 // Emit custom events
-litechat.utils.emit('custom.user.event', { message: "Hello from JavaScript!" });
+llmchef.utils.emit('custom.user.event', { message: "Hello from JavaScript!" });
 ```
 
 ## Python Examples
@@ -271,15 +271,15 @@ litechat.utils.emit('custom.user.event', { message: "Hello from JavaScript!" });
 
 ```python
 # Log current context information
-print(f"Current conversation: {litechat.context.selectedConversationId}")
-print(f"Current model: {litechat.context.selectedModelId}")
-print(f"Current theme: {litechat.context.theme}")
+print(f"Current conversation: {llmchef.context.selectedConversationId}")
+print(f"Current model: {llmchef.context.selectedModelId}")
+print(f"Current theme: {llmchef.context.theme}")
 
 # Show a toast notification
-litechat.utils.toast("success", "Hello from runnable Python!")
+llmchef.utils.toast("success", "Hello from runnable Python!")
 
 # Generate a unique ID
-my_id = litechat.utils.generateId()
+my_id = llmchef.utils.generateId()
 print(f"Generated ID: {my_id}")
 ```
 
@@ -312,7 +312,7 @@ print(f"\nActive Services: {', '.join(data['services'])}")
 print(f"Active Alerts: {len(data['alerts'])}")
 
 # Create preview with results
-preview = litechat.preview.createTarget("system-report")
+preview = llmchef.preview.createTarget("system-report")
 preview.render(f"""
 <div style="font-family: monospace; background: #f5f5f5; padding: 15px; border-radius: 8px;">
   <h3>System Status</h3>

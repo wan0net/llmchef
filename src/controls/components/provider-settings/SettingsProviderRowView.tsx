@@ -5,7 +5,7 @@ import type {
   DbProviderConfig,
   DbApiKey,
   OpenRouterModel,
-} from "@/types/litechat/provider";
+} from "@/types/llmchef/provider";
 import { Button } from "@/components/ui/button";
 import {
   Edit2Icon,
@@ -28,11 +28,11 @@ import {
   requiresBaseURL,
   supportsModelFetching,
   // combineModelId,
-} from "@/lib/litechat/provider-helpers";
+} from "@/lib/llmchef/provider-helpers";
 import { cn } from "@/lib/utils";
 import { ModelEnablementList } from "./ModelEnablementList";
 import { toast } from "sonner";
-import { ActionTooltipButton } from "@/components/LiteChat/common/ActionTooltipButton";
+import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 
 type FetchStatus = "idle" | "fetching" | "error" | "success";
 

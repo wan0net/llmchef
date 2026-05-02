@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/ApiKeySelector.tsx
+// src/components/LLMChef/settings/ApiKeySelector.tsx
 import React from "react";
 import {
   Select,
@@ -10,7 +10,7 @@ import {
 import { KeyIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 // Corrected import path for types
-import type { DbApiKey } from "@/types/litechat/provider";
+import type { DbApiKey } from "@/types/llmchef/provider";
 
 interface ApiKeySelectorProps {
   className?: string;

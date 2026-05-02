@@ -23,7 +23,7 @@ This codebase is a stunning monument to ambition and a masterclass in leveraging
 
 ### **Verdict**
 
-LiteChat is an exceptional project that demonstrates a rare combination of visionary ambition and impressive technical execution. The developer has not only met but has far exceeded the requirements of the hackathon, delivering a polished, feature-rich, and innovative application.
+LLMChef is an exceptional project that demonstrates a rare combination of visionary ambition and impressive technical execution. The developer has not only met but has far exceeded the requirements of the hackathon, delivering a polished, feature-rich, and innovative application.
 
 The "Runnable Blocks" feature, which I initially misjudged, is a prime example of the project's thoughtful design. It is a powerful tool for developers that is implemented with a clear and deliberate security model that empowers users to make informed decisions about the code they run.
 

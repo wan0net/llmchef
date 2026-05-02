@@ -5,11 +5,11 @@ LLMChef uses a sophisticated event-driven architecture for decoupled communicati
 ## Core Concepts
 
 ### Event Emitter
-The central event bus is defined in [`src/lib/litechat/event-emitter.ts`](../src/lib/litechat/event-emitter.ts):
+The central event bus is defined in [`src/lib/llmchef/event-emitter.ts`](../src/lib/llmchef/event-emitter.ts):
 
 ```typescript
 import mitt, { type Emitter, type EventType } from "mitt";
-import type { ModEventPayloadMap } from "@/types/litechat/modding";
+import type { ModEventPayloadMap } from "@/types/llmchef/modding";
 
 export const emitter: Emitter<ModEventPayloadMap & Record<EventType, any>> =
   mitt<ModEventPayloadMap & Record<EventType, any>>();
@@ -19,7 +19,7 @@ export const emitter: Emitter<ModEventPayloadMap & Record<EventType, any>> =
 All events are strongly typed through the `ModEventPayloadMap` interface, which aggregates event payloads from all domains:
 
 ```typescript
-// From src/types/litechat/modding.ts
+// From src/types/llmchef/modding.ts
 export interface ModEventPayloadMap extends
   SettingsEventPayloads,
   ProviderEventPayloads,
@@ -96,10 +96,10 @@ export const appEvent = {
 
 ## Event Definitions
 
-Event definitions are organized by domain in [`src/types/litechat/events/`](../src/types/litechat/events/):
+Event definitions are organized by domain in [`src/types/llmchef/events/`](../src/types/llmchef/events/):
 
 ### Settings Events
-[`src/types/litechat/events/settings.events.ts`](../src/types/litechat/events/settings.events.ts)
+[`src/types/llmchef/events/settings.events.ts`](../src/types/llmchef/events/settings.events.ts)
 
 ```typescript
 export const settingsEvent = {
@@ -123,7 +123,7 @@ export interface SettingsEventPayloads {
 ```
 
 ### Conversation Events
-[`src/types/litechat/events/conversation.events.ts`](../src/types/litechat/events/conversation.events.ts)
+[`src/types/llmchef/events/conversation.events.ts`](../src/types/llmchef/events/conversation.events.ts)
 
 ```typescript
 export const conversationEvent = {
@@ -140,7 +140,7 @@ export const conversationEvent = {
 ```
 
 ### VFS Events
-[`src/types/litechat/events/vfs.events.ts`](../src/types/litechat/events/vfs.events.ts)
+[`src/types/llmchef/events/vfs.events.ts`](../src/types/llmchef/events/vfs.events.ts)
 
 ```typescript
 export const vfsEvent = {
@@ -157,7 +157,7 @@ export const vfsEvent = {
 ```
 
 ### Prompt Events
-[`src/types/litechat/events/prompt.events.ts`](../src/types/litechat/events/prompt.events.ts)
+[`src/types/llmchef/events/prompt.events.ts`](../src/types/llmchef/events/prompt.events.ts)
 
 ```typescript
 export const promptEvent = {
@@ -289,7 +289,7 @@ Components and modules subscribe to state change events:
 
 ```typescript
 // In a Control Module's initialize() method
-async initialize(modApi: LiteChatModApi): Promise<void> {
+async initialize(modApi: LLMChefModApi): Promise<void> {
   this.eventUnsubscribers.push(
     modApi.on(settingsEvent.themeChanged, (payload) => {
       this.handleThemeChange(payload.theme);
@@ -418,7 +418,7 @@ Use browser dev tools to inspect event flow:
 ```typescript
 // Add to window for debugging
 if (process.env.NODE_ENV === 'development') {
-  (window as any).liteChatEmitter = emitter;
+  (window as any).llmChefEmitter = emitter;
   (window as any).emitEvent = (eventName: string, payload: any) => {
     emitter.emit(eventName as any, payload);
   };
@@ -549,7 +549,7 @@ useEffect(() => {
 Create or update event definition file:
 
 ```typescript
-// src/types/litechat/events/my-feature.events.ts
+// src/types/llmchef/events/my-feature.events.ts
 export const myFeatureEvent = {
   // State change events
   dataLoaded: "myFeature.data.loaded",
@@ -572,7 +572,7 @@ export interface MyFeatureEventPayloads {
 Add to the main event payload map:
 
 ```typescript
-// src/types/litechat/modding.ts
+// src/types/llmchef/modding.ts
 export interface ModEventPayloadMap extends
   SettingsEventPayloads,
   ConversationEventPayloads,

@@ -5,7 +5,7 @@ import {
   clearOutboundRequestLog,
   getOutboundRequestLog,
   subscribeOutboundRequestLog,
-} from "@/lib/litechat/outbound-policy";
+} from "@/lib/llmchef/outbound-policy";
 import { getRuntimeAllowedOutboundHosts } from "@/services/outbound-fetch-guard.service";
 
 const emptySnapshot: ReturnType<typeof getOutboundRequestLog> = [];

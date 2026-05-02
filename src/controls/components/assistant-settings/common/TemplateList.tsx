@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Edit, Trash2 } from "lucide-react";
-import type { PromptTemplate } from "@/types/litechat/prompt-template";
+import type { PromptTemplate } from "@/types/llmchef/prompt-template";
 
 interface TemplateListProps {
   templates: PromptTemplate[];

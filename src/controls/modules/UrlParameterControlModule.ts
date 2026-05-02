@@ -1,23 +1,23 @@
 // src/controls/modules/UrlParameterControlModule.ts
 // FULL FILE
-import { type ControlModule } from "@/types/litechat/control";
-import { type LiteChatModApi } from "@/types/litechat/modding";
-import { promptEvent } from "@/types/litechat/events/prompt.events";
-import { appEvent } from "@/types/litechat/events/app.events"; // Corrected import
-import { parseAppUrlParameters } from "@/lib/litechat/url-helpers";
+import { type ControlModule } from "@/types/llmchef/control";
+import { type LLMChefModApi } from "@/types/llmchef/modding";
+import { promptEvent } from "@/types/llmchef/events/prompt.events";
+import { appEvent } from "@/types/llmchef/events/app.events"; // Corrected import
+import { parseAppUrlParameters } from "@/lib/llmchef/url-helpers";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
-import { conversationEvent } from "@/types/litechat/events/conversation.events";
-import { providerEvent } from "@/types/litechat/events/provider.events";
+import { conversationEvent } from "@/types/llmchef/events/conversation.events";
+import { providerEvent } from "@/types/llmchef/events/provider.events";
 // Removed unused vfsEvent import
 import { useProviderStore } from "@/store/provider.store";
 
 export class UrlParameterControlModule implements ControlModule {
   readonly id = "core-url-parameters";
   readonly dependencies = ["core-text-triggers"]; // Add dependency on text triggers
-  private modApiRef: LiteChatModApi | null = null;
+  private modApiRef: LLMChefModApi | null = null;
 
-  async initialize(modApi: LiteChatModApi): Promise<void> {
+  async initialize(modApi: LLMChefModApi): Promise<void> {
     this.modApiRef = modApi;
     console.log(`[${this.id}] Initializing...`);
     modApi.on(appEvent.initializationPhaseCompleted, (payload) => {
@@ -32,7 +32,7 @@ export class UrlParameterControlModule implements ControlModule {
     console.log(`[${this.id}] Initialized, awaiting full app load.`);
   }
 
-  register(_modApi: LiteChatModApi): void {
+  register(_modApi: LLMChefModApi): void {
     // No UI components to register
   }
 

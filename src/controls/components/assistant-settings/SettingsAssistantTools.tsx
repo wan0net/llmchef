@@ -1,4 +1,4 @@
-// src/components/LiteChat/settings/assistant/SettingsAssistantTools.tsx
+// src/components/LLMChef/settings/assistant/SettingsAssistantTools.tsx
 // FULL FILE
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { z } from "zod";
 import { toast } from "sonner";
-import { SwitchField } from "@/components/LiteChat/common/form-fields/SwitchField";
+import { SwitchField } from "@/components/LLMChef/common/form-fields/SwitchField";
 import { Separator } from "@/components/ui/separator";
 
 const assistantToolsSchema = z.object({
