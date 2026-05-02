@@ -1,7 +1,7 @@
 // src/hooks/llmchef/useAsyncOperation.ts
 
 import { useState, useCallback } from "react";
-import { toast } from "sonner";
+import { BackgroundTaskToast } from "@/services/background-task-toast.service";
 
 // Corrected type definition
 type AsyncOperation<TArgs extends any[], TResult> = (
@@ -23,6 +23,8 @@ export function useAsyncOperation<TArgs extends any[], TResult>(
     setError?: (error: string | null) => void;
     successMessage?: string | ((result: TResult) => string);
     errorMessagePrefix?: string;
+    loadingMessage?: string;
+    toastId?: string;
   },
 ): UseAsyncOperationResult<TArgs, TResult> {
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +33,7 @@ export function useAsyncOperation<TArgs extends any[], TResult>(
   const setLoading = options?.setLoading ?? setIsLoading;
   const setError = options?.setError ?? setErrorState;
   const prefix = options?.errorMessagePrefix ?? "Operation failed";
+  const toastId = options?.toastId ?? `async-operation:${prefix}`;
 
   const resetError = useCallback(() => {
     setError(null);
@@ -40,10 +43,23 @@ export function useAsyncOperation<TArgs extends any[], TResult>(
     async (...args: TArgs): Promise<TResult | undefined> => {
       if (isLoading) {
         console.warn("Operation already in progress, skipping.");
+        if (options?.loadingMessage) {
+          BackgroundTaskToast.loading({
+            id: toastId,
+            message: options.loadingMessage,
+            description: "This action is already running.",
+          });
+        }
         return undefined;
       }
       setLoading(true);
       setError(null);
+      if (options?.loadingMessage) {
+        BackgroundTaskToast.loading({
+          id: toastId,
+          message: options.loadingMessage,
+        });
+      }
       try {
         const result = await operation(...args);
         if (options?.successMessage) {
@@ -51,20 +67,26 @@ export function useAsyncOperation<TArgs extends any[], TResult>(
             typeof options.successMessage === "function"
               ? options.successMessage(result)
               : options.successMessage;
-          toast.success(message);
+          BackgroundTaskToast.success({ id: toastId, message });
+        } else if (options?.loadingMessage) {
+          BackgroundTaskToast.dismiss(toastId);
         }
         return result;
       } catch (err: unknown) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(`[useAsyncOperation Error - ${prefix}]:`, err);
         setError(errorMsg);
-        toast.error(`${prefix}: ${errorMsg}`);
+        BackgroundTaskToast.error({
+          id: toastId,
+          message: prefix,
+          description: errorMsg,
+        });
         return undefined;
       } finally {
         setLoading(false);
       }
     },
-    [isLoading, setLoading, setError, operation, options, prefix],
+    [isLoading, setLoading, setError, operation, options, prefix, toastId],
   );
 
   return { run, isLoading, error, resetError };

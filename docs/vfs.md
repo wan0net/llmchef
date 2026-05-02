@@ -1,6 +1,6 @@
 # Virtual File System (VFS)
 
-LLMChef implements a browser-based Virtual File System using ZenFS with IndexedDB backend, providing full filesystem functionality without server dependencies. The VFS enables project-specific file storage, Git integration, and seamless file operations entirely within the browser.
+LLMChef implements a browser-based Virtual File System using ZenFS with IndexedDB backend, providing full filesystem functionality without server dependencies. The VFS enables shared app storage with project folders, Git integration, and seamless file operations entirely within the browser.
 
 ## Architecture Overview
 

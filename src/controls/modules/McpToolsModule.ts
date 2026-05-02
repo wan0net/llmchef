@@ -413,8 +413,6 @@ export class McpToolsModule implements ControlModule {
     // bridge owns the command and args in MCP_BRIDGE_SERVERS.
     const stdioUrl = new URL(server.url);
     const profileName = stdioUrl.hostname || stdioUrl.pathname.replace(/^\/+/, '');
-    const argsParam = stdioUrl.searchParams.get('args') || '';
-
     if (!profileName) {
       throw new Error('stdio:// URL must specify a bridge profile (e.g., stdio://myfs).');
     }
@@ -423,17 +421,8 @@ export class McpToolsModule implements ControlModule {
     const bridgeUrl = await this.getBridgeUrl();
 
     try {
-      // Build the profile-backed server endpoint. Legacy command/args mode only
-      // works when the bridge explicitly enables MCP_BRIDGE_ALLOW_DYNAMIC=true.
-      const params = new URLSearchParams();
-      if (argsParam) {
-        params.set('command', profileName);
-        params.set('args', argsParam);
-      }
-      const query = params.toString();
-
       const serverEndpoint = assertAllowedOutboundUrl(
-        `${bridgeUrl}/servers/${encodeURIComponent(profileName)}/mcp${query ? `?${query}` : ''}`,
+        `${bridgeUrl}/servers/${encodeURIComponent(profileName)}/mcp`,
         `mcp:stdio-bridge:${server.name}`,
       );
 

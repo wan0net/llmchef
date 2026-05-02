@@ -78,7 +78,7 @@ For stdio servers, define a named bridge profile in `MCP_BRIDGE_SERVERS`, then u
 Examples:
 - Bridge env: `MCP_BRIDGE_SERVERS='{"myfs":{"command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/Users/username/Documents"]}}'`
 - LLMChef server URL: `stdio://myfs`
-- Legacy `stdio://command?args=...` URLs only work when the bridge is explicitly started with `MCP_BRIDGE_ALLOW_DYNAMIC=true`.
+- URL-supplied commands and arguments are rejected. The bridge owner must define every launchable server in `MCP_BRIDGE_SERVERS`.
 
 ### Connection Settings
 

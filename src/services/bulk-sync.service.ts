@@ -1,9 +1,9 @@
 import { useConversationStore } from "@/store/conversation.store";
-import { toast } from "sonner";
 import type { Conversation } from "@/types/llmchef/chat";
 import type { SyncRepo } from "@/types/llmchef/sync";
 import { emitter } from "@/lib/llmchef/event-emitter";
 import { syncEvent } from "@/types/llmchef/events/sync.events";
+import { BackgroundTaskToast } from "@/services/background-task-toast.service";
 
 export interface BulkSyncProgress {
   totalRepos: number;
@@ -38,7 +38,11 @@ export class BulkSyncService {
     };
 
     if (this.isRunning) {
-      toast.warning("Bulk sync already in progress");
+      BackgroundTaskToast.info({
+        id: "bulk-sync",
+        message: "Bulk sync already running",
+        description: "The current sync will keep updating here.",
+      });
       return;
     }
 
@@ -60,7 +64,11 @@ export class BulkSyncService {
 
     try {
       emitter.emit(syncEvent.bulkSyncStarted, { progress });
-      toast.info(`Starting bulk sync: ${repos.length} repositories, ${conversations.length} conversations`);
+      BackgroundTaskToast.loading({
+        id: "bulk-sync",
+        message: "Syncing in background...",
+        description: `${repos.length} repositories, ${conversations.length} conversations`,
+      });
 
       // Phase 1: Initialize/sync all repositories
       if (opts.syncRepos && repos.length > 0) {
@@ -76,15 +84,27 @@ export class BulkSyncService {
       emitter.emit(syncEvent.bulkSyncCompleted, { progress, success: !hasErrors });
       
       if (hasErrors) {
-        toast.warning(`Bulk sync completed with ${progress.errors.length} errors. Check console for details.`);
+        BackgroundTaskToast.error({
+          id: "bulk-sync",
+          message: "Bulk sync completed with errors",
+          description: `${progress.errors.length} item${progress.errors.length === 1 ? "" : "s"} failed. Check console for details.`,
+        });
         console.warn("Bulk sync errors:", progress.errors);
       } else {
-        toast.success("Bulk sync completed successfully!");
+        BackgroundTaskToast.success({
+          id: "bulk-sync",
+          message: "Bulk sync completed",
+          description: "Repositories and conversations are up to date.",
+        });
       }
 
     } catch (error) {
       console.error("Bulk sync failed:", error);
-      toast.error(`Bulk sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      BackgroundTaskToast.error({
+        id: "bulk-sync",
+        message: "Bulk sync failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
       emitter.emit(syncEvent.bulkSyncFailed, { progress, error: String(error) });
     } finally {
       this.isRunning = false;
@@ -103,11 +123,14 @@ export class BulkSyncService {
     });
 
     if (pendingConversations.length === 0) {
-      toast.info("No conversations need syncing");
+      BackgroundTaskToast.info({
+        id: "bulk-sync",
+        message: "Nothing to sync",
+        description: "No conversations need syncing.",
+      });
       return;
     }
 
-    toast.info(`Syncing ${pendingConversations.length} pending conversations...`);
     await this.syncAll({
       syncRepos: false,
       syncConversations: true,
@@ -124,11 +147,14 @@ export class BulkSyncService {
     const repos = conversationStore.syncRepos;
     
     if (repos.length === 0) {
-      toast.info("No repositories configured");
+      BackgroundTaskToast.info({
+        id: "bulk-sync",
+        message: "No repositories configured",
+        description: "Add a sync repository before initializing.",
+      });
       return;
     }
 
-    toast.info(`Initializing ${repos.length} repositories...`);
     await this.syncAll({
       syncRepos: true,
       syncConversations: false,
@@ -143,7 +169,10 @@ export class BulkSyncService {
   static abort(): void {
     if (this.isRunning && this.abortController) {
       this.abortController.abort();
-      toast.info("Bulk sync operation cancelled");
+      BackgroundTaskToast.info({
+        id: "bulk-sync",
+        message: "Bulk sync cancelled",
+      });
     }
   }
 
@@ -237,4 +266,4 @@ export class BulkSyncService {
     }
     return batches;
   }
-} 
+}

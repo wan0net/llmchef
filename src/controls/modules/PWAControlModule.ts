@@ -1,11 +1,10 @@
 import type { ControlModule } from "@/types/llmchef/control";
-import type { LLMChefModApi } from "@/types/llmchef/modding";
 import { PWAService } from "@/services/pwa.service";
 import { PWAUpdateNotification } from "@/components/LLMChef/common/PWAUpdateNotification";
 import { emitter } from "@/lib/llmchef/event-emitter";
 import { pwaEvent } from "@/types/llmchef/events/pwa.events";
 import { Button } from "@/components/ui/button";
-import { DownloadIcon, RotateCcw } from "lucide-react";
+import { DownloadIcon, Loader2, RotateCcw } from "lucide-react";
 import React from "react";
 import i18next from "i18next";
 import type { ControlModuleConstructor } from "@/types/llmchef/control";
@@ -15,7 +14,7 @@ export class PWAControlModule implements ControlModule {
   private unregisterCallbacks: (() => void)[] = [];
   private pwaService: PWAService | null = null;
 
-  async initialize(_modApi: LLMChefModApi): Promise<void> {
+  async initialize(): Promise<void> {
     this.pwaService = PWAService.getInstance();
 
     // Initialize PWA service
@@ -91,6 +90,7 @@ export class PWAControlModule implements ControlModule {
     const PWAUpdateButton: React.FC = () => {
       const [isUpdateAvailable, setIsUpdateAvailable] = React.useState(false);
       const [isUpdating, setIsUpdating] = React.useState(false);
+      const [isCheckingUpdates, setIsCheckingUpdates] = React.useState(false);
       const [isOfflineReady, setIsOfflineReady] = React.useState(false);
 
       React.useEffect(() => {
@@ -130,7 +130,12 @@ export class PWAControlModule implements ControlModule {
 
       const handleCheckForUpdates = async () => {
         if (!pwaService) return;
-        await pwaService.checkForUpdates();
+        setIsCheckingUpdates(true);
+        try {
+          await pwaService.checkForUpdates();
+        } finally {
+          setIsCheckingUpdates(false);
+        }
       };
 
       if (!isUpdateAvailable && !isOfflineReady) return null;
@@ -174,10 +179,15 @@ export class PWAControlModule implements ControlModule {
               variant: "ghost",
               size: "sm",
               onClick: handleCheckForUpdates,
+              disabled: isCheckingUpdates,
               className: "h-8 px-3 text-xs",
             },
-            React.createElement(RotateCcw, { className: "h-3 w-3 mr-1" }),
-            "Check Updates"
+            isCheckingUpdates
+              ? React.createElement(Loader2, {
+                  className: "h-3 w-3 mr-1 animate-spin",
+                })
+              : React.createElement(RotateCcw, { className: "h-3 w-3 mr-1" }),
+            isCheckingUpdates ? "Checking..." : "Check Updates"
           )
       );
     };
@@ -191,6 +201,8 @@ export class PWAControlModule implements ControlModule {
     const PWASettings: React.FC = () => {
       const [isUpdateAvailable, setIsUpdateAvailable] = React.useState(false);
       const [isOfflineReady, setIsOfflineReady] = React.useState(false);
+      const [isCheckingUpdates, setIsCheckingUpdates] = React.useState(false);
+      const [isInstallingUpdate, setIsInstallingUpdate] = React.useState(false);
 
       React.useEffect(() => {
         if (!pwaService) return;
@@ -201,12 +213,25 @@ export class PWAControlModule implements ControlModule {
 
       const handleCheckForUpdates = async () => {
         if (!pwaService) return;
-        await pwaService.checkForUpdates();
+        setIsCheckingUpdates(true);
+        try {
+          await pwaService.checkForUpdates();
+          setIsUpdateAvailable(pwaService.isUpdateAvailable());
+          setIsOfflineReady(pwaService.isOfflineReady());
+        } finally {
+          setIsCheckingUpdates(false);
+        }
       };
 
       const handleAcceptUpdate = async () => {
         if (!pwaService) return;
-        await pwaService.acceptUpdate();
+        setIsInstallingUpdate(true);
+        try {
+          await pwaService.acceptUpdate();
+          setIsUpdateAvailable(pwaService.isUpdateAvailable());
+        } finally {
+          setIsInstallingUpdate(false);
+        }
       };
 
       return React.createElement(
@@ -300,9 +325,16 @@ export class PWAControlModule implements ControlModule {
                 variant: "outline",
                 size: "sm",
                 onClick: handleCheckForUpdates,
+                disabled: isCheckingUpdates || isInstallingUpdate,
               },
-              React.createElement(RotateCcw, { className: "h-4 w-4 mr-2" }),
-              "Check for Updates"
+              isCheckingUpdates
+                ? React.createElement(Loader2, {
+                    className: "h-4 w-4 mr-2 animate-spin",
+                  })
+                : React.createElement(RotateCcw, {
+                    className: "h-4 w-4 mr-2",
+                  }),
+              isCheckingUpdates ? "Checking..." : "Check for Updates"
             ),
             isUpdateAvailable &&
               React.createElement(
@@ -310,11 +342,16 @@ export class PWAControlModule implements ControlModule {
                 {
                   size: "sm",
                   onClick: handleAcceptUpdate,
+                  disabled: isInstallingUpdate,
                 },
-                React.createElement(DownloadIcon, {
-                  className: "h-4 w-4 mr-2",
-                }),
-                "Install Update"
+                isInstallingUpdate
+                  ? React.createElement(Loader2, {
+                      className: "h-4 w-4 mr-2 animate-spin",
+                    })
+                  : React.createElement(DownloadIcon, {
+                      className: "h-4 w-4 mr-2",
+                    }),
+                isInstallingUpdate ? "Installing..." : "Install Update"
               )
           )
         ),

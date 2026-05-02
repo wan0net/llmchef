@@ -71,7 +71,7 @@ X-MCP-Bridge-Token: secret
 - **Sandboxing**: MCP servers run in isolated child processes
 - **Resource Limits**: CPU and memory limits on spawned processes
 - **Path Validation**: Working directory and file path validation
-- **Named Profiles**: Commands and arguments come from `MCP_BRIDGE_SERVERS`; legacy URL-supplied commands require `MCP_BRIDGE_ALLOW_DYNAMIC=true`.
+- **Named Profiles**: Commands and arguments come from `MCP_BRIDGE_SERVERS`; URL-supplied commands and arguments are rejected.
 - **Command Restrictions**: Allowlist of permitted commands
 
 ### Session Management
@@ -107,7 +107,6 @@ X-MCP-Bridge-Token: secret
 - `MCP_BRIDGE_TOKEN`: Required token for protected bridge endpoints; generated at startup if omitted
 - `MCP_BRIDGE_SERVERS`: JSON object of named stdio server profiles
 - `MCP_BRIDGE_ALLOWED_COMMANDS`: Comma-separated list of commands allowed in profiles
-- `MCP_BRIDGE_ALLOW_DYNAMIC`: Set to `true` to temporarily allow legacy URL-supplied command/args mode
 
 ## Error Handling
 

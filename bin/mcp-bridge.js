@@ -70,7 +70,6 @@ const config = {
   allowedCommands: parseCsv(process.env.MCP_BRIDGE_ALLOWED_COMMANDS || 'npx,node,python,python3'),
   serverProfiles: parseServerProfiles(process.env.MCP_BRIDGE_SERVERS),
   token: process.env.MCP_BRIDGE_TOKEN || randomBytes(24).toString('base64url'),
-  allowDynamicServers: process.env.MCP_BRIDGE_ALLOW_DYNAMIC === 'true',
 };
 
 function isLoopbackBindHost(host) {
@@ -124,8 +123,8 @@ Server Profiles:
 
   LLMChef should connect to stdio://myfs and send the bridge token.
 
-Dynamic URL command mode is disabled by default. To temporarily allow legacy
-stdio://command?args=... URLs, set MCP_BRIDGE_ALLOW_DYNAMIC=true.
+URL-supplied commands and arguments are not supported. Add every stdio server
+to MCP_BRIDGE_SERVERS so the bridge owner controls exactly what can launch.
       `);
       process.exit(0);
   }
@@ -157,8 +156,8 @@ function assertCommandAllowed(command) {
   }
 }
 
-// Parse server configuration from named profiles, with legacy dynamic mode opt-in.
-function parseServerConfig(serverName, url) {
+// Parse server configuration from named profiles only.
+function parseServerConfig(serverName) {
   const profile = config.serverProfiles[serverName];
   if (profile) {
     if (!profile.enabled) {
@@ -167,26 +166,7 @@ function parseServerConfig(serverName, url) {
     assertCommandAllowed(profile.command);
     return { ...profile };
   }
-
-  const urlObj = new URL(url, `http://localhost:${config.port}`);
-  const command = urlObj.searchParams.get('command');
-  const argsStr = urlObj.searchParams.get('args');
-
-  if (!config.allowDynamicServers) {
-    throw new Error(`Unknown MCP server profile "${serverName}". Add it to MCP_BRIDGE_SERVERS.`);
-  }
-  if (!command) {
-    throw new Error('Missing required parameter: command');
-  }
-  assertCommandAllowed(command);
-  
-  const args = argsStr ? argsStr.split(',').map(arg => arg.trim()).filter(arg => arg) : [];
-  
-  return {
-    command,
-    args,
-    enabled: true
-  };
+  throw new Error(`Unknown MCP server profile "${serverName}". Add it to MCP_BRIDGE_SERVERS.`);
 }
 
 // JSON Line Parser
@@ -245,7 +225,7 @@ class McpServer {
   async start() {
     if (this.process) return; // Already started
 
-    log(`Starting dynamic MCP server: ${this.name} (${this.config.command} ${this.config.args.join(' ')})`);
+    log(`Starting MCP server profile: ${this.name} (${this.config.command} ${this.config.args.join(' ')})`);
     
     try {
       this.process = spawn(this.config.command, this.config.args, {
@@ -273,7 +253,7 @@ class McpServer {
 
       // Initialize the server
       await this.initialize();
-      log(`Dynamic server ${this.name} started and initialized`);
+      log(`MCP server profile ${this.name} started and initialized`);
 
     } catch (err) {
       error(`Failed to start server ${this.name}:`, err);
@@ -433,13 +413,13 @@ class McpServer {
   }
 }
 
-// Get or create server dynamically
+// Get or create named profile server
 async function getOrCreateServer(name, serverConfig) {
   if (servers.has(name)) {
     return servers.get(name);
   }
 
-  log(`Creating new dynamic server: ${name}`);
+  log(`Creating MCP server profile: ${name}`);
   const server = new McpServer(name, serverConfig);
   servers.set(name, server);
   
@@ -518,7 +498,7 @@ async function handleHealth(req, res) {
     activeServers: Array.from(servers.keys()),
     configuredProfiles: Object.keys(config.serverProfiles),
     version: '1.0.0',
-    mode: config.allowDynamicServers ? 'profile+dynamic' : 'profile'
+    mode: 'profile'
   });
 }
 
@@ -539,7 +519,7 @@ async function handleServersList(req, res) {
 
 async function handleServerRequest(req, res, serverName) {
   try {
-    const serverConfig = parseServerConfig(serverName, req.url);
+    const serverConfig = parseServerConfig(serverName);
     
     // Get or create the server
     const server = await getOrCreateServer(serverName, serverConfig);
@@ -693,7 +673,6 @@ server.listen(config.port, config.host, () => {
   console.log(`✅ LLMChef MCP Bridge running on ${config.host}:${config.port}`);
   console.log(`🔐 Bridge token: ${config.token}${generatedToken ? ' (generated for this session)' : ''}`);
   console.log(`📦 Configured profiles: ${Object.keys(config.serverProfiles).join(', ') || '(none)'}`);
-  console.log(`🔄 Legacy dynamic command mode: ${config.allowDynamicServers ? 'enabled' : 'disabled'}`);
   console.log(`📋 Health check: http://${config.host}:${config.port}/health`);
   console.log(`📊 Active servers: http://${config.host}:${config.port}/servers`);
   console.log(`\n🚀 Ready to accept profile-backed server requests!`);

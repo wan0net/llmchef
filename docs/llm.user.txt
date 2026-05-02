@@ -89,10 +89,11 @@ Each project can override global settings:
 - Mix and match rules and tags per conversation
 
 ### Virtual File System (VFS)
-- **Project-Specific**: Each project has its own filesystem
+- **Shared App VFS**: All user files live in the main LLMChef VFS
+- **Project Folders**: Each project gets a folder inside the shared VFS
 - **File Operations**: Create, upload, edit, delete files and folders
 - **AI Integration**: AI can read/write files using tools
-- **Context Switching**: VFS automatically switches with project selection
+- **Context Switching**: Project selection changes the current folder view while the broader VFS remains browsable
 
 ### Git Integration
 1. **Setup Repositories**: Settings → Git → Sync Repositories

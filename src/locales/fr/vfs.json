@@ -74,9 +74,9 @@
     }
   },
   "fileManagerBanner": {
-    "sharedVfs": "<b>VFS Partagé:</b> Tous les chats <i>non</i> dans un projet partagent ce système de fichiers.",
-    "projectSharedVfs": "<b>VFS Partagé de Projet:</b> Tous les chats de ce projet partagent ce système de fichiers.",
-    "projectVfs": "<b>VFS de Projet:</b> Système de fichiers pour ce projet et tous ses chats."
+    "sharedVfs": "<b>VFS de l'app:</b> Les fichiers racine et les dossiers de projet vivent dans le même système local.",
+    "projectSharedVfs": "<b>Dossier de projet:</b> Ce chat affiche son dossier de projet dans le VFS de l'app.",
+    "projectVfs": "<b>Dossier de projet:</b> Ce projet est un dossier dans le VFS partagé de l'app."
   },
   "newFolder": {
     "placeholder": "Nom du nouveau dossier",

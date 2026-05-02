@@ -74,9 +74,9 @@
     }
   },
   "fileManagerBanner": {
-    "sharedVfs": "<b>Gemeinsames VFS:</b> Alle Chats <i>nicht</i> in einem Projekt teilen dieses Dateisystem.",
-    "projectSharedVfs": "<b>Projekt-gemeinsames VFS:</b> Alle Chats in diesem Projekt teilen dieses Dateisystem.",
-    "projectVfs": "<b>Projekt VFS:</b> Dateisystem für dieses Projekt und alle seine Chats."
+    "sharedVfs": "<b>App-VFS:</b> Stammdateien und Projektordner liegen im selben lokalen Dateisystem.",
+    "projectSharedVfs": "<b>Projektordner:</b> Dieser Chat zeigt seinen Projektordner im App-VFS.",
+    "projectVfs": "<b>Projektordner:</b> Dieses Projekt ist ein Ordner im gemeinsamen App-VFS."
   },
   "newFolder": {
     "placeholder": "Neuer Ordnername",

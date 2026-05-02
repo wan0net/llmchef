@@ -2,12 +2,14 @@ import { registerSW } from "virtual:pwa-register";
 import { emitter } from "@/lib/llmchef/event-emitter";
 import { pwaEvent } from "@/types/llmchef/events/pwa.events";
 import { toast } from "sonner";
+import { BackgroundTaskToast } from "@/services/background-task-toast.service";
 
 export class PWAService {
   private static instance: PWAService | null = null;
   private updateSW: ((reloadPage?: boolean) => Promise<void>) | null = null;
   private offlineReady = false;
   private needRefresh = false;
+  private updateCheckPromise: Promise<void> | null = null;
 
   private constructor() {
     // Private constructor for singleton
@@ -72,6 +74,7 @@ export class PWAService {
 
     // Show toast notification
     toast("Update Available", {
+      id: "pwa-update-available",
       description: "A new version of LLMChef is available. Click to update.",
       action: {
         label: "Update Now",
@@ -88,6 +91,7 @@ export class PWAService {
     });
 
     toast.success("App Ready", {
+      id: "pwa-offline-ready",
       description: "LLMChef is now ready to work offline.",
       duration: 5000,
     });
@@ -99,9 +103,10 @@ export class PWAService {
       context,
     });
 
-    toast.error("Update Error", {
+    BackgroundTaskToast.error({
+      id: "pwa-update-check",
+      message: "Update Error",
       description: `Failed to update the app: ${error.message}`,
-      duration: 8000,
     });
   }
 
@@ -109,6 +114,11 @@ export class PWAService {
     if (!this.updateSW) return;
 
     try {
+      BackgroundTaskToast.loading({
+        id: "pwa-install-update",
+        message: "Installing update...",
+        description: "LLMChef will reload when the new build is ready.",
+      });
       emitter.emit(pwaEvent.updateAccepted, {
         updateSW: this.updateSW,
       });
@@ -117,6 +127,11 @@ export class PWAService {
 
       emitter.emit(pwaEvent.updateInstalled, {
         needsRefresh: false,
+      });
+      BackgroundTaskToast.success({
+        id: "pwa-install-update",
+        message: "Update installed",
+        description: "LLMChef has been updated successfully.",
       });
     } catch (error) {
       this.handleUpdateError(error as Error, "Update installation failed");
@@ -143,12 +158,32 @@ export class PWAService {
   }
 
   public async checkForUpdates(): Promise<void> {
+    if (this.updateCheckPromise) {
+      BackgroundTaskToast.loading({
+        id: "pwa-update-check",
+        message: "Checking for updates...",
+        description: "An update check is already running.",
+      });
+      return this.updateCheckPromise;
+    }
+
     if (!this.updateSW) {
       console.log("No update service worker available");
+      BackgroundTaskToast.info({
+        id: "pwa-update-check",
+        message: "Update checks unavailable",
+        description: "The service worker is not active in this environment.",
+      });
       return;
     }
 
-    try {
+    this.updateCheckPromise = (async () => {
+      BackgroundTaskToast.loading({
+        id: "pwa-update-check",
+        message: "Checking for updates...",
+        description: "Looking for a newer LLMChef build.",
+      });
+
       // Force check for updates by calling the service worker update function
       // This will trigger the onNeedRefresh callback if an update is available
       const registration = await navigator.serviceWorker.getRegistration();
@@ -156,9 +191,29 @@ export class PWAService {
         await registration.update();
         console.log("Manual update check completed");
       }
+
+      if (this.needRefresh) {
+        BackgroundTaskToast.success({
+          id: "pwa-update-check",
+          message: "Update found",
+          description: "A new version is ready to install.",
+        });
+      } else {
+        BackgroundTaskToast.success({
+          id: "pwa-update-check",
+          message: "LLMChef is up to date",
+          description: "No newer local app bundle was found.",
+        });
+      }
+    })();
+
+    try {
+      await this.updateCheckPromise;
     } catch (error) {
       console.error("Manual update check failed:", error);
       this.handleUpdateError(error as Error, "Manual update check failed");
+    } finally {
+      this.updateCheckPromise = null;
     }
   }
 }

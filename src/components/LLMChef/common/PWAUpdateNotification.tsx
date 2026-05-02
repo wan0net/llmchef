@@ -51,6 +51,7 @@ export const PWAUpdateNotification: React.FC<PWAUpdateNotificationProps> = ({
       setIsUpdating(false);
       setIsVisible(false);
       toast.success("Update Installed", {
+        id: "pwa-install-update",
         description: "LLMChef has been updated successfully!",
       });
     };
@@ -90,6 +91,7 @@ export const PWAUpdateNotification: React.FC<PWAUpdateNotificationProps> = ({
       console.error("Update failed:", error);
       setIsUpdating(false);
       toast.error("Update Failed", {
+        id: "pwa-install-update",
         description: "Failed to update the app. Please try again.",
       });
     }

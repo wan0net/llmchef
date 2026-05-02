@@ -81,9 +81,9 @@
     }
   },
   "fileManagerBanner": {
-    "sharedVfs": "<b>Shared VFS:</b> All chats <i>not</i> in a project share this filesystem.",
-    "projectSharedVfs": "<b>Project-shared VFS:</b> All chats in this project share this filesystem.",
-    "projectVfs": "<b>Project VFS:</b> Filesystem for this project and all its chats."
+    "sharedVfs": "<b>App VFS:</b> Root files and project folders live in the same local filesystem.",
+    "projectSharedVfs": "<b>Project folder:</b> This chat is viewing its project folder inside the app VFS.",
+    "projectVfs": "<b>Project folder:</b> This project is a folder inside the shared app VFS."
   },
   "newFolder": {
     "placeholder": "New folder name",
