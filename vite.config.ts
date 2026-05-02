@@ -161,7 +161,7 @@ export default defineConfig({
         display: 'standalone',
         lang: lang,
         scope: base,
-        start_url: base,
+        start_url: `${base}#app`,
         icons: [
           {
             src: `${base}icons/192.png`,

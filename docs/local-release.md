@@ -35,4 +35,4 @@ Python packages are also resolved from the local Pyodide bundle. LLMChef does no
 
 ## Offline Check
 
-After unzipping `latest.zip`, serve the folder from localhost and open Settings -> Network. Same-origin assets and loopback are allowed by default. Other remote hosts only appear when providers, MCP servers, marketplace sources, remote mods, service URLs, or sync repositories are configured.
+After unzipping `latest.zip`, serve the folder from localhost. The root page is the LLMChef website, and the app is available at `/#app`. Open Settings -> Network from the app. Same-origin assets and loopback are allowed by default. Other remote hosts only appear when providers, MCP servers, marketplace sources, remote mods, service URLs, or sync repositories are configured.

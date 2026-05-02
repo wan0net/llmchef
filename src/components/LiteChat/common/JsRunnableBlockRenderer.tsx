@@ -41,7 +41,6 @@ import { ActionTooltipButton } from "./ActionTooltipButton";
 // QuickJS types declaration
 declare global {
   interface Window {
-    getQuickJS?: () => Promise<any>;
     liteChatQuickJS?: {
       isLoading: boolean;
       isReady: boolean;
@@ -51,6 +50,8 @@ declare global {
     };
   }
 }
+
+let quickJSLoadPromise: Promise<{ QuickJS: any; vm: any }> | null = null;
 
 interface JsRunnableBlockRendererProps {
   code: string;
@@ -65,41 +66,48 @@ const waitForQuickJS = () => {
   if (window.liteChatQuickJS?.isReady && window.liteChatQuickJS.QuickJS && window.liteChatQuickJS.context) {
     return Promise.resolve({ QuickJS: window.liteChatQuickJS.QuickJS, vm: window.liteChatQuickJS.context });
   }
-  return new Promise<{ QuickJS: any; vm: any }>((resolve, reject) => {
-    let settled = false;
-    let timeoutId: ReturnType<typeof setTimeout>;
-    
-    function cleanup() {
-      window.removeEventListener('quickjs-ready', onReady);
-      window.removeEventListener('quickjs-error', onError);
-      if (timeoutId) clearTimeout(timeoutId);
-    }
-    
-    function onReady(e: any) {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      resolve(e.detail);
-    }
-    
-    function onError(e: any) {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(e.detail);
-    }
-    
-    timeoutId = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(new Error('Timed out waiting for QuickJS to load'));
-    }, 10000);
-    
-    window.addEventListener('quickjs-ready', onReady);
-    window.addEventListener('quickjs-error', onError);
-    window.dispatchEvent(new Event('get-quickjs'));
-  });
+
+  if (quickJSLoadPromise) {
+    return quickJSLoadPromise;
+  }
+
+  window.liteChatQuickJS = {
+    isLoading: true,
+    isReady: false,
+    loadPromise: undefined,
+    QuickJS: undefined,
+    context: undefined,
+  };
+
+  quickJSLoadPromise = import("quickjs-emscripten")
+    .then(async ({ getQuickJS }) => {
+      const QuickJS = await getQuickJS();
+      const vm = QuickJS.newContext();
+      window.liteChatQuickJS = {
+        isLoading: false,
+        isReady: true,
+        loadPromise: undefined,
+        QuickJS,
+        context: vm,
+      };
+      window.dispatchEvent(new CustomEvent("quickjs-ready", { detail: { QuickJS, vm } }));
+      return { QuickJS, vm };
+    })
+    .catch((error) => {
+      window.liteChatQuickJS = {
+        isLoading: false,
+        isReady: false,
+        loadPromise: undefined,
+        QuickJS: undefined,
+        context: undefined,
+      };
+      quickJSLoadPromise = null;
+      window.dispatchEvent(new CustomEvent("quickjs-error", { detail: error }));
+      throw error;
+    });
+
+  window.liteChatQuickJS.loadPromise = quickJSLoadPromise.then(() => undefined);
+  return quickJSLoadPromise;
 };
 
 const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> = ({ 
@@ -321,7 +329,7 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
           
           // Simple cleanup during unmount
           previewRef.current.innerHTML = "";
-        } catch (error) {
+        } catch {
           // Ignore cleanup errors during unmount - component is going away anyway
         }
       }

@@ -71,7 +71,9 @@ This repository is the `wan0net/llmchef` fork of LiteChat. The upstream project 
 
 ## 🌐 Try LLMChef
 
-**Public Version**: [https://wan0net.github.io/llmchef](https://wan0net.github.io/llmchef) (hosted on GitHub Pages)
+**Website**: [https://wan0net.github.io/llmchef](https://wan0net.github.io/llmchef)
+
+**App**: [https://wan0net.github.io/llmchef/#app](https://wan0net.github.io/llmchef/#app)
 
 ## 📚 Documentation
 

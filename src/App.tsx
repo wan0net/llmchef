@@ -1,6 +1,8 @@
 // src/App.tsx
 // FULL FILE
+import { useEffect, useState } from "react";
 import { LiteChat } from "@/components/LiteChat/LiteChat";
+import { LandingPage } from "@/components/LandingPage";
 import { PrismThemeLoader } from "@/components/LiteChat/common/PrismThemeLoader";
 import { ThemeManager } from "@/components/LiteChat/common/ThemeManager";
 import { ErrorBoundary } from "@/components/LiteChat/common/ErrorBoundary";
@@ -179,7 +181,34 @@ const controlModulesToRegister: ControlModuleConstructor[] = [
   TextTriggerControlModule,
 ];
 
+function shouldRenderAppRoute() {
+  return (
+    window.location.hash === "#app" ||
+    window.location.search.includes("app=1") ||
+    window.location.pathname.replace(/\/$/, "").endsWith("/app")
+  );
+}
+
 function App() {
+  const [shouldShowApp, setShouldShowApp] = useState(shouldRenderAppRoute);
+  const base = import.meta.env.BASE_URL;
+  const appHref = `${base}#app`;
+  const downloadHref = `${base}release/latest.zip`;
+
+  useEffect(() => {
+    const updateRoute = () => setShouldShowApp(shouldRenderAppRoute());
+    window.addEventListener("hashchange", updateRoute);
+    window.addEventListener("popstate", updateRoute);
+    return () => {
+      window.removeEventListener("hashchange", updateRoute);
+      window.removeEventListener("popstate", updateRoute);
+    };
+  }, []);
+
+  if (!shouldShowApp) {
+    return <LandingPage appHref={appHref} downloadHref={downloadHref} />;
+  }
+
   return (
     <ErrorBoundary>
       <ThemeManager />
