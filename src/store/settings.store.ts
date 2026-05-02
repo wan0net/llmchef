@@ -208,7 +208,7 @@ interface SettingsActions {
 }
 
 // Define default constants
-const DEFAULT_THEME: Theme = "system";
+const DEFAULT_THEME: Theme = "link42Dark";
 const DEFAULT_SYSTEM_PROMPT = BUNDLED_SYSTEM_PROMPT;
 const DEFAULT_TEMPERATURE = null;
 const DEFAULT_MAX_TOKENS = null;
