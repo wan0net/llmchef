@@ -185,13 +185,13 @@ Configure where LLMChef looks for the bridge service:
 #### Remote Bridge Examples
 ```bash
 # Run bridge on VM/container with custom host binding
-node bin/mcp-bridge.js --host 0.0.0.0 --port 3001
+MCP_BRIDGE_TOKEN=<generate-a-strong-token> node bin/mcp-bridge.js --host 0.0.0.0 --port 3001
 
 # Run bridge on specific interface
-node bin/mcp-bridge.js --host 192.168.1.100 --port 8080
+MCP_BRIDGE_TOKEN=<generate-a-strong-token> node bin/mcp-bridge.js --host 192.168.1.100 --port 8080
 
 # Run bridge in Docker container
-docker run -p 3001:3001 my-mcp-bridge node bin/mcp-bridge.js --host 0.0.0.0
+docker run -e MCP_BRIDGE_TOKEN=<generate-a-strong-token> -p 3001:3001 my-mcp-bridge node bin/mcp-bridge.js --host 0.0.0.0
 ```
 
 ### Requirements
