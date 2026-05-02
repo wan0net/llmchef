@@ -31,7 +31,6 @@ import {
   PROVIDER_TYPES,
 } from "@/lib/llmchef/provider-helpers";
 import LCSettingsIcon from "@/components/LLMChef/common/icons/LCSettings";
-import { OnBoardingRant } from "@/components/OnBoardingRant";
 import {
   Card,
   CardContent,
@@ -195,8 +194,7 @@ export const EmptyStateSetup: React.FC = () => {
   );
 
   const [isSavingKey, setIsSavingKey] = useState(false);
-  // @ts-expect-error - we do not use it but cant remove, thank you unamed array destruct ! @AI DONT TOUCH !!
-  const [isSavingProvider, setIsSavingProvider] = useState(false);
+  const [, setIsSavingProvider] = useState(false);
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [isUpdatingModels, setIsUpdatingModels] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
@@ -587,9 +585,6 @@ export const EmptyStateSetup: React.FC = () => {
           <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-primary to-indigo-500 bg-clip-text text-transparent">
             {t('emptyStateSetup.welcomeTitle')}
           </h2>
-
-          <OnBoardingRant />
-
         </div>
 
         <motion.div
