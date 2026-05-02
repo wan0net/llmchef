@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon, PackagePlusIcon, DownloadIcon, Loader2Icon, EyeIcon, SearchIcon } from "lucide-react";
+import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon, PackagePlusIcon, DownloadIcon, Loader2Icon, EyeIcon, SearchIcon, ShieldCheckIcon, LockKeyholeIcon, AlertTriangleIcon } from "lucide-react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { z } from "zod";
 import { parseMcpImportInput } from "@/lib/llmchef/mcp-package-import";
@@ -226,6 +226,15 @@ function PackageImportsTab() {
     return flags;
   };
 
+  const registryIsLoopbackHttp = (() => {
+    try {
+      const parsed = new URL(packageRuntimeRegistryUrl);
+      return parsed.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
+    } catch {
+      return false;
+    }
+  })();
+
   return (
     <div className="space-y-6">
       <div>
@@ -283,6 +292,46 @@ function PackageImportsTab() {
             placeholder="https://esm.sh"
           />
           <p className="text-xs text-muted-foreground">{t('mcp.import.runtimeSafetyNote')}</p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Badge variant="secondary" className="gap-1">
+              <ShieldCheckIcon className="h-3 w-3" />
+              {registryIsLoopbackHttp ? "Loopback HTTP only" : "HTTPS registry"}
+            </Badge>
+            <Badge variant="secondary" className="gap-1">
+              <LockKeyholeIcon className="h-3 w-3" />
+              Install builds a local hash lock
+            </Badge>
+            <Badge variant="secondary" className="gap-1">
+              <SearchIcon className="h-3 w-3" />
+              Probe is explicit
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center">
+            <ShieldCheckIcon className="mr-2 h-4 w-4" />
+            MCP JavaScript Safety Gates
+          </CardTitle>
+          <CardDescription>
+            Package imports are reviewed in three steps: parse the command, resolve and hash the browser module graph, then explicitly probe tools.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-md border p-3">
+            <p className="text-sm font-medium">1. Import</p>
+            <p className="text-xs text-muted-foreground">Only npx/npm-style JavaScript package specs are accepted. Local stdio process launch is not used.</p>
+          </div>
+          <div className="rounded-md border p-3">
+            <p className="text-sm font-medium">2. Resolve lock</p>
+            <p className="text-xs text-muted-foreground">The registry must be HTTPS unless it is loopback, and resolved modules are shown with hashes.</p>
+          </div>
+          <div className="rounded-md border p-3">
+            <p className="text-sm font-medium">3. Probe</p>
+            <p className="text-xs text-muted-foreground">Tool discovery runs only after install, so the package graph can be reviewed first.</p>
+          </div>
         </CardContent>
       </Card>
 
@@ -308,6 +357,7 @@ function PackageImportsTab() {
               <TableBody>
                 {packageImports.map((item) => {
                   const install = installsByImportId.get(item.id);
+                  const moduleHashEntries = Object.entries(install?.moduleHashes ?? {});
                   return (
                     <React.Fragment key={item.id}>
                       <TableRow>
@@ -317,11 +367,35 @@ function PackageImportsTab() {
                           {item.envKeys.length > 0 ? item.envKeys.join(", ") : "—"}
                         </TableCell>
                         <TableCell className="text-xs">
-                          {install
-                            ? t('mcp.import.installedStatus', {
-                                modules: install.moduleCount,
-                              })
-                            : t('mcp.import.notInstalledStatus')}
+                          <div className="flex flex-col gap-1">
+                            <span>
+                              {install
+                                ? t('mcp.import.installedStatus', {
+                                    modules: install.moduleCount,
+                                  })
+                                : t('mcp.import.notInstalledStatus')}
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {install ? (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {moduleHashEntries.length} hashes
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px]">
+                                  lock pending
+                                </Badge>
+                              )}
+                              {install?.lastProbeAt ? (
+                                <Badge variant={install.lastProbeOk ? "secondary" : "destructive"} className="text-[10px]">
+                                  {install.lastProbeOk ? "probe ok" : "probe warning"}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px]">
+                                  probe pending
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
@@ -373,6 +447,13 @@ function PackageImportsTab() {
                             <div className="grid gap-3 text-xs md:grid-cols-2">
                               <div className="space-y-1">
                                 <p className="font-medium">{t('mcp.import.reviewTitle')}</p>
+                                <div className="flex flex-wrap gap-1">
+                                  <Badge variant={install ? "secondary" : "outline"}>{install ? "Resolved" : "Install required"}</Badge>
+                                  <Badge variant={install?.lastProbeAt ? "secondary" : "outline"}>{install?.lastProbeAt ? "Probe recorded" : "Probe pending"}</Badge>
+                                  {item.envKeys.length > 0 ? (
+                                    <Badge variant="outline"><AlertTriangleIcon className="mr-1 h-3 w-3" />env required</Badge>
+                                  ) : null}
+                                </div>
                                 <p><span className="text-muted-foreground">{t('mcp.import.entryUrlLabel')}:</span> <span className="font-mono">{buildEsmPackageEntryUrl(packageRuntimeRegistryUrl, item.packageName)}</span></p>
                                 <p><span className="text-muted-foreground">{t('mcp.import.argsLabel')}:</span> <span className="font-mono">{item.args.length > 0 ? item.args.join(" ") : "—"}</span></p>
                                 <p><span className="text-muted-foreground">{t('mcp.import.vfsRootLabel')}:</span> <span className="font-mono">{install?.vfsRoot ?? "—"}</span></p>
@@ -380,13 +461,13 @@ function PackageImportsTab() {
                                   <div>
                                     <p className="text-muted-foreground">{t('mcp.import.lockLabel', 'Resolved lock')}:</p>
                                     <ul className="mt-1 space-y-1 font-mono">
-                                      {Object.entries(install.moduleHashes).slice(0, 3).map(([url, hash]) => (
+                                      {moduleHashEntries.slice(0, 6).map(([url, hash]) => (
                                         <li key={url} className="break-all">
                                           {url} · {hash.slice(0, 12)}
                                         </li>
                                       ))}
-                                      {Object.keys(install.moduleHashes).length > 3 ? (
-                                        <li>{t('mcp.import.lockMore', '+ {{count}} more modules', { count: Object.keys(install.moduleHashes).length - 3 })}</li>
+                                      {moduleHashEntries.length > 6 ? (
+                                        <li>{t('mcp.import.lockMore', '+ {{count}} more modules', { count: moduleHashEntries.length - 6 })}</li>
                                       ) : null}
                                     </ul>
                                   </div>

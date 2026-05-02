@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useSyncExternalStore } from "react";
-import { ClipboardIcon, Trash2Icon } from "lucide-react";
+import { ClipboardIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   clearOutboundRequestLog,
@@ -172,6 +172,30 @@ const SettingsNetworkLedgerComponent: React.FC = () => {
           <ClipboardIcon className="mr-2 h-4 w-4" />
           Copy Audit
         </Button>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-md border p-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheckIcon className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-medium">Outbound guard active</h4>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Browser `fetch` calls are checked against configured hosts before data leaves this app.
+          </p>
+        </div>
+        <div className="rounded-md border p-3">
+          <p className="text-sm font-medium">{allowedHosts.length} configured hosts</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Same-origin and localhost are allowed for local-first operation; remote hosts must come from configured integrations.
+          </p>
+        </div>
+        <div className="rounded-md border p-3">
+          <p className="text-sm font-medium">{records.length} recorded requests</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Use Copy Audit to capture surfaces, allowed hosts, and recent outbound requests for review.
+          </p>
+        </div>
       </div>
 
       <div className="rounded-md border overflow-hidden">
