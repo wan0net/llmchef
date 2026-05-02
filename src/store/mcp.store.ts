@@ -14,6 +14,20 @@ export interface McpServerConfig {
   description?: string;
 }
 
+export interface McpPackageImport {
+  id: string;
+  name: string;
+  packageName: string;
+  command: "npx" | "npm exec";
+  args: string[];
+  envKeys: string[];
+  source: "command" | "json";
+  sourceLabel?: string;
+  endpointUrl?: string;
+  warnings: string[];
+  createdAt: Date;
+}
+
 export interface McpServerStatus {
   serverId: string;
   connected: boolean;
@@ -25,6 +39,7 @@ export interface McpServerStatus {
 
 export interface McpState {
   servers: McpServerConfig[];
+  packageImports: McpPackageImport[];
   serverStatuses: Record<string, McpServerStatus>;
   loading: boolean;
   error: string | null;
@@ -42,6 +57,8 @@ export interface McpActions {
   addServer: (server: Omit<McpServerConfig, 'id'>) => void;
   updateServer: (id: string, updates: Partial<McpServerConfig>) => void;
   deleteServer: (id: string) => void;
+  addPackageImports: (imports: Array<Omit<McpPackageImport, 'id' | 'createdAt'>>) => void;
+  deletePackageImport: (id: string) => void;
   
   // Connection Management
   setServerStatus: (status: McpServerStatus) => void;
@@ -76,6 +93,7 @@ const DEFAULT_MCP_MAX_RESPONSE_SIZE = 128000; // 128KB - much more generous defa
 
 const defaultMcpState: McpState = {
   servers: [],
+  packageImports: [],
   serverStatuses: {},
   loading: false,
   error: null,
@@ -171,6 +189,38 @@ export const useMcpStore = create(
       // Emit events
       emitter.emit(mcpEvent.serverDeleted, { serverId: id });
       emitter.emit(mcpEvent.serversChanged, { servers: updatedServers });
+    },
+
+    addPackageImports: (imports) => {
+      const createdAt = new Date();
+      const newImports: McpPackageImport[] = imports.map((item) => ({
+        ...item,
+        id: `mcp_pkg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+        createdAt,
+      }));
+
+      set((state) => {
+        state.packageImports.push(...newImports);
+        state.error = null;
+      });
+
+      PersistenceService.saveSetting("mcpPackageImports", get().packageImports).catch((error: any) => {
+        console.error("Failed to persist MCP package imports:", error);
+      });
+
+      emitter.emit(mcpEvent.packageImportsChanged, { imports: get().packageImports });
+    },
+
+    deletePackageImport: (id) => {
+      set((state) => {
+        state.packageImports = state.packageImports.filter((item) => item.id !== id);
+      });
+
+      PersistenceService.saveSetting("mcpPackageImports", get().packageImports).catch((error: any) => {
+        console.error("Failed to persist MCP package imports:", error);
+      });
+
+      emitter.emit(mcpEvent.packageImportsChanged, { imports: get().packageImports });
     },
 
     // Connection Management Actions
@@ -281,12 +331,14 @@ export const useMcpStore = create(
         // Load all MCP settings from persistence
         const [
           servers,
+          packageImports,
           retryAttempts,
           retryDelay,
           connectionTimeout,
           maxResponseSize,
         ] = await Promise.all([
           PersistenceService.loadSetting<McpServerConfig[]>("mcpServers", []),
+          PersistenceService.loadSetting<McpPackageImport[]>("mcpPackageImports", []),
           PersistenceService.loadSetting<number>("mcpRetryAttempts", DEFAULT_MCP_RETRY_ATTEMPTS),
           PersistenceService.loadSetting<number>("mcpRetryDelay", DEFAULT_MCP_RETRY_DELAY),
           PersistenceService.loadSetting<number>("mcpConnectionTimeout", DEFAULT_MCP_CONNECTION_TIMEOUT),
@@ -295,6 +347,10 @@ export const useMcpStore = create(
         
         set((state) => {
           state.servers = servers || [];
+          state.packageImports = (packageImports || []).map((item) => ({
+            ...item,
+            createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+          }));
           state.retryAttempts = retryAttempts;
           state.retryDelay = retryDelay;
           state.connectionTimeout = connectionTimeout;
@@ -304,6 +360,7 @@ export const useMcpStore = create(
 
         // Emit change events
         emitter.emit(mcpEvent.serversChanged, { servers: servers || [] });
+        emitter.emit(mcpEvent.packageImportsChanged, { imports: get().packageImports });
         emitter.emit(mcpEvent.retryAttemptsChanged, { attempts: retryAttempts });
         emitter.emit(mcpEvent.retryDelayChanged, { delay: retryDelay });
         emitter.emit(mcpEvent.connectionTimeoutChanged, { timeout: connectionTimeout });
@@ -321,6 +378,7 @@ export const useMcpStore = create(
     resetMcpState: () => {
       set((state) => {
         state.servers = [];
+        state.packageImports = [];
         state.serverStatuses = {};
         state.retryAttempts = DEFAULT_MCP_RETRY_ATTEMPTS;
         state.retryDelay = DEFAULT_MCP_RETRY_DELAY;
@@ -333,6 +391,7 @@ export const useMcpStore = create(
       // Clear persistence
       Promise.all([
         PersistenceService.saveSetting("mcpServers", []),
+        PersistenceService.saveSetting("mcpPackageImports", []),
         PersistenceService.saveSetting("mcpRetryAttempts", DEFAULT_MCP_RETRY_ATTEMPTS),
         PersistenceService.saveSetting("mcpRetryDelay", DEFAULT_MCP_RETRY_DELAY),
         PersistenceService.saveSetting("mcpConnectionTimeout", DEFAULT_MCP_CONNECTION_TIMEOUT),
@@ -343,6 +402,7 @@ export const useMcpStore = create(
       
       // Emit change events
       emitter.emit(mcpEvent.serversChanged, { servers: [] });
+      emitter.emit(mcpEvent.packageImportsChanged, { imports: [] });
       emitter.emit(mcpEvent.retryAttemptsChanged, { attempts: DEFAULT_MCP_RETRY_ATTEMPTS });
       emitter.emit(mcpEvent.retryDelayChanged, { delay: DEFAULT_MCP_RETRY_DELAY });
       emitter.emit(mcpEvent.connectionTimeoutChanged, { timeout: DEFAULT_MCP_CONNECTION_TIMEOUT });

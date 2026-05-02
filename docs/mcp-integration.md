@@ -28,11 +28,23 @@ LLMChef can fall back to the older SSE transport for compatible MCP servers that
 
 Only `http://` and `https://` URLs are accepted. Tool discovery and tool calls use the same configured endpoint and headers.
 
+## Importing Package Snippets
+
+Many MCP examples are shared as `npx` or `npm exec` commands. LLMChef can import these snippets, including npm and GitHub package specs, for review without executing them.
+
+1. Open **Settings -> Assistant -> MCP -> Imports**.
+2. Paste an `npx ...`, `npm exec ...`, or JSON config with `mcpServers`.
+3. Review the imported package metadata.
+4. If the import includes an HTTP endpoint, LLMChef creates a disabled server draft that you can inspect and enable.
+
+Package imports are local metadata only. LLMChef does not run package commands, spawn processes, or store environment values. Environment variable names are kept so you can see what a package expects.
+
 ## Security Model
 
 - MCP endpoints are opt-in and stored locally.
 - Requests are limited by LLMChef's outbound host policy.
 - Authentication secrets are supplied through per-server headers.
+- Package snippets are parsed, not executed.
 - Tool responses are bounded by the configured maximum response size.
 - Failed connections use bounded retry settings with visible toast feedback.
 

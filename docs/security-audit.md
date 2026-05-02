@@ -418,6 +418,31 @@ Remaining work:
   configured provider, marketplace, MCP server, Git remote, proxy, and
   extraction service.
 
+### MCP Package Imports
+
+Files:
+
+- `src/lib/llmchef/mcp-package-import.ts`
+- `src/controls/components/assistant-settings/SettingsAssistantMcp.tsx`
+- `src/store/mcp.store.ts`
+
+Current guardrails:
+
+- `npx` and `npm exec` snippets are parsed as local metadata only; LLMChef does
+  not spawn a process, run npm, or install packages.
+- Imported command arguments are redacted before persistence.
+- JSON `env` values are never imported; only variable names are retained for
+  user review.
+- HTTP MCP endpoints discovered in imported configs are added disabled by
+  default and must be reviewed before use.
+- Local stdio/process MCP bridge support remains removed from the app and docs.
+
+Remaining work:
+
+- If JS-native MCP package execution is added later, route it through an
+  explicit browser sandbox/capability model rather than local process launch.
+- Add a richer preview/review step before imported endpoint drafts are saved.
+
 ### Service Worker / PWA
 
 Files:

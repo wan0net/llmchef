@@ -9,9 +9,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon } from "lucide-react";
+import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon, PackagePlusIcon } from "lucide-react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { z } from "zod";
+import { parseMcpImportInput } from "@/lib/llmchef/mcp-package-import";
 
 import {
   TabbedLayout,
@@ -59,6 +60,144 @@ function FieldMetaMessages({ field }: { field: AnyFieldApi }) {
         </em>
       ) : null}
     </>
+  );
+}
+
+function PackageImportsTab() {
+  const { t } = useTranslation('assistantSettings');
+  const [importText, setImportText] = useState("");
+  const [parseError, setParseError] = useState<string | null>(null);
+  const {
+    packageImports,
+    addPackageImports,
+    deletePackageImport,
+    addServer,
+  } = useMcpStore(
+    useShallow((state) => ({
+      packageImports: state.packageImports,
+      addPackageImports: state.addPackageImports,
+      deletePackageImport: state.deletePackageImport,
+      addServer: state.addServer,
+    }))
+  );
+
+  const handleImport = () => {
+    try {
+      const result = parseMcpImportInput(importText);
+      setParseError(null);
+
+      if (result.packageImports.length > 0) {
+        addPackageImports(result.packageImports);
+      }
+      for (const draft of result.serverDrafts) {
+        addServer({
+          name: draft.name,
+          url: draft.url,
+          description: draft.description,
+          headers: draft.headers,
+          enabled: false,
+        });
+      }
+
+      toast.success(t('mcp.import.success'), {
+        description: t('mcp.import.successDescription', {
+          packages: result.packageImports.length,
+          servers: result.serverDrafts.length,
+        }),
+      });
+      setImportText("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Import failed";
+      setParseError(message);
+      toast.error(t('mcp.import.error'), { description: message });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="font-medium">{t('mcp.import.title')}</h3>
+        <p className="text-sm text-muted-foreground">
+          {t('mcp.import.description')}
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center">
+            <PackagePlusIcon className="mr-2 h-4 w-4" />
+            {t('mcp.import.pasteTitle')}
+          </CardTitle>
+          <CardDescription>
+            {t('mcp.import.pasteDescription')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Textarea
+            value={importText}
+            onChange={(event) => setImportText(event.target.value)}
+            placeholder={t('mcp.import.placeholder')}
+            rows={8}
+            className="font-mono text-xs"
+          />
+          {parseError ? (
+            <p className="text-xs text-destructive">{parseError}</p>
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            {t('mcp.import.safetyNote')}
+          </p>
+        </CardContent>
+        <CardFooter>
+          <Button type="button" onClick={handleImport} disabled={!importText.trim()}>
+            <PackagePlusIcon className="mr-2 h-4 w-4" />
+            {t('mcp.import.importButton')}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('mcp.import.importedTitle')}</CardTitle>
+          <CardDescription>{t('mcp.import.importedDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {packageImports.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('mcp.import.empty')}</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('mcp.import.nameColumn')}</TableHead>
+                  <TableHead>{t('mcp.import.packageColumn')}</TableHead>
+                  <TableHead>{t('mcp.import.envColumn')}</TableHead>
+                  <TableHead className="text-right">{t('mcp.servers.actionsColumn')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {packageImports.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell className="font-mono text-xs">{item.packageName}</TableCell>
+                    <TableCell className="text-xs">
+                      {item.envKeys.length > 0 ? item.envKeys.join(", ") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deletePackageImport(item.id)}
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -663,6 +802,11 @@ export const SettingsAssistantMcp: React.FC = () => {
           onEditServer={handleEditServer}
         />
       ),
+    },
+    {
+      value: "imports",
+      label: t('mcp.tabs.imports'),
+      content: <PackageImportsTab />,
     },
     {
       value: "connection",

@@ -155,7 +155,26 @@
       "servers": "Servidores",
       "connection": "Conexión",
       "addServer": "Agregar Servidor",
-      "editServer": "Editar: {{name}}"
+      "editServer": "Editar: {{name}}",
+      "imports": "Imports"
+    },
+    "import": {
+      "title": "Import MCP Packages",
+      "description": "Import common npx/npm exec MCP snippets as local metadata without running them.",
+      "pasteTitle": "Paste package command or JSON config",
+      "pasteDescription": "Accepts npx snippets, npm exec snippets, or JSON configs with mcpServers.",
+      "placeholder": "npx -y @modelcontextprotocol/server-example\n\nor {\n  \"mcpServers\": {\n    \"example\": { \"command\": \"npx\", \"args\": [\"-y\", \"@modelcontextprotocol/server-example\"] }\n  }\n}",
+      "safetyNote": "Package imports are never executed. Environment values are not stored; only variable names are kept for review. HTTP endpoints are imported as disabled servers.",
+      "importButton": "Import Package Metadata",
+      "success": "MCP import added",
+      "successDescription": "Imported {{packages}} package records and {{servers}} disabled HTTP server drafts.",
+      "error": "MCP import failed",
+      "importedTitle": "Imported Package Metadata",
+      "importedDescription": "These records document package-based MCP servers for review. They are not runnable commands.",
+      "empty": "No package imports yet.",
+      "nameColumn": "Name",
+      "packageColumn": "Package",
+      "envColumn": "Env keys"
     }
   },
   "template": {

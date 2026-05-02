@@ -1,4 +1,4 @@
-import type { McpState, McpServerConfig } from "@/store/mcp.store";
+import type { McpPackageImport, McpState, McpServerConfig } from "@/store/mcp.store";
 
 export const mcpEvent = {
   // State Change Events
@@ -6,6 +6,7 @@ export const mcpEvent = {
   serverAdded: "mcp.server.added",
   serverUpdated: "mcp.server.updated",
   serverDeleted: "mcp.server.deleted",
+  packageImportsChanged: "mcp.package.imports.changed",
   serverConnectionChanged: "mcp.server.connection.changed",
   toolsChanged: "mcp.tools.changed",
 
@@ -48,6 +49,7 @@ export interface McpEventPayloads {
   [mcpEvent.serverAdded]: { server: McpServerConfig };
   [mcpEvent.serverUpdated]: { server: McpServerConfig };
   [mcpEvent.serverDeleted]: { serverId: string };
+  [mcpEvent.packageImportsChanged]: { imports: McpPackageImport[] };
   [mcpEvent.serverConnectionChanged]: { 
     serverId: string; 
     connected: boolean; 
