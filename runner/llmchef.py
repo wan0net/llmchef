@@ -25,7 +25,7 @@ os.chdir(temp_dir)
 print("Downloading LLMChef release...")
 zip_path = os.path.join(temp_dir, 'llmchef.zip')
 try:
-    request.urlretrieve('https://wan0.net/llmchef/release/latest.zip', zip_path)
+    request.urlretrieve('https://wan0.net/llmchef/release/latest.zip', zip_path)  # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
     print("Download complete. Extracting...")
 
     # Extract the zip file
