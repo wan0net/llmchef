@@ -1,11 +1,11 @@
 {
-  "name": "LLMChef",
-  "short_name": "LLMChef",
+  "name": "Link42 Chat",
+  "short_name": "Link42",
   "description": "Your private, customizable, high-performance AI chat interface.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a2a3a",
-  "theme_color": "#4fd1c5",
+  "theme_color": "#2563eb",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

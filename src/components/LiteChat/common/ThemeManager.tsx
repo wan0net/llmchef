@@ -50,6 +50,8 @@ const ALL_THEME_COLOR_KEYS: (keyof CustomThemeColors)[] = [
 const THEME_CLASS_MAP: Record<string, string> = {
   light: "light",
   dark: "dark",
+  link42Light: "link42Light",
+  link42Dark: "link42Dark",
   TijuLight: "TijuLight",
   TijuDark: "TijuDark",
   bubblegum: "bubblegum",

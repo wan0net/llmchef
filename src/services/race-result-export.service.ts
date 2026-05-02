@@ -361,9 +361,9 @@ export class RaceResultExportService {
             border-bottom: 2px solid transparent; 
         }
         .tab-button.active { 
-            border-bottom-color: hsl(var(--primary)); 
-            color: hsl(var(--primary)); 
-            background-color: hsl(var(--muted)); 
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            background-color: var(--muted);
         }
     </style>
 </head>
@@ -643,43 +643,43 @@ export class RaceResultExportService {
     <style>
         /* DataTable theming */
         .dataTable-table {
-            background: hsl(var(--card)) !important;
-            border: 1px solid hsl(var(--border)) !important;
+            background: var(--card) !important;
+            border: 1px solid var(--border) !important;
             border-radius: 0.5rem !important;
             overflow: hidden !important;
         }
         .dataTable-table thead th {
-            background: hsl(var(--muted)) !important;
-            color: hsl(var(--card-foreground)) !important;
-            border-bottom: 1px solid hsl(var(--border)) !important;
+            background: var(--muted) !important;
+            color: var(--card-foreground) !important;
+            border-bottom: 1px solid var(--border) !important;
             padding: 12px 16px !important;
         }
         .dataTable-table tbody td {
-            color: hsl(var(--card-foreground)) !important;
-            border-bottom: 1px solid hsl(var(--border)) !important;
+            color: var(--card-foreground) !important;
+            border-bottom: 1px solid var(--border) !important;
             padding: 12px 16px !important;
         }
         .dataTable-table tbody tr:hover {
-            background: hsl(var(--muted) / 0.5) !important;
+            background: color-mix(in srgb, var(--muted) 50%, transparent) !important;
         }
         .dataTable-search input,
         .dataTable-selector select {
-            background: hsl(var(--card)) !important;
-            border: 2px solid hsl(var(--primary)) !important;
-            color: hsl(var(--card-foreground)) !important;
+            background: var(--card) !important;
+            border: 2px solid var(--primary) !important;
+            color: var(--card-foreground) !important;
             border-radius: 0.5rem !important;
             padding: 0.75rem 1.25rem !important;
         }
         .dataTable-pagination a {
-            background: hsl(var(--card)) !important;
-            border: 2px solid hsl(var(--primary)) !important;
-            color: hsl(var(--primary)) !important;
+            background: var(--card) !important;
+            border: 2px solid var(--primary) !important;
+            color: var(--primary) !important;
             border-radius: 0.5rem !important;
             padding: 0.75rem 1.25rem !important;
         }
         .dataTable-pagination a:hover {
-            background: hsl(var(--primary)) !important;
-            color: hsl(var(--primary-foreground)) !important;
+            background: var(--primary) !important;
+            color: var(--primary-foreground) !important;
         }
     </style>
 </head>

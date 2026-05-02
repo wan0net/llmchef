@@ -9,11 +9,11 @@
 /* Base Layers */
 @layer base {
   * {
-    border-color: hsl(var(--border));
+    border-color: var(--border);
   }
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
 
@@ -54,9 +54,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   /* Custom UI Helpers */
-  --custom-highlight-bg: hsl(var(--primary) / 0.1);
-  --custom-highlight-fg: hsl(var(--primary));
-  --custom-highlight-border: hsl(var(--primary) / 0.5);
+  --custom-highlight-bg: color-mix(in srgb, var(--primary) 10%, transparent);
+  --custom-highlight-fg: var(--primary);
+  --custom-highlight-border: color-mix(in srgb, var(--primary) 50%, transparent);
   /* Custom Font */
   --custom-font-family: var(--font-sans); /* Default fallback */
   --custom-font-size: 16px; /* Default fallback */
@@ -1172,23 +1172,23 @@
 
   /* Ensure Mermaid diagrams are readable in both light and dark themes */
   .mermaid-container svg text {
-    fill: hsl(var(--foreground));
+    fill: var(--foreground);
   }
 
   .mermaid-container svg .node rect,
   .mermaid-container svg .node circle,
   .mermaid-container svg .node ellipse,
   .mermaid-container svg .node polygon {
-    fill: hsl(var(--card));
-    stroke: hsl(var(--border));
+    fill: var(--card);
+    stroke: var(--border);
   }
 
   .mermaid-container svg .edgePath path {
-    stroke: hsl(var(--muted-foreground));
+    stroke: var(--muted-foreground);
   }
 
   .mermaid-container svg .arrowheadPath {
-    fill: hsl(var(--muted-foreground));
+    fill: var(--muted-foreground);
   }
 } /* End @layer utilities */
 
@@ -1262,4 +1262,147 @@
 }
 .animate-slideInFromTop {
   animation: slideInFromTop 0.3s ease-out forwards;
+}
+
+/* Link42 application chrome
+   Keeps the LLMChef chat layout intact while aligning the default light/dark
+   themes with Link42's shared tokens: neutral surfaces, Geist-style type,
+   compact radii, and blue/cyan intelligence accents. */
+:root,
+.light,
+.link42Light {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #f8f8f7;
+  --secondary-foreground: #57534e;
+  --muted: #f8f8f7;
+  --muted-foreground: #57534e;
+  --accent: #eff6ff;
+  --accent-foreground: #1d4ed8;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e8e8e6;
+  --input: #e8e8e6;
+  --ring: #2563eb;
+  --chart-1: #0d9488;
+  --chart-2: #6366f1;
+  --chart-3: #2563eb;
+  --chart-4: #ea580c;
+  --chart-5: #e11d48;
+  --sidebar: #f8f8f7;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eff6ff;
+  --sidebar-accent-foreground: #1d4ed8;
+  --sidebar-border: #e8e8e6;
+  --sidebar-ring: #2563eb;
+  --link42-bg-subtle: #f8f8f7;
+  --link42-bg-hover: #f3f3f2;
+  --link42-bg-active: #ebebea;
+  --link42-border-strong: #d4d4d0;
+  --link42-text-mid: #57534e;
+  --link42-text-dim: #a8a29e;
+  --link42-accent-cyan: #38bdf8;
+  --link42-accent-teal: #0d9488;
+  --link42-accent-indigo: #6366f1;
+  --link42-accent-blue: #2563eb;
+  --link42-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.04);
+  --link42-shadow-md: 0 4px 12px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.04);
+  --font-sans: Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --custom-font-family: var(--font-sans);
+  --custom-font-size: 15px;
+  --radius: 0.45rem;
+}
+
+.dark,
+.link42Dark {
+  --background: #111110;
+  --foreground: #ededed;
+  --card: #1c1c1b;
+  --card-foreground: #ededed;
+  --popover: #1c1c1b;
+  --popover-foreground: #ededed;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1a1a19;
+  --secondary-foreground: #a09f9b;
+  --muted: #1a1a19;
+  --muted-foreground: #a09f9b;
+  --accent: #1e2e4a;
+  --accent-foreground: #93c5fd;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #282826;
+  --input: #343432;
+  --ring: #3b82f6;
+  --chart-1: #2dd4bf;
+  --chart-2: #818cf8;
+  --chart-3: #3b82f6;
+  --chart-4: #fb923c;
+  --chart-5: #fb7185;
+  --sidebar: #1a1a19;
+  --sidebar-foreground: #ededed;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e2e4a;
+  --sidebar-accent-foreground: #bfdbfe;
+  --sidebar-border: #282826;
+  --sidebar-ring: #3b82f6;
+  --link42-bg-subtle: #1a1a19;
+  --link42-bg-hover: #242423;
+  --link42-bg-active: #2c2c2b;
+  --link42-border-strong: #343432;
+  --link42-text-mid: #a09f9b;
+  --link42-text-dim: #5c5b57;
+  --link42-accent-cyan: #38bdf8;
+  --link42-accent-teal: #2dd4bf;
+  --link42-accent-indigo: #818cf8;
+  --link42-accent-blue: #3b82f6;
+  --link42-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.3);
+  --link42-shadow-md: 0 4px 12px rgb(0 0 0 / 0.3);
+}
+
+body {
+  font-family: var(--custom-font-family);
+  font-size: var(--custom-font-size);
+  letter-spacing: 0;
+}
+
+#root {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--link42-accent-cyan) 12%, transparent), transparent 28rem),
+    linear-gradient(180deg, var(--background), var(--link42-bg-subtle));
+}
+
+[data-slot="button"] {
+  border-radius: 7px;
+  box-shadow: none;
+}
+
+[data-slot="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.llmchef-shell {
+  box-shadow: var(--link42-shadow-md);
+}
+
+.llmchef-brand-mark {
+  background: linear-gradient(135deg, #243c5a 0%, var(--link42-accent-cyan) 100%);
+}
+
+.link42-panel {
+  background: color-mix(in srgb, var(--card) 94%, var(--link42-bg-subtle));
+  border-color: var(--border);
 }

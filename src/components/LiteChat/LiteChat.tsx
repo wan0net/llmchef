@@ -22,7 +22,7 @@ import { InputArea } from "@/components/LiteChat/prompt/InputArea";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Loader2, Menu, X } from "lucide-react";
+import { Loader2, Menu, ShieldCheck, X } from "lucide-react";
 import { performFullInitialization } from "@/lib/litechat/initialization";
 import { usePromptStateStore } from "@/store/prompt.store";
 import type {
@@ -434,15 +434,35 @@ export const LiteChat: React.FC<LiteChatProps> = ({ controls = [] }) => {
   return (
     <>
       <ModalManager />
-      <div className="flex h-full w-full border border-border rounded-lg overflow-hidden bg-background text-foreground">
+      <div className="llmchef-shell flex h-full w-full overflow-hidden border border-border bg-background text-foreground md:m-2 md:h-[calc(100%-1rem)] md:w-[calc(100%-1rem)] md:rounded-lg">
         <div
           className={cn(
-            "hidden md:flex flex-col border-r border-border bg-card",
+            "hidden md:flex flex-col border-r border-border bg-sidebar",
             "transition-[width] duration-300 ease-in-out",
             "flex-shrink-0 overflow-hidden",
             isSidebarCollapsed ? "w-16" : "w-64"
           )}
         >
+          <div
+            className={cn(
+              "flex h-12 flex-shrink-0 items-center border-b border-border px-3",
+              isSidebarCollapsed ? "justify-center" : "gap-2"
+            )}
+          >
+            <span className="llmchef-brand-mark flex h-7 w-7 items-center justify-center rounded-md text-white shadow-sm">
+              <ShieldCheck className="h-4 w-4" />
+            </span>
+            {!isSidebarCollapsed && (
+              <div className="min-w-0">
+                <div className="text-sm font-semibold tracking-[-0.02em] text-sidebar-foreground">
+                  Link42 Chat
+                </div>
+                <div className="truncate text-[11px] text-muted-foreground">
+                  Local-first AI workspace
+                </div>
+              </div>
+            )}
+          </div>
           <div className="flex-grow overflow-y-auto overflow-x-hidden">
             <div className={cn(isSidebarCollapsed ? "hidden" : "block")}>
               <ChatControlWrapper
@@ -489,9 +509,14 @@ export const LiteChat: React.FC<LiteChatProps> = ({ controls = [] }) => {
               className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn"
               onClick={toggleMobileSidebar}
             ></div>
-            <div className="relative w-4/5 max-w-sm bg-card border-r border-border h-full flex flex-col animate-slideInFromLeft shadow-2xl">
+            <div className="relative w-4/5 max-w-sm bg-sidebar border-r border-border h-full flex flex-col animate-slideInFromLeft shadow-2xl">
               <div className="sticky top-0 z-[var(--z-sticky)] flex justify-between items-center p-4 border-b border-border bg-card">
-                <h2 className="font-semibold text-card-foreground">{t('liteChatMenu')}</h2>
+                <div className="flex items-center gap-2">
+                  <span className="llmchef-brand-mark flex h-7 w-7 items-center justify-center rounded-md text-white">
+                    <ShieldCheck className="h-4 w-4" />
+                  </span>
+                  <h2 className="font-semibold text-card-foreground">Link42 Chat</h2>
+                </div>
                 <button
                   onClick={toggleMobileSidebar}
                   className="p-2 rounded-md hover:bg-muted text-card-foreground touch-manipulation"
@@ -537,7 +562,7 @@ export const LiteChat: React.FC<LiteChatProps> = ({ controls = [] }) => {
         )}
 
         <div className="flex flex-col flex-grow min-w-0">
-          <div className="flex items-center justify-between p-2 border-b border-border bg-card flex-shrink-0">
+          <div className="link42-panel flex items-center justify-between border-b border-border px-2 py-1.5 flex-shrink-0">
             <button
               className={cn(
                 "md:hidden p-3 rounded-md hover:bg-muted active:bg-muted/80 transition-colors touch-manipulation",

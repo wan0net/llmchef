@@ -7,12 +7,14 @@ export interface DbBase {
   updatedAt: Date;
 }
 
-export type Theme = "light" | "dark" | "system" | "TijuLight" | "TijuDark" | "custom" | "bubblegum" | "bubblegumDark" | "candyland" | "candylandDark" | "doom64" | "doom64Dark" | "luxury" | "luxuryDark" | "northernLights" | "northernLightsDark" | "retroArcade" | "retroArcadeDark" | "staryNight" | "staryNightDark" | "tangerine" | "tangerineDark";
+export type Theme = "light" | "dark" | "system" | "link42Light" | "link42Dark" | "TijuLight" | "TijuDark" | "custom" | "bubblegum" | "bubblegumDark" | "candyland" | "candylandDark" | "doom64" | "doom64Dark" | "luxury" | "luxuryDark" | "northernLights" | "northernLightsDark" | "retroArcade" | "retroArcadeDark" | "staryNight" | "staryNightDark" | "tangerine" | "tangerineDark";
 
 export const THEME_OPTIONS: Theme[] = [
   "light",
   "dark",
   "system",
+  "link42Light",
+  "link42Dark",
   "TijuLight",
   "TijuDark",
   "custom",

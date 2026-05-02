@@ -1535,12 +1535,12 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
               `text-xs h-7 ` +
               (securityResult
                 ? securityResult.score > 90
-                  ? 'bg-[hsl(var(--destructive))] border-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]'
+                  ? 'bg-[var(--destructive)] border-[var(--destructive)] text-[var(--destructive-foreground)]'
                   : securityResult.score > 60
-                  ? 'bg-[hsl(var(--accent))] border-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]'
+                  ? 'bg-[var(--accent)] border-[var(--accent)] text-[var(--accent-foreground)]'
                   : securityResult.score > 30
-                  ? 'bg-[hsl(var(--warning, var(--primary)))] border-[hsl(var(--warning, var(--primary)))] text-[hsl(var(--foreground))]'
-                  : 'bg-[hsl(var(--primary))] border-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
+                  ? 'bg-[var(--warning,var(--primary))] border-[var(--warning,var(--primary))] text-[var(--foreground)]'
+                  : 'bg-[var(--primary)] border-[var(--primary)] text-[var(--primary-foreground)]'
                 : '')
             }
           >

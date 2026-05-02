@@ -235,6 +235,14 @@ const SettingsThemeComponent: React.FC = () => {
             label="Theme"
             options={THEME_OPTIONS.map((theme) => {
               switch (theme) {
+                case "light":
+                  return { value: "light", label: "Link42 Light" };
+                case "dark":
+                  return { value: "dark", label: "Link42 Dark" };
+                case "link42Light":
+                  return { value: "link42Light", label: "Link42 Light (explicit)" };
+                case "link42Dark":
+                  return { value: "link42Dark", label: "Link42 Dark (explicit)" };
                 case "TijuLight":
                   return { value: "TijuLight", label: "Tiju Light" };
                 case "TijuDark":
