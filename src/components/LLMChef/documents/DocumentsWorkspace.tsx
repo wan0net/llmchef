@@ -362,6 +362,19 @@ const sha256Hex = async (data: Uint8Array): Promise<string> => {
     .join("");
 };
 
+const bytesToBase64 = (data: Uint8Array): string => {
+  const chunkSize = 0x8000;
+  const chunks: string[] = [];
+  for (let index = 0; index < data.length; index += chunkSize) {
+    const chunk = data.slice(index, index + chunkSize);
+    chunks.push(String.fromCharCode(...chunk));
+  }
+  return btoa(chunks.join(""));
+};
+
+const filenameStem = (name: string): string =>
+  name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9._-]+/gi, "-") || "extract";
+
 const indexWorkspaceDocument = async (
   path: string,
   name: string,
@@ -820,6 +833,47 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     toast.success("SHA-256 copied.");
   }, [previewData]);
 
+  const copyActiveBase64 = useCallback(async () => {
+    if (!previewData) return;
+    await navigator.clipboard.writeText(bytesToBase64(previewData));
+    toast.success("Base64 copied.");
+  }, [previewData]);
+
+  const saveActiveTextExtract = useCallback(async () => {
+    if (!activeDocument || !fs) return;
+    const text =
+      activeDocument.kind === "crea8" ||
+      isIndexableText(activeDocument.doc.name, activeDocument.doc.type)
+        ? draft
+        : "";
+    if (!text.trim()) {
+      toast.info("No text available to save.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const targetPath = joinPath(
+        workspaceRoot,
+        "extracts",
+        `${filenameStem(activeDocument.doc.name)}-${Date.now()}.txt`,
+      );
+      await writeFileOp(targetPath, new TextEncoder().encode(text), {
+        fsInstance: fs,
+      });
+      await loadDocuments();
+      toast.success(`Saved extract to ${targetPath}.`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to save text extract.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [activeDocument, draft, fs, loadDocuments, workspaceRoot]);
+
   const createCrea8PageFromActive = useCallback(async () => {
     if (!activeDocument || !connector) return;
     const content =
@@ -1175,6 +1229,30 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     >
                       <HashIcon />
                       SHA-256
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void copyActiveBase64()}
+                      disabled={!previewData}
+                    >
+                      <CopyIcon />
+                      Base64
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void saveActiveTextExtract()}
+                      disabled={
+                        saving ||
+                        (activeDocument.kind === "file" &&
+                          !isIndexableText(activeDocument.doc.name, activeDocument.doc.type))
+                      }
+                    >
+                      <FileTextIcon />
+                      Save .txt
                     </Button>
                     <Button
                       type="button"
