@@ -20,7 +20,10 @@ import { toast } from "sonner";
 import type { Project } from "@/types/llmchef/project";
 import { ProjectSettingsPrompt } from "./ProjectSettingsPrompt";
 import { ProjectSettingsParams } from "./ProjectSettingsParams";
-import { ProjectSettingsSync } from "./ProjectSettingsSync";
+import {
+  ProjectSettingsSync,
+  type ProjectWikiSyncMetadata,
+} from "./ProjectSettingsSync";
 import { ProjectSettingsVfs } from "./ProjectSettingsVfs";
 import { ProjectSettingsRules } from "./ProjectSettingsRules";
 import { ProjectSettingsTags } from "./ProjectSettingsTags";
@@ -90,6 +93,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   const [defaultRuleIds, setDefaultRuleIds] = useState<string[] | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isProjectSyncing, setIsProjectSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState("prompt");
 
   const { project, effectiveSettings } = useMemo(() => {
@@ -131,6 +135,8 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   const effectiveSyncRepoId = projectId
     ? getEffectiveSyncRepoId(projectId)
     : null;
+  const projectWikiSync = (project?.metadata?.projectWikiSync ??
+    null) as ProjectWikiSyncMetadata | null;
 
   useEffect(() => {
     if (isOpen && projectId && project && effectiveSettings) {
@@ -269,8 +275,26 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       return;
     }
 
-    setIsSaving(true);
+    setIsProjectSyncing(true);
+    const startedAt = new Date().toISOString();
+    const branch = repo.branch || "main";
+    const baseMetadata = project.metadata ?? {};
     try {
+      await updateProject(project.id, {
+        metadata: {
+          ...baseMetadata,
+          projectWikiSync: {
+            status: "syncing",
+            repoId: repo.id,
+            repoName: repo.name,
+            branch,
+            startedAt,
+            lastPushedAt: projectWikiSync?.lastPushedAt ?? null,
+            lastError: null,
+          } satisfies ProjectWikiSyncMetadata & { startedAt: string },
+        },
+      });
+
       let fsInstance = useVfsStore.getState().fs;
       if (!fsInstance || useVfsStore.getState().vfsKey !== APP_VFS_KEY) {
         await useVfsStore.getState().initializeVFS(APP_VFS_KEY);
@@ -281,21 +305,48 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       }
 
       toast.info(`Pushing "${project.name}" wiki/files to ${repo.name}...`);
-      await ProjectGitSyncService.pushProjectToRepo({
+      const syncResult = await ProjectGitSyncService.pushProjectToRepo({
         project,
         repo,
         fsInstance,
+      });
+      await updateProject(project.id, {
+        metadata: {
+          ...baseMetadata,
+          projectWikiSync: {
+            status: "synced",
+            repoId: repo.id,
+            repoName: repo.name,
+            branch,
+            lastPushedAt: new Date().toISOString(),
+            lastError: null,
+            initialized: syncResult.initialized,
+          } satisfies ProjectWikiSyncMetadata,
+        },
       });
       toast.success(`Project "${project.name}" pushed to ${repo.name}.`);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Project Git sync failed.";
+      await updateProject(project.id, {
+        metadata: {
+          ...baseMetadata,
+          projectWikiSync: {
+            status: "error",
+            repoId: repo.id,
+            repoName: repo.name,
+            branch,
+            lastPushedAt: projectWikiSync?.lastPushedAt ?? null,
+            lastError: message,
+          } satisfies ProjectWikiSyncMetadata,
+        },
+      });
       toast.error(message);
       console.error("Failed to sync project wiki:", error);
     } finally {
-      setIsSaving(false);
+      setIsProjectSyncing(false);
     }
-  }, [effectiveSyncRepoId, project, syncRepos]);
+  }, [effectiveSyncRepoId, project, projectWikiSync?.lastPushedAt, syncRepos, updateProject]);
 
   const tabs: TabDefinition[] = useMemo(
     () => [
@@ -380,9 +431,11 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
               setSyncRepoId(sri);
             }}
             onSyncProject={handleSyncProjectWiki}
+            projectWikiSync={projectWikiSync}
             effectiveSyncRepoId={effectiveSyncRepoId}
             syncRepos={syncRepos}
             isParentSaving={isSaving}
+            isProjectSyncing={isProjectSyncing}
           />
         ),
       },
@@ -409,8 +462,10 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       globalDefaults,
       globalModelId,
       isSaving,
+      isProjectSyncing,
       effectiveSyncRepoId,
       handleSyncProjectWiki,
+      projectWikiSync,
       syncRepos,
       projectId,
       project?.name,

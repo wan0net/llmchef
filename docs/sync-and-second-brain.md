@@ -62,7 +62,9 @@ Recommended approach:
 Current implementation:
 - Project settings can push the selected project folder directly as a Git repository using the configured Sync Repository.
 - The project VFS folder itself becomes the Git working tree, so human-readable wiki files, raw sources, recipes, and outputs are what Git sees.
+- Project sync status is stored in project metadata, including repository, branch, last pushed time, and the last error.
 - `.git` and `.llmchef` are hidden from the Documents/Wiki tree.
+- Connected local folders reconcile every minute and now also queue a short debounced sync after VFS writes, deletes, moves, and renames under the project folder.
 
 Sources:
 - isomorphic-git, https://isomorphic-git.org/
@@ -133,3 +135,9 @@ The assistant should maintain the second brain with these defaults:
 - Maintain `_home.md`, `_index.md`, and `overview.md` pages as navigational surfaces.
 - Record contradictions and open questions as first-class pages.
 - Treat memories as user-owned editable knowledge, not hidden model memory.
+
+Current automation:
+- Completed assistant responses can create accepted crea8 markdown memories automatically when they look durable enough.
+- Auto memories are written with provenance, source prompt excerpts, tags, and a taxonomy path.
+- The memory automation seeds `_index.md` and `overview.md` in the project second-brain folder without overwriting human edits.
+- Responses are classified into Findings, Decisions, Lessons, Questions, Contradictions, Sources, or Concepts using local heuristics; the AI prompt still guides richer human-quality edits during chat.

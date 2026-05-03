@@ -131,6 +131,7 @@ export const FileManager = memo(() => {
   const renameInputRef = useRef<HTMLInputElement | null>(null);
   const newFolderInputRef = useRef<HTMLInputElement | null>(null);
   const projectFolderSyncingRef = useRef(false);
+  const projectFolderSyncTimerRef = useRef<number | null>(null);
 
   const currentDirectory = currentParentId ? nodes[currentParentId] : null;
   const currentPath = currentDirectory ? currentDirectory.path : "/";
@@ -463,6 +464,37 @@ export const FileManager = memo(() => {
     }, 60_000);
     return () => window.clearInterval(interval);
   }, [localFolderName, projectIdForLocalFolder, runProjectFolderSync]);
+
+  useEffect(() => {
+    if (!localFolderName || !projectFolderVfsPath) return;
+
+    const isProjectPath = (path: string) =>
+      path === projectFolderVfsPath || path.startsWith(`${projectFolderVfsPath}/`);
+    const queueSync = ({ path }: { path: string }) => {
+      if (!isProjectPath(path) || projectFolderSyncingRef.current) return;
+      if (projectFolderSyncTimerRef.current !== null) {
+        window.clearTimeout(projectFolderSyncTimerRef.current);
+      }
+      setLocalFolderStatus(
+        t("fileManager.localFolderSyncQueued", "Local folder sync queued...")
+      );
+      projectFolderSyncTimerRef.current = window.setTimeout(() => {
+        projectFolderSyncTimerRef.current = null;
+        void runProjectFolderSync(false);
+      }, 1500);
+    };
+
+    emitter.on(vfsEvent.fileWritten, queueSync);
+    emitter.on(vfsEvent.fileDeleted, queueSync);
+    return () => {
+      emitter.off(vfsEvent.fileWritten, queueSync);
+      emitter.off(vfsEvent.fileDeleted, queueSync);
+      if (projectFolderSyncTimerRef.current !== null) {
+        window.clearTimeout(projectFolderSyncTimerRef.current);
+        projectFolderSyncTimerRef.current = null;
+      }
+    };
+  }, [localFolderName, projectFolderVfsPath, runProjectFolderSync, t]);
 
   const handleConnectProjectFolder = useCallback(async () => {
     if (!projectIdForLocalFolder || !projectFolderVfsPath) {

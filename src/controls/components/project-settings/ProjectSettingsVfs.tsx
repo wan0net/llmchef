@@ -55,7 +55,8 @@ export const ProjectSettingsVfs: React.FC<ProjectSettingsVfsProps> = ({
             <div>
               <Label>Project Filesystem Info</Label>
               <p className="text-xs text-muted-foreground mb-2">
-                Each project has its own dedicated Virtual File System (VFS).
+                Projects are folders in the shared LLMChef Virtual File System.
+                Local folder sync and Git sync operate on this project folder.
               </p>
               <div className="p-3 border rounded bg-muted/30 text-sm mb-2 break-all">
                 {" "}

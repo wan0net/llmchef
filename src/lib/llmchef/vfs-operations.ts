@@ -230,7 +230,9 @@ export const createDirectoryOp = async (
   path: string,
   options?: { fsInstance?: typeof fs }
 ): Promise<void> => {
-  await createDirectoryRecursive(path, options);
+  const normalized = normalizePath(path);
+  await createDirectoryRecursive(normalized, options);
+  emitter.emit(vfsEvent.fileWritten, { path: normalized });
 };
 
 export const downloadFileOp = async (
@@ -496,6 +498,8 @@ export const renameOp = async (
     }
 
     await fsToUse.promises.rename(normalizedOld, normalizedNew);
+    emitter.emit(vfsEvent.fileDeleted, { path: normalizedOld });
+    emitter.emit(vfsEvent.fileWritten, { path: normalizedNew });
     toast.success(
       `Renamed "${basename(normalizedOld)}" to "${basename(normalizedNew)}"`
     );

@@ -14,15 +14,29 @@ import {
 } from "@/components/ui/select";
 import type { SyncRepo } from "@/types/llmchef/sync";
 import { FieldMetaMessages } from "@/components/LLMChef/common/form-fields/FieldMetaMessages";
-import { Loader2, SaveIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, CheckCircle2, Clock, GitBranch, Loader2, SaveIcon } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+
+export interface ProjectWikiSyncMetadata {
+  status?: "idle" | "syncing" | "synced" | "error";
+  repoId?: string | null;
+  repoName?: string | null;
+  branch?: string | null;
+  lastPushedAt?: string | null;
+  lastError?: string | null;
+  initialized?: boolean;
+}
 
 interface ProjectSettingsSyncProps {
   initialSyncRepoId: string | null;
   onSave: (data: { syncRepoId: string | null }) => Promise<void> | void;
   onSyncProject?: () => Promise<void> | void;
+  projectWikiSync?: ProjectWikiSyncMetadata | null;
   effectiveSyncRepoId: string | null;
   syncRepos: SyncRepo[];
   isParentSaving?: boolean;
+  isProjectSyncing?: boolean;
 }
 
 const projectSettingsSyncSchema = z.object({
@@ -33,12 +47,29 @@ export const ProjectSettingsSync: React.FC<ProjectSettingsSyncProps> = ({
   initialSyncRepoId,
   onSave,
   onSyncProject,
+  projectWikiSync,
   effectiveSyncRepoId,
   syncRepos,
   isParentSaving = false,
+  isProjectSyncing = false,
 }) => {
   const effectiveRepoName =
     syncRepos.find((r) => r.id === effectiveSyncRepoId)?.name ?? "None";
+  const status = isProjectSyncing ? "syncing" : projectWikiSync?.status ?? "idle";
+  const statusConfig = {
+    idle: { label: "Not pushed", icon: Clock, variant: "outline" as const },
+    syncing: { label: "Pushing", icon: Loader2, variant: "secondary" as const },
+    synced: { label: "Synced", icon: CheckCircle2, variant: "secondary" as const },
+    error: { label: "Error", icon: AlertTriangle, variant: "destructive" as const },
+  }[status];
+  const StatusIcon = statusConfig.icon;
+  const pushedAt = projectWikiSync?.lastPushedAt
+    ? new Date(projectWikiSync.lastPushedAt)
+    : null;
+  const pushedAtLabel =
+    pushedAt && !Number.isNaN(pushedAt.getTime())
+      ? formatDistanceToNow(pushedAt, { addSuffix: true })
+      : null;
 
   const form = useForm({
     defaultValues: {
@@ -126,6 +157,44 @@ export const ProjectSettingsSync: React.FC<ProjectSettingsSyncProps> = ({
           </div>
         )}
       />
+      <div className="rounded-sm border bg-card/60 p-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="space-y-0.5">
+            <div className="font-medium">Project wiki push</div>
+            <div className="text-xs text-muted-foreground">
+              Pushes this project folder, including wiki pages and files, to the linked Git repository.
+            </div>
+          </div>
+          <Badge variant={statusConfig.variant}>
+            <StatusIcon className={isProjectSyncing ? "animate-spin" : undefined} />
+            {statusConfig.label}
+          </Badge>
+        </div>
+        <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+          <div>
+            <span className="font-medium text-foreground">Repository:</span>{" "}
+            {projectWikiSync?.repoName ?? effectiveRepoName}
+          </div>
+          <div className="flex items-center gap-1">
+            <GitBranch className="h-3.5 w-3.5" />
+            <span className="font-medium text-foreground">Branch:</span>{" "}
+            {projectWikiSync?.branch ?? "Inherited repository default"}
+          </div>
+          <div>
+            <span className="font-medium text-foreground">Last pushed:</span>{" "}
+            {pushedAtLabel ?? "Never"}
+          </div>
+          <div>
+            <span className="font-medium text-foreground">Working tree:</span>{" "}
+            {projectWikiSync?.initialized ? "Initialized during last push" : "Existing or not yet initialized"}
+          </div>
+        </div>
+        {projectWikiSync?.lastError && (
+          <div className="mt-3 rounded-sm border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+            {projectWikiSync.lastError}
+          </div>
+        )}
+      </div>
       <div className="flex flex-wrap justify-end gap-2 pt-2">
         <Button
           type="button"
@@ -136,10 +205,12 @@ export const ProjectSettingsSync: React.FC<ProjectSettingsSyncProps> = ({
             isParentSaving ||
             form.state.isSubmitting ||
             !effectiveSyncRepoId ||
-            !onSyncProject
+            !onSyncProject ||
+            isProjectSyncing
           }
         >
-          Push Project Wiki
+          {isProjectSyncing && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+          {isProjectSyncing ? "Pushing..." : "Push Project Wiki"}
         </Button>
         <form.Subscribe
           selector={(state) =>
