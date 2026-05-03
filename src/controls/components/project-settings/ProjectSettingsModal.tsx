@@ -26,6 +26,7 @@ import { ProjectSettingsRules } from "./ProjectSettingsRules";
 import { ProjectSettingsTags } from "./ProjectSettingsTags";
 import { useConversationStore } from "@/store/conversation.store";
 import { APP_VFS_KEY } from "@/lib/llmchef/constants";
+import { ProjectGitSyncService } from "@/services/project-git-sync.service";
 import {
   TabbedLayout,
   TabDefinition,
@@ -256,6 +257,46 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
     }
   };
 
+  const handleSyncProjectWiki = useCallback(async () => {
+    if (!project || !effectiveSyncRepoId) {
+      toast.info("Choose a sync repository before pushing this project.");
+      return;
+    }
+
+    const repo = syncRepos.find((candidate) => candidate.id === effectiveSyncRepoId);
+    if (!repo) {
+      toast.error("Selected sync repository was not found.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      let fsInstance = useVfsStore.getState().fs;
+      if (!fsInstance || useVfsStore.getState().vfsKey !== APP_VFS_KEY) {
+        await useVfsStore.getState().initializeVFS(APP_VFS_KEY);
+        fsInstance = useVfsStore.getState().fs;
+      }
+      if (!fsInstance) {
+        throw new Error("App filesystem is not ready.");
+      }
+
+      toast.info(`Pushing "${project.name}" wiki/files to ${repo.name}...`);
+      await ProjectGitSyncService.pushProjectToRepo({
+        project,
+        repo,
+        fsInstance,
+      });
+      toast.success(`Project "${project.name}" pushed to ${repo.name}.`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Project Git sync failed.";
+      toast.error(message);
+      console.error("Failed to sync project wiki:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [effectiveSyncRepoId, project, syncRepos]);
+
   const tabs: TabDefinition[] = useMemo(
     () => [
       {
@@ -338,6 +379,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
             onSave={({ syncRepoId: sri }) => {
               setSyncRepoId(sri);
             }}
+            onSyncProject={handleSyncProjectWiki}
             effectiveSyncRepoId={effectiveSyncRepoId}
             syncRepos={syncRepos}
             isParentSaving={isSaving}
@@ -368,6 +410,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       globalModelId,
       isSaving,
       effectiveSyncRepoId,
+      handleSyncProjectWiki,
       syncRepos,
       projectId,
       project?.name,

@@ -380,6 +380,66 @@ export const gitInitOp = async (
   }
 };
 
+export const gitEnsureRemoteOp = async (
+  path: string,
+  remoteUrl: string,
+  remote = "origin",
+  options?: { fsInstance?: typeof fs },
+): Promise<void> => {
+  const fsToUse = options?.fsInstance ?? fs;
+  const dir = normalizePath(path);
+  const remotePath = `remote.${remote}.url`;
+
+  try {
+    const existingUrl = await git
+      .getConfig({ fs: fsToUse, dir, path: remotePath })
+      .catch(() => null);
+
+    if (existingUrl !== remoteUrl) {
+      await git.setConfig({
+        fs: fsToUse,
+        dir,
+        path: remotePath,
+        value: remoteUrl,
+      });
+    }
+  } catch (err: unknown) {
+    console.error(`[VFS Git Op] Git remote setup failed for ${dir}:`, err);
+    toast.error(
+      `Git remote setup failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    throw err;
+  }
+};
+
+export const gitEnsureBranchOp = async (
+  path: string,
+  branch: string,
+  options?: { fsInstance?: typeof fs },
+): Promise<void> => {
+  const fsToUse = options?.fsInstance ?? fs;
+  const dir = normalizePath(path);
+
+  try {
+    const currentBranch = await git
+      .currentBranch({ fs: fsToUse, dir, fullname: false })
+      .catch(() => null);
+    if (currentBranch === branch) return;
+
+    try {
+      await git.checkout({ fs: fsToUse, dir, ref: branch });
+    } catch {
+      await git.branch({ fs: fsToUse, dir, ref: branch, checkout: true });
+    }
+  } catch (err: unknown) {
+    console.error(`[VFS Git Op] Git branch setup failed for ${dir}:`, err);
+    toast.error(
+      `Git branch setup failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    throw err;
+  }
+};
+
 export const gitCommitOp = async (
   path: string,
   message: string,

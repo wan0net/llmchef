@@ -19,6 +19,7 @@ import { Loader2, SaveIcon } from "lucide-react";
 interface ProjectSettingsSyncProps {
   initialSyncRepoId: string | null;
   onSave: (data: { syncRepoId: string | null }) => Promise<void> | void;
+  onSyncProject?: () => Promise<void> | void;
   effectiveSyncRepoId: string | null;
   syncRepos: SyncRepo[];
   isParentSaving?: boolean;
@@ -31,6 +32,7 @@ const projectSettingsSyncSchema = z.object({
 export const ProjectSettingsSync: React.FC<ProjectSettingsSyncProps> = ({
   initialSyncRepoId,
   onSave,
+  onSyncProject,
   effectiveSyncRepoId,
   syncRepos,
   isParentSaving = false,
@@ -124,7 +126,21 @@ export const ProjectSettingsSync: React.FC<ProjectSettingsSyncProps> = ({
           </div>
         )}
       />
-      <div className="flex justify-end pt-2">
+      <div className="flex flex-wrap justify-end gap-2 pt-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => void onSyncProject?.()}
+          disabled={
+            isParentSaving ||
+            form.state.isSubmitting ||
+            !effectiveSyncRepoId ||
+            !onSyncProject
+          }
+        >
+          Push Project Wiki
+        </Button>
         <form.Subscribe
           selector={(state) =>
             [

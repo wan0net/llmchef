@@ -95,6 +95,8 @@ const RETRIEVAL_CHUNK_OVERLAP = 240;
 const MAX_RETRIEVAL_CHUNKS = 12;
 const MAX_RETRIEVAL_CONTEXT_CHARS = 24_000;
 const SNIPPET_LENGTH = 220;
+const IGNORED_DOCUMENT_TREE_NAMES = new Set([".git", ".llmchef"]);
+
 const workspacePathParts = (path: string, rootPath: string): string[] => {
   const normalizedPath = normalizePath(path);
   const normalizedRoot = normalizePath(rootPath);
@@ -405,6 +407,7 @@ const listWorkspaceDocuments = async (
   const docs: WorkspaceDocument[] = [];
 
   for (const entry of entries) {
+    if (IGNORED_DOCUMENT_TREE_NAMES.has(entry.name)) continue;
     if (entry.isDirectory) {
       docs.push(...(await listWorkspaceDocuments(entry.path, fsInstance)));
       continue;

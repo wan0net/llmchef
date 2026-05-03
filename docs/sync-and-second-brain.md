@@ -52,12 +52,17 @@ Source: MDN File System API, https://developer.mozilla.org/en-US/docs/Web/API/Fi
 
 ### Git and GitHub
 
-Use `isomorphic-git` for real Git repositories in browser JavaScript. It can clone, commit, list status, and push using a supplied filesystem and HTTP client. Use GitHub via either Git remotes or Octokit for repository/file APIs.
+Use LLMChef's existing `isomorphic-git` stack for real Git repositories in browser JavaScript. The app already wraps clone, init, commit, pull, push, branch, status, and remotes in `src/lib/llmchef/vfs-git-operations.ts`; new Git-backed sync features should extend those wrappers rather than introducing another Git library.
 
 Recommended approach:
-- `isomorphic-git` for full project snapshot/version sync.
+- Existing `VfsOps.git*` wrappers for full project snapshot/version sync.
 - `@octokit/rest` for GitHub-specific setup, repo creation, issue/PR metadata, and simple file updates.
 - Keep Git credentials as explicit secrets and redact from exports by default.
+
+Current implementation:
+- Project settings can push the selected project folder directly as a Git repository using the configured Sync Repository.
+- The project VFS folder itself becomes the Git working tree, so human-readable wiki files, raw sources, recipes, and outputs are what Git sees.
+- `.git` and `.llmchef` are hidden from the Documents/Wiki tree.
 
 Sources:
 - isomorphic-git, https://isomorphic-git.org/
