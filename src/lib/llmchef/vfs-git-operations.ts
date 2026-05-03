@@ -404,7 +404,7 @@ export const gitEnsureRemoteOp = async (
       });
     }
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git remote setup failed for ${dir}:`, err);
+    console.error("[VFS Git Op] Git remote setup failed for %s:", dir, err);
     toast.error(
       `Git remote setup failed: ${err instanceof Error ? err.message : String(err)}`,
     );
@@ -432,7 +432,7 @@ export const gitEnsureBranchOp = async (
       await git.branch({ fs: fsToUse, dir, ref: branch, checkout: true });
     }
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git branch setup failed for ${dir}:`, err);
+    console.error("[VFS Git Op] Git branch setup failed for %s:", dir, err);
     toast.error(
       `Git branch setup failed: ${err instanceof Error ? err.message : String(err)}`,
     );
