@@ -3,7 +3,7 @@ import { emitter } from "@/lib/llmchef/event-emitter";
 import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import { createMemoryProposal } from "@/lib/llmchef/crea8-memory";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
-import { joinPath } from "@/lib/llmchef/file-manager-utils";
+import { dirname, joinPath } from "@/lib/llmchef/file-manager-utils";
 import {
   initializeFsOp,
   readFileOp,
@@ -276,12 +276,38 @@ export class Crea8MemoryAutomationService {
       (await initializeFsOp(APP_VFS_KEY));
     if (!fs) throw new Error("App VFS is not available.");
 
+    const wikiRoot = dirname(rootPath);
+    const workspaceRoot = dirname(wikiRoot);
+
+    await writeIfMissing(
+      joinPath(workspaceRoot, "Home.md"),
+      [
+        `# ${projectName}`,
+        "",
+        "This is the human-facing home for the project knowledge base.",
+        "",
+        "## Start Here",
+        "",
+        "- [[Wiki/Second Brain/_index]]",
+        "- [[Wiki/Second Brain/overview]]",
+        "- [[Wiki]]",
+        "",
+        "## Working Notes",
+        "",
+        "- LLMChef automatically writes durable findings into the Second Brain.",
+        "- Edit, merge, or move those Markdown notes as the project evolves.",
+        "",
+      ].join("\n"),
+      fs,
+    );
+
     await writeIfMissing(
       joinPath(rootPath, "_index.md"),
       [
         `# ${projectName} Second Brain`,
         "",
         "This folder is maintained by LLMChef and remains human-editable.",
+        "Automatic memories are Markdown notes that should be reviewed, merged, and curated like any other wiki page.",
         "",
         ...SECOND_BRAIN_SECTIONS.map((section) => `- [[${section}]]`),
         "",

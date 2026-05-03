@@ -65,7 +65,14 @@ test("project sidebar sections replace the old workspace selector", async ({ pag
   await expect(
     page.getByText(`${projectName} files, wiki pages, and notebook questions grounded locally`),
   ).toBeVisible();
+  await expect(page.locator("h1", { hasText: projectName })).toBeVisible();
+  await expect(page.getByText("This is the human-facing home for the project knowledge base.")).toBeVisible();
+  await expect(page.getByText("Backlinks", { exact: true })).toBeVisible();
+  await expect(page.getByText("Related", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Chat input")).not.toBeVisible();
+
+  await page.getByRole("button", { name: "Page" }).click();
+  await expect(page.getByRole("heading", { name: `${projectName} note` })).toBeVisible();
 
   await page.getByRole("button", { name: `Chats for ${projectName}` }).click();
   await expect(page.getByLabel("Chat input")).toBeVisible();

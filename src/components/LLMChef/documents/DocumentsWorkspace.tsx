@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import {
   BookOpenTextIcon,
+  LinkIcon,
   CopyIcon,
   FileAudioIcon,
   FileCodeIcon,
@@ -89,6 +90,7 @@ type WorkspaceDocument = {
 };
 
 const GLOBAL_DOCUMENTS_ROOT = "/Documents";
+const PROJECT_HOME_FILENAME = "Home.md";
 const MAX_INDEX_BYTES = 200_000;
 const MAX_RETRIEVAL_BYTES = 700_000;
 const RETRIEVAL_CHUNK_SIZE = 1_800;
@@ -367,6 +369,95 @@ const wikiLabelForDoc = (doc: WorkspaceDocument): string =>
 const isWikiMarkdownDoc = (doc: WorkspaceDocument): boolean =>
   doc.kind === "crea8" || doc.previewDescriptor.kind === "markdown";
 
+const isMissingPathError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false;
+  const code = (error as Error & { code?: string }).code;
+  return code === "ENOENT" || /not found|no such file/i.test(error.message);
+};
+
+const wikiLinkTargets = (markdown: string): string[] =>
+  Array.from(markdown.matchAll(/\[\[([^\]]+)\]\]/g))
+    .map((match) => match[1]?.split("|")[0]?.trim())
+    .filter((target): target is string => Boolean(target));
+
+const tokenizeWikiText = (text: string): Set<string> =>
+  new Set(
+    text
+      .toLowerCase()
+      .match(/[a-z0-9][a-z0-9_-]{2,}/g)
+      ?.filter(
+        (term) =>
+          ![
+            "the",
+            "and",
+            "for",
+            "with",
+            "from",
+            "this",
+            "that",
+            "wiki",
+            "page",
+            "project",
+          ].includes(term),
+      ) ?? [],
+  );
+
+const buildProjectHomeContent = (workspaceLabel: string): string =>
+  [
+    `# ${workspaceLabel}`,
+    "",
+    "This is the human-facing home for the project knowledge base.",
+    "",
+    "## Start Here",
+    "",
+    "- [[Wiki/Second Brain/_index]]",
+    "- [[Wiki/Second Brain/overview]]",
+    "- [[Wiki]]",
+    "",
+    "## Working Notes",
+    "",
+    "- Capture durable decisions, findings, and questions as Markdown.",
+    "- Keep source files alongside wiki pages so notebook queries can use both.",
+    "- Let LLMChef add second-brain memories automatically, then edit them here.",
+    "",
+  ].join("\n");
+
+const ensureProjectHomePage = async ({
+  fsInstance,
+  workspaceRoot,
+  workspaceLabel,
+  projectId,
+  connector,
+}: {
+  fsInstance: typeof import("@zenfs/core").fs;
+  workspaceRoot: string;
+  workspaceLabel: string;
+  projectId: string | null;
+  connector: ReturnType<typeof createCrea8VfsConnector>;
+}): Promise<string> => {
+  const homePath = joinPath(workspaceRoot, PROJECT_HOME_FILENAME);
+  try {
+    await readFileOp(homePath, { fsInstance, silent: true });
+    return homePath;
+  } catch (error) {
+    if (!isMissingPathError(error)) throw error;
+  }
+
+  await createDirectoryOp(joinPath(workspaceRoot, "Wiki"), { fsInstance });
+  await createDirectoryOp(joinPath(workspaceRoot, "Wiki", "Second Brain"), {
+    fsInstance,
+  });
+  await connector.create({
+    title: workspaceLabel,
+    content: buildProjectHomeContent(workspaceLabel),
+    scope: projectId ? "project" : "reference",
+    tags: ["home", "wiki"],
+    projectId,
+    path: homePath,
+  });
+  return homePath;
+};
+
 const indexWorkspaceDocument = async (
   path: string,
   name: string,
@@ -571,6 +662,10 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     [currentProject?.path],
   );
   const workspaceLabel = currentProject?.name ?? "Global documents";
+  const homePath = useMemo(
+    () => joinPath(workspaceRoot, PROJECT_HOME_FILENAME),
+    [workspaceRoot],
+  );
   const connector = useMemo(
     () =>
       fs
@@ -622,6 +717,17 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     setError(null);
     try {
       await createDirectoryOp(workspaceRoot, { fsInstance: fs });
+      const workspaceConnector = createCrea8VfsConnector({
+        rootPath: workspaceRoot,
+        fsInstance: fs,
+      });
+      await ensureProjectHomePage({
+        fsInstance: fs,
+        workspaceRoot,
+        workspaceLabel,
+        projectId: currentProjectId,
+        connector: workspaceConnector,
+      });
       setWorkspaceDocs(await listWorkspaceDocuments(workspaceRoot, fs));
     } catch (error) {
       const message =
@@ -631,7 +737,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [fs, workspaceRoot]);
+  }, [currentProjectId, fs, workspaceLabel, workspaceRoot]);
 
   useEffect(() => {
     void loadDocuments();
@@ -642,6 +748,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   }, [workspaceRoot]);
 
   useEffect(() => {
+    if (saving) return;
     if (
       activeDocument &&
       !workspaceDocs.some((doc) => doc.path === activeDocument.doc.path)
@@ -650,7 +757,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       setDraft("");
       setIsEditingCrea8(false);
     }
-  }, [activeDocument, workspaceDocs]);
+  }, [activeDocument, saving, workspaceDocs]);
 
   const selectWorkspaceDoc = useCallback(
     async (doc: WorkspaceDocument) => {
@@ -687,6 +794,24 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     },
     [fs],
   );
+
+  useEffect(() => {
+    if (!fs || workspaceDocs.length === 0) return;
+    if (
+      activeDocument &&
+      workspaceDocs.some((doc) => doc.path === activeDocument.doc.path)
+    ) {
+      return;
+    }
+
+    const homeDoc =
+      workspaceDocs.find((doc) => normalizePath(doc.path) === homePath) ??
+      workspaceDocs.find((doc) => isWikiMarkdownDoc(doc)) ??
+      workspaceDocs[0];
+    if (homeDoc) {
+      void selectWorkspaceDoc(homeDoc);
+    }
+  }, [activeDocument, fs, homePath, selectWorkspaceDoc, workspaceDocs]);
 
   const saveActiveDocument = useCallback(async () => {
     if (!activeDocument || !fs) return;
@@ -804,6 +929,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       });
       setPreviewDescriptor(previewDescriptor);
       setPreviewData(data);
+      await loadDocuments();
       setActiveDocument({
         kind: "crea8",
         note,
@@ -822,7 +948,6 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       });
       setDraft(note.content);
       setIsEditingCrea8(true);
-      await loadDocuments();
       toast.success("Wiki page created.");
     } catch (error) {
       const message =
@@ -1126,6 +1251,72 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       : activeDocument?.kind === "file" && isIndexableText(activeDocument.doc.name, activeDocument.doc.type)
       ? draft !== activeDocument.content
       : false;
+  const activeWikiLinks = useMemo(() => wikiLinkTargets(draft), [draft]);
+  const activeBacklinks = useMemo(() => {
+    if (!activeDocument) return [];
+    const title = wikiLabelForDoc(activeDocument.doc).toLowerCase();
+    const filename = activeDocument.doc.name.replace(/\.(md|markdown|mdx)$/i, "").toLowerCase();
+    const linkNeedles = new Set([
+      `[[${title}]]`,
+      `[[${filename}]]`,
+      activeDocument.doc.path.toLowerCase(),
+    ]);
+    return workspaceDocs
+      .filter((doc) => doc.path !== activeDocument.doc.path)
+      .filter((doc) =>
+        [...linkNeedles].some((needle) => doc.indexText.includes(needle)),
+      )
+      .slice(0, 6);
+  }, [activeDocument, workspaceDocs]);
+  const relatedWikiDocs = useMemo(() => {
+    if (!activeDocument) return [];
+    const sourceTerms = tokenizeWikiText(
+      `${wikiLabelForDoc(activeDocument.doc)} ${draft}`,
+    );
+    if (sourceTerms.size === 0) return [];
+
+    return workspaceDocs
+      .filter((doc) => doc.path !== activeDocument.doc.path)
+      .map((doc) => {
+        const targetTerms = tokenizeWikiText(`${wikiLabelForDoc(doc)} ${doc.indexText}`);
+        let score = 0;
+        for (const term of sourceTerms) {
+          if (targetTerms.has(term)) score += 1;
+        }
+        return { doc, score };
+      })
+      .filter((item) => item.score > 1)
+      .sort((first, second) => second.score - first.score)
+      .slice(0, 6)
+      .map((item) => item.doc);
+  }, [activeDocument, draft, workspaceDocs]);
+
+  const openDocumentByLabel = useCallback(
+    (label: string) => {
+      const normalized = label.trim().toLowerCase().replace(/\.(md|markdown|mdx)$/i, "");
+      const target = workspaceDocs.find((doc) => {
+        const docLabel = wikiLabelForDoc(doc).toLowerCase();
+        const fileLabel = doc.name
+          .replace(/\.(md|markdown|mdx)$/i, "")
+          .toLowerCase();
+        const relativePath = workspacePathParts(doc.path, workspaceRoot)
+          .join("/")
+          .replace(/\.(md|markdown|mdx)$/i, "")
+          .toLowerCase();
+        return (
+          docLabel === normalized ||
+          fileLabel === normalized ||
+          relativePath === normalized
+        );
+      });
+      if (target) {
+        void selectWorkspaceDoc(target);
+      } else {
+        setDocSearch(label);
+      }
+    },
+    [selectWorkspaceDoc, workspaceDocs, workspaceRoot],
+  );
 
   const sidebarPane = (
     <div className="h-full min-h-0 border-r border-border bg-sidebar/40">
@@ -1421,6 +1612,78 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   <SaveIcon className={saving ? "animate-pulse" : ""} />
                   Save
                 </Button>
+              </div>
+            </div>
+            <div className="grid gap-2 border-b border-border bg-muted/15 px-4 py-3 text-xs md:grid-cols-3">
+              <div className="min-w-0">
+                <div className="mb-1 flex items-center gap-1 font-medium text-muted-foreground">
+                  <LinkIcon className="h-3.5 w-3.5" />
+                  Links
+                </div>
+                {activeWikiLinks.length === 0 ? (
+                  <p className="text-muted-foreground">No wiki links yet.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {activeWikiLinks.slice(0, 8).map((link) => (
+                      <Button
+                        key={link}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-6 max-w-full px-2 text-[11px]"
+                        onClick={() => openDocumentByLabel(link)}
+                      >
+                        <span className="truncate">{link}</span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="mb-1 font-medium text-muted-foreground">
+                  Backlinks
+                </div>
+                {activeBacklinks.length === 0 ? (
+                  <p className="text-muted-foreground">No backlinks yet.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {activeBacklinks.map((doc) => (
+                      <Button
+                        key={doc.path}
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 max-w-full px-2 text-[11px]"
+                        onClick={() => void selectWorkspaceDoc(doc)}
+                      >
+                        <span className="truncate">{wikiLabelForDoc(doc)}</span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="mb-1 font-medium text-muted-foreground">
+                  Related
+                </div>
+                {relatedWikiDocs.length === 0 ? (
+                  <p className="text-muted-foreground">Related pages will appear as the wiki grows.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {relatedWikiDocs.map((doc) => (
+                      <Button
+                        key={doc.path}
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 max-w-full px-2 text-[11px]"
+                        onClick={() => void selectWorkspaceDoc(doc)}
+                      >
+                        <span className="truncate">{wikiLabelForDoc(doc)}</span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             {activeDocument.kind === "file" &&
