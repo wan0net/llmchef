@@ -48,7 +48,7 @@ export class Crea8MemoryControlModule implements ControlModule {
       }
 
       const connector = createCrea8VfsConnector({
-        rootPath: "/Memory",
+        rootPath: "/",
         fsInstance: fs,
       });
       this.results = await connector.search({

@@ -1,7 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  BookOpenTextIcon,
+  FileAudioIcon,
+  FileCodeIcon,
+  FileIcon,
+  FileImageIcon,
+  FileJsonIcon,
   FilePlusIcon,
   FileTextIcon,
+  FileVideoIcon,
   FolderIcon,
   FolderPlusIcon,
   Loader2Icon,
@@ -16,15 +23,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { FilePreviewDialog } from "@/components/LLMChef/file-manager/FilePreviewDialog";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
-import { basename, joinPath } from "@/lib/llmchef/file-manager-utils";
-import { listFilesOp, readFileOp, writeFileOp } from "@/lib/llmchef/vfs-operations";
+import { parseCrea8MarkdownNote } from "@/lib/llmchef/crea8-memory";
+import { basename, joinPath, normalizePath } from "@/lib/llmchef/file-manager-utils";
+import {
+  createDirectoryOp,
+  listFilesOp,
+  readFileOp,
+  writeFileOp,
+} from "@/lib/llmchef/vfs-operations";
+import {
+  inferFilePreviewDescriptor,
+  type FilePreviewDescriptor,
+} from "@/lib/llmchef/file-preview";
+import { useProjectStore } from "@/store/project.store";
 import { useVfsStore } from "@/store/vfs.store";
 import type { AttachedFileMetadata } from "@/store/input.store";
 import type {
   Crea8MemoryNote,
-  Crea8MemoryNoteRef,
-  Crea8MemorySearchResult,
   Crea8MemoryScope,
 } from "@/types/llmchef/crea8-memory";
 
@@ -38,8 +55,8 @@ type DocumentsWorkspaceProps = {
 
 type ScopeFilter = "project-current" | "all" | Crea8MemoryScope;
 type ActiveDocument =
-  | { kind: "memory"; note: Crea8MemoryNote }
-  | { kind: "notebook"; doc: NotebookDocument; content: string };
+  | { kind: "crea8"; doc: WorkspaceDocument; note: Crea8MemoryNote }
+  | { kind: "file"; doc: WorkspaceDocument; content: string; data: Uint8Array };
 
 type TreeNodeModel<T> = {
   name: string;
@@ -48,7 +65,8 @@ type TreeNodeModel<T> = {
   item?: T;
 };
 
-type NotebookDocument = {
+type WorkspaceDocument = {
+  kind: "crea8" | "file";
   name: string;
   path: string;
   type: string;
@@ -56,9 +74,11 @@ type NotebookDocument = {
   updatedAt: Date;
   snippet: string;
   indexText: string;
+  previewDescriptor: FilePreviewDescriptor;
+  memoryNote?: Crea8MemoryNote;
 };
 
-const NOTEBOOK_ROOT = "/Documents/Imports";
+const GLOBAL_DOCUMENTS_ROOT = "/Documents";
 const MAX_INDEX_BYTES = 200_000;
 const MAX_RETRIEVAL_BYTES = 700_000;
 const RETRIEVAL_CHUNK_SIZE = 1_800;
@@ -68,7 +88,7 @@ const MAX_RETRIEVAL_CONTEXT_CHARS = 24_000;
 const SNIPPET_LENGTH = 220;
 const FILTERS: { id: ScopeFilter; label: string }[] = [
   { id: "project-current", label: "Current project" },
-  { id: "all", label: "All memory" },
+  { id: "all", label: "All items" },
   { id: "user", label: "User" },
   { id: "project", label: "Projects" },
   { id: "decision", label: "Decisions" },
@@ -77,16 +97,16 @@ const FILTERS: { id: ScopeFilter; label: string }[] = [
   { id: "reference", label: "Reference" },
 ];
 
-const memoryPathParts = (path: string | undefined, fallback: string): string[] => {
-  const normalized = (path || fallback).replace(/^\/+/, "");
-  const withoutRoot = normalized.replace(/^Memory\/?/, "");
-  return withoutRoot.split("/").filter(Boolean);
-};
-
-const notebookPathParts = (path: string): string[] => {
-  const normalized = path.replace(/^\/+/, "");
-  const withoutRoot = normalized.replace(/^Documents\/Imports\/?/, "");
-  return withoutRoot.split("/").filter(Boolean);
+const workspacePathParts = (path: string, rootPath: string): string[] => {
+  const normalizedPath = normalizePath(path);
+  const normalizedRoot = normalizePath(rootPath);
+  const relative =
+    normalizedPath === normalizedRoot
+      ? ""
+      : normalizedPath.startsWith(`${normalizedRoot}/`)
+        ? normalizedPath.slice(normalizedRoot.length + 1)
+        : normalizedPath.replace(/^\/+/, "");
+  return relative.split("/").filter(Boolean);
 };
 
 const sortTree = <T,>(node: TreeNodeModel<T>): TreeNodeModel<T> => ({
@@ -99,33 +119,19 @@ const sortTree = <T,>(node: TreeNodeModel<T>): TreeNodeModel<T> => ({
     }),
 });
 
-const buildMemoryTree = (
-  results: Crea8MemorySearchResult[],
-): TreeNodeModel<Crea8MemorySearchResult> => {
-  const root: TreeNodeModel<Crea8MemorySearchResult> = {
-    name: "Memory",
-    path: "/Memory",
-    children: [],
-  };
-
-  for (const result of results) {
-    addTreePath(root, memoryPathParts(result.note.path, result.note.title), result);
-  }
-
-  return sortTree(root);
-};
-
-const buildNotebookTree = (
-  docs: NotebookDocument[],
-): TreeNodeModel<NotebookDocument> => {
-  const root: TreeNodeModel<NotebookDocument> = {
-    name: "Imports",
-    path: NOTEBOOK_ROOT,
+const buildWorkspaceTree = (
+  docs: WorkspaceDocument[],
+  rootPath: string,
+  rootName: string,
+): TreeNodeModel<WorkspaceDocument> => {
+  const root: TreeNodeModel<WorkspaceDocument> = {
+    name: rootName,
+    path: rootPath,
     children: [],
   };
 
   for (const doc of docs) {
-    addTreePath(root, notebookPathParts(doc.path), doc);
+    addTreePath(root, workspacePathParts(doc.path, rootPath), doc);
   }
 
   return sortTree(root);
@@ -155,14 +161,16 @@ const addTreePath = <T,>(
 };
 
 const matchesFilter = (
-  note: Crea8MemoryNote,
+  doc: WorkspaceDocument,
   filter: ScopeFilter,
   currentProjectId: string | null,
 ): boolean => {
   if (filter === "all") return true;
-  if (filter === "project-current") {
-    return currentProjectId ? note.projectId === currentProjectId : true;
-  }
+  if (filter === "project-current") return true;
+  if (doc.kind === "file") return false;
+  const note = doc.memoryNote;
+  if (!note) return false;
+  void currentProjectId;
   return note.scope === filter;
 };
 
@@ -240,13 +248,13 @@ const chunkText = (text: string): string[] => {
 };
 
 const buildRetrievalContext = async (
-  docs: NotebookDocument[],
+  docs: WorkspaceDocument[],
   question: string,
   fsInstance: typeof import("@zenfs/core").fs,
 ): Promise<{ content: string; chunkCount: number }> => {
   const terms = queryTerms(question);
   const scoredChunks: Array<{
-    doc: NotebookDocument;
+    doc: WorkspaceDocument;
     index: number;
     score: number;
     text: string;
@@ -307,55 +315,119 @@ const buildRetrievalContext = async (
   return { content, chunkCount: sections.length };
 };
 
-const indexNotebookDocument = async (
+const iconForPreviewKind = (doc: WorkspaceDocument): React.ReactNode => {
+  const className = "mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground";
+  if (doc.kind === "crea8") return <BookOpenTextIcon className={className} />;
+  switch (doc.previewDescriptor.kind) {
+    case "image":
+    case "svg":
+      return <FileImageIcon className={className} />;
+    case "audio":
+      return <FileAudioIcon className={className} />;
+    case "video":
+      return <FileVideoIcon className={className} />;
+    case "json":
+      return <FileJsonIcon className={className} />;
+    case "code":
+    case "html":
+      return <FileCodeIcon className={className} />;
+    case "markdown":
+    case "text":
+      return <FileTextIcon className={className} />;
+    default:
+      return <FileIcon className={className} />;
+  }
+};
+
+const readCrea8NoteIfPresent = (
+  path: string,
+  name: string,
+  mimeType: string,
+  text: string,
+): Crea8MemoryNote | undefined => {
+  if (!isIndexableText(name, mimeType) || !/\.mdx?$/i.test(name)) return undefined;
+  try {
+    return parseCrea8MarkdownNote(text, path);
+  } catch {
+    return undefined;
+  }
+};
+
+const indexWorkspaceDocument = async (
   path: string,
   name: string,
   mimeType: string,
   fsInstance: typeof import("@zenfs/core").fs,
-): Promise<{ snippet: string; indexText: string }> => {
+): Promise<{
+  kind: WorkspaceDocument["kind"];
+  snippet: string;
+  indexText: string;
+  memoryNote?: Crea8MemoryNote;
+}> => {
   if (!isIndexableText(name, mimeType)) {
-    return { snippet: "", indexText: `${name} ${path}`.toLowerCase() };
+    return {
+      kind: "file",
+      snippet: "",
+      indexText: `${name} ${path}`.toLowerCase(),
+    };
   }
 
   try {
     const data = await readFileOp(path, { fsInstance, silent: true });
     const preview = decodeText(data.slice(0, MAX_INDEX_BYTES)).trim();
+    const memoryNote = readCrea8NoteIfPresent(path, name, mimeType, preview);
     return {
-      snippet: preview.slice(0, SNIPPET_LENGTH),
-      indexText: `${name} ${path} ${preview}`.toLowerCase(),
+      kind: memoryNote ? "crea8" : "file",
+      snippet: (memoryNote?.content ?? preview).slice(0, SNIPPET_LENGTH),
+      indexText: `${name} ${path} ${memoryNote?.title ?? ""} ${
+        memoryNote?.content ?? preview
+      }`.toLowerCase(),
+      memoryNote,
     };
   } catch {
-    return { snippet: "", indexText: `${name} ${path}`.toLowerCase() };
+    return {
+      kind: "file",
+      snippet: "",
+      indexText: `${name} ${path}`.toLowerCase(),
+    };
   }
 };
 
-const listNotebookDocuments = async (
+const listWorkspaceDocuments = async (
   path: string,
   fsInstance: typeof import("@zenfs/core").fs,
-): Promise<NotebookDocument[]> => {
+): Promise<WorkspaceDocument[]> => {
   const entries = await listFilesOp(path, { fsInstance });
-  const docs: NotebookDocument[] = [];
+  const docs: WorkspaceDocument[] = [];
 
   for (const entry of entries) {
     if (entry.isDirectory) {
-      docs.push(...(await listNotebookDocuments(entry.path, fsInstance)));
+      docs.push(...(await listWorkspaceDocuments(entry.path, fsInstance)));
       continue;
     }
 
     const type = guessMimeType(entry.name);
-    const indexed = await indexNotebookDocument(
+    const indexed = await indexWorkspaceDocument(
       entry.path,
       entry.name,
       type,
       fsInstance,
     );
+    const previewDescriptor = inferFilePreviewDescriptor({
+      name: entry.name,
+      path: entry.path,
+      mimeType: type,
+      size: entry.size,
+    });
 
     docs.push({
+      kind: indexed.kind,
       name: entry.name,
       path: entry.path,
       type,
       size: entry.size,
       updatedAt: entry.lastModified,
+      previewDescriptor,
       ...indexed,
     });
   }
@@ -370,6 +442,7 @@ const TreeNode = <T,>({
   label,
   meta,
   snippet,
+  icon,
   itemKey,
   onSelect,
 }: {
@@ -379,6 +452,7 @@ const TreeNode = <T,>({
   label: (item: T) => string;
   meta?: (item: T) => React.ReactNode;
   snippet?: (item: T) => string | undefined;
+  icon?: (item: T) => React.ReactNode;
   itemKey: (item: T) => string;
   onSelect: (item: T) => void;
 }) => {
@@ -400,8 +474,10 @@ const TreeNode = <T,>({
           if (node.item) onSelect(node.item);
         }}
       >
-        {isFile ? (
-          <FileTextIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        {isFile && node.item ? (
+          icon?.(node.item) ?? (
+            <FileTextIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          )
         ) : (
           <FolderIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         )}
@@ -426,6 +502,7 @@ const TreeNode = <T,>({
           label={label}
           meta={meta}
           snippet={snippet}
+          icon={icon}
           itemKey={itemKey}
           onSelect={onSelect}
         />
@@ -441,15 +518,21 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const fs = useVfsStore((state) => state.fs);
   const vfsLoading = useVfsStore((state) => state.loading);
   const operationLoading = useVfsStore((state) => state.operationLoading);
+  const currentProject = useProjectStore((state) =>
+    state.getProjectById(currentProjectId),
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const [filter, setFilter] = useState<ScopeFilter>("project-current");
-  const [memoryResults, setMemoryResults] = useState<Crea8MemorySearchResult[]>([]);
-  const [notebookDocs, setNotebookDocs] = useState<NotebookDocument[]>([]);
+  const [workspaceDocs, setWorkspaceDocs] = useState<WorkspaceDocument[]>([]);
   const [docSearch, setDocSearch] = useState("");
   const [selectedDocPaths, setSelectedDocPaths] = useState<Set<string>>(new Set());
   const [activeDocument, setActiveDocument] = useState<ActiveDocument | null>(null);
   const [draft, setDraft] = useState("");
+  const [previewDescriptor, setPreviewDescriptor] =
+    useState<FilePreviewDescriptor | null>(null);
+  const [previewData, setPreviewData] = useState<Uint8Array | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -457,32 +540,36 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const workspaceRoot = useMemo(
+    () => normalizePath(currentProject?.path ?? GLOBAL_DOCUMENTS_ROOT),
+    [currentProject?.path],
+  );
+  const workspaceLabel = currentProject?.name ?? "Global documents";
   const connector = useMemo(
     () =>
       fs
         ? createCrea8VfsConnector({
-            rootPath: "/Memory",
+            rootPath: workspaceRoot,
             fsInstance: fs,
           })
         : null,
-    [fs],
+    [fs, workspaceRoot],
   );
-  const memoryTree = useMemo(() => buildMemoryTree(memoryResults), [memoryResults]);
-  const filteredNotebookDocs = useMemo(() => {
+  const filteredWorkspaceDocs = useMemo(() => {
     const query = docSearch.trim().toLowerCase();
-    if (!query) return notebookDocs;
     const terms = query.split(/\s+/).filter(Boolean);
-    return notebookDocs.filter((doc) =>
-      terms.every((term) => doc.indexText.includes(term)),
+    return workspaceDocs.filter((doc) =>
+      matchesFilter(doc, filter, currentProjectId) &&
+      (terms.length === 0 || terms.every((term) => doc.indexText.includes(term))),
     );
-  }, [docSearch, notebookDocs]);
-  const notebookTree = useMemo(
-    () => buildNotebookTree(filteredNotebookDocs),
-    [filteredNotebookDocs],
+  }, [currentProjectId, docSearch, filter, workspaceDocs]);
+  const workspaceTree = useMemo(
+    () => buildWorkspaceTree(filteredWorkspaceDocs, workspaceRoot, workspaceLabel),
+    [filteredWorkspaceDocs, workspaceLabel, workspaceRoot],
   );
   const selectedDocs = useMemo(
-    () => notebookDocs.filter((doc) => selectedDocPaths.has(doc.path)),
-    [notebookDocs, selectedDocPaths],
+    () => workspaceDocs.filter((doc) => selectedDocPaths.has(doc.path)),
+    [workspaceDocs, selectedDocPaths],
   );
   const busy = loading || importing || vfsLoading || operationLoading;
 
@@ -494,9 +581,8 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   }, []);
 
   const loadDocuments = useCallback(async () => {
-    if (!fs || !connector) {
-      setMemoryResults([]);
-      setNotebookDocs([]);
+    if (!fs) {
+      setWorkspaceDocs([]);
       setActiveDocument(null);
       return;
     }
@@ -504,29 +590,17 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const found = await connector.search({ text: "", limit: 1000 });
-      const notes = await Promise.all(
-        found.map(async (result) => ({
-          result,
-          note: await connector.read(result.note),
-        })),
-      );
-      setMemoryResults(
-        notes
-          .filter(({ note }) => matchesFilter(note, filter, currentProjectId))
-          .map(({ result }) => result),
-      );
-      setNotebookDocs(await listNotebookDocuments(NOTEBOOK_ROOT, fs));
+      await createDirectoryOp(workspaceRoot, { fsInstance: fs });
+      setWorkspaceDocs(await listWorkspaceDocuments(workspaceRoot, fs));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to load documents.";
       setError(message);
-      setMemoryResults([]);
-      setNotebookDocs([]);
+      setWorkspaceDocs([]);
     } finally {
       setLoading(false);
     }
-  }, [connector, currentProjectId, filter, fs]);
+  }, [fs, workspaceRoot]);
 
   useEffect(() => {
     void loadDocuments();
@@ -534,46 +608,39 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
 
   useEffect(() => {
     if (
-      activeDocument?.kind === "memory" &&
-      !memoryResults.some((result) => result.note.id === activeDocument.note.id)
+      activeDocument &&
+      !workspaceDocs.some((doc) => doc.path === activeDocument.doc.path)
     ) {
       setActiveDocument(null);
       setDraft("");
     }
-    if (
-      activeDocument?.kind === "notebook" &&
-      !notebookDocs.some((doc) => doc.path === activeDocument.doc.path)
-    ) {
-      setActiveDocument(null);
-      setDraft("");
-    }
-  }, [activeDocument, memoryResults, notebookDocs]);
+  }, [activeDocument, workspaceDocs]);
 
-  const selectMemoryNote = useCallback(
-    async (ref: Crea8MemoryNoteRef) => {
-      if (!connector) return;
-      setError(null);
-      try {
-        const note = await connector.read(ref);
-        setActiveDocument({ kind: "memory", note });
-        setDraft(note.content);
-      } catch (error) {
-        setError(error instanceof Error ? error.message : "Failed to open note.");
-      }
-    },
-    [connector],
-  );
-
-  const selectNotebookDoc = useCallback(
-    async (doc: NotebookDocument) => {
+  const selectWorkspaceDoc = useCallback(
+    async (doc: WorkspaceDocument) => {
       if (!fs) return;
       setError(null);
       try {
-        const content = decodeText(
-          await readFileOp(doc.path, { fsInstance: fs, silent: true }),
-        );
-        setActiveDocument({ kind: "notebook", doc, content });
-        setDraft(content);
+        const data = await readFileOp(doc.path, { fsInstance: fs, silent: true });
+        setPreviewDescriptor(doc.previewDescriptor);
+        setPreviewData(data);
+
+        if (doc.kind === "crea8" && doc.memoryNote) {
+          setActiveDocument({ kind: "crea8", doc, note: doc.memoryNote });
+          setDraft(doc.memoryNote.content);
+          return;
+        }
+
+        if (isIndexableText(doc.name, doc.type)) {
+          const content = decodeText(data);
+          setActiveDocument({ kind: "file", doc, content, data });
+          setDraft(content);
+          return;
+        }
+
+        setActiveDocument({ kind: "file", doc, content: "", data });
+        setDraft("");
+        setIsPreviewOpen(true);
       } catch (error) {
         setError(error instanceof Error ? error.message : "Failed to open document.");
       }
@@ -586,26 +653,41 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     setSaving(true);
     setError(null);
     try {
-      if (activeDocument.kind === "memory") {
+      if (activeDocument.kind === "crea8") {
         if (!connector) return;
         const updatedRef = await connector.update(
           {
             backend: "markdown-workspace",
             id: activeDocument.note.id,
             title: activeDocument.note.title,
-            path: activeDocument.note.path,
+            path: activeDocument.doc.path,
           },
           { content: draft },
         );
         const updatedNote = await connector.read(updatedRef);
-        setActiveDocument({ kind: "memory", note: updatedNote });
+        setActiveDocument({
+          kind: "crea8",
+          doc: {
+            ...activeDocument.doc,
+            name: basename(updatedNote.path ?? activeDocument.doc.path),
+            path: updatedNote.path ?? activeDocument.doc.path,
+            snippet: updatedNote.content.slice(0, SNIPPET_LENGTH),
+            indexText: `${updatedNote.title} ${updatedNote.content}`.toLowerCase(),
+            memoryNote: updatedNote,
+          },
+          note: updatedNote,
+        });
         setDraft(updatedNote.content);
-      } else {
+      } else if (activeDocument.kind === "file") {
+        if (!isIndexableText(activeDocument.doc.name, activeDocument.doc.type)) {
+          throw new Error("This file type cannot be edited as text.");
+        }
         await writeFileOp(activeDocument.doc.path, draft, { fsInstance: fs });
         setActiveDocument({
-          kind: "notebook",
+          kind: "file",
           doc: activeDocument.doc,
           content: draft,
+          data: new TextEncoder().encode(draft),
         });
       }
       await loadDocuments();
@@ -629,7 +711,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         for (const file of Array.from(files)) {
           const browserFile = file as File & { webkitRelativePath?: string };
           const relativePath = browserFile.webkitRelativePath || file.name;
-          const targetPath = joinPath(NOTEBOOK_ROOT, relativePath);
+          const targetPath = joinPath(workspaceRoot, relativePath);
           await writeFileOp(targetPath, new Uint8Array(await file.arrayBuffer()), {
             fsInstance: fs,
           });
@@ -646,10 +728,68 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
     },
-    [fs, loadDocuments],
+    [fs, loadDocuments, workspaceRoot],
   );
 
-  const toggleDocSelection = useCallback((doc: NotebookDocument) => {
+  const createCrea8Page = useCallback(async () => {
+    if (!connector) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const title = currentProject ? `${currentProject.name} note` : "New memory";
+      const ref = await connector.create({
+        title,
+        content: "",
+        scope: currentProjectId ? "project" : "reference",
+        tags: [],
+        projectId: currentProjectId,
+        path: joinPath(workspaceRoot, "crea8", `memory-${Date.now()}.md`),
+      });
+      const note = await connector.read(ref);
+      const path = note.path ?? ref.path ?? workspaceRoot;
+      const data = fs
+        ? await readFileOp(path, { fsInstance: fs, silent: true })
+        : new Uint8Array();
+      const name = basename(path);
+      const type = guessMimeType(name);
+      const previewDescriptor = inferFilePreviewDescriptor({
+        name,
+        path,
+        mimeType: type,
+        size: data.byteLength,
+      });
+      setPreviewDescriptor(previewDescriptor);
+      setPreviewData(data);
+      setActiveDocument({
+        kind: "crea8",
+        note,
+        doc: {
+          kind: "crea8",
+          name,
+          path,
+          type,
+          size: data.byteLength,
+          updatedAt: note.updatedAt,
+          snippet: note.content.slice(0, SNIPPET_LENGTH),
+          indexText: `${note.title} ${note.content}`.toLowerCase(),
+          previewDescriptor,
+          memoryNote: note,
+        },
+      });
+      setDraft(note.content);
+      await loadDocuments();
+      toast.success("crea8 page created.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to create crea8 page.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [connector, currentProject, currentProjectId, fs, loadDocuments, workspaceRoot]);
+
+  const toggleDocSelection = useCallback((doc: WorkspaceDocument) => {
     setSelectedDocPaths((current) => {
       const next = new Set(current);
       if (next.has(doc.path)) next.delete(doc.path);
@@ -661,12 +801,12 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const selectVisibleDocs = useCallback(() => {
     setSelectedDocPaths((current) => {
       const next = new Set(current);
-      for (const doc of filteredNotebookDocs) {
+      for (const doc of filteredWorkspaceDocs) {
         next.add(doc.path);
       }
       return next;
     });
-  }, [filteredNotebookDocs]);
+  }, [filteredWorkspaceDocs]);
 
   const clearSelectedDocs = useCallback(() => {
     setSelectedDocPaths(new Set());
@@ -722,17 +862,15 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   }, [fs, onAskDocuments, question, selectedDocs]);
 
   const activeTitle =
-    activeDocument?.kind === "memory"
+    activeDocument?.kind === "crea8"
       ? activeDocument.note.title
       : activeDocument?.doc.name;
   const activePath =
-    activeDocument?.kind === "memory"
-      ? activeDocument.note.path
-      : activeDocument?.doc.path;
+    activeDocument?.doc.path;
   const isDirty =
-    activeDocument?.kind === "memory"
+    activeDocument?.kind === "crea8"
       ? draft !== activeDocument.note.content
-      : activeDocument?.kind === "notebook"
+      : activeDocument?.kind === "file" && isIndexableText(activeDocument.doc.name, activeDocument.doc.type)
       ? draft !== activeDocument.content
       : false;
 
@@ -742,7 +880,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         <div className="min-w-0">
           <h2 className="truncate text-sm font-semibold">Documents</h2>
           <p className="truncate text-xs text-muted-foreground">
-            Memory notes, imported docs, and notebook questions grounded in selected files
+            {workspaceLabel} files, crea8 pages, and notebook questions grounded locally
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -772,6 +910,16 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
             className="hidden"
             onChange={(event) => void importFiles(event.currentTarget.files)}
           />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => void createCrea8Page()}
+            disabled={!fs || saving}
+          >
+            <BookOpenTextIcon className={saving ? "animate-pulse" : ""} />
+            Crea8
+          </Button>
           <Button
             type="button"
             size="sm"
@@ -822,43 +970,13 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
             ) : (
               <div className="space-y-4 p-2">
                 <section>
-                  <div className="mb-1 flex items-center justify-between px-2 text-xs font-medium text-muted-foreground">
-                    <span>Knowledge base</span>
-                    <Badge variant="outline">{memoryResults.length}</Badge>
-                  </div>
-                  {memoryResults.length === 0 ? (
-                    <p className="px-2 py-3 text-xs text-muted-foreground">
-                      No memory notes found for this view.
-                    </p>
-                  ) : (
-                    <TreeNode
-                      node={memoryTree}
-                      selectedKey={
-                        activeDocument?.kind === "memory"
-                          ? activeDocument.note.id
-                          : null
-                      }
-                      label={(result) => result.note.title}
-                      meta={(result) => (
-                        <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
-                          {result.scope}
-                        </Badge>
-                      )}
-                      snippet={(result) => result.snippet}
-                      itemKey={(result) => result.note.id}
-                      onSelect={(result) => void selectMemoryNote(result.note)}
-                    />
-                  )}
-                </section>
-
-                <section>
                   <div className="mb-2 space-y-2 px-2">
                     <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                      <span>Imported docs</span>
+                      <span>{workspaceLabel}</span>
                       <div className="flex items-center gap-1">
-                        <Badge variant="outline">{filteredNotebookDocs.length}</Badge>
-                        {filteredNotebookDocs.length !== notebookDocs.length ? (
-                          <Badge variant="secondary">{notebookDocs.length} total</Badge>
+                        <Badge variant="outline">{filteredWorkspaceDocs.length}</Badge>
+                        {filteredWorkspaceDocs.length !== workspaceDocs.length ? (
+                          <Badge variant="secondary">{workspaceDocs.length} total</Badge>
                         ) : null}
                       </div>
                     </div>
@@ -867,7 +985,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                       <Input
                         value={docSearch}
                         onChange={(event) => setDocSearch(event.target.value)}
-                        placeholder="Search imported docs"
+                        placeholder="Search files and crea8 pages"
                         className="h-8 pl-7 text-xs"
                       />
                     </div>
@@ -878,7 +996,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                         variant="outline"
                         className="h-7 px-2 text-xs"
                         onClick={selectVisibleDocs}
-                        disabled={filteredNotebookDocs.length === 0}
+                        disabled={filteredWorkspaceDocs.length === 0}
                       >
                         Select results
                       </Button>
@@ -894,33 +1012,39 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                       </Button>
                     </div>
                   </div>
-                  {notebookDocs.length === 0 ? (
+                  {workspaceDocs.length === 0 ? (
                     <p className="px-2 py-3 text-xs text-muted-foreground">
-                      Import local files to query them from chat.
+                      Import local files into this workspace. crea8 markdown pages will appear alongside them.
                     </p>
-                  ) : filteredNotebookDocs.length === 0 ? (
+                  ) : filteredWorkspaceDocs.length === 0 ? (
                     <p className="px-2 py-3 text-xs text-muted-foreground">
-                      No imported docs match the current search.
+                      No files or crea8 pages match the current view.
                     </p>
                   ) : (
                     <TreeNode
-                      node={notebookTree}
+                      node={workspaceTree}
                       selectedKey={
-                        activeDocument?.kind === "notebook"
+                        activeDocument
                           ? activeDocument.doc.path
                           : null
                       }
-                      label={(doc) => doc.name}
+                      label={(doc) => doc.memoryNote?.title ?? doc.name}
                       meta={(doc) =>
-                        selectedDocPaths.has(doc.path) ? (
-                          <Badge variant="secondary" className="h-5 shrink-0 text-[10px]">
-                            selected
+                        <>
+                          <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
+                            {doc.kind === "crea8" ? doc.memoryNote?.scope ?? "crea8" : doc.previewDescriptor.kind}
                           </Badge>
-                        ) : null
+                          {selectedDocPaths.has(doc.path) ? (
+                            <Badge variant="secondary" className="h-5 shrink-0 text-[10px]">
+                              selected
+                            </Badge>
+                          ) : null}
+                        </>
                       }
                       snippet={(doc) => doc.snippet}
                       itemKey={(doc) => doc.path}
-                      onSelect={(doc) => void selectNotebookDoc(doc)}
+                      icon={iconForPreviewKind}
+                      onSelect={(doc) => void selectWorkspaceDoc(doc)}
                     />
                   )}
                 </section>
@@ -937,7 +1061,11 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   <div className="min-w-0 space-y-1">
                     <div className="flex min-w-0 items-center gap-2">
                       <h3 className="truncate text-sm font-semibold">{activeTitle}</h3>
-                      <Badge variant="outline">{activeDocument.kind}</Badge>
+                      <Badge variant="outline">
+                        {activeDocument.kind === "crea8"
+                          ? "crea8"
+                          : activeDocument.doc.previewDescriptor.kind}
+                      </Badge>
                     </div>
                     {activePath ? (
                       <p className="truncate text-xs text-muted-foreground">
@@ -946,22 +1074,29 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     ) : null}
                   </div>
                   <div className="flex items-center gap-2">
-                    {activeDocument.kind === "notebook" ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={
-                          selectedDocPaths.has(activeDocument.doc.path)
-                            ? "secondary"
-                            : "outline"
-                        }
-                        onClick={() => toggleDocSelection(activeDocument.doc)}
-                      >
-                        {selectedDocPaths.has(activeDocument.doc.path)
-                          ? "Selected"
-                          : "Use in query"}
-                      </Button>
-                    ) : null}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsPreviewOpen(true)}
+                      disabled={!previewDescriptor || !previewData}
+                    >
+                      Preview
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={
+                        selectedDocPaths.has(activeDocument.doc.path)
+                          ? "secondary"
+                          : "outline"
+                      }
+                      onClick={() => toggleDocSelection(activeDocument.doc)}
+                    >
+                      {selectedDocPaths.has(activeDocument.doc.path)
+                        ? "Selected"
+                        : "Use in query"}
+                    </Button>
                     <Button
                       type="button"
                       size="sm"
@@ -973,15 +1108,22 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     </Button>
                   </div>
                 </div>
-                <Textarea
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  className="min-h-0 flex-1 resize-none rounded-none border-0 bg-background p-4 font-mono text-sm shadow-none focus-visible:ring-0"
-                />
+                {activeDocument.kind === "file" &&
+                !isIndexableText(activeDocument.doc.name, activeDocument.doc.type) ? (
+                  <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
+                    Preview is available for {activeDocument.doc.previewDescriptor.kind} files.
+                  </div>
+                ) : (
+                  <Textarea
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    className="min-h-0 flex-1 resize-none rounded-none border-0 bg-background p-4 font-mono text-sm shadow-none focus-visible:ring-0"
+                  />
+                )}
               </>
             ) : (
               <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
-                Select a memory note or imported document from the tree.
+                Select a crea8 page or file from the workspace tree.
               </div>
             )}
           </div>
@@ -1008,7 +1150,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
               <Textarea
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
-                placeholder="Ask a question grounded in the selected imported docs"
+                placeholder="Ask a question grounded in selected files and crea8 pages"
                 className="min-h-20 resize-y text-sm"
               />
               <Button
@@ -1024,6 +1166,12 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
           </div>
         </div>
       </div>
+      <FilePreviewDialog
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        descriptor={previewDescriptor}
+        data={previewData}
+      />
     </div>
   );
 };

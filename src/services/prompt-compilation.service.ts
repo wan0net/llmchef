@@ -210,7 +210,7 @@ ${skillPromptContext}`
       try {
         const fsInstance = await this._ensureVfsReady(targetVfsKey);
         const connector = createCrea8VfsConnector({
-          rootPath: "/Memory",
+          rootPath: "/",
           fsInstance,
         });
         const memoryContext = await resolveCrea8MemoryPromptContext({
