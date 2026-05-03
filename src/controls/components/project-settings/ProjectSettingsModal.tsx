@@ -167,7 +167,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
         presencePenalty: project.presencePenalty ?? 0.0,
         frequencyPenalty: project.frequencyPenalty ?? 0.0,
       });
-      setActiveTab("prompt");
+      setActiveTab(initialTab ?? "prompt");
     } else if (!isOpen) {
       setVfsKey(APP_VFS_KEY);
       setSystemPrompt(null);
@@ -184,7 +184,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
         frequencyPenalty: 0.0,
       });
     }
-  }, [isOpen, projectId, project, effectiveSettings, setVfsKey, paramsForm]);
+  }, [isOpen, projectId, project, effectiveSettings, initialTab, setVfsKey, paramsForm]);
 
   const handleSave = async () => {
     if (!projectId || !project) return;

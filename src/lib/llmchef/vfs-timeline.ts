@@ -20,6 +20,7 @@ export interface VfsTimelineSummary {
 
 const MAX_RECORDS = 200;
 const records: VfsTimelineRecord[] = [];
+let snapshot: VfsTimelineRecord[] = records;
 const listeners = new Set<() => void>();
 let installed = false;
 
@@ -35,6 +36,7 @@ const addRecord = (operation: VfsTimelineOperation, path: string): void => {
     timestamp: new Date().toISOString(),
   });
   if (records.length > MAX_RECORDS) records.length = MAX_RECORDS;
+  snapshot = [...records];
   notify();
 };
 
@@ -47,7 +49,7 @@ export const installVfsTimeline = (): void => {
   emitter.on(vfsEvent.fileDeleted, ({ path }: { path: string }) => addRecord("delete", path));
 };
 
-export const getVfsTimelineRecords = (): VfsTimelineRecord[] => [...records];
+export const getVfsTimelineRecords = (): VfsTimelineRecord[] => snapshot;
 
 export const getVfsTimelineSummary = (): VfsTimelineSummary => {
   const changedPaths = new Set<string>();
@@ -79,6 +81,7 @@ export const getVfsTimelineSummary = (): VfsTimelineSummary => {
 
 export const clearVfsTimeline = (): void => {
   records.length = 0;
+  snapshot = [];
   notify();
 };
 

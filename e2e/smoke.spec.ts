@@ -1,4 +1,27 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+const bootApp = async (page: Page) => {
+  await page.goto("/#app");
+  await expect(page.getByLabel("Chat input")).toBeVisible({ timeout: 20_000 });
+};
+
+const createProject = async (page: Page, name: string) => {
+  await page.locator('button[aria-label="New Project"]:visible').click();
+  const editInput = page.locator("li input").first();
+  await expect(editInput).toBeVisible();
+  await editInput.fill(name);
+  await editInput.press("Enter");
+  await expect(page.locator("li input")).toHaveCount(0);
+  await expect(page.getByText(name, { exact: true })).toBeVisible();
+};
+
+const expandProject = async (page: Page, name: string) => {
+  await page.getByText(name, { exact: true }).click();
+  await expect(page.getByRole("button", { name: `Chats for ${name}` })).toBeVisible();
+  await expect(page.getByRole("button", { name: `Wiki for ${name}` })).toBeVisible();
+  await expect(page.getByRole("button", { name: `Files for ${name}` })).toBeVisible();
+  await expect(page.getByRole("button", { name: `Git for ${name}` })).toBeVisible();
+};
 
 test("landing page exposes the local-first app and bundle paths", async ({ page }) => {
   await page.goto("/");
@@ -25,6 +48,56 @@ test("app route boots the chat shell without console errors", async ({ page }) =
   await expect(page.getByLabel("New Chat").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Send message" })).toBeVisible();
   expect(consoleErrors.filter((message) => !message.includes("PWA service initialization failed"))).toEqual([]);
+});
+
+test("project sidebar sections replace the old workspace selector", async ({ page }) => {
+  const projectName = `E2E Project ${Date.now()}`;
+  await bootApp(page);
+
+  await expect(page.getByRole("button", { name: "Chats and projects" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Documents" })).toHaveCount(0);
+
+  await createProject(page, projectName);
+  await expandProject(page, projectName);
+
+  await page.getByRole("button", { name: `Wiki for ${projectName}` }).click();
+  await expect(page.getByRole("heading", { name: "Documents" })).toBeVisible();
+  await expect(
+    page.getByText(`${projectName} files, wiki pages, and notebook questions grounded locally`),
+  ).toBeVisible();
+  await expect(page.getByLabel("Chat input")).not.toBeVisible();
+
+  await page.getByRole("button", { name: `Chats for ${projectName}` }).click();
+  await expect(page.getByLabel("Chat input")).toBeVisible();
+
+  await page.getByRole("button", { name: `Files for ${projectName}` }).click();
+  const filesDialog = page.getByRole("dialog");
+  await expect(filesDialog).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Virtual Filesystem" })).toBeVisible();
+  await filesDialog.locator('button:has-text("Close")').first().click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  await page.getByRole("button", { name: `Git for ${projectName}` }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: `Project Settings: ${projectName}` }),
+  ).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Sync" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+});
+
+test("mobile project drawer uses the same single-pane sections", async ({ page }) => {
+  const projectName = `Mobile Project ${Date.now()}`;
+  await page.setViewportSize({ width: 390, height: 844 });
+  await bootApp(page);
+
+  await page.getByLabel("Open menu").click();
+  await expect(page.getByRole("button", { name: "Documents" })).toHaveCount(0);
+  await createProject(page, projectName);
+
+  await expandProject(page, projectName);
 });
 
 test("composer queue controls are available in the chat shell", async ({ page }) => {

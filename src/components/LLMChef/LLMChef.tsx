@@ -159,9 +159,9 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
   }, []);
 
   useEffect(() => {
-    // Close the mobile sidebar when a conversation or project is selected
-    // Don't close for settings or other modal interactions
-    if (isMobileSidebarOpen && selectedItemId && (selectedItemType === "conversation" || selectedItemType === "project")) {
+    // Close the mobile sidebar when a conversation is selected. Project rows stay
+    // open so their Chats/Wiki/Files/Git sections remain usable on mobile.
+    if (isMobileSidebarOpen && selectedItemId && selectedItemType === "conversation") {
       setIsMobileSidebarOpen(false);
     }
   }, [isMobileSidebarOpen, selectedItemId, selectedItemType]);
