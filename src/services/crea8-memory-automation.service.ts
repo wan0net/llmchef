@@ -1,10 +1,21 @@
+import { nanoid } from "nanoid";
 import { emitter } from "@/lib/llmchef/event-emitter";
+import { APP_VFS_KEY } from "@/lib/llmchef/constants";
+import { createMemoryProposal } from "@/lib/llmchef/crea8-memory";
+import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
+import { joinPath } from "@/lib/llmchef/file-manager-utils";
+import { initializeFsOp } from "@/lib/llmchef/vfs-operations";
 import { useCrea8MemoryStore } from "@/store/crea8-memory.store";
 import { useConversationStore } from "@/store/conversation.store";
+import { useProjectStore } from "@/store/project.store";
+import { useVfsStore } from "@/store/vfs.store";
 import { PersistenceService } from "@/services/persistence.service";
 import { interactionEvent } from "@/types/llmchef/events/interaction.events";
 import type { Interaction } from "@/types/llmchef/interaction";
-import type { Crea8MemoryScope } from "@/types/llmchef/crea8-memory";
+import type {
+  Crea8MemoryProposal,
+  Crea8MemoryScope,
+} from "@/types/llmchef/crea8-memory";
 
 const AUTO_MEMORY_TYPES = new Set<Interaction["type"]>([
   "message.user_assistant",
@@ -13,6 +24,7 @@ const AUTO_MEMORY_TYPES = new Set<Interaction["type"]>([
 const MIN_RESPONSE_LENGTH = 180;
 const MAX_CONTENT_LENGTH = 6000;
 const MAX_TITLE_LENGTH = 80;
+const GLOBAL_DOCUMENTS_ROOT = "/Documents";
 
 const isMemoryWorthProposing = (response: string): boolean => {
   const trimmed = response.trim();
@@ -38,6 +50,37 @@ const titleFromInteraction = (interaction: Interaction, response: string): strin
 
 const scopeFromInteraction = (interaction: Interaction): Crea8MemoryScope =>
   interaction.prompt?.metadata?.activeRuleIds?.length ? "reference" : "project";
+
+const slugSegment = (value: string): string =>
+  value
+    .toLowerCase()
+    .match(/[a-z0-9]+/g)
+    ?.join("-")
+    .slice(0, 80) || "memory";
+
+const taxonomyRootForInteraction = (interaction: Interaction): string => {
+  const conversation = useConversationStore
+    .getState()
+    .getConversationById(interaction.conversationId);
+  const project = useProjectStore
+    .getState()
+    .getProjectById(conversation?.projectId ?? null);
+  return joinPath(project?.path ?? GLOBAL_DOCUMENTS_ROOT, "crea8", "Second Brain");
+};
+
+const taxonomyPathForMemory = (
+  interaction: Interaction,
+  scope: Crea8MemoryScope,
+  title: string,
+): string => {
+  const date = new Date().toISOString().slice(0, 10);
+  const section = scope === "project" ? "Findings" : "Reference";
+  return joinPath(
+    taxonomyRootForInteraction(interaction),
+    section,
+    `${date}-${slugSegment(title)}-${interaction.id.slice(0, 8)}.md`,
+  );
+};
 
 export class Crea8MemoryAutomationService {
   private static isInitialized = false;
@@ -69,25 +112,68 @@ export class Crea8MemoryAutomationService {
         return;
       }
 
-      await useCrea8MemoryStore.getState().proposeMemoryUpdate({
-        scope: scopeFromInteraction(interaction),
-        title: titleFromInteraction(interaction, response),
-        reason: "Automatically proposed from assistant response.",
+      await this.writeMemoryFromInteraction(interaction, response);
+    } catch (error) {
+      console.warn("[Crea8MemoryAutomationService] Auto memory write skipped.", error);
+    }
+  }
+
+  private static async writeMemoryFromInteraction(
+    interaction: Interaction,
+    response: string,
+  ): Promise<void> {
+    const fs =
+      useVfsStore.getState().fs ??
+      (await initializeFsOp(APP_VFS_KEY));
+    if (!fs) throw new Error("App VFS is not available.");
+
+    const conversation = useConversationStore
+      .getState()
+      .getConversationById(interaction.conversationId);
+    const scope = scopeFromInteraction(interaction);
+    const title = titleFromInteraction(interaction, response);
+    const proposal: Crea8MemoryProposal = {
+      id: nanoid(),
+      ...createMemoryProposal({
+        scope,
+        title,
+        reason: "Automatically written from assistant response.",
         proposedContent: response.slice(0, MAX_CONTENT_LENGTH),
         source: {
           conversationId: interaction.conversationId,
           interactionId: interaction.id,
-          projectId:
-            useConversationStore
-              .getState()
-              .getConversationById(interaction.conversationId)?.projectId ??
-            undefined,
+          projectId: conversation?.projectId ?? undefined,
         },
-        confidence: 0.6,
-        notify: false,
-      });
-    } catch (error) {
-      console.warn("[Crea8MemoryAutomationService] Auto memory proposal skipped.", error);
-    }
+        confidence: 0.72,
+      }),
+    };
+
+    const connector = createCrea8VfsConnector({
+      rootPath: taxonomyRootForInteraction(interaction),
+      fsInstance: fs,
+    });
+    const targetNote = await connector.create({
+      title: proposal.title,
+      content: proposal.proposedContent,
+      scope: proposal.scope,
+      tags: ["auto-memory", "second-brain"],
+      projectId: proposal.source.projectId ?? null,
+      skillId: proposal.source.skillId ?? null,
+      path: taxonomyPathForMemory(interaction, scope, title),
+    });
+    const now = new Date();
+    const written: Crea8MemoryProposal = {
+      ...proposal,
+      status: "accepted",
+      finalContent: proposal.proposedContent,
+      targetNote,
+      resolvedAt: now,
+      updatedAt: now,
+    };
+
+    await PersistenceService.saveCrea8MemoryProposal(written);
+    useCrea8MemoryStore.setState((state) => ({
+      proposals: [written, ...state.proposals],
+    }));
   }
 }

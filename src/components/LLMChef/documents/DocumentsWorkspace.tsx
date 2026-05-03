@@ -37,8 +37,10 @@ import {
 } from "@/lib/llmchef/file-manager-utils";
 import {
   createDirectoryOp,
+  deleteItemOp,
   listFilesOp,
   readFileOp,
+  renameOp,
   writeFileOp,
 } from "@/lib/llmchef/vfs-operations";
 import {
@@ -50,7 +52,6 @@ import { useVfsStore } from "@/store/vfs.store";
 import type { AttachedFileMetadata } from "@/store/input.store";
 import type {
   Crea8MemoryNote,
-  Crea8MemoryScope,
 } from "@/types/llmchef/crea8-memory";
 
 type DocumentsWorkspaceProps = {
@@ -62,7 +63,6 @@ type DocumentsWorkspaceProps = {
   sidebarPortalTarget?: HTMLElement | null;
 };
 
-type ScopeFilter = "project-current" | "all" | Crea8MemoryScope;
 type ActiveDocument =
   | { kind: "crea8"; doc: WorkspaceDocument; note: Crea8MemoryNote }
   | { kind: "file"; doc: WorkspaceDocument; content: string; data: Uint8Array };
@@ -95,17 +95,6 @@ const RETRIEVAL_CHUNK_OVERLAP = 240;
 const MAX_RETRIEVAL_CHUNKS = 12;
 const MAX_RETRIEVAL_CONTEXT_CHARS = 24_000;
 const SNIPPET_LENGTH = 220;
-const FILTERS: { id: ScopeFilter; label: string }[] = [
-  { id: "project-current", label: "Current project" },
-  { id: "all", label: "All items" },
-  { id: "user", label: "User" },
-  { id: "project", label: "Projects" },
-  { id: "decision", label: "Decisions" },
-  { id: "work-log", label: "Work log" },
-  { id: "skill", label: "Skills" },
-  { id: "reference", label: "Reference" },
-];
-
 const workspacePathParts = (path: string, rootPath: string): string[] => {
   const normalizedPath = normalizePath(path);
   const normalizedRoot = normalizePath(rootPath);
@@ -167,20 +156,6 @@ const addTreePath = <T,>(
     if (isFile) child.item = item;
     current = child;
   });
-};
-
-const matchesFilter = (
-  doc: WorkspaceDocument,
-  filter: ScopeFilter,
-  currentProjectId: string | null,
-): boolean => {
-  if (filter === "all") return true;
-  if (filter === "project-current") return true;
-  if (doc.kind === "file") return false;
-  const note = doc.memoryNote;
-  if (!note) return false;
-  void currentProjectId;
-  return note.scope === filter;
 };
 
 const guessMimeType = (name: string, browserType?: string): string => {
@@ -562,7 +537,6 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
-  const [filter, setFilter] = useState<ScopeFilter>("project-current");
   const [workspaceDocs, setWorkspaceDocs] = useState<WorkspaceDocument[]>([]);
   const [docSearch, setDocSearch] = useState("");
   const [selectedDocPaths, setSelectedDocPaths] = useState<Set<string>>(new Set());
@@ -598,11 +572,12 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const filteredWorkspaceDocs = useMemo(() => {
     const query = docSearch.trim().toLowerCase();
     const terms = query.split(/\s+/).filter(Boolean);
-    return workspaceDocs.filter((doc) =>
-      matchesFilter(doc, filter, currentProjectId) &&
-      (terms.length === 0 || terms.every((term) => doc.indexText.includes(term))),
+    return workspaceDocs.filter(
+      (doc) =>
+        terms.length === 0 ||
+        terms.every((term) => doc.indexText.includes(term)),
     );
-  }, [currentProjectId, docSearch, filter, workspaceDocs]);
+  }, [docSearch, workspaceDocs]);
   const workspaceTree = useMemo(
     () => buildWorkspaceTree(filteredWorkspaceDocs, workspaceRoot, workspaceLabel),
     [filteredWorkspaceDocs, workspaceLabel, workspaceRoot],
@@ -963,6 +938,107 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     setSelectedDocPaths(new Set());
   }, []);
 
+  const createFolderInActiveFolder = useCallback(async () => {
+    if (!fs) return;
+    const folderName = window.prompt("Folder name");
+    const trimmed = folderName?.trim();
+    if (!trimmed) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      const targetPath = joinPath(activeFolderPath ?? workspaceRoot, trimmed);
+      await createDirectoryOp(targetPath, { fsInstance: fs });
+      setActiveFolderPath(targetPath);
+      await loadDocuments();
+      toast.success(`Created folder ${targetPath}.`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to create folder.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [activeFolderPath, fs, loadDocuments, workspaceRoot]);
+
+  const moveSelectedDocsToActiveFolder = useCallback(async () => {
+    if (!fs || selectedDocs.length === 0) return;
+    const targetFolder = normalizePath(activeFolderPath ?? workspaceRoot);
+
+    setSaving(true);
+    setError(null);
+    try {
+      for (const doc of selectedDocs) {
+        const targetPath = joinPath(targetFolder, basename(doc.path));
+        if (normalizePath(doc.path) === targetPath) continue;
+        await renameOp(doc.path, targetPath, { fsInstance: fs });
+      }
+      setSelectedDocPaths(new Set());
+      await loadDocuments();
+      toast.success(`Moved ${selectedDocs.length} item${selectedDocs.length === 1 ? "" : "s"}.`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to move selected items.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [activeFolderPath, fs, loadDocuments, selectedDocs, workspaceRoot]);
+
+  const renameActiveDocument = useCallback(async () => {
+    if (!activeDocument || !fs) return;
+    const nextName = window.prompt("Rename document", activeDocument.doc.name);
+    const trimmed = nextName?.trim();
+    if (!trimmed || trimmed === activeDocument.doc.name) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      const targetPath = joinPath(dirname(activeDocument.doc.path), trimmed);
+      await renameOp(activeDocument.doc.path, targetPath, { fsInstance: fs });
+      setActiveDocument(null);
+      setDraft("");
+      await loadDocuments();
+      toast.success(`Renamed to ${trimmed}.`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to rename document.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [activeDocument, fs, loadDocuments]);
+
+  const deleteActiveDocument = useCallback(async () => {
+    if (!activeDocument || !fs) return;
+    const confirmed = window.confirm(`Delete ${activeDocument.doc.name}?`);
+    if (!confirmed) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      await deleteItemOp(activeDocument.doc.path, false, { fsInstance: fs });
+      setSelectedDocPaths((current) => {
+        const next = new Set(current);
+        next.delete(activeDocument.doc.path);
+        return next;
+      });
+      setActiveDocument(null);
+      setDraft("");
+      await loadDocuments();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete document.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [activeDocument, fs, loadDocuments]);
+
   const askSelectedDocuments = useCallback(async () => {
     const trimmedQuestion = question.trim();
     if (!fs || !trimmedQuestion || selectedDocs.length === 0) return;
@@ -1061,10 +1137,31 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     size="sm"
                     variant="outline"
                     className="h-7 px-2 text-xs"
+                    onClick={() => void createFolderInActiveFolder()}
+                    disabled={!fs || saving}
+                  >
+                    <FolderPlusIcon className="h-3.5 w-3.5" />
+                    Folder
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
                     onClick={selectVisibleDocs}
                     disabled={filteredWorkspaceDocs.length === 0}
                   >
                     Select results
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => void moveSelectedDocsToActiveFolder()}
+                    disabled={!fs || saving || selectedDocs.length === 0}
+                  >
+                    Move here
                   </Button>
                   <Button
                     type="button"
@@ -1144,6 +1241,24 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                 ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void renameActiveDocument()}
+                  disabled={saving}
+                >
+                  Rename
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void deleteActiveDocument()}
+                  disabled={saving}
+                >
+                  Delete
+                </Button>
                 <Button
                   type="button"
                   size="sm"
@@ -1347,18 +1462,6 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {FILTERS.map((item) => (
-            <Button
-              key={item.id}
-              type="button"
-              size="sm"
-              variant={filter === item.id ? "secondary" : "outline"}
-              onClick={() => setFilter(item.id)}
-              disabled={item.id === "project-current" && !currentProjectId}
-            >
-              {item.label}
-            </Button>
-          ))}
           <input
             ref={fileInputRef}
             type="file"
