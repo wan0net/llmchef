@@ -8,9 +8,14 @@ export interface OutboundRequestRecord {
 const MAX_OUTBOUND_LOG_ENTRIES = 200;
 const outboundRequestLog: OutboundRequestRecord[] = [];
 const outboundLogListeners = new Set<() => void>();
+let outboundRequestSnapshot: OutboundRequestRecord[] = [];
 
 const notifyOutboundLogListeners = (): void => {
   outboundLogListeners.forEach((listener) => listener());
+};
+
+const refreshOutboundRequestSnapshot = (): void => {
+  outboundRequestSnapshot = [...outboundRequestLog];
 };
 
 const parseHttpUrl = (url: string): URL => {
@@ -48,6 +53,7 @@ export const recordOutboundRequest = (
     outboundRequestLog.length = MAX_OUTBOUND_LOG_ENTRIES;
   }
 
+  refreshOutboundRequestSnapshot();
   notifyOutboundLogListeners();
   return record;
 };
@@ -67,12 +73,11 @@ export const assertAllowedOutboundUrl = (
   return parsed.toString();
 };
 
-export const getOutboundRequestLog = (): OutboundRequestRecord[] => [
-  ...outboundRequestLog,
-];
+export const getOutboundRequestLog = (): OutboundRequestRecord[] => outboundRequestSnapshot;
 
 export const clearOutboundRequestLog = (): void => {
   outboundRequestLog.length = 0;
+  refreshOutboundRequestSnapshot();
   notifyOutboundLogListeners();
 };
 

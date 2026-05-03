@@ -50,6 +50,23 @@ test("settings modal exposes advanced controls", async ({ page }) => {
   await expect(page.getByText("Advanced Settings")).toBeVisible();
 });
 
+test("network ledger settings tab opens without a render loop", async ({ page }) => {
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+
+  await page.goto("/#app");
+
+  await expect(page.getByLabel("Chat input")).toBeVisible({ timeout: 20_000 });
+  await page.getByLabel("Open Settings").click();
+  await page.getByRole("tab", { name: "Network" }).click();
+
+  await expect(page.getByRole("heading", { name: "Network Ledger" })).toBeVisible();
+  await expect(page.getByText("Configured Network Surfaces")).toBeVisible();
+  expect(consoleErrors.filter((message) => !message.includes("PWA service initialization failed"))).toEqual([]);
+});
+
 test("release bundle endpoint is available from the hosted app", async ({ request }) => {
   const response = await request.get("/release/latest.zip");
 

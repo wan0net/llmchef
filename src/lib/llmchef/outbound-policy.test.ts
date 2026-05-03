@@ -62,4 +62,16 @@ describe("outbound-policy", () => {
 
     expect(notifications).toBe(2);
   });
+
+  it("keeps the log snapshot stable between changes", () => {
+    const emptySnapshot = getOutboundRequestLog();
+
+    expect(getOutboundRequestLog()).toBe(emptySnapshot);
+
+    assertAllowedOutboundUrl("https://api.openai.com/v1/models", "model-list");
+    const populatedSnapshot = getOutboundRequestLog();
+
+    expect(populatedSnapshot).not.toBe(emptySnapshot);
+    expect(getOutboundRequestLog()).toBe(populatedSnapshot);
+  });
 });
