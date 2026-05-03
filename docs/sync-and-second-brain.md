@@ -61,8 +61,9 @@ Recommended approach:
 
 Current implementation:
 - Project settings can push the selected project folder directly as a Git repository using the configured Sync Repository.
+- Project settings can pull a linked repository into an empty project folder, or pull updates for an existing project Git working tree.
 - The project VFS folder itself becomes the Git working tree, so human-readable wiki files, raw sources, recipes, and outputs are what Git sees.
-- Project sync status is stored in project metadata, including repository, branch, last pushed time, and the last error.
+- Project sync status is stored in project metadata, including repository, branch, last pushed/pulled time, last action, and the last error.
 - `.git` and `.llmchef` are hidden from the Documents/Wiki tree.
 - Connected local folders reconcile every minute and now also queue a short debounced sync after VFS writes, deletes, moves, and renames under the project folder.
 

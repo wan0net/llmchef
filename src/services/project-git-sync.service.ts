@@ -7,8 +7,22 @@ import type { SyncRepo } from "@/types/llmchef/sync";
 export interface ProjectGitSyncResult {
   branch: string;
   initialized: boolean;
+  pulled: boolean;
   pushed: boolean;
 }
+
+const credentialsForRepo = (repo: SyncRepo) => ({
+  username: repo.username,
+  password: repo.password,
+});
+
+const isProjectFolderEmptyForClone = async (
+  projectPath: string,
+  fsInstance: typeof FsType,
+): Promise<boolean> => {
+  const entries = await VfsOps.listFilesOp(projectPath, { fsInstance });
+  return entries.length === 0;
+};
 
 export class ProjectGitSyncService {
   static async pushProjectToRepo(input: {
@@ -19,8 +33,9 @@ export class ProjectGitSyncService {
     const { project, repo, fsInstance } = input;
     const projectPath = normalizePath(project.path);
     const branch = repo.branch || "main";
-    const credentials = { username: repo.username, password: repo.password };
+    const credentials = credentialsForRepo(repo);
     const initialized = !(await VfsOps.isGitRepoOp(projectPath, { fsInstance }));
+    let pulled = false;
 
     if (initialized) {
       await VfsOps.gitInitOp(projectPath, { fsInstance });
@@ -30,6 +45,7 @@ export class ProjectGitSyncService {
         fsInstance,
       });
       await VfsOps.gitPullOp(projectPath, branch, credentials, { fsInstance });
+      pulled = true;
     }
 
     await VfsOps.gitEnsureBranchOp(projectPath, branch, { fsInstance });
@@ -46,7 +62,44 @@ export class ProjectGitSyncService {
     return {
       branch,
       initialized,
+      pulled,
       pushed: true,
+    };
+  }
+
+  static async pullProjectFromRepo(input: {
+    project: Project;
+    repo: SyncRepo;
+    fsInstance: typeof FsType;
+  }): Promise<ProjectGitSyncResult> {
+    const { project, repo, fsInstance } = input;
+    const projectPath = normalizePath(project.path);
+    const branch = repo.branch || "main";
+    const credentials = credentialsForRepo(repo);
+    const initialized = !(await VfsOps.isGitRepoOp(projectPath, { fsInstance }));
+
+    if (initialized) {
+      if (!(await isProjectFolderEmptyForClone(projectPath, fsInstance))) {
+        throw new Error(
+          "Project folder has local files but is not a Git repository. Push it first, or pull into an empty project.",
+        );
+      }
+      await VfsOps.gitCloneOp(projectPath, repo.remoteUrl, branch, credentials, {
+        fsInstance,
+      });
+    } else {
+      await VfsOps.gitEnsureBranchOp(projectPath, branch, { fsInstance });
+      await VfsOps.gitEnsureRemoteOp(projectPath, repo.remoteUrl, "origin", {
+        fsInstance,
+      });
+      await VfsOps.gitPullOp(projectPath, branch, credentials, { fsInstance });
+    }
+
+    return {
+      branch,
+      initialized,
+      pulled: true,
+      pushed: false,
     };
   }
 }

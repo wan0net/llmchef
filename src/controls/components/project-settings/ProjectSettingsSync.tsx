@@ -24,19 +24,23 @@ export interface ProjectWikiSyncMetadata {
   repoName?: string | null;
   branch?: string | null;
   lastPushedAt?: string | null;
+  lastPulledAt?: string | null;
   lastError?: string | null;
   initialized?: boolean;
+  lastAction?: "pull" | "push" | "sync" | null;
 }
 
 interface ProjectSettingsSyncProps {
   initialSyncRepoId: string | null;
   onSave: (data: { syncRepoId: string | null }) => Promise<void> | void;
   onSyncProject?: () => Promise<void> | void;
+  onPullProject?: () => Promise<void> | void;
   projectWikiSync?: ProjectWikiSyncMetadata | null;
   effectiveSyncRepoId: string | null;
   syncRepos: SyncRepo[];
   isParentSaving?: boolean;
   isProjectSyncing?: boolean;
+  projectSyncAction?: "pull" | "push" | null;
 }
 
 const projectSettingsSyncSchema = z.object({
@@ -47,18 +51,24 @@ export const ProjectSettingsSync: React.FC<ProjectSettingsSyncProps> = ({
   initialSyncRepoId,
   onSave,
   onSyncProject,
+  onPullProject,
   projectWikiSync,
   effectiveSyncRepoId,
   syncRepos,
   isParentSaving = false,
   isProjectSyncing = false,
+  projectSyncAction = null,
 }) => {
   const effectiveRepoName =
     syncRepos.find((r) => r.id === effectiveSyncRepoId)?.name ?? "None";
   const status = isProjectSyncing ? "syncing" : projectWikiSync?.status ?? "idle";
   const statusConfig = {
     idle: { label: "Not pushed", icon: Clock, variant: "outline" as const },
-    syncing: { label: "Pushing", icon: Loader2, variant: "secondary" as const },
+    syncing: {
+      label: projectSyncAction === "pull" ? "Pulling" : "Pushing",
+      icon: Loader2,
+      variant: "secondary" as const,
+    },
     synced: { label: "Synced", icon: CheckCircle2, variant: "secondary" as const },
     error: { label: "Error", icon: AlertTriangle, variant: "destructive" as const },
   }[status];
@@ -66,9 +76,16 @@ export const ProjectSettingsSync: React.FC<ProjectSettingsSyncProps> = ({
   const pushedAt = projectWikiSync?.lastPushedAt
     ? new Date(projectWikiSync.lastPushedAt)
     : null;
+  const pulledAt = projectWikiSync?.lastPulledAt
+    ? new Date(projectWikiSync.lastPulledAt)
+    : null;
   const pushedAtLabel =
     pushedAt && !Number.isNaN(pushedAt.getTime())
       ? formatDistanceToNow(pushedAt, { addSuffix: true })
+      : null;
+  const pulledAtLabel =
+    pulledAt && !Number.isNaN(pulledAt.getTime())
+      ? formatDistanceToNow(pulledAt, { addSuffix: true })
       : null;
 
   const form = useForm({
@@ -185,8 +202,16 @@ export const ProjectSettingsSync: React.FC<ProjectSettingsSyncProps> = ({
             {pushedAtLabel ?? "Never"}
           </div>
           <div>
+            <span className="font-medium text-foreground">Last pulled:</span>{" "}
+            {pulledAtLabel ?? "Never"}
+          </div>
+          <div>
+            <span className="font-medium text-foreground">Last action:</span>{" "}
+            {projectWikiSync?.lastAction ?? "None"}
+          </div>
+          <div>
             <span className="font-medium text-foreground">Working tree:</span>{" "}
-            {projectWikiSync?.initialized ? "Initialized during last push" : "Existing or not yet initialized"}
+            {projectWikiSync?.initialized ? "Initialized during last sync" : "Existing or not yet initialized"}
           </div>
         </div>
         {projectWikiSync?.lastError && (
@@ -200,6 +225,26 @@ export const ProjectSettingsSync: React.FC<ProjectSettingsSyncProps> = ({
           type="button"
           size="sm"
           variant="outline"
+          onClick={() => void onPullProject?.()}
+          disabled={
+            isParentSaving ||
+            form.state.isSubmitting ||
+            !effectiveSyncRepoId ||
+            !onPullProject ||
+            isProjectSyncing
+          }
+        >
+          {isProjectSyncing && projectSyncAction === "pull" && (
+            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+          )}
+          {isProjectSyncing && projectSyncAction === "pull"
+            ? "Pulling..."
+            : "Pull Project Wiki"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
           onClick={() => void onSyncProject?.()}
           disabled={
             isParentSaving ||
@@ -209,8 +254,12 @@ export const ProjectSettingsSync: React.FC<ProjectSettingsSyncProps> = ({
             isProjectSyncing
           }
         >
-          {isProjectSyncing && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-          {isProjectSyncing ? "Pushing..." : "Push Project Wiki"}
+          {isProjectSyncing && projectSyncAction === "push" && (
+            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+          )}
+          {isProjectSyncing && projectSyncAction === "push"
+            ? "Pushing..."
+            : "Push Project Wiki"}
         </Button>
         <form.Subscribe
           selector={(state) =>
