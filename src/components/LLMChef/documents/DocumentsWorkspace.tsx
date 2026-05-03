@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   BookOpenTextIcon,
   CopyIcon,
@@ -28,7 +29,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { FilePreviewDialog } from "@/components/LLMChef/file-manager/FilePreviewDialog";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
 import { parseCrea8MarkdownNote } from "@/lib/llmchef/crea8-memory";
-import { basename, joinPath, normalizePath } from "@/lib/llmchef/file-manager-utils";
+import {
+  basename,
+  dirname,
+  joinPath,
+  normalizePath,
+} from "@/lib/llmchef/file-manager-utils";
 import {
   createDirectoryOp,
   listFilesOp,
@@ -53,6 +59,7 @@ type DocumentsWorkspaceProps = {
     question: string,
     files: Omit<AttachedFileMetadata, "id">[],
   ) => Promise<void>;
+  sidebarPortalTarget?: HTMLElement | null;
 };
 
 type ScopeFilter = "project-current" | "all" | Crea8MemoryScope;
@@ -460,6 +467,7 @@ const listWorkspaceDocuments = async (
 const TreeNode = <T,>({
   node,
   selectedKey,
+  selectedFolderPath,
   depth = 0,
   label,
   meta,
@@ -467,9 +475,11 @@ const TreeNode = <T,>({
   icon,
   itemKey,
   onSelect,
+  onSelectFolder,
 }: {
   node: TreeNodeModel<T>;
   selectedKey: string | null;
+  selectedFolderPath: string | null;
   depth?: number;
   label: (item: T) => string;
   meta?: (item: T) => React.ReactNode;
@@ -477,10 +487,13 @@ const TreeNode = <T,>({
   icon?: (item: T) => React.ReactNode;
   itemKey: (item: T) => string;
   onSelect: (item: T) => void;
+  onSelectFolder: (path: string) => void;
 }) => {
   const isFile = Boolean(node.item);
   const renderedLabel = node.item ? label(node.item) : node.name;
-  const isSelected = node.item ? itemKey(node.item) === selectedKey : false;
+  const isSelected = node.item
+    ? itemKey(node.item) === selectedKey
+    : node.path === selectedFolderPath;
 
   return (
     <div>
@@ -488,12 +501,13 @@ const TreeNode = <T,>({
         type="button"
         className={[
           "flex min-h-9 w-full min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
-          isFile ? "hover:bg-muted/60" : "cursor-default",
+          isFile ? "hover:bg-muted/60" : "hover:bg-muted/40",
           isSelected ? "bg-primary/10 text-primary" : "",
         ].join(" ")}
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={() => {
           if (node.item) onSelect(node.item);
+          else onSelectFolder(node.path);
         }}
       >
         {isFile && node.item ? (
@@ -520,6 +534,7 @@ const TreeNode = <T,>({
           key={child.path}
           node={child}
           selectedKey={selectedKey}
+          selectedFolderPath={selectedFolderPath}
           depth={depth + 1}
           label={label}
           meta={meta}
@@ -527,6 +542,7 @@ const TreeNode = <T,>({
           icon={icon}
           itemKey={itemKey}
           onSelect={onSelect}
+          onSelectFolder={onSelectFolder}
         />
       ))}
     </div>
@@ -536,6 +552,7 @@ const TreeNode = <T,>({
 export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   currentProjectId,
   onAskDocuments,
+  sidebarPortalTarget,
 }) => {
   const fs = useVfsStore((state) => state.fs);
   const vfsLoading = useVfsStore((state) => state.loading);
@@ -549,6 +566,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const [workspaceDocs, setWorkspaceDocs] = useState<WorkspaceDocument[]>([]);
   const [docSearch, setDocSearch] = useState("");
   const [selectedDocPaths, setSelectedDocPaths] = useState<Set<string>>(new Set());
+  const [activeFolderPath, setActiveFolderPath] = useState<string | null>(null);
   const [activeDocument, setActiveDocument] = useState<ActiveDocument | null>(null);
   const [draft, setDraft] = useState("");
   const [previewDescriptor, setPreviewDescriptor] =
@@ -589,6 +607,10 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     () => buildWorkspaceTree(filteredWorkspaceDocs, workspaceRoot, workspaceLabel),
     [filteredWorkspaceDocs, workspaceLabel, workspaceRoot],
   );
+  const activeFolderDocs = useMemo(() => {
+    const folderPath = normalizePath(activeFolderPath ?? workspaceRoot);
+    return workspaceDocs.filter((doc) => dirname(doc.path) === folderPath);
+  }, [activeFolderPath, workspaceDocs, workspaceRoot]);
   const selectedDocs = useMemo(
     () => workspaceDocs.filter((doc) => selectedDocPaths.has(doc.path)),
     [workspaceDocs, selectedDocPaths],
@@ -629,6 +651,10 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   }, [loadDocuments]);
 
   useEffect(() => {
+    setActiveFolderPath(workspaceRoot);
+  }, [workspaceRoot]);
+
+  useEffect(() => {
     if (
       activeDocument &&
       !workspaceDocs.some((doc) => doc.path === activeDocument.doc.path)
@@ -644,6 +670,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       setError(null);
       try {
         const data = await readFileOp(doc.path, { fsInstance: fs, silent: true });
+        setActiveFolderPath(dirname(doc.path));
         setPreviewDescriptor(doc.previewDescriptor);
         setPreviewData(data);
 
@@ -998,8 +1025,320 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       ? draft !== activeDocument.content
       : false;
 
+  const sidebarPane = (
+    <div className="h-full min-h-0 border-r border-border bg-sidebar/40">
+      <ScrollArea className="h-full">
+        {busy ? (
+          <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+            <Loader2Icon className="h-4 w-4 animate-spin" />
+            Loading documents...
+          </div>
+        ) : (
+          <div className="space-y-4 p-2">
+            <section>
+              <div className="mb-2 space-y-2 px-2">
+                <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                  <span className="truncate">{workspaceLabel}</span>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Badge variant="outline">{filteredWorkspaceDocs.length}</Badge>
+                    {filteredWorkspaceDocs.length !== workspaceDocs.length ? (
+                      <Badge variant="secondary">{workspaceDocs.length} total</Badge>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="relative">
+                  <SearchIcon className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    value={docSearch}
+                    onChange={(event) => setDocSearch(event.target.value)}
+                    placeholder="Search files and crea8 pages"
+                    className="h-8 pl-7 text-xs"
+                  />
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
+                    onClick={selectVisibleDocs}
+                    disabled={filteredWorkspaceDocs.length === 0}
+                  >
+                    Select results
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={clearSelectedDocs}
+                    disabled={selectedDocPaths.size === 0}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+              {workspaceDocs.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground">
+                  Import local files into this workspace. crea8 markdown pages will appear alongside them.
+                </p>
+              ) : filteredWorkspaceDocs.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground">
+                  No files or crea8 pages match the current view.
+                </p>
+              ) : (
+                <TreeNode
+                  node={workspaceTree}
+                  selectedKey={activeDocument ? activeDocument.doc.path : null}
+                  selectedFolderPath={activeFolderPath}
+                  label={(doc) => doc.memoryNote?.title ?? doc.name}
+                  meta={(doc) =>
+                    <>
+                      <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
+                        {doc.kind === "crea8" ? doc.memoryNote?.scope ?? "crea8" : doc.previewDescriptor.kind}
+                      </Badge>
+                      {selectedDocPaths.has(doc.path) ? (
+                        <Badge variant="secondary" className="h-5 shrink-0 text-[10px]">
+                          selected
+                        </Badge>
+                      ) : null}
+                    </>
+                  }
+                  snippet={(doc) => doc.snippet}
+                  itemKey={(doc) => doc.path}
+                  icon={iconForPreviewKind}
+                  onSelect={(doc) => void selectWorkspaceDoc(doc)}
+                  onSelectFolder={(path) => {
+                    setActiveDocument(null);
+                    setDraft("");
+                    setActiveFolderPath(path);
+                  }}
+                />
+              )}
+            </section>
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  );
+
+  const mainPane = (
+    <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto]">
+      <div className="flex min-h-0 flex-col">
+        {activeDocument ? (
+          <>
+            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3">
+              <div className="min-w-0 space-y-1">
+                <div className="flex min-w-0 items-center gap-2">
+                  <h3 className="truncate text-sm font-semibold">{activeTitle}</h3>
+                  <Badge variant="outline">
+                    {activeDocument.kind === "crea8"
+                      ? "crea8"
+                      : activeDocument.doc.previewDescriptor.kind}
+                  </Badge>
+                </div>
+                {activePath ? (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {activePath}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsPreviewOpen(true)}
+                  disabled={!previewDescriptor || !previewData}
+                >
+                  Preview
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void copyActiveText()}
+                  disabled={
+                    activeDocument.kind === "file" &&
+                    !isIndexableText(activeDocument.doc.name, activeDocument.doc.type)
+                  }
+                >
+                  <CopyIcon />
+                  Text
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void copyActiveHash()}
+                  disabled={!previewData}
+                >
+                  <HashIcon />
+                  SHA-256
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void copyActiveBase64()}
+                  disabled={!previewData}
+                >
+                  <CopyIcon />
+                  Base64
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void saveActiveTextExtract()}
+                  disabled={
+                    saving ||
+                    (activeDocument.kind === "file" &&
+                      !isIndexableText(activeDocument.doc.name, activeDocument.doc.type))
+                  }
+                >
+                  <FileTextIcon />
+                  Save .txt
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void createCrea8PageFromActive()}
+                  disabled={
+                    saving ||
+                    (activeDocument.kind === "file" &&
+                      !isIndexableText(activeDocument.doc.name, activeDocument.doc.type))
+                  }
+                >
+                  <BookOpenTextIcon />
+                  Extract
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    selectedDocPaths.has(activeDocument.doc.path)
+                      ? "secondary"
+                      : "outline"
+                  }
+                  onClick={() => toggleDocSelection(activeDocument.doc)}
+                >
+                  {selectedDocPaths.has(activeDocument.doc.path)
+                    ? "Selected"
+                    : "Use in query"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void saveActiveDocument()}
+                  disabled={saving || !isDirty}
+                >
+                  <SaveIcon className={saving ? "animate-pulse" : ""} />
+                  Save
+                </Button>
+              </div>
+            </div>
+            {activeDocument.kind === "file" &&
+            !isIndexableText(activeDocument.doc.name, activeDocument.doc.type) ? (
+              <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
+                Preview is available for {activeDocument.doc.previewDescriptor.kind} files.
+              </div>
+            ) : (
+              <Textarea
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                className="min-h-0 flex-1 resize-none rounded-none border-0 bg-background p-4 font-mono text-sm shadow-none focus-visible:ring-0"
+              />
+            )}
+          </>
+        ) : (
+          <div className="flex h-full flex-col p-6">
+            <div className="mb-4 min-w-0">
+              <h3 className="truncate text-sm font-semibold">
+                {basename(activeFolderPath ?? workspaceRoot) || workspaceLabel}
+              </h3>
+              <p className="truncate text-xs text-muted-foreground">
+                {normalizePath(activeFolderPath ?? workspaceRoot)}
+              </p>
+            </div>
+            {activeFolderDocs.length === 0 ? (
+              <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
+                This folder has no direct documents yet.
+              </div>
+            ) : (
+              <div className="grid auto-rows-min gap-2 overflow-y-auto">
+                {activeFolderDocs.map((doc) => (
+                  <button
+                    key={doc.path}
+                    type="button"
+                    className="flex min-w-0 items-start gap-3 rounded-md border border-border bg-card px-3 py-2 text-left hover:bg-muted/40"
+                    onClick={() => void selectWorkspaceDoc(doc)}
+                  >
+                    {iconForPreviewKind(doc)}
+                    <span className="min-w-0 flex-1">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-sm font-medium">
+                          {doc.memoryNote?.title ?? doc.name}
+                        </span>
+                        <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
+                          {doc.kind === "crea8" ? "crea8" : doc.previewDescriptor.kind}
+                        </Badge>
+                      </span>
+                      <span className="line-clamp-2 text-xs text-muted-foreground">
+                        {doc.snippet || doc.path}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-border bg-card p-3">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            Notebook query
+          </span>
+          {selectedDocs.length === 0 ? (
+            <Badge variant="outline">No docs selected</Badge>
+          ) : (
+            selectedDocs.slice(0, 4).map((doc) => (
+              <Badge key={doc.path} variant="secondary" className="max-w-40 truncate">
+                {basename(doc.path)}
+              </Badge>
+            ))
+          )}
+          {selectedDocs.length > 4 ? (
+            <Badge variant="outline">+{selectedDocs.length - 4}</Badge>
+          ) : null}
+        </div>
+        <div className="flex gap-2">
+          <Textarea
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            placeholder="Ask a question grounded in selected files and crea8 pages"
+            className="min-h-20 resize-y text-sm"
+          />
+          <Button
+            type="button"
+            className="self-end"
+            onClick={() => void askSelectedDocuments()}
+            disabled={asking || selectedDocs.length === 0 || !question.trim()}
+          >
+            <SendIcon className={asking ? "animate-pulse" : ""} />
+            Ask
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-background">
+      {sidebarPortalTarget ? createPortal(sidebarPane, sidebarPortalTarget) : null}
       <div className="link42-panel flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
         <div className="min-w-0">
           <h2 className="truncate text-sm font-semibold">Documents</h2>
@@ -1083,274 +1422,14 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         </div>
       ) : null}
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[22rem_minmax(0,1fr)]">
-        <div className="min-h-0 border-r border-border bg-sidebar/40">
-          <ScrollArea className="h-full">
-            {busy ? (
-              <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-                <Loader2Icon className="h-4 w-4 animate-spin" />
-                Loading documents...
-              </div>
-            ) : (
-              <div className="space-y-4 p-2">
-                <section>
-                  <div className="mb-2 space-y-2 px-2">
-                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                      <span>{workspaceLabel}</span>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline">{filteredWorkspaceDocs.length}</Badge>
-                        {filteredWorkspaceDocs.length !== workspaceDocs.length ? (
-                          <Badge variant="secondary">{workspaceDocs.length} total</Badge>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <SearchIcon className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
-                      <Input
-                        value={docSearch}
-                        onChange={(event) => setDocSearch(event.target.value)}
-                        placeholder="Search files and crea8 pages"
-                        className="h-8 pl-7 text-xs"
-                      />
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs"
-                        onClick={selectVisibleDocs}
-                        disabled={filteredWorkspaceDocs.length === 0}
-                      >
-                        Select results
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2 text-xs"
-                        onClick={clearSelectedDocs}
-                        disabled={selectedDocPaths.size === 0}
-                      >
-                        Clear
-                      </Button>
-                    </div>
-                  </div>
-                  {workspaceDocs.length === 0 ? (
-                    <p className="px-2 py-3 text-xs text-muted-foreground">
-                      Import local files into this workspace. crea8 markdown pages will appear alongside them.
-                    </p>
-                  ) : filteredWorkspaceDocs.length === 0 ? (
-                    <p className="px-2 py-3 text-xs text-muted-foreground">
-                      No files or crea8 pages match the current view.
-                    </p>
-                  ) : (
-                    <TreeNode
-                      node={workspaceTree}
-                      selectedKey={
-                        activeDocument
-                          ? activeDocument.doc.path
-                          : null
-                      }
-                      label={(doc) => doc.memoryNote?.title ?? doc.name}
-                      meta={(doc) =>
-                        <>
-                          <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
-                            {doc.kind === "crea8" ? doc.memoryNote?.scope ?? "crea8" : doc.previewDescriptor.kind}
-                          </Badge>
-                          {selectedDocPaths.has(doc.path) ? (
-                            <Badge variant="secondary" className="h-5 shrink-0 text-[10px]">
-                              selected
-                            </Badge>
-                          ) : null}
-                        </>
-                      }
-                      snippet={(doc) => doc.snippet}
-                      itemKey={(doc) => doc.path}
-                      icon={iconForPreviewKind}
-                      onSelect={(doc) => void selectWorkspaceDoc(doc)}
-                    />
-                  )}
-                </section>
-              </div>
-            )}
-          </ScrollArea>
+      {sidebarPortalTarget ? (
+        mainPane
+      ) : (
+        <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[22rem_minmax(0,1fr)]">
+          {sidebarPane}
+          {mainPane}
         </div>
-
-        <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">
-          <div className="flex min-h-0 flex-col">
-            {activeDocument ? (
-              <>
-                <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3">
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <h3 className="truncate text-sm font-semibold">{activeTitle}</h3>
-                      <Badge variant="outline">
-                        {activeDocument.kind === "crea8"
-                          ? "crea8"
-                          : activeDocument.doc.previewDescriptor.kind}
-                      </Badge>
-                    </div>
-                    {activePath ? (
-                      <p className="truncate text-xs text-muted-foreground">
-                        {activePath}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsPreviewOpen(true)}
-                      disabled={!previewDescriptor || !previewData}
-                    >
-                      Preview
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => void copyActiveText()}
-                      disabled={
-                        activeDocument.kind === "file" &&
-                        !isIndexableText(activeDocument.doc.name, activeDocument.doc.type)
-                      }
-                    >
-                      <CopyIcon />
-                      Text
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => void copyActiveHash()}
-                      disabled={!previewData}
-                    >
-                      <HashIcon />
-                      SHA-256
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => void copyActiveBase64()}
-                      disabled={!previewData}
-                    >
-                      <CopyIcon />
-                      Base64
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => void saveActiveTextExtract()}
-                      disabled={
-                        saving ||
-                        (activeDocument.kind === "file" &&
-                          !isIndexableText(activeDocument.doc.name, activeDocument.doc.type))
-                      }
-                    >
-                      <FileTextIcon />
-                      Save .txt
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => void createCrea8PageFromActive()}
-                      disabled={
-                        saving ||
-                        (activeDocument.kind === "file" &&
-                          !isIndexableText(activeDocument.doc.name, activeDocument.doc.type))
-                      }
-                    >
-                      <BookOpenTextIcon />
-                      Extract
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={
-                        selectedDocPaths.has(activeDocument.doc.path)
-                          ? "secondary"
-                          : "outline"
-                      }
-                      onClick={() => toggleDocSelection(activeDocument.doc)}
-                    >
-                      {selectedDocPaths.has(activeDocument.doc.path)
-                        ? "Selected"
-                        : "Use in query"}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => void saveActiveDocument()}
-                      disabled={saving || !isDirty}
-                    >
-                      <SaveIcon className={saving ? "animate-pulse" : ""} />
-                      Save
-                    </Button>
-                  </div>
-                </div>
-                {activeDocument.kind === "file" &&
-                !isIndexableText(activeDocument.doc.name, activeDocument.doc.type) ? (
-                  <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
-                    Preview is available for {activeDocument.doc.previewDescriptor.kind} files.
-                  </div>
-                ) : (
-                  <Textarea
-                    value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    className="min-h-0 flex-1 resize-none rounded-none border-0 bg-background p-4 font-mono text-sm shadow-none focus-visible:ring-0"
-                  />
-                )}
-              </>
-            ) : (
-              <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
-                Select a crea8 page or file from the workspace tree.
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-border bg-card p-3">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">
-                Notebook query
-              </span>
-              {selectedDocs.length === 0 ? (
-                <Badge variant="outline">No docs selected</Badge>
-              ) : (
-                selectedDocs.slice(0, 4).map((doc) => (
-                  <Badge key={doc.path} variant="secondary" className="max-w-40 truncate">
-                    {basename(doc.path)}
-                  </Badge>
-                ))
-              )}
-              {selectedDocs.length > 4 ? (
-                <Badge variant="outline">+{selectedDocs.length - 4}</Badge>
-              ) : null}
-            </div>
-            <div className="flex gap-2">
-              <Textarea
-                value={question}
-                onChange={(event) => setQuestion(event.target.value)}
-                placeholder="Ask a question grounded in selected files and crea8 pages"
-                className="min-h-20 resize-y text-sm"
-              />
-              <Button
-                type="button"
-                className="self-end"
-                onClick={() => void askSelectedDocuments()}
-                disabled={asking || selectedDocs.length === 0 || !question.trim()}
-              >
-                <SendIcon className={asking ? "animate-pulse" : ""} />
-                Ask
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
       <FilePreviewDialog
         open={isPreviewOpen}
         onOpenChange={setIsPreviewOpen}
