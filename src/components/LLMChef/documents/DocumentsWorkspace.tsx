@@ -361,6 +361,12 @@ const bytesToBase64 = (data: Uint8Array): string => {
 const filenameStem = (name: string): string =>
   name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9._-]+/gi, "-") || "extract";
 
+const wikiLabelForDoc = (doc: WorkspaceDocument): string =>
+  doc.memoryNote?.title ?? doc.name.replace(/\.(md|markdown|mdx)$/i, "");
+
+const isWikiMarkdownDoc = (doc: WorkspaceDocument): boolean =>
+  doc.kind === "crea8" || doc.previewDescriptor.kind === "markdown";
+
 const indexWorkspaceDocument = async (
   path: string,
   name: string,
@@ -724,6 +730,9 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
           content: draft,
           data: new TextEncoder().encode(draft),
         });
+        if (activeDocument.doc.previewDescriptor.kind === "markdown") {
+          setIsEditingCrea8(false);
+        }
       }
       await loadDocuments();
       toast.success("Document saved.");
@@ -1105,7 +1114,12 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const activeTitle =
     activeDocument?.kind === "crea8"
       ? activeDocument.note.title
-      : activeDocument?.doc.name;
+      : activeDocument
+        ? wikiLabelForDoc(activeDocument.doc)
+        : undefined;
+  const activeIsWikiMarkdown = activeDocument
+    ? isWikiMarkdownDoc(activeDocument.doc)
+    : false;
   const isDirty =
     activeDocument?.kind === "crea8"
       ? draft !== activeDocument.note.content
@@ -1200,11 +1214,11 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   node={workspaceTree}
                   selectedKey={activeDocument ? activeDocument.doc.path : null}
                   selectedFolderPath={activeFolderPath}
-                  label={(doc) => doc.memoryNote?.title ?? doc.name}
+                  label={wikiLabelForDoc}
                   meta={(doc) =>
                     <>
                       <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
-                        {doc.kind === "crea8" ? doc.memoryNote?.scope ?? "wiki" : doc.previewDescriptor.kind}
+                        {isWikiMarkdownDoc(doc) ? doc.memoryNote?.scope ?? "wiki" : doc.previewDescriptor.kind}
                       </Badge>
                       {selectedDocPaths.has(doc.path) ? (
                         <Badge variant="secondary" className="h-5 shrink-0 text-[10px]">
@@ -1278,7 +1292,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                 <div className="flex min-w-0 items-center gap-2">
                   <h3 className="truncate text-sm font-semibold">{activeTitle}</h3>
                   <Badge variant="outline">
-                    {activeDocument.kind === "crea8"
+                    {activeIsWikiMarkdown
                       ? "wiki"
                       : activeDocument.doc.previewDescriptor.kind}
                   </Badge>
@@ -1373,7 +1387,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   <BookOpenTextIcon />
                   Extract
                 </Button>
-                {activeDocument.kind === "crea8" ? (
+                {activeIsWikiMarkdown ? (
                   <Button
                     type="button"
                     size="sm"
@@ -1414,17 +1428,23 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
               <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
                 Preview is available for {activeDocument.doc.previewDescriptor.kind} files.
               </div>
-            ) : activeDocument.kind === "crea8" && !isEditingCrea8 ? (
+            ) : activeIsWikiMarkdown && !isEditingCrea8 ? (
               <ScrollArea className="min-h-0 flex-1">
                 <div className="mx-auto w-full max-w-4xl px-5 py-5">
                   <div className="mb-5 rounded-md border border-border bg-card p-4">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline">{activeDocument.note.scope}</Badge>
-                      {activeDocument.note.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary">
-                          {tag}
-                        </Badge>
-                      ))}
+                      <Badge variant="outline">
+                        {activeDocument.kind === "crea8"
+                          ? activeDocument.note.scope
+                          : "wiki"}
+                      </Badge>
+                      {activeDocument.kind === "crea8"
+                        ? activeDocument.note.tags.map((tag) => (
+                            <Badge key={tag} variant="secondary">
+                              {tag}
+                            </Badge>
+                          ))
+                        : null}
                       {isDirty ? <Badge variant="destructive">unsaved</Badge> : null}
                     </div>
                     <h1 className="mt-3 text-2xl font-semibold tracking-normal text-foreground">
@@ -1477,10 +1497,10 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     <span className="min-w-0 flex-1">
                       <span className="flex min-w-0 items-center gap-2">
                         <span className="truncate text-sm font-medium">
-                          {doc.memoryNote?.title ?? doc.name}
+                          {wikiLabelForDoc(doc)}
                         </span>
                         <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
-                          {doc.kind === "crea8" ? "wiki" : doc.previewDescriptor.kind}
+                          {isWikiMarkdownDoc(doc) ? "wiki" : doc.previewDescriptor.kind}
                         </Badge>
                       </span>
                       <span className="line-clamp-2 text-xs text-muted-foreground">
