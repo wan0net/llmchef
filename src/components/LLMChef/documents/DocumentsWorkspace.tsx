@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpenTextIcon,
+  CopyIcon,
   FileAudioIcon,
   FileCodeIcon,
   FileIcon,
@@ -11,6 +12,7 @@ import {
   FileVideoIcon,
   FolderIcon,
   FolderPlusIcon,
+  HashIcon,
   Loader2Icon,
   RefreshCwIcon,
   SaveIcon,
@@ -351,6 +353,13 @@ const readCrea8NoteIfPresent = (
   } catch {
     return undefined;
   }
+};
+
+const sha256Hex = async (data: Uint8Array): Promise<string> => {
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 };
 
 const indexWorkspaceDocument = async (
@@ -789,6 +798,67 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     }
   }, [connector, currentProject, currentProjectId, fs, loadDocuments, workspaceRoot]);
 
+  const copyActiveText = useCallback(async () => {
+    if (!activeDocument) return;
+    const text =
+      activeDocument.kind === "crea8" ||
+      isIndexableText(activeDocument.doc.name, activeDocument.doc.type)
+        ? draft
+        : "";
+    if (!text.trim()) {
+      toast.info("No text available to copy.");
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    toast.success("Text copied.");
+  }, [activeDocument, draft]);
+
+  const copyActiveHash = useCallback(async () => {
+    if (!previewData) return;
+    const hash = await sha256Hex(previewData);
+    await navigator.clipboard.writeText(hash);
+    toast.success("SHA-256 copied.");
+  }, [previewData]);
+
+  const createCrea8PageFromActive = useCallback(async () => {
+    if (!activeDocument || !connector) return;
+    const content =
+      activeDocument.kind === "crea8" ||
+      isIndexableText(activeDocument.doc.name, activeDocument.doc.type)
+        ? draft
+        : "";
+    if (!content.trim()) {
+      toast.info("No text available to turn into a crea8 page.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const sourceName =
+        activeDocument.kind === "crea8"
+          ? activeDocument.note.title
+          : activeDocument.doc.name;
+      const ref = await connector.create({
+        title: `${sourceName} extract`,
+        content,
+        scope: currentProjectId ? "project" : "reference",
+        tags: ["extract"],
+        projectId: currentProjectId,
+        path: joinPath(workspaceRoot, "crea8", `extract-${Date.now()}.md`),
+      });
+      const note = await connector.read(ref);
+      await loadDocuments();
+      toast.success(`Created crea8 page: ${note.title}`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to create crea8 page.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [activeDocument, connector, currentProjectId, draft, loadDocuments, workspaceRoot]);
+
   const toggleDocSelection = useCallback((doc: WorkspaceDocument) => {
     setSelectedDocPaths((current) => {
       const next = new Set(current);
@@ -1082,6 +1152,43 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                       disabled={!previewDescriptor || !previewData}
                     >
                       Preview
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void copyActiveText()}
+                      disabled={
+                        activeDocument.kind === "file" &&
+                        !isIndexableText(activeDocument.doc.name, activeDocument.doc.type)
+                      }
+                    >
+                      <CopyIcon />
+                      Text
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void copyActiveHash()}
+                      disabled={!previewData}
+                    >
+                      <HashIcon />
+                      SHA-256
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void createCrea8PageFromActive()}
+                      disabled={
+                        saving ||
+                        (activeDocument.kind === "file" &&
+                          !isIndexableText(activeDocument.doc.name, activeDocument.doc.type))
+                      }
+                    >
+                      <BookOpenTextIcon />
+                      Extract
                     </Button>
                     <Button
                       type="button"
