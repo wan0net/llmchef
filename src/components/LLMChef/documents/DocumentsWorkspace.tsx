@@ -15,6 +15,8 @@ import {
   FolderIcon,
   FolderPlusIcon,
   HashIcon,
+  MessageSquarePlusIcon,
+  PaperclipIcon,
   PencilIcon,
   Loader2Icon,
   RefreshCwIcon,
@@ -51,7 +53,15 @@ import {
 } from "@/lib/llmchef/file-preview";
 import { useProjectStore } from "@/store/project.store";
 import { useVfsStore } from "@/store/vfs.store";
-import type { AttachedFileMetadata } from "@/store/input.store";
+import { useInputStore, type AttachedFileMetadata } from "@/store/input.store";
+import { useUIStateStore } from "@/store/ui.store";
+import {
+  describeRealFsSyncResult,
+  getProjectDirectoryHandleInfo,
+  isRealFsSyncSupported,
+  pickProjectDirectory,
+  syncProjectDirectoryTwoWay,
+} from "@/lib/llmchef/real-fs-sync";
 import type {
   Crea8MemoryNote,
 } from "@/types/llmchef/crea8-memory";
@@ -85,6 +95,8 @@ type WorkspaceDocument = {
   updatedAt: Date;
   snippet: string;
   indexText: string;
+  wikiLinks: string[];
+  terms: string[];
   previewDescriptor: FilePreviewDescriptor;
   memoryNote?: Crea8MemoryNote;
 };
@@ -380,8 +392,8 @@ const wikiLinkTargets = (markdown: string): string[] =>
     .map((match) => match[1]?.split("|")[0]?.trim())
     .filter((target): target is string => Boolean(target));
 
-const tokenizeWikiText = (text: string): Set<string> =>
-  new Set(
+const tokenizeWikiText = (text: string): string[] =>
+  Array.from(new Set(
     text
       .toLowerCase()
       .match(/[a-z0-9][a-z0-9_-]{2,}/g)
@@ -400,7 +412,10 @@ const tokenizeWikiText = (text: string): Set<string> =>
             "project",
           ].includes(term),
       ) ?? [],
-  );
+  ));
+
+const normalizeWikiLinkLabel = (label: string): string =>
+  label.trim().toLowerCase().replace(/\.(md|markdown|mdx)$/i, "");
 
 const buildProjectHomeContent = (workspaceLabel: string): string =>
   [
@@ -464,16 +479,20 @@ const indexWorkspaceDocument = async (
   mimeType: string,
   fsInstance: typeof import("@zenfs/core").fs,
 ): Promise<{
-  kind: WorkspaceDocument["kind"];
-  snippet: string;
-  indexText: string;
-  memoryNote?: Crea8MemoryNote;
-}> => {
+	  kind: WorkspaceDocument["kind"];
+	  snippet: string;
+	  indexText: string;
+	  wikiLinks: string[];
+	  terms: string[];
+	  memoryNote?: Crea8MemoryNote;
+	}> => {
   if (!isIndexableText(name, mimeType)) {
     return {
       kind: "file",
       snippet: "",
       indexText: `${name} ${path}`.toLowerCase(),
+      wikiLinks: [],
+      terms: tokenizeWikiText(`${name} ${path}`),
     };
   }
 
@@ -481,12 +500,15 @@ const indexWorkspaceDocument = async (
     const data = await readFileOp(path, { fsInstance, silent: true });
     const preview = decodeText(data.slice(0, MAX_INDEX_BYTES)).trim();
     const memoryNote = readCrea8NoteIfPresent(path, name, mimeType, preview);
+    const indexText = `${name} ${path} ${memoryNote?.title ?? ""} ${
+      memoryNote?.content ?? preview
+    }`.toLowerCase();
     return {
       kind: memoryNote ? "crea8" : "file",
       snippet: (memoryNote?.content ?? preview).slice(0, SNIPPET_LENGTH),
-      indexText: `${name} ${path} ${memoryNote?.title ?? ""} ${
-        memoryNote?.content ?? preview
-      }`.toLowerCase(),
+      indexText,
+      wikiLinks: wikiLinkTargets(memoryNote?.content ?? preview).map(normalizeWikiLinkLabel),
+      terms: tokenizeWikiText(indexText),
       memoryNote,
     };
   } catch {
@@ -494,6 +516,8 @@ const indexWorkspaceDocument = async (
       kind: "file",
       snippet: "",
       indexText: `${name} ${path}`.toLowerCase(),
+      wikiLinks: [],
+      terms: tokenizeWikiText(`${name} ${path}`),
     };
   }
 };
@@ -553,6 +577,9 @@ const TreeNode = <T,>({
   itemKey,
   onSelect,
   onSelectFolder,
+  onCreatePageInFolder,
+  onCreateFolderInFolder,
+  onToggleSelect,
 }: {
   node: TreeNodeModel<T>;
   selectedKey: string | null;
@@ -565,6 +592,9 @@ const TreeNode = <T,>({
   itemKey: (item: T) => string;
   onSelect: (item: T) => void;
   onSelectFolder: (path: string) => void;
+  onCreatePageInFolder?: (path: string) => void;
+  onCreateFolderInFolder?: (path: string) => void;
+  onToggleSelect?: (item: T) => void;
 }) => {
   const isFile = Boolean(node.item);
   const renderedLabel = node.item ? label(node.item) : node.name;
@@ -577,7 +607,7 @@ const TreeNode = <T,>({
       <button
         type="button"
         className={[
-          "flex min-h-9 w-full min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
+          "group flex min-h-9 w-full min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
           isFile ? "hover:bg-muted/60" : "hover:bg-muted/40",
           isSelected ? "bg-primary/10 text-primary" : "",
         ].join(" ")}
@@ -605,6 +635,52 @@ const TreeNode = <T,>({
             </span>
           ) : null}
         </span>
+        <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          {node.item ? (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6"
+              aria-label={`Toggle context for ${renderedLabel}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (node.item) onToggleSelect?.(node.item);
+              }}
+            >
+              <PaperclipIcon className="h-3.5 w-3.5" />
+            </Button>
+          ) : (
+            <>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6"
+                aria-label={`New page in ${renderedLabel}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onCreatePageInFolder?.(node.path);
+                }}
+              >
+                <BookOpenTextIcon className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6"
+                aria-label={`New folder in ${renderedLabel}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onCreateFolderInFolder?.(node.path);
+                }}
+              >
+                <FolderPlusIcon className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+        </span>
       </button>
       {node.children.map((child) => (
         <TreeNode
@@ -620,6 +696,9 @@ const TreeNode = <T,>({
           itemKey={itemKey}
           onSelect={onSelect}
           onSelectFolder={onSelectFolder}
+          onCreatePageInFolder={onCreatePageInFolder}
+          onCreateFolderInFolder={onCreateFolderInFolder}
+          onToggleSelect={onToggleSelect}
         />
       ))}
     </div>
@@ -656,6 +735,9 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const [saving, setSaving] = useState(false);
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localFolderName, setLocalFolderName] = useState<string | null>(null);
+  const [localFolderStatus, setLocalFolderStatus] = useState<string | null>(null);
+  const [syncingLocalFolder, setSyncingLocalFolder] = useState(false);
 
   const workspaceRoot = useMemo(
     () => normalizePath(currentProject?.path ?? GLOBAL_DOCUMENTS_ROOT),
@@ -697,7 +779,15 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     () => workspaceDocs.filter((doc) => selectedDocPaths.has(doc.path)),
     [workspaceDocs, selectedDocPaths],
   );
+  const secondBrainCount = useMemo(
+    () =>
+      workspaceDocs.filter((doc) =>
+        normalizePath(doc.path).startsWith(joinPath(workspaceRoot, "Wiki", "Second Brain")),
+      ).length,
+    [workspaceDocs, workspaceRoot],
+  );
   const busy = loading || importing || vfsLoading || operationLoading;
+  const localSyncSupported = isRealFsSyncSupported();
 
   const configureFolderInput = useCallback((node: HTMLInputElement | null) => {
     folderInputRef.current = node;
@@ -746,6 +836,27 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   useEffect(() => {
     setActiveFolderPath(workspaceRoot);
   }, [workspaceRoot]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!currentProjectId) {
+      setLocalFolderName(null);
+      setLocalFolderStatus(null);
+      return;
+    }
+
+    void getProjectDirectoryHandleInfo(currentProjectId).then((info) => {
+      if (cancelled) return;
+      setLocalFolderName(info?.name ?? null);
+      setLocalFolderStatus(
+        info ? `Local folder: ${info.name}` : "No local folder connected",
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentProjectId]);
 
   useEffect(() => {
     if (saving) return;
@@ -900,19 +1011,20 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     [fs, loadDocuments, workspaceRoot],
   );
 
-  const createCrea8Page = useCallback(async () => {
+  const createCrea8Page = useCallback(async (targetFolder?: string) => {
     if (!connector) return;
     setSaving(true);
     setError(null);
     try {
       const title = currentProject ? `${currentProject.name} note` : "New memory";
+      const folderPath = normalizePath(targetFolder ?? activeFolderPath ?? joinPath(workspaceRoot, "Wiki"));
       const ref = await connector.create({
         title,
         content: "",
         scope: currentProjectId ? "project" : "reference",
         tags: [],
         projectId: currentProjectId,
-        path: joinPath(workspaceRoot, "Wiki", `page-${Date.now()}.md`),
+        path: joinPath(folderPath, `page-${Date.now()}.md`),
       });
       const note = await connector.read(ref);
       const path = note.path ?? ref.path ?? workspaceRoot;
@@ -921,6 +1033,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         : new Uint8Array();
       const name = basename(path);
       const type = guessMimeType(name);
+      const indexText = `${note.title} ${note.content} ${path}`.toLowerCase();
       const previewDescriptor = inferFilePreviewDescriptor({
         name,
         path,
@@ -941,7 +1054,9 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
           size: data.byteLength,
           updatedAt: note.updatedAt,
           snippet: note.content.slice(0, SNIPPET_LENGTH),
-          indexText: `${note.title} ${note.content}`.toLowerCase(),
+          indexText,
+          wikiLinks: wikiLinkTargets(note.content).map(normalizeWikiLinkLabel),
+          terms: tokenizeWikiText(indexText),
           previewDescriptor,
           memoryNote: note,
         },
@@ -957,7 +1072,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     } finally {
       setSaving(false);
     }
-  }, [connector, currentProject, currentProjectId, fs, loadDocuments, workspaceRoot]);
+  }, [activeFolderPath, connector, currentProject, currentProjectId, fs, loadDocuments, workspaceRoot]);
 
   const copyActiveText = useCallback(async () => {
     if (!activeDocument) return;
@@ -1084,7 +1199,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     setSelectedDocPaths(new Set());
   }, []);
 
-  const createFolderInActiveFolder = useCallback(async () => {
+  const createFolderAtPath = useCallback(async (parentPath: string) => {
     if (!fs) return;
     const folderName = window.prompt("Folder name");
     const trimmed = folderName?.trim();
@@ -1093,7 +1208,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     setSaving(true);
     setError(null);
     try {
-      const targetPath = joinPath(activeFolderPath ?? workspaceRoot, trimmed);
+      const targetPath = joinPath(parentPath, trimmed);
       await createDirectoryOp(targetPath, { fsInstance: fs });
       setActiveFolderPath(targetPath);
       await loadDocuments();
@@ -1106,7 +1221,11 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     } finally {
       setSaving(false);
     }
-  }, [activeFolderPath, fs, loadDocuments, workspaceRoot]);
+  }, [fs, loadDocuments]);
+
+  const createFolderInActiveFolder = useCallback(async () => {
+    await createFolderAtPath(activeFolderPath ?? workspaceRoot);
+  }, [activeFolderPath, createFolderAtPath, workspaceRoot]);
 
   const moveSelectedDocsToActiveFolder = useCallback(async () => {
     if (!fs || selectedDocs.length === 0) return;
@@ -1187,6 +1306,35 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     }
   }, [activeDocument, fs, loadDocuments]);
 
+  const deleteSelectedDocuments = useCallback(async () => {
+    if (!fs || selectedDocs.length === 0) return;
+    const confirmed = window.confirm(
+      `Delete ${selectedDocs.length} selected document${selectedDocs.length === 1 ? "" : "s"}?`,
+    );
+    if (!confirmed) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      for (const doc of selectedDocs) {
+        await deleteItemOp(doc.path, false, { fsInstance: fs });
+      }
+      setSelectedDocPaths(new Set());
+      setActiveDocument(null);
+      setDraft("");
+      setIsEditingCrea8(false);
+      await loadDocuments();
+      toast.success(`Deleted ${selectedDocs.length} selected item${selectedDocs.length === 1 ? "" : "s"}.`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete selected documents.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [fs, loadDocuments, selectedDocs]);
+
   const askSelectedDocuments = useCallback(async () => {
     const trimmedQuestion = question.trim();
     if (!fs || !trimmedQuestion || selectedDocs.length === 0) return;
@@ -1236,6 +1384,100 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     }
   }, [fs, onAskDocuments, question, selectedDocs]);
 
+  const attachSelectedDocumentsToChat = useCallback(async () => {
+    if (!fs || selectedDocs.length === 0) return;
+
+    setAsking(true);
+    setError(null);
+    try {
+      const retrieval = await buildRetrievalContext(
+        selectedDocs,
+        question.trim() || "selected project context",
+        fs,
+      );
+      if (retrieval.chunkCount === 0) {
+        throw new Error("No indexable text passages found in the selected docs.");
+      }
+      const contextSize = new TextEncoder().encode(retrieval.content).byteLength;
+      useInputStore.getState().addAttachedFile({
+        source: "direct",
+        name: "selected-documents-context.md",
+        type: "text/markdown",
+        size: contextSize,
+        contentText: retrieval.content,
+      });
+      useUIStateStore.getState().setWorkspaceMode("chat");
+      toast.success(
+        `Attached ${retrieval.chunkCount} passage${retrieval.chunkCount === 1 ? "" : "s"} to chat.`,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to attach documents.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setAsking(false);
+    }
+  }, [fs, question, selectedDocs]);
+
+  const connectLocalFolder = useCallback(async () => {
+    if (!currentProjectId || !fs) {
+      toast.info("Select a project before connecting a local folder.");
+      return;
+    }
+
+    setSyncingLocalFolder(true);
+    setError(null);
+    try {
+      const handle = await pickProjectDirectory(currentProjectId);
+      setLocalFolderName(handle.name);
+      const result = await syncProjectDirectoryTwoWay(
+        currentProjectId,
+        fs,
+        workspaceRoot,
+      );
+      const message = describeRealFsSyncResult("two-way", result);
+      setLocalFolderStatus(message);
+      await loadDocuments();
+      toast.success(message);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      const message =
+        error instanceof Error ? error.message : "Failed to connect local folder.";
+      setLocalFolderStatus(message);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSyncingLocalFolder(false);
+    }
+  }, [currentProjectId, fs, loadDocuments, workspaceRoot]);
+
+  const syncLocalFolderNow = useCallback(async () => {
+    if (!currentProjectId || !fs || !localFolderName) return;
+
+    setSyncingLocalFolder(true);
+    setError(null);
+    try {
+      const result = await syncProjectDirectoryTwoWay(
+        currentProjectId,
+        fs,
+        workspaceRoot,
+      );
+      const message = describeRealFsSyncResult("two-way", result);
+      setLocalFolderStatus(message);
+      await loadDocuments();
+      toast.success(message);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to sync local folder.";
+      setLocalFolderStatus(message);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSyncingLocalFolder(false);
+    }
+  }, [currentProjectId, fs, loadDocuments, localFolderName, workspaceRoot]);
+
   const activeTitle =
     activeDocument?.kind === "crea8"
       ? activeDocument.note.title
@@ -1254,31 +1496,40 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const activeWikiLinks = useMemo(() => wikiLinkTargets(draft), [draft]);
   const activeBacklinks = useMemo(() => {
     if (!activeDocument) return [];
-    const title = wikiLabelForDoc(activeDocument.doc).toLowerCase();
-    const filename = activeDocument.doc.name.replace(/\.(md|markdown|mdx)$/i, "").toLowerCase();
+    const title = normalizeWikiLinkLabel(wikiLabelForDoc(activeDocument.doc));
+    const filename = normalizeWikiLinkLabel(activeDocument.doc.name);
+    const relativePath = normalizeWikiLinkLabel(
+      workspacePathParts(activeDocument.doc.path, workspaceRoot).join("/"),
+    );
     const linkNeedles = new Set([
-      `[[${title}]]`,
-      `[[${filename}]]`,
+      title,
+      filename,
+      relativePath,
       activeDocument.doc.path.toLowerCase(),
     ]);
     return workspaceDocs
       .filter((doc) => doc.path !== activeDocument.doc.path)
       .filter((doc) =>
-        [...linkNeedles].some((needle) => doc.indexText.includes(needle)),
+        [...linkNeedles].some(
+          (needle) =>
+            doc.wikiLinks.includes(needle) || doc.indexText.includes(`[[${needle}]]`),
+        ),
       )
       .slice(0, 6);
-  }, [activeDocument, workspaceDocs]);
+  }, [activeDocument, workspaceDocs, workspaceRoot]);
   const relatedWikiDocs = useMemo(() => {
     if (!activeDocument) return [];
-    const sourceTerms = tokenizeWikiText(
-      `${wikiLabelForDoc(activeDocument.doc)} ${draft}`,
+    const sourceTerms = new Set(
+      activeDocument.doc.terms.length > 0
+        ? activeDocument.doc.terms
+        : tokenizeWikiText(`${wikiLabelForDoc(activeDocument.doc)} ${draft}`),
     );
     if (sourceTerms.size === 0) return [];
 
     return workspaceDocs
       .filter((doc) => doc.path !== activeDocument.doc.path)
       .map((doc) => {
-        const targetTerms = tokenizeWikiText(`${wikiLabelForDoc(doc)} ${doc.indexText}`);
+        const targetTerms = new Set(doc.terms);
         let score = 0;
         for (const term of sourceTerms) {
           if (targetTerms.has(term)) score += 1;
@@ -1334,6 +1585,9 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   <span className="truncate">{workspaceLabel}</span>
                   <div className="flex shrink-0 items-center gap-1">
                     <Badge variant="outline">{filteredWorkspaceDocs.length}</Badge>
+                    {secondBrainCount > 0 ? (
+                      <Badge variant="secondary">{secondBrainCount} memories</Badge>
+                    ) : null}
                     {filteredWorkspaceDocs.length !== workspaceDocs.length ? (
                       <Badge variant="secondary">{workspaceDocs.length} total</Badge>
                     ) : null}
@@ -1349,6 +1603,17 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   />
                 </div>
                 <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => void createCrea8Page(activeFolderPath ?? workspaceRoot)}
+                    disabled={!fs || saving}
+                  >
+                    <BookOpenTextIcon className="h-3.5 w-3.5" />
+                    Page
+                  </Button>
                   <Button
                     type="button"
                     size="sm"
@@ -1390,6 +1655,52 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   >
                     Clear
                   </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs text-destructive"
+                    onClick={() => void deleteSelectedDocuments()}
+                    disabled={!fs || saving || selectedDocs.length === 0}
+                  >
+                    Delete
+                  </Button>
+                </div>
+                <div className="rounded-md border border-border bg-background/60 p-2 text-xs">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <span className="font-medium text-muted-foreground">Sync</span>
+                    <Badge variant="outline">
+                      {localFolderName ? "local linked" : "local only"}
+                    </Badge>
+                  </div>
+                  <p className="mb-2 line-clamp-2 text-muted-foreground">
+                    {localFolderStatus ??
+                      "Use Git from the project row, or connect a local folder for browser filesystem sync."}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => void connectLocalFolder()}
+                      disabled={!currentProjectId || !fs || syncingLocalFolder || !localSyncSupported}
+                    >
+                      <FolderPlusIcon className={syncingLocalFolder ? "h-3.5 w-3.5 animate-pulse" : "h-3.5 w-3.5"} />
+                      Local
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => void syncLocalFolderNow()}
+                      disabled={!currentProjectId || !fs || !localFolderName || syncingLocalFolder}
+                    >
+                      <RefreshCwIcon className={syncingLocalFolder ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
+                      Sync
+                    </Button>
+                  </div>
                 </div>
               </div>
               {workspaceDocs.length === 0 ? (
@@ -1427,6 +1738,9 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     setDraft("");
                     setActiveFolderPath(path);
                   }}
+                  onCreatePageInFolder={(path) => void createCrea8Page(path)}
+                  onCreateFolderInFolder={(path) => void createFolderAtPath(path)}
+                  onToggleSelect={toggleDocSelection}
                 />
               )}
             </section>
@@ -1463,6 +1777,16 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
             placeholder="Ask a question grounded in selected files and wiki pages"
             className="min-h-16 resize-y text-sm"
           />
+          <Button
+            type="button"
+            variant="outline"
+            className="self-end"
+            onClick={() => void attachSelectedDocumentsToChat()}
+            disabled={asking || selectedDocs.length === 0}
+          >
+            <MessageSquarePlusIcon className={asking ? "animate-pulse" : ""} />
+            Attach
+          </Button>
           <Button
             type="button"
             className="self-end"

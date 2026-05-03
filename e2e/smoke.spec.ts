@@ -71,7 +71,10 @@ test("project sidebar sections replace the old workspace selector", async ({ pag
   await expect(page.getByText("Related", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Chat input")).not.toBeVisible();
 
-  await page.getByRole("button", { name: "Page" }).click();
+  await page
+    .locator(".link42-panel")
+    .getByRole("button", { name: "Page" })
+    .click();
   await expect(page.getByRole("heading", { name: `${projectName} note` })).toBeVisible();
 
   await page.getByRole("button", { name: `Chats for ${projectName}` }).click();

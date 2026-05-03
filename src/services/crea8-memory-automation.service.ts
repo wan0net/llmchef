@@ -39,6 +39,17 @@ const SECOND_BRAIN_SECTIONS = [
   "Questions",
   "Contradictions",
 ];
+const TOPIC_RULES: Array<{ topic: string; pattern: RegExp }> = [
+  { topic: "Security", pattern: /\b(security|secret|token|leak|sandbox|permission|auth|credential|policy)\b/ },
+  { topic: "Architecture", pattern: /\b(architecture|module|store|service|runtime|design|interface|abstraction)\b/ },
+  { topic: "Projects", pattern: /\b(project|workspace|folder|wiki|document|knowledge|memory|second brain)\b/ },
+  { topic: "Sync", pattern: /\b(sync|git|github|s3|dropbox|onedrive|filesystem|export|import)\b/ },
+  { topic: "MCP", pattern: /\b(mcp|tool|server|client|transport|package|registry)\b/ },
+  { topic: "UI", pattern: /\b(ui|theme|button|toolbar|sidebar|layout|screen|ux|interface)\b/ },
+  { topic: "Testing", pattern: /\b(test|e2e|lint|build|ci|quality|semgrep|trivy|playwright)\b/ },
+  { topic: "Operations", pattern: /\b(deploy|release|gh-pages|performance|optimization|cache|bundle)\b/ },
+  { topic: "Product", pattern: /\b(feature|workflow|user|experience|notebook|chat|recipe)\b/ },
+];
 
 const isMemoryWorthProposing = (response: string): boolean => {
   const trimmed = response.trim();
@@ -112,16 +123,23 @@ const classifyTaxonomySection = (
   return "Findings";
 };
 
+const classifyTopic = (interaction: Interaction, response: string): string => {
+  const text = `${interaction.prompt?.content ?? ""}\n${response}`.toLowerCase();
+  return TOPIC_RULES.find((rule) => rule.pattern.test(text))?.topic ?? "General";
+};
+
 const taxonomyPathForMemory = (
   interaction: Interaction,
   scope: Crea8MemoryScope,
   title: string,
   section: string,
+  topic: string,
 ): string => {
   const date = new Date().toISOString().slice(0, 10);
   return joinPath(
     taxonomyRootForInteraction(interaction),
     section,
+    topic,
     `${date}-${slugSegment(title)}-${interaction.id.slice(0, 8)}.md`,
   );
 };
@@ -130,11 +148,13 @@ const buildMemoryContent = (
   interaction: Interaction,
   response: string,
   section: string,
+  topic: string,
 ): string => {
   const { conversation, project } = projectForInteraction(interaction);
   const sourcePrompt = interaction.prompt?.content?.trim();
   const sourceLines = [
     `- Taxonomy: ${section}`,
+    `- Topic: ${topic}`,
     `- Conversation: ${conversation?.title ?? interaction.conversationId}`,
     project ? `- Project: ${project.name}` : null,
     `- Interaction: ${interaction.id}`,
@@ -144,6 +164,10 @@ const buildMemoryContent = (
   return [
     `## Summary`,
     response.slice(0, MAX_CONTENT_LENGTH).trim(),
+    "",
+    "## Curation",
+    `- Placed under: [[${section}/${topic}]]`,
+    "- Method: keep this note atomic, link it to related pages, and merge it upward when it becomes durable project knowledge.",
     "",
     "## Provenance",
     ...sourceLines,
@@ -217,8 +241,9 @@ export class Crea8MemoryAutomationService {
     const scope = scopeFromInteraction(interaction);
     const title = titleFromInteraction(interaction, response);
     const section = classifyTaxonomySection(interaction, response, scope);
+    const topic = classifyTopic(interaction, response);
     const rootPath = taxonomyRootForInteraction(interaction);
-    const proposedContent = buildMemoryContent(interaction, response, section);
+    const proposedContent = buildMemoryContent(interaction, response, section, topic);
 
     await this.ensureSecondBrainScaffold(rootPath, project?.name ?? "LLMChef");
 
@@ -247,9 +272,9 @@ export class Crea8MemoryAutomationService {
       content: proposal.proposedContent,
       scope: proposal.scope,
       tags: ["auto-memory", "second-brain", section.toLowerCase()],
+      path: taxonomyPathForMemory(interaction, scope, title, section, topic),
       projectId: proposal.source.projectId ?? null,
       skillId: proposal.source.skillId ?? null,
-      path: taxonomyPathForMemory(interaction, scope, title, section),
     });
     const now = new Date();
     const written: Crea8MemoryProposal = {
@@ -308,8 +333,10 @@ export class Crea8MemoryAutomationService {
         "",
         "This folder is maintained by LLMChef and remains human-editable.",
         "Automatic memories are Markdown notes that should be reviewed, merged, and curated like any other wiki page.",
+        "LLMChef files notes into a section and topic automatically; move them only when the human-facing map becomes clearer.",
         "",
         ...SECOND_BRAIN_SECTIONS.map((section) => `- [[${section}]]`),
+        "- [[method]]",
         "",
       ].join("\n"),
       fs,
@@ -331,6 +358,47 @@ export class Crea8MemoryAutomationService {
         "",
       ].join("\n"),
       fs,
+    );
+
+    await writeIfMissing(
+      joinPath(rootPath, "method.md"),
+      [
+        `# ${projectName} Second Brain Method`,
+        "",
+        "LLMChef treats this wiki as a human-readable second brain that AI can maintain.",
+        "",
+        "## Defaults",
+        "",
+        "- New durable findings are filed automatically by section and topic.",
+        "- Notes should stay atomic enough to reuse in chat and broad enough to remain readable.",
+        "- Project home pages are maps of content, not dumping grounds.",
+        "",
+        "## Curation Pattern",
+        "",
+        "- Capture: write the smallest useful Markdown note.",
+        "- Connect: add wiki links to related pages, folders, source docs, and decisions.",
+        "- Consolidate: merge repeated notes into overview or decision pages when a pattern stabilizes.",
+        "",
+      ].join("\n"),
+      fs,
+    );
+
+    await Promise.all(
+      SECOND_BRAIN_SECTIONS.map((section) =>
+        writeIfMissing(
+          joinPath(rootPath, section, "_index.md"),
+          [
+            `# ${section}`,
+            "",
+            `Automatically curated ${section.toLowerCase()} live here by topic.`,
+            "",
+            ...TOPIC_RULES.map((rule) => `- [[${rule.topic}]]`),
+            "- [[General]]",
+            "",
+          ].join("\n"),
+          fs,
+        ),
+      ),
     );
   }
 }
