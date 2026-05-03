@@ -31,10 +31,6 @@ import { FilePreviewDialog } from "@/components/LLMChef/file-manager/FilePreview
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
 import { parseCrea8MarkdownNote } from "@/lib/llmchef/crea8-memory";
 import {
-  useMarkdownParser,
-  type UniversalBlockData,
-} from "@/lib/llmchef/useMarkdownParser";
-import {
   basename,
   dirname,
   joinPath,
@@ -101,6 +97,7 @@ const MAX_RETRIEVAL_CHUNKS = 12;
 const MAX_RETRIEVAL_CONTEXT_CHARS = 24_000;
 const SNIPPET_LENGTH = 220;
 const IGNORED_DOCUMENT_TREE_NAMES = new Set([".git", ".llmchef"]);
+const WikiMarkdownPreview = React.lazy(() => import("./WikiMarkdownPreview"));
 
 const workspacePathParts = (path: string, rootPath: string): string[] => {
   const normalizedPath = normalizePath(path);
@@ -330,45 +327,6 @@ const iconForPreviewKind = (doc: WorkspaceDocument): React.ReactNode => {
   }
 };
 
-const WikiMarkdownPreview: React.FC<{ markdown: string }> = ({ markdown }) => {
-  const parsedContent = useMarkdownParser(markdown);
-
-  if (parsedContent.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center rounded-md border border-dashed border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground">
-        This wiki page is empty. Switch to edit mode to start writing.
-      </div>
-    );
-  }
-
-  return (
-    <article className="space-y-4">
-      {parsedContent.map((item, index) => {
-        if (typeof item === "string") {
-          if (!item.trim()) return null;
-          return (
-            <div
-              key={`html-${index}`}
-              className="markdown-content"
-              dangerouslySetInnerHTML={{ __html: item }}
-            />
-          );
-        }
-
-        const block = item as UniversalBlockData;
-        return (
-          <pre
-            key={`block-${index}`}
-            className="overflow-x-auto rounded-md border border-border bg-muted/50 p-3 text-xs"
-          >
-            <code>{block.code}</code>
-          </pre>
-        );
-      })}
-    </article>
-  );
-};
-
 const readCrea8NoteIfPresent = (
   path: string,
   name: string,
@@ -402,9 +360,6 @@ const bytesToBase64 = (data: Uint8Array): string => {
 
 const filenameStem = (name: string): string =>
   name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9._-]+/gi, "-") || "extract";
-
-const humanWorkspacePath = (path: string): string =>
-  normalizePath(path).replace(/\/crea8(?=\/|$)/gi, "/Wiki");
 
 const indexWorkspaceDocument = async (
   path: string,
@@ -1151,7 +1106,6 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     activeDocument?.kind === "crea8"
       ? activeDocument.note.title
       : activeDocument?.doc.name;
-  const activePath = activeDocument ? humanWorkspacePath(activeDocument.doc.path) : undefined;
   const isDirty =
     activeDocument?.kind === "crea8"
       ? draft !== activeDocument.note.content
@@ -1329,11 +1283,6 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                       : activeDocument.doc.previewDescriptor.kind}
                   </Badge>
                 </div>
-                {activePath ? (
-                  <p className="truncate text-xs text-muted-foreground">
-                    {activePath}
-                  </p>
-                ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
@@ -1481,11 +1430,16 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     <h1 className="mt-3 text-2xl font-semibold tracking-normal text-foreground">
                       {activeDocument.note.title}
                     </h1>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Stored as Markdown in {humanWorkspacePath(activeDocument.doc.path)}
-                    </p>
                   </div>
-                  <WikiMarkdownPreview markdown={draft} />
+                  <React.Suspense
+                    fallback={
+                      <div className="flex min-h-40 items-center justify-center text-sm text-muted-foreground">
+                        Rendering wiki page...
+                      </div>
+                    }
+                  >
+                    <WikiMarkdownPreview markdown={draft} />
+                  </React.Suspense>
                 </div>
               </ScrollArea>
             ) : (

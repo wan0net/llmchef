@@ -47,7 +47,6 @@ import { projectEvent } from "@/types/llmchef/events/project.events";
 import type { LLMChefModApi } from "@/types/llmchef/modding";
 import { WorkflowService } from "@/services/workflow.service";
 import { Crea8MemoryAutomationService } from "@/services/crea8-memory-automation.service";
-import { DocumentsWorkspace } from "@/components/LLMChef/documents/DocumentsWorkspace";
 import { useTranslation } from "react-i18next";
 import { nanoid } from "nanoid";
 import type { AttachedFileMetadata } from "@/store/input.store";
@@ -55,6 +54,11 @@ import type { AttachedFileMetadata } from "@/store/input.store";
 let initializedControlModules: ControlModule[] = [];
 let appInitializationPromise: Promise<ControlModule[]> | null = null;
 let hasInitializedSuccessfully = false;
+const DocumentsWorkspace = React.lazy(() =>
+  import("@/components/LLMChef/documents/DocumentsWorkspace").then((module) => ({
+    default: module.DocumentsWorkspace,
+  })),
+);
 
 const getUninitializedControlConstructors = (
   controls: ControlModuleConstructor[],
@@ -740,11 +744,19 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
               className="flex-grow overflow-y-hidden"
             />
           ) : (
-            <DocumentsWorkspace
-              currentProjectId={currentProjectId}
-              onAskDocuments={handleAskDocuments}
-              sidebarPortalTarget={documentsSidebarTarget}
-            />
+            <React.Suspense
+              fallback={
+                <div className="flex flex-grow items-center justify-center text-sm text-muted-foreground">
+                  Loading wiki...
+                </div>
+              }
+            >
+              <DocumentsWorkspace
+                currentProjectId={currentProjectId}
+                onAskDocuments={handleAskDocuments}
+                sidebarPortalTarget={documentsSidebarTarget}
+              />
+            </React.Suspense>
           )}
 
           {globalError && (
