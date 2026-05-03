@@ -14,6 +14,7 @@ import {
   FolderIcon,
   FolderPlusIcon,
   HashIcon,
+  PencilIcon,
   Loader2Icon,
   RefreshCwIcon,
   SaveIcon,
@@ -29,6 +30,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { FilePreviewDialog } from "@/components/LLMChef/file-manager/FilePreviewDialog";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
 import { parseCrea8MarkdownNote } from "@/lib/llmchef/crea8-memory";
+import {
+  useMarkdownParser,
+  type UniversalBlockData,
+} from "@/lib/llmchef/useMarkdownParser";
 import {
   basename,
   dirname,
@@ -325,6 +330,45 @@ const iconForPreviewKind = (doc: WorkspaceDocument): React.ReactNode => {
   }
 };
 
+const WikiMarkdownPreview: React.FC<{ markdown: string }> = ({ markdown }) => {
+  const parsedContent = useMarkdownParser(markdown);
+
+  if (parsedContent.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center rounded-md border border-dashed border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground">
+        This wiki page is empty. Switch to edit mode to start writing.
+      </div>
+    );
+  }
+
+  return (
+    <article className="space-y-4">
+      {parsedContent.map((item, index) => {
+        if (typeof item === "string") {
+          if (!item.trim()) return null;
+          return (
+            <div
+              key={`html-${index}`}
+              className="markdown-content"
+              dangerouslySetInnerHTML={{ __html: item }}
+            />
+          );
+        }
+
+        const block = item as UniversalBlockData;
+        return (
+          <pre
+            key={`block-${index}`}
+            className="overflow-x-auto rounded-md border border-border bg-muted/50 p-3 text-xs"
+          >
+            <code>{block.code}</code>
+          </pre>
+        );
+      })}
+    </article>
+  );
+};
+
 const readCrea8NoteIfPresent = (
   path: string,
   name: string,
@@ -358,6 +402,9 @@ const bytesToBase64 = (data: Uint8Array): string => {
 
 const filenameStem = (name: string): string =>
   name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9._-]+/gi, "-") || "extract";
+
+const humanWorkspacePath = (path: string): string =>
+  normalizePath(path).replace(/\/crea8(?=\/|$)/gi, "/Wiki");
 
 const indexWorkspaceDocument = async (
   path: string,
@@ -546,6 +593,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const [activeFolderPath, setActiveFolderPath] = useState<string | null>(null);
   const [activeDocument, setActiveDocument] = useState<ActiveDocument | null>(null);
   const [draft, setDraft] = useState("");
+  const [isEditingCrea8, setIsEditingCrea8] = useState(false);
   const [previewDescriptor, setPreviewDescriptor] =
     useState<FilePreviewDescriptor | null>(null);
   const [previewData, setPreviewData] = useState<Uint8Array | null>(null);
@@ -639,6 +687,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     ) {
       setActiveDocument(null);
       setDraft("");
+      setIsEditingCrea8(false);
     }
   }, [activeDocument, workspaceDocs]);
 
@@ -655,6 +704,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         if (doc.kind === "crea8" && doc.memoryNote) {
           setActiveDocument({ kind: "crea8", doc, note: doc.memoryNote });
           setDraft(doc.memoryNote.content);
+          setIsEditingCrea8(false);
           return;
         }
 
@@ -662,11 +712,13 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
           const content = decodeText(data);
           setActiveDocument({ kind: "file", doc, content, data });
           setDraft(content);
+          setIsEditingCrea8(false);
           return;
         }
 
         setActiveDocument({ kind: "file", doc, content: "", data });
         setDraft("");
+        setIsEditingCrea8(false);
         setIsPreviewOpen(true);
       } catch (error) {
         setError(error instanceof Error ? error.message : "Failed to open document.");
@@ -705,6 +757,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
           note: updatedNote,
         });
         setDraft(updatedNote.content);
+        setIsEditingCrea8(false);
       } else if (activeDocument.kind === "file") {
         if (!isIndexableText(activeDocument.doc.name, activeDocument.doc.type)) {
           throw new Error("This file type cannot be edited as text.");
@@ -770,7 +823,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         scope: currentProjectId ? "project" : "reference",
         tags: [],
         projectId: currentProjectId,
-        path: joinPath(workspaceRoot, "crea8", `memory-${Date.now()}.md`),
+        path: joinPath(workspaceRoot, "Wiki", `page-${Date.now()}.md`),
       });
       const note = await connector.read(ref);
       const path = note.path ?? ref.path ?? workspaceRoot;
@@ -804,11 +857,12 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         },
       });
       setDraft(note.content);
+      setIsEditingCrea8(true);
       await loadDocuments();
-      toast.success("crea8 page created.");
+      toast.success("Wiki page created.");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to create crea8 page.";
+        error instanceof Error ? error.message : "Failed to create wiki page.";
       setError(message);
       toast.error(message);
     } finally {
@@ -887,7 +941,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         ? draft
         : "";
     if (!content.trim()) {
-      toast.info("No text available to turn into a crea8 page.");
+      toast.info("No text available to turn into a wiki page.");
       return;
     }
     setSaving(true);
@@ -903,14 +957,14 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         scope: currentProjectId ? "project" : "reference",
         tags: ["extract"],
         projectId: currentProjectId,
-        path: joinPath(workspaceRoot, "crea8", `extract-${Date.now()}.md`),
+        path: joinPath(workspaceRoot, "Wiki", `extract-${Date.now()}.md`),
       });
       const note = await connector.read(ref);
       await loadDocuments();
-      toast.success(`Created crea8 page: ${note.title}`);
+      toast.success(`Created wiki page: ${note.title}`);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to create crea8 page.";
+        error instanceof Error ? error.message : "Failed to create wiki page.";
       setError(message);
       toast.error(message);
     } finally {
@@ -1003,6 +1057,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       await renameOp(activeDocument.doc.path, targetPath, { fsInstance: fs });
       setActiveDocument(null);
       setDraft("");
+      setIsEditingCrea8(false);
       await loadDocuments();
       toast.success(`Renamed to ${trimmed}.`);
     } catch (error) {
@@ -1031,6 +1086,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       });
       setActiveDocument(null);
       setDraft("");
+      setIsEditingCrea8(false);
       await loadDocuments();
     } catch (error) {
       const message =
@@ -1095,8 +1151,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     activeDocument?.kind === "crea8"
       ? activeDocument.note.title
       : activeDocument?.doc.name;
-  const activePath =
-    activeDocument?.doc.path;
+  const activePath = activeDocument ? humanWorkspacePath(activeDocument.doc.path) : undefined;
   const isDirty =
     activeDocument?.kind === "crea8"
       ? draft !== activeDocument.note.content
@@ -1130,7 +1185,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   <Input
                     value={docSearch}
                     onChange={(event) => setDocSearch(event.target.value)}
-                    placeholder="Search files and crea8 pages"
+                    placeholder="Search files and wiki pages"
                     className="h-8 pl-7 text-xs"
                   />
                 </div>
@@ -1180,11 +1235,11 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
               </div>
               {workspaceDocs.length === 0 ? (
                 <p className="px-2 py-3 text-xs text-muted-foreground">
-                  Import local files into this workspace. crea8 markdown pages will appear alongside them.
+                  Import local files into this workspace. Wiki pages are stored as Markdown alongside them.
                 </p>
               ) : filteredWorkspaceDocs.length === 0 ? (
                 <p className="px-2 py-3 text-xs text-muted-foreground">
-                  No files or crea8 pages match the current view.
+                  No files or wiki pages match the current view.
                 </p>
               ) : (
                 <TreeNode
@@ -1195,7 +1250,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   meta={(doc) =>
                     <>
                       <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
-                        {doc.kind === "crea8" ? doc.memoryNote?.scope ?? "crea8" : doc.previewDescriptor.kind}
+                        {doc.kind === "crea8" ? doc.memoryNote?.scope ?? "wiki" : doc.previewDescriptor.kind}
                       </Badge>
                       {selectedDocPaths.has(doc.path) ? (
                         <Badge variant="secondary" className="h-5 shrink-0 text-[10px]">
@@ -1223,7 +1278,44 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   );
 
   const mainPane = (
-    <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto]">
+    <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)]">
+      <div className="border-b border-border bg-card p-3">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            Notebook query
+          </span>
+          {selectedDocs.length === 0 ? (
+            <Badge variant="outline">No docs selected</Badge>
+          ) : (
+            selectedDocs.slice(0, 4).map((doc) => (
+              <Badge key={doc.path} variant="secondary" className="max-w-40 truncate">
+                {basename(doc.path)}
+              </Badge>
+            ))
+          )}
+          {selectedDocs.length > 4 ? (
+            <Badge variant="outline">+{selectedDocs.length - 4}</Badge>
+          ) : null}
+        </div>
+        <div className="flex gap-2">
+          <Textarea
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            placeholder="Ask a question grounded in selected files and wiki pages"
+            className="min-h-16 resize-y text-sm"
+          />
+          <Button
+            type="button"
+            className="self-end"
+            onClick={() => void askSelectedDocuments()}
+            disabled={asking || selectedDocs.length === 0 || !question.trim()}
+          >
+            <SendIcon className={asking ? "animate-pulse" : ""} />
+            Ask
+          </Button>
+        </div>
+      </div>
+
       <div className="flex min-h-0 flex-col">
         {activeDocument ? (
           <>
@@ -1233,7 +1325,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   <h3 className="truncate text-sm font-semibold">{activeTitle}</h3>
                   <Badge variant="outline">
                     {activeDocument.kind === "crea8"
-                      ? "crea8"
+                      ? "wiki"
                       : activeDocument.doc.previewDescriptor.kind}
                   </Badge>
                 </div>
@@ -1332,6 +1424,17 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   <BookOpenTextIcon />
                   Extract
                 </Button>
+                {activeDocument.kind === "crea8" ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={isEditingCrea8 ? "secondary" : "outline"}
+                    onClick={() => setIsEditingCrea8((current) => !current)}
+                  >
+                    <PencilIcon />
+                    {isEditingCrea8 ? "Render" : "Edit"}
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   size="sm"
@@ -1362,6 +1465,29 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
               <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
                 Preview is available for {activeDocument.doc.previewDescriptor.kind} files.
               </div>
+            ) : activeDocument.kind === "crea8" && !isEditingCrea8 ? (
+              <ScrollArea className="min-h-0 flex-1">
+                <div className="mx-auto w-full max-w-4xl px-5 py-5">
+                  <div className="mb-5 rounded-md border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">{activeDocument.note.scope}</Badge>
+                      {activeDocument.note.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {isDirty ? <Badge variant="destructive">unsaved</Badge> : null}
+                    </div>
+                    <h1 className="mt-3 text-2xl font-semibold tracking-normal text-foreground">
+                      {activeDocument.note.title}
+                    </h1>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Stored as Markdown in {humanWorkspacePath(activeDocument.doc.path)}
+                    </p>
+                  </div>
+                  <WikiMarkdownPreview markdown={draft} />
+                </div>
+              </ScrollArea>
             ) : (
               <Textarea
                 value={draft}
@@ -1400,7 +1526,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                           {doc.memoryNote?.title ?? doc.name}
                         </span>
                         <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
-                          {doc.kind === "crea8" ? "crea8" : doc.previewDescriptor.kind}
+                          {doc.kind === "crea8" ? "wiki" : doc.previewDescriptor.kind}
                         </Badge>
                       </span>
                       <span className="line-clamp-2 text-xs text-muted-foreground">
@@ -1414,43 +1540,6 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
           </div>
         )}
       </div>
-
-      <div className="border-t border-border bg-card p-3">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">
-            Notebook query
-          </span>
-          {selectedDocs.length === 0 ? (
-            <Badge variant="outline">No docs selected</Badge>
-          ) : (
-            selectedDocs.slice(0, 4).map((doc) => (
-              <Badge key={doc.path} variant="secondary" className="max-w-40 truncate">
-                {basename(doc.path)}
-              </Badge>
-            ))
-          )}
-          {selectedDocs.length > 4 ? (
-            <Badge variant="outline">+{selectedDocs.length - 4}</Badge>
-          ) : null}
-        </div>
-        <div className="flex gap-2">
-          <Textarea
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-            placeholder="Ask a question grounded in selected files and crea8 pages"
-            className="min-h-20 resize-y text-sm"
-          />
-          <Button
-            type="button"
-            className="self-end"
-            onClick={() => void askSelectedDocuments()}
-            disabled={asking || selectedDocs.length === 0 || !question.trim()}
-          >
-            <SendIcon className={asking ? "animate-pulse" : ""} />
-            Ask
-          </Button>
-        </div>
-      </div>
     </div>
   );
 
@@ -1461,7 +1550,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         <div className="min-w-0">
           <h2 className="truncate text-sm font-semibold">Documents</h2>
           <p className="truncate text-xs text-muted-foreground">
-            {workspaceLabel} files, crea8 pages, and notebook questions grounded locally
+            {workspaceLabel} files, wiki pages, and notebook questions grounded locally
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1487,7 +1576,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
             disabled={!fs || saving}
           >
             <BookOpenTextIcon className={saving ? "animate-pulse" : ""} />
-            Crea8
+            Page
           </Button>
           <Button
             type="button"

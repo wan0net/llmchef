@@ -68,8 +68,8 @@ export const Crea8MemoryProposalActionControl: React.FC<
 
   return (
     <ActionTooltipButton
-      tooltipText="Propose as crea8 memory"
-      aria-label="Propose as crea8 memory"
+      tooltipText="Propose as wiki memory"
+      aria-label="Propose as wiki memory"
       onClick={handleProposeMemory}
       disabled={isSaving}
       icon={<BookMarkedIcon />}

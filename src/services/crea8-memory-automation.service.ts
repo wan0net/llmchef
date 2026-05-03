@@ -84,7 +84,7 @@ const slugSegment = (value: string): string =>
 
 const taxonomyRootForInteraction = (interaction: Interaction): string => {
   const { project } = projectForInteraction(interaction);
-  return joinPath(project?.path ?? GLOBAL_DOCUMENTS_ROOT, "crea8", "Second Brain");
+  return joinPath(project?.path ?? GLOBAL_DOCUMENTS_ROOT, "Wiki", "Second Brain");
 };
 
 const classifyTaxonomySection = (

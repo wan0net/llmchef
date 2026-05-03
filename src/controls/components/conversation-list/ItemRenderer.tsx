@@ -16,8 +16,10 @@ import {
   DownloadIcon,
   Loader2,
   FileJsonIcon,
+  FilePlusIcon,
   CogIcon,
   FolderInputIcon,
+  FolderPlusIcon,
 } from "lucide-react";
 import { getSyncIndicator } from "@/controls/components/conversation-list/SyncIndicator";
 import type { SidebarItemType } from "@/types/llmchef/chat";
@@ -51,6 +53,8 @@ interface ConversationItemProps {
     e: React.MouseEvent
   ) => void;
   onExportProject: (id: string, e: React.MouseEvent) => void;
+  onCreateProjectPage: (project: Project, e: React.MouseEvent) => void;
+  onCreateProjectFolder: (project: Project, e: React.MouseEvent) => void;
   expandedProjects: Set<string>;
   toggleProjectExpansion: (projectId: string) => void;
   editingItemId: string | null; // Global editing item ID
@@ -79,6 +83,8 @@ export const ConversationItemRenderer = memo<ConversationItemProps>(
     onMoveConversation,
     onExportConversation,
     onExportProject,
+    onCreateProjectPage,
+    onCreateProjectFolder,
     expandedProjects,
     toggleProjectExpansion,
     editingItemId,
@@ -321,13 +327,35 @@ export const ConversationItemRenderer = memo<ConversationItemProps>(
           ) : (
             <>
               {isProject && (
-                <ActionTooltipButton
-                  tooltipText={t('itemRenderer.projectSettings')}
-                  onClick={handleSettingsClick}
-                  aria-label={t('itemRenderer.settingsFor', { name: displayName })}
-                  icon={<CogIcon />}
-                  className="h-5 w-5 text-muted-foreground hover:text-foreground"
-                />
+                <>
+                  <ActionTooltipButton
+                    tooltipText={t('itemRenderer.newWikiPage', 'New wiki page')}
+                    onClick={(e) => onCreateProjectPage(item as Project, e)}
+                    aria-label={t('itemRenderer.newWikiPageFor', {
+                      name: displayName,
+                      defaultValue: `New wiki page in ${displayName}`,
+                    })}
+                    icon={<FilePlusIcon />}
+                    className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                  />
+                  <ActionTooltipButton
+                    tooltipText={t('itemRenderer.newProjectFolder', 'New folder')}
+                    onClick={(e) => onCreateProjectFolder(item as Project, e)}
+                    aria-label={t('itemRenderer.newProjectFolderFor', {
+                      name: displayName,
+                      defaultValue: `New folder in ${displayName}`,
+                    })}
+                    icon={<FolderPlusIcon />}
+                    className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                  />
+                  <ActionTooltipButton
+                    tooltipText={t('itemRenderer.projectSettings')}
+                    onClick={handleSettingsClick}
+                    aria-label={t('itemRenderer.settingsFor', { name: displayName })}
+                    icon={<CogIcon />}
+                    className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                  />
+                </>
               )}
               <ActionTooltipButton
                 tooltipText={t('itemRenderer.edit')}

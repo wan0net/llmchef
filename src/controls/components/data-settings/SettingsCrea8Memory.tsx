@@ -313,8 +313,8 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
   return (
     <div className="space-y-4 p-1">
       <SettingsSection
-        title="crea8 Memory"
-        description="Review proposed memory notes before writing them to the current VFS workspace."
+        title="Wiki Memory"
+        description="Review proposed memory notes before writing them to the current wiki workspace."
       >
         <Tabs defaultValue="proposals" className="space-y-3">
           <TabsList>

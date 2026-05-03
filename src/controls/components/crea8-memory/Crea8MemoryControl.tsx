@@ -92,8 +92,8 @@ export const Crea8MemoryControl: React.FC<Crea8MemoryControlProps> = ({
   );
 
   const tooltipText = hasSelection
-    ? `crea8 Memory (${selectedRefs.length} selected)`
-    : "crea8 Memory";
+    ? `Wiki Memory (${selectedRefs.length} selected)`
+    : "Wiki Memory";
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -126,7 +126,7 @@ export const Crea8MemoryControl: React.FC<Crea8MemoryControlProps> = ({
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <BookOpenTextIcon className="h-4 w-4 text-muted-foreground" />
-              <h4 className="truncate text-sm font-medium">crea8 Memory</h4>
+              <h4 className="truncate text-sm font-medium">Wiki Memory</h4>
             </div>
             {workspaceLabel ? (
               <Badge variant="outline" className="max-w-36 truncate">

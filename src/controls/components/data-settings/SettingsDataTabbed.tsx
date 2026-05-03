@@ -25,7 +25,7 @@ const SettingsDataTabbedComponent: React.FC = () => {
     },
     {
       value: "crea8-memory",
-      label: "crea8 Memory",
+      label: "Wiki Memory",
       content: <SettingsCrea8Memory />,
       order: 3,
     },

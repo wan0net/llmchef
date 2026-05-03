@@ -12,6 +12,7 @@ import {
   type SidebarItem,
 } from "@/store/conversation.store";
 import { useProjectStore } from "@/store/project.store";
+import { useVfsStore } from "@/store/vfs.store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusIcon, FolderPlusIcon, SearchIcon, DownloadIcon } from "lucide-react";
@@ -34,6 +35,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Lnk } from "@/components/ui/lnk";
 import { GithubIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { APP_VFS_KEY } from "@/lib/llmchef/constants";
+import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
+import { joinPath } from "@/lib/llmchef/file-manager-utils";
+import { createDirectoryOp } from "@/lib/llmchef/vfs-operations";
 
 export interface VirtualListItem {
   id: string; // Unique ID for the virtual list item (e.g., `project-${projectId}` or `conversation-${conversationId}`)
@@ -106,6 +111,26 @@ const itemMatchesFilterOrHasMatchingDescendant = (
   }
   memo[cacheKey] = matches;
   return matches;
+};
+
+const wikiPageSlug = (title: string): string =>
+  title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "page";
+
+const ensureAppVfs = async () => {
+  const store = useVfsStore.getState();
+  if (store.vfsKey !== APP_VFS_KEY) {
+    store.setVfsKey(APP_VFS_KEY);
+  }
+  const current = useVfsStore.getState();
+  if (current.configuredVfsKey === APP_VFS_KEY && current.fs) {
+    return current.fs;
+  }
+  return current.initializeVFS(APP_VFS_KEY);
 };
 
 interface ConversationListControlComponentProps {
@@ -390,6 +415,68 @@ export const ConversationListControlComponent: React.FC<
     [projects, t, updateConversation]
   );
 
+  const handleCreateProjectPage = useCallback(
+    async (project: Project, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (editingItemId) return;
+
+      const title = window.prompt("Wiki page title", `${project.name} page`);
+      const trimmedTitle = title?.trim();
+      if (!trimmedTitle) return;
+
+      try {
+        const fsInstance = await ensureAppVfs();
+        const connector = createCrea8VfsConnector({
+          rootPath: project.path,
+          fsInstance,
+        });
+        await connector.create({
+          title: trimmedTitle,
+          content: `# ${trimmedTitle}\n`,
+          scope: "project",
+          tags: [],
+          projectId: project.id,
+          path: joinPath(
+            project.path,
+            "Wiki",
+            `${wikiPageSlug(trimmedTitle)}-${Date.now()}.md`,
+          ),
+        });
+        selectItem(project.id, "project");
+        setExpandedProjects((prev) => new Set(prev).add(project.id));
+        toast.success(`Created wiki page in ${project.name}.`);
+      } catch (error) {
+        console.error("Failed to create wiki page:", error);
+        toast.error("Failed to create wiki page.");
+      }
+    },
+    [editingItemId, selectItem],
+  );
+
+  const handleCreateProjectFolder = useCallback(
+    async (project: Project, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (editingItemId) return;
+
+      const folderName = window.prompt("Folder name", "New folder");
+      const trimmedName = folderName?.trim();
+      if (!trimmedName) return;
+
+      try {
+        const fsInstance = await ensureAppVfs();
+        const targetPath = joinPath(project.path, trimmedName);
+        await createDirectoryOp(targetPath, { fsInstance });
+        selectItem(project.id, "project");
+        setExpandedProjects((prev) => new Set(prev).add(project.id));
+        toast.success(`Created folder in ${project.name}.`);
+      } catch (error) {
+        console.error("Failed to create project folder:", error);
+        toast.error("Failed to create folder.");
+      }
+    },
+    [editingItemId, selectItem],
+  );
+
   const repoNameMap = useMemo(() => {
     return new Map((syncRepos || []).map((r) => [r.id, r.name]));
   }, [syncRepos]);
@@ -637,6 +724,8 @@ export const ConversationListControlComponent: React.FC<
                     onMoveConversation={handleMoveConversation}
                     onExportConversation={handleExportConversation}
                     onExportProject={handleExportProject}
+                    onCreateProjectPage={handleCreateProjectPage}
+                    onCreateProjectFolder={handleCreateProjectFolder}
                     expandedProjects={expandedProjects}
                     toggleProjectExpansion={toggleProjectExpansion}
                     editingItemId={editingItemId}
