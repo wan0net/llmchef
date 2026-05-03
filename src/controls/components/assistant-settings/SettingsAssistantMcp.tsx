@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon, PackagePlusIcon, DownloadIcon, Loader2Icon, EyeIcon, SearchIcon, ShieldCheckIcon, LockKeyholeIcon, AlertTriangleIcon } from "lucide-react";
+import { PlusIcon, EditIcon, TrashIcon, ServerIcon, CheckCircleIcon, XCircleIcon, RotateCcwIcon, PackagePlusIcon, DownloadIcon, Loader2Icon, EyeIcon, SearchIcon, ShieldCheckIcon, LockKeyholeIcon, AlertTriangleIcon, CopyIcon } from "lucide-react";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { z } from "zod";
 import { parseMcpImportInput } from "@/lib/llmchef/mcp-package-import";
@@ -226,6 +226,40 @@ function PackageImportsTab() {
     return flags;
   };
 
+  const installedCount = packageRuntimeInstalls.length;
+  const probedCount = packageRuntimeInstalls.filter((install) => install.lastProbeAt).length;
+  const lockHashCount = packageRuntimeInstalls.reduce(
+    (total, install) => total + Object.keys(install.moduleHashes ?? {}).length,
+    0,
+  );
+
+  const getLockFingerprint = (install: typeof packageRuntimeInstalls[number] | undefined) => {
+    const hashes = Object.values(install?.moduleHashes ?? {}).sort();
+    if (hashes.length === 0) return "—";
+    return hashes[0].slice(0, 12);
+  };
+
+  const handleCopyLockSummary = async (install: typeof packageRuntimeInstalls[number]) => {
+    const lockSummary = {
+      packageName: install.packageName,
+      entryUrl: install.entryUrl,
+      registryBaseUrl: install.registryBaseUrl,
+      vfsRoot: install.vfsRoot,
+      moduleCount: install.moduleCount,
+      moduleHashes: install.moduleHashes,
+      detectedTools: install.detectedTools ?? [],
+      lastProbeOk: install.lastProbeOk ?? null,
+    };
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(lockSummary, null, 2));
+      toast.success("MCP package lock copied");
+    } catch (error) {
+      toast.error("Could not copy MCP package lock", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
   const registryIsLoopbackHttp = (() => {
     try {
       const parsed = new URL(packageRuntimeRegistryUrl);
@@ -340,7 +374,25 @@ function PackageImportsTab() {
           <CardTitle className="text-base">{t('mcp.import.importedTitle')}</CardTitle>
           <CardDescription>{t('mcp.import.importedDescription')}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 rounded-md border bg-muted/20 p-3 text-xs md:grid-cols-4">
+            <div>
+              <p className="font-medium">Imported packages</p>
+              <p className="mt-1 text-muted-foreground">{packageImports.length}</p>
+            </div>
+            <div>
+              <p className="font-medium">Installed locks</p>
+              <p className="mt-1 text-muted-foreground">{installedCount}</p>
+            </div>
+            <div>
+              <p className="font-medium">Resolved modules</p>
+              <p className="mt-1 text-muted-foreground">{lockHashCount}</p>
+            </div>
+            <div>
+              <p className="font-medium">Tool probes</p>
+              <p className="mt-1 text-muted-foreground">{probedCount}</p>
+            </div>
+          </div>
           {packageImports.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('mcp.import.empty')}</p>
           ) : (
@@ -378,7 +430,7 @@ function PackageImportsTab() {
                             <div className="flex flex-wrap gap-1">
                               {install ? (
                                 <Badge variant="secondary" className="text-[10px]">
-                                  {moduleHashEntries.length} hashes
+                                  lock {getLockFingerprint(install)}
                                 </Badge>
                               ) : (
                                 <Badge variant="outline" className="text-[10px]">
@@ -411,7 +463,7 @@ function PackageImportsTab() {
                             size="sm"
                             onClick={() => handleInstallPackage(item.id)}
                             disabled={activeInstallId !== null}
-                            title={t('mcp.import.installButton')}
+                            title={install ? "Refresh resolved lock" : t('mcp.import.installButton')}
                           >
                             {activeInstallId === item.id ? (
                               <Loader2Icon className="h-4 w-4 animate-spin" />
@@ -457,6 +509,35 @@ function PackageImportsTab() {
                                 <p><span className="text-muted-foreground">{t('mcp.import.entryUrlLabel')}:</span> <span className="font-mono">{buildEsmPackageEntryUrl(packageRuntimeRegistryUrl, item.packageName)}</span></p>
                                 <p><span className="text-muted-foreground">{t('mcp.import.argsLabel')}:</span> <span className="font-mono">{item.args.length > 0 ? item.args.join(" ") : "—"}</span></p>
                                 <p><span className="text-muted-foreground">{t('mcp.import.vfsRootLabel')}:</span> <span className="font-mono">{install?.vfsRoot ?? "—"}</span></p>
+                                {install ? (
+                                  <div className="flex flex-wrap gap-2 pt-1">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 gap-1 text-xs"
+                                      onClick={() => handleInstallPackage(item.id)}
+                                      disabled={activeInstallId !== null}
+                                    >
+                                      {activeInstallId === item.id ? (
+                                        <Loader2Icon className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <RotateCcwIcon className="h-3 w-3" />
+                                      )}
+                                      Refresh lock
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 gap-1 text-xs"
+                                      onClick={() => void handleCopyLockSummary(install)}
+                                    >
+                                      <CopyIcon className="h-3 w-3" />
+                                      Copy lock
+                                    </Button>
+                                  </div>
+                                ) : null}
                                 {install ? (
                                   <div>
                                     <p className="text-muted-foreground">{t('mcp.import.lockLabel', 'Resolved lock')}:</p>

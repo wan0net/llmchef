@@ -27,6 +27,29 @@ test("app route boots the chat shell without console errors", async ({ page }) =
   expect(consoleErrors.filter((message) => !message.includes("PWA service initialization failed"))).toEqual([]);
 });
 
+test("composer queue controls are available in the chat shell", async ({ page }) => {
+  await page.goto("/#app");
+
+  const input = page.getByLabel("Chat input");
+  await expect(input).toBeVisible({ timeout: 20_000 });
+  await input.fill("Queue this prompt for later");
+
+  await expect(page.getByLabel("Add prompt to queue")).toBeVisible();
+  await expect(page.getByLabel("Send message")).toBeVisible();
+});
+
+test("settings modal exposes advanced controls", async ({ page }) => {
+  await page.goto("/#app");
+
+  await expect(page.getByLabel("Chat input")).toBeVisible({ timeout: 20_000 });
+  await page.getByLabel("Open Settings").click();
+
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "General" })).toBeVisible();
+  await expect(page.getByText("Advanced Settings")).toBeVisible();
+});
+
 test("release bundle endpoint is available from the hosted app", async ({ request }) => {
   const response = await request.get("/release/latest.zip");
 
