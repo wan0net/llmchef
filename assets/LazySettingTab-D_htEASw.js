@@ -1,0 +1,1 @@
+import{R as s,j as t,r as n}from"./vendor-react-Djp8M_-6.js";const c=e=>{const a=s.lazy(e);return()=>t.jsx(n.Suspense,{fallback:t.jsx("div",{className:"p-4 text-sm text-muted-foreground",children:"Loading settings..."}),children:t.jsx(a,{})})};export{c};
