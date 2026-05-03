@@ -22,8 +22,12 @@ import { InputArea } from "@/components/LLMChef/prompt/InputArea";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Loader2, Menu, ShieldCheck, X } from "lucide-react";
-import { performFullInitialization } from "@/lib/llmchef/initialization";
+import { BookOpenText, Loader2, Menu, MessageSquare, ShieldCheck, X } from "lucide-react";
+import {
+  initializeControlModules,
+  performFullInitialization,
+  registerControlModules,
+} from "@/lib/llmchef/initialization";
 import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import { usePromptStateStore } from "@/store/prompt.store";
 import type {
@@ -42,11 +46,30 @@ import { settingsEvent } from "@/types/llmchef/events/settings.events";
 import { projectEvent } from "@/types/llmchef/events/project.events";
 import type { LLMChefModApi } from "@/types/llmchef/modding";
 import { WorkflowService } from "@/services/workflow.service";
+import { Crea8MemoryAutomationService } from "@/services/crea8-memory-automation.service";
+import { DocumentsWorkspace } from "@/components/LLMChef/documents/DocumentsWorkspace";
 import { useTranslation } from "react-i18next";
+import { nanoid } from "nanoid";
+import type { AttachedFileMetadata } from "@/store/input.store";
 
 let initializedControlModules: ControlModule[] = [];
 let appInitializationPromise: Promise<ControlModule[]> | null = null;
 let hasInitializedSuccessfully = false;
+
+const getUninitializedControlConstructors = (
+  controls: ControlModuleConstructor[],
+): ControlModuleConstructor[] => {
+  const initializedIds = new Set(
+    initializedControlModules.map((module) => module.id),
+  );
+  return controls.filter((Ctor) => {
+    try {
+      return !initializedIds.has(new Ctor().id);
+    } catch {
+      return true;
+    }
+  });
+};
 
 interface LLMChefProps {
   controls?: ControlModuleConstructor[];
@@ -55,6 +78,7 @@ interface LLMChefProps {
 export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [workspaceMode, setWorkspaceMode] = useState<"chat" | "documents">("chat");
   const inputAreaRef = useRef<InputAreaRef>(null);
   const coreModApiRef = useRef<LLMChefModApi | null>(null);
   const { t } = useTranslation('common');
@@ -147,6 +171,7 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
 
     EventActionCoordinatorService.initialize();
     WorkflowService.initialize();
+    Crea8MemoryAutomationService.initialize();
 
     const initializeApp = async () => {
       if (hasInitializedSuccessfully) {
@@ -175,6 +200,40 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
       );
     }
   }, [controls]);
+
+  useEffect(() => {
+    if (isInitializing || !hasInitializedSuccessfully || !coreModApiRef.current) {
+      return;
+    }
+
+    const pendingControls = getUninitializedControlConstructors(controls);
+    if (pendingControls.length === 0) return;
+
+    let cancelled = false;
+    const modApi = coreModApiRef.current;
+    void (async () => {
+      try {
+        const modules = await initializeControlModules(pendingControls, modApi);
+        if (cancelled) {
+          for (const module of modules) module.destroy(modApi);
+          return;
+        }
+        registerControlModules(modules, modApi);
+        initializedControlModules = [...initializedControlModules, ...modules];
+      } catch (error) {
+        console.error("[LLMChef] Failed to stage-load control modules:", error);
+        toast.error(
+          `Control module load failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [controls, isInitializing]);
 
   const prevContextRef = useRef<{
     itemId: string | null;
@@ -406,6 +465,32 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
 
   const currentConversationIdForCanvas =
     selectedItemType === "conversation" ? selectedItemId : null;
+  const currentProjectId = useMemo(() => {
+    if (selectedItemType === "project") return selectedItemId;
+    if (selectedItemType === "conversation" && selectedItemId) {
+      return getConversationByIdFromStore(selectedItemId)?.projectId ?? null;
+    }
+    return null;
+  }, [getConversationByIdFromStore, selectedItemId, selectedItemType]);
+
+  const handleAskDocuments = useCallback(
+    async (question: string, files: Omit<AttachedFileMetadata, "id">[]) => {
+      setWorkspaceMode("chat");
+      await handlePromptSubmit({
+        id: nanoid(),
+        content: question,
+        parameters: {},
+        metadata: {
+          attachedFiles: files.map((file) => ({
+            id: nanoid(),
+            ...file,
+          })),
+          autoTitleEnabledForTurn: true,
+        },
+      });
+    },
+    [handlePromptSubmit],
+  );
 
   if (isInitializing) {
     return (
@@ -568,14 +653,49 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
               panelId="header"
               className="flex items-center justify-end gap-1 flex-grow"
             />
+            <div className="ml-2 flex shrink-0 items-center gap-1 rounded-md border border-border bg-card p-1">
+              <button
+                type="button"
+                className={cn(
+                  "inline-flex h-8 items-center gap-1.5 rounded px-2 text-xs transition-colors",
+                  workspaceMode === "chat"
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+                onClick={() => setWorkspaceMode("chat")}
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                Chat
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  "inline-flex h-8 items-center gap-1.5 rounded px-2 text-xs transition-colors",
+                  workspaceMode === "documents"
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+                onClick={() => setWorkspaceMode("documents")}
+              >
+                <BookOpenText className="h-3.5 w-3.5" />
+                Documents
+              </button>
+            </div>
           </div>
 
-          <ChatCanvas
-            conversationId={currentConversationIdForCanvas}
-            interactions={interactions}
-            status={interactionStatus}
-            className="flex-grow overflow-y-hidden"
-          />
+          {workspaceMode === "chat" ? (
+            <ChatCanvas
+              conversationId={currentConversationIdForCanvas}
+              interactions={interactions}
+              status={interactionStatus}
+              className="flex-grow overflow-y-hidden"
+            />
+          ) : (
+            <DocumentsWorkspace
+              currentProjectId={currentProjectId}
+              onAskDocuments={handleAskDocuments}
+            />
+          )}
 
           {globalError && (
             <div className="p-2 bg-destructive text-destructive-foreground text-sm text-center">
@@ -583,14 +703,16 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
             </div>
           )}
 
-          <PromptWrapper
-            InputAreaRenderer={InputArea}
-            onSubmit={handlePromptSubmit}
-            className="border-t border-border bg-card flex-shrink-0"
-            inputAreaRef={inputAreaRef}
-            selectedItemId={selectedItemId}
-            selectedItemType={selectedItemType}
-          />
+          {workspaceMode === "chat" ? (
+            <PromptWrapper
+              InputAreaRenderer={InputArea}
+              onSubmit={handlePromptSubmit}
+              className="border-t border-border bg-card flex-shrink-0"
+              inputAreaRef={inputAreaRef}
+              selectedItemId={selectedItemId}
+              selectedItemType={selectedItemType}
+            />
+          ) : null}
         </div>
       </div>
       <Toaster richColors position="bottom-right" closeButton />

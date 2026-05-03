@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LLMChef } from "@/components/LLMChef/LLMChef";
 import { PrismThemeLoader } from "@/components/LLMChef/common/PrismThemeLoader";
 import { ThemeManager } from "@/components/LLMChef/common/ThemeManager";
@@ -9,8 +9,16 @@ const loadControlModules = async (): Promise<ControlModuleConstructor[]> => {
   return controlModulesToRegister;
 };
 
+const loadStagedControlModules = async (): Promise<ControlModuleConstructor[]> => {
+  const { loadAdvancedControlModules } = await import(
+    "./LLMChefAdvancedControlModules"
+  );
+  return loadAdvancedControlModules();
+};
+
 export function LLMChefApp() {
   const [controls, setControls] = useState<ControlModuleConstructor[] | null>(null);
+  const stagedControlsRequestedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -21,6 +29,29 @@ export function LLMChefApp() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!controls || stagedControlsRequestedRef.current) return;
+    stagedControlsRequestedRef.current = true;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void loadStagedControlModules()
+        .then((stagedControls) => {
+          if (cancelled) return;
+          setControls((current) =>
+            current ? [...current, ...stagedControls] : stagedControls,
+          );
+        })
+        .catch((error) => {
+          console.error("[LLMChefApp] Failed to load staged controls:", error);
+        });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [controls]);
 
   return (
     <>

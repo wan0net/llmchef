@@ -1,9 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckIcon, RefreshCwIcon, TrashIcon, XIcon } from "lucide-react";
+import {
+  CheckIcon,
+  FileTextIcon,
+  FolderIcon,
+  RefreshCwIcon,
+  TrashIcon,
+  XIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { SettingsSection } from "@/components/LLMChef/common/SettingsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
 import { useCrea8MemoryStore } from "@/store/crea8-memory.store";
@@ -11,6 +20,7 @@ import { useVfsStore } from "@/store/vfs.store";
 import type {
   Crea8MemoryProposal,
   Crea8MemoryProposalStatus,
+  Crea8MemorySearchResult,
 } from "@/types/llmchef/crea8-memory";
 
 const statusBadgeVariant = (status: Crea8MemoryProposalStatus) => {
@@ -36,6 +46,103 @@ const sortProposals = (
   return proposalTimestamp(second) - proposalTimestamp(first);
 };
 
+type MemoryTreeNode = {
+  name: string;
+  path: string;
+  children: MemoryTreeNode[];
+  result?: Crea8MemorySearchResult;
+};
+
+const memoryPathParts = (path: string | undefined, fallback: string): string[] => {
+  const normalized = (path || fallback).replace(/^\/+/, "");
+  const withoutRoot = normalized.replace(/^Memory\/?/, "");
+  return withoutRoot.split("/").filter(Boolean);
+};
+
+const buildMemoryTree = (results: Crea8MemorySearchResult[]): MemoryTreeNode => {
+  const root: MemoryTreeNode = { name: "Memory", path: "/Memory", children: [] };
+
+  for (const result of results) {
+    const parts = memoryPathParts(result.note.path, result.note.title);
+    let current = root;
+    let path = "/Memory";
+
+    parts.forEach((part, index) => {
+      path = `${path}/${part}`;
+      const isFile = index === parts.length - 1;
+      let child = current.children.find((node) => node.name === part);
+
+      if (!child) {
+        child = { name: part, path, children: [] };
+        current.children.push(child);
+      }
+
+      if (isFile) child.result = result;
+      current = child;
+    });
+  }
+
+  const sortNode = (node: MemoryTreeNode): MemoryTreeNode => ({
+    ...node,
+    children: node.children
+      .map(sortNode)
+      .sort((first, second) => {
+        if (Boolean(first.result) !== Boolean(second.result)) {
+          return first.result ? 1 : -1;
+        }
+        return first.name.localeCompare(second.name);
+      }),
+  });
+
+  return sortNode(root);
+};
+
+const MemoryTree: React.FC<{ node: MemoryTreeNode; depth?: number }> = ({
+  node,
+  depth = 0,
+}) => {
+  const isFile = Boolean(node.result);
+  const label = node.result?.note.title || node.name;
+
+  return (
+    <div>
+      <div
+        className="flex min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted/50"
+        style={{ paddingLeft: `${8 + depth * 16}px` }}
+      >
+        {isFile ? (
+          <FileTextIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        ) : (
+          <FolderIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate font-medium">{label}</span>
+            {node.result ? (
+              <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
+                {node.result.scope}
+              </Badge>
+            ) : null}
+          </div>
+          {node.result?.snippet ? (
+            <p className="line-clamp-2 text-muted-foreground">
+              {node.result.snippet}
+            </p>
+          ) : null}
+          {node.result?.note.path ? (
+            <p className="truncate text-[10px] text-muted-foreground/80">
+              {node.result.note.path}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      {node.children.map((child) => (
+        <MemoryTree key={child.path} node={child} depth={depth + 1} />
+      ))}
+    </div>
+  );
+};
+
 const SettingsCrea8MemoryComponent: React.FC = () => {
   const {
     proposals,
@@ -56,6 +163,9 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
   } = useVfsStore();
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [busyProposalId, setBusyProposalId] = useState<string | null>(null);
+  const [memoryResults, setMemoryResults] = useState<Crea8MemorySearchResult[]>([]);
+  const [memoryLoading, setMemoryLoading] = useState(false);
+  const [memoryError, setMemoryError] = useState<string | null>(null);
 
   useEffect(() => {
     void loadProposals();
@@ -93,6 +203,7 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
     () => [...proposals].sort(sortProposals),
     [proposals],
   );
+  const memoryTree = useMemo(() => buildMemoryTree(memoryResults), [memoryResults]);
 
   const updateDraft = useCallback((proposalId: string, value: string) => {
     setDrafts((currentDrafts) => ({
@@ -100,6 +211,34 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
       [proposalId]: value,
     }));
   }, []);
+
+  const loadMemoryTree = useCallback(async () => {
+    if (!fs) {
+      setMemoryResults([]);
+      return;
+    }
+
+    setMemoryLoading(true);
+    setMemoryError(null);
+    try {
+      const connector = createCrea8VfsConnector({
+        rootPath: "/Memory",
+        fsInstance: fs,
+      });
+      setMemoryResults(await connector.search({ text: "", limit: 500 }));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load memory tree.";
+      setMemoryError(message);
+      setMemoryResults([]);
+    } finally {
+      setMemoryLoading(false);
+    }
+  }, [fs]);
+
+  useEffect(() => {
+    void loadMemoryTree();
+  }, [loadMemoryTree]);
 
   const withBusyProposal = useCallback(
     async (proposalId: string, action: () => Promise<void>, message: string) => {
@@ -177,149 +316,205 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
         title="crea8 Memory"
         description="Review proposed memory notes before writing them to the current VFS workspace."
       >
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <Badge variant="outline">Pending {counts.pending}</Badge>
-              <Badge variant="secondary">Accepted {counts.accepted}</Badge>
-              <Badge variant="secondary">Rejected {counts.rejected}</Badge>
-              {configuredVfsKey || vfsKey ? (
-                <span className="text-xs text-muted-foreground">
-                  Workspace: {configuredVfsKey ?? vfsKey}
-                </span>
-              ) : null}
+        <Tabs defaultValue="proposals" className="space-y-3">
+          <TabsList>
+            <TabsTrigger value="proposals">Proposals</TabsTrigger>
+            <TabsTrigger value="tree">Knowledge Base</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="proposals" className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <Badge variant="outline">Pending {counts.pending}</Badge>
+                <Badge variant="secondary">Accepted {counts.accepted}</Badge>
+                <Badge variant="secondary">Rejected {counts.rejected}</Badge>
+                {configuredVfsKey || vfsKey ? (
+                  <span className="text-xs text-muted-foreground">
+                    Workspace: {configuredVfsKey ?? vfsKey}
+                  </span>
+                ) : null}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void loadProposals()}
+                disabled={loading}
+              >
+                <RefreshCwIcon />
+                Refresh
+              </Button>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => void loadProposals()}
-              disabled={loading}
-            >
-              <RefreshCwIcon />
-              Refresh
-            </Button>
-          </div>
 
-          {!vfsAvailable ? (
-            <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
-              No VFS workspace is available. Accepting a proposal needs the
-              current VFS workspace so markdown can be written under /Memory.
-            </p>
-          ) : null}
+            {!vfsAvailable ? (
+              <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
+                No VFS workspace is available. Accepting a proposal needs the
+                current VFS workspace so markdown can be written under /Memory.
+              </p>
+            ) : null}
 
-          {error ? (
-            <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              {error}
-            </p>
-          ) : null}
+            {error ? (
+              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {error}
+              </p>
+            ) : null}
 
-          {vfsError ? (
-            <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              VFS error: {vfsError}
-            </p>
-          ) : null}
+            {vfsError ? (
+              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                VFS error: {vfsError}
+              </p>
+            ) : null}
 
-          {loading ? (
-            <p className="text-sm text-muted-foreground">
-              Loading memory proposals...
-            </p>
-          ) : null}
+            {loading ? (
+              <p className="text-sm text-muted-foreground">
+                Loading memory proposals...
+              </p>
+            ) : null}
 
-          {!loading && sortedProposals.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No memory proposals yet.
-            </p>
-          ) : null}
+            {!loading && sortedProposals.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No memory proposals yet.
+              </p>
+            ) : null}
 
-          <div className="space-y-3">
-            {sortedProposals.map((proposal) => {
-              const isPending = proposal.status === "pending";
-              const isBusy = busyProposalId === proposal.id;
-              const draft = drafts[proposal.id] ?? proposalContent(proposal);
+            <div className="space-y-3">
+              {sortedProposals.map((proposal) => {
+                const isPending = proposal.status === "pending";
+                const isBusy = busyProposalId === proposal.id;
+                const draft = drafts[proposal.id] ?? proposalContent(proposal);
 
-              return (
-                <div
-                  key={proposal.id}
-                  className="space-y-3 rounded-md border bg-card p-3"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={statusBadgeVariant(proposal.status)}>
-                          {proposal.status}
-                        </Badge>
-                        <Badge variant="outline">{proposal.scope}</Badge>
-                        <h4 className="truncate text-sm font-medium">
-                          {proposal.title}
-                        </h4>
+                return (
+                  <div
+                    key={proposal.id}
+                    className="space-y-3 rounded-md border bg-card p-3"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={statusBadgeVariant(proposal.status)}>
+                            {proposal.status}
+                          </Badge>
+                          <Badge variant="outline">{proposal.scope}</Badge>
+                          <h4 className="truncate text-sm font-medium">
+                            {proposal.title}
+                          </h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {proposal.reason}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {proposal.reason}
-                      </p>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {isPending ? (
+                          <>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => void acceptProposal(proposal)}
+                              disabled={!vfsAvailable || vfsBusy || isBusy}
+                            >
+                              <CheckIcon />
+                              Accept
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => void rejectProposal(proposal)}
+                              disabled={isBusy}
+                            >
+                              <XIcon />
+                              Reject
+                            </Button>
+                          </>
+                        ) : null}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => void removeProposal(proposal)}
+                          disabled={isBusy}
+                        >
+                          <TrashIcon />
+                          Delete
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {isPending ? (
-                        <>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => void acceptProposal(proposal)}
-                            disabled={!vfsAvailable || vfsBusy || isBusy}
-                          >
-                            <CheckIcon />
-                            Accept
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => void rejectProposal(proposal)}
-                            disabled={isBusy}
-                          >
-                            <XIcon />
-                            Reject
-                          </Button>
-                        </>
+
+                    <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                      {proposal.source.conversationId ? (
+                        <span>Conversation: {proposal.source.conversationId}</span>
                       ) : null}
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => void removeProposal(proposal)}
-                        disabled={isBusy}
-                      >
-                        <TrashIcon />
-                        Delete
-                      </Button>
+                      {proposal.source.interactionId ? (
+                        <span>Interaction: {proposal.source.interactionId}</span>
+                      ) : null}
+                      {proposal.targetNote?.path ? (
+                        <span>Target: {proposal.targetNote.path}</span>
+                      ) : null}
                     </div>
-                  </div>
 
-                  <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-                    {proposal.source.conversationId ? (
-                      <span>Conversation: {proposal.source.conversationId}</span>
-                    ) : null}
-                    {proposal.source.interactionId ? (
-                      <span>Interaction: {proposal.source.interactionId}</span>
-                    ) : null}
-                    {proposal.targetNote?.path ? (
-                      <span>Target: {proposal.targetNote.path}</span>
-                    ) : null}
+                    <Textarea
+                      value={draft}
+                      onChange={(event) =>
+                        updateDraft(proposal.id, event.target.value)
+                      }
+                      readOnly={!isPending}
+                      className="min-h-36 resize-y text-xs"
+                    />
                   </div>
+                );
+              })}
+            </div>
+          </TabsContent>
 
-                  <Textarea
-                    value={draft}
-                    onChange={(event) =>
-                      updateDraft(proposal.id, event.target.value)
-                    }
-                    readOnly={!isPending}
-                    className="min-h-36 resize-y text-xs"
-                  />
+          <TabsContent value="tree" className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">Notes {memoryResults.length}</Badge>
+                <span className="text-xs text-muted-foreground">
+                  Markdown memory tree under /Memory
+                </span>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void loadMemoryTree()}
+                disabled={memoryLoading || vfsBusy}
+              >
+                <RefreshCwIcon className={memoryLoading ? "animate-spin" : ""} />
+                Refresh
+              </Button>
+            </div>
+
+            {memoryError ? (
+              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {memoryError}
+              </p>
+            ) : null}
+
+            {!vfsAvailable ? (
+              <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
+                No VFS workspace is available.
+              </p>
+            ) : null}
+
+            <ScrollArea className="h-[28rem] rounded-md border bg-background/50">
+              {memoryLoading ? (
+                <p className="p-4 text-sm text-muted-foreground">
+                  Loading memory tree...
+                </p>
+              ) : memoryResults.length === 0 ? (
+                <p className="p-4 text-sm text-muted-foreground">
+                  No accepted memory notes yet.
+                </p>
+              ) : (
+                <div className="p-2">
+                  <MemoryTree node={memoryTree} />
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
       </SettingsSection>
     </div>
   );

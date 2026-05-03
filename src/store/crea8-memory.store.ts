@@ -28,6 +28,7 @@ interface Crea8MemoryActions {
     proposedContent: string;
     source: Crea8MemorySourceRef;
     confidence?: number;
+    notify?: boolean;
   }) => Promise<string>;
   updateProposal: (
     id: string,
@@ -87,7 +88,9 @@ export const useCrea8MemoryStore = create(
 
       try {
         await PersistenceService.saveCrea8MemoryProposal(proposal);
-        toast.success("Memory proposal saved.");
+        if (input.notify !== false) {
+          toast.success("Memory proposal saved.");
+        }
         return proposal.id;
       } catch (error) {
         await get().loadProposals();
