@@ -10,6 +10,7 @@ interface UIState {
   isChatControlPanelOpen: Record<string, boolean>;
   isPromptControlPanelOpen: Record<string, boolean>;
   isSidebarCollapsed: boolean;
+  workspaceMode: "chat" | "documents";
   globalLoading: boolean;
   globalError: string | null;
   focusInputOnNextRender: boolean;
@@ -23,6 +24,7 @@ interface UIActions {
   toggleChatControlPanel: (panelId: string, isOpen?: boolean) => void;
   togglePromptControlPanel: (controlId: string, isOpen?: boolean) => void;
   toggleSidebar: (isCollapsed?: boolean) => void;
+  setWorkspaceMode: (mode: "chat" | "documents") => void;
   setGlobalLoading: (loading: boolean) => void;
   setGlobalError: (error: string | null) => void;
   setFocusInputFlag: (focus: boolean) => void;
@@ -39,6 +41,7 @@ export const useUIStateStore = create(
     isChatControlPanelOpen: {},
     isPromptControlPanelOpen: {},
     isSidebarCollapsed: false,
+    workspaceMode: "chat",
     globalLoading: false,
     globalError: null,
     focusInputOnNextRender: false,
@@ -84,6 +87,12 @@ export const useUIStateStore = create(
         emitter.emit(uiEvent.sidebarVisibilityChanged, {
           isCollapsed: newCollapsedState,
         });
+      }
+    },
+
+    setWorkspaceMode: (mode) => {
+      if (get().workspaceMode !== mode) {
+        set({ workspaceMode: mode });
       }
     },
 

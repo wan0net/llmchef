@@ -45,6 +45,7 @@ interface ProjectSettingsModalProps {
   onClose: () => void;
   projectId: string | null;
   module: ProjectSettingsControlModule;
+  initialTab?: string | null;
 }
 
 const projectParamsSchema = z.object({
@@ -61,6 +62,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   onClose,
   projectId,
   module,
+  initialTab,
 }) => {
   const { getProjectById, updateProject } = useProjectStore(
     useShallow((state) => ({
@@ -95,7 +97,13 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isProjectSyncing, setIsProjectSyncing] = useState(false);
   const [projectSyncAction, setProjectSyncAction] = useState<"pull" | "push" | null>(null);
-  const [activeTab, setActiveTab] = useState("prompt");
+  const [activeTab, setActiveTab] = useState(initialTab ?? "prompt");
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab ?? "prompt");
+    }
+  }, [initialTab, isOpen, projectId]);
 
   const { project, effectiveSettings } = useMemo(() => {
     const proj = projectId ? getProjectById(projectId) : null;

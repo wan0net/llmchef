@@ -85,7 +85,7 @@ export class ProjectSettingsControlModule implements ControlModule {
           onClose: props.onClose,
           projectId: props.targetId || null,
           module: this,
-          // initialTab: props.initialTab,
+          initialTab: props.initialTab,
         });
       }
     );

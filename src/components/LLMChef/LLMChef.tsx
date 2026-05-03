@@ -22,7 +22,7 @@ import { InputArea } from "@/components/LLMChef/prompt/InputArea";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { BookOpenText, Loader2, Menu, MessageSquare, ShieldCheck, X } from "lucide-react";
+import { Loader2, Menu, ShieldCheck, X } from "lucide-react";
 import {
   initializeControlModules,
   performFullInitialization,
@@ -82,9 +82,6 @@ interface LLMChefProps {
 export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [workspaceMode, setWorkspaceMode] = useState<"chat" | "documents">("chat");
-  const [documentsSidebarTarget, setDocumentsSidebarTarget] =
-    useState<HTMLDivElement | null>(null);
   const inputAreaRef = useRef<InputAreaRef>(null);
   const coreModApiRef = useRef<LLMChefModApi | null>(null);
   const { t } = useTranslation('common');
@@ -114,12 +111,20 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
       status: state.status,
     }))
   );
-  const { globalError, isSidebarCollapsed, isChatControlPanelOpen } =
+  const {
+    globalError,
+    isSidebarCollapsed,
+    isChatControlPanelOpen,
+    workspaceMode,
+    setWorkspaceMode,
+  } =
     useUIStateStore(
       useShallow((state) => ({
         globalError: state.globalError,
         isSidebarCollapsed: state.isSidebarCollapsed,
         isChatControlPanelOpen: state.isChatControlPanelOpen,
+        workspaceMode: state.workspaceMode,
+        setWorkspaceMode: state.setWorkspaceMode,
       }))
     );
 
@@ -495,7 +500,7 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
         },
       });
     },
-    [handlePromptSubmit],
+    [handlePromptSubmit, setWorkspaceMode],
   );
 
   if (isInitializing) {
@@ -543,66 +548,23 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
               </div>
             )}
           </div>
-          <div className="flex-shrink-0 border-b border-border p-2">
-            <div
-              className={cn(
-                "grid gap-1 rounded-md border border-border bg-card p-1",
-                isSidebarCollapsed ? "grid-cols-1" : "grid-cols-2",
-              )}
-            >
-              <button
-                type="button"
-                className={cn(
-                  "inline-flex h-8 items-center justify-center gap-1.5 rounded px-2 text-xs transition-colors",
-                  workspaceMode === "chat"
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-                onClick={() => setWorkspaceMode("chat")}
-                aria-label="Chats and projects"
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                {!isSidebarCollapsed ? "Chats" : null}
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  "inline-flex h-8 items-center justify-center gap-1.5 rounded px-2 text-xs transition-colors",
-                  workspaceMode === "documents"
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-                onClick={() => setWorkspaceMode("documents")}
-                aria-label="Documents"
-              >
-                <BookOpenText className="h-3.5 w-3.5" />
-                {!isSidebarCollapsed ? "Documents" : null}
-              </button>
-            </div>
-          </div>
           <div className="flex-grow overflow-y-auto overflow-x-hidden">
-            {workspaceMode === "chat" ? (
-              <>
-                <div className={cn(isSidebarCollapsed ? "hidden" : "block")}>
-                  <ChatControlWrapper
-                    controls={sidebarControls}
-                    panelId="sidebar"
-                    renderMode="full"
-                    className="h-full"
-                  />
-                </div>
-                <div className={cn(isSidebarCollapsed ? "block" : "hidden")}>
-                  <ChatControlWrapper
-                    controls={sidebarControls}
-                    panelId="sidebar"
-                    renderMode="icon"
-                    className="flex flex-col items-center gap-2 p-2"
-                  />
-                </div>
-              </>
-            ) : (
-              <div ref={setDocumentsSidebarTarget} className="h-full min-h-0" />
-            )}
+            <div className={cn(isSidebarCollapsed ? "hidden" : "block")}>
+              <ChatControlWrapper
+                controls={sidebarControls}
+                panelId="sidebar"
+                renderMode="full"
+                className="h-full"
+              />
+            </div>
+            <div className={cn(isSidebarCollapsed ? "block" : "hidden")}>
+              <ChatControlWrapper
+                controls={sidebarControls}
+                panelId="sidebar"
+                renderMode="icon"
+                className="flex flex-col items-center gap-2 p-2"
+              />
+            </div>
           </div>
           <div
             className={cn(
@@ -649,40 +611,8 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <div className="border-b border-border bg-card p-2">
-                <div className="grid grid-cols-2 gap-1 rounded-md border border-border bg-background p-1">
-                  <button
-                    type="button"
-                    className={cn(
-                      "inline-flex h-9 items-center justify-center gap-1.5 rounded px-2 text-xs transition-colors",
-                      workspaceMode === "chat"
-                        ? "bg-secondary text-secondary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    )}
-                    onClick={() => setWorkspaceMode("chat")}
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    Chats
-                  </button>
-                  <button
-                    type="button"
-                    className={cn(
-                      "inline-flex h-9 items-center justify-center gap-1.5 rounded px-2 text-xs transition-colors",
-                      workspaceMode === "documents"
-                        ? "bg-secondary text-secondary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    )}
-                    onClick={() => setWorkspaceMode("documents")}
-                  >
-                    <BookOpenText className="h-3.5 w-3.5" />
-                    Documents
-                  </button>
-                </div>
-              </div>
               <div className="flex-grow overflow-y-auto overflow-x-hidden bg-card">
-                {workspaceMode === "documents" ? (
-                  <div ref={setDocumentsSidebarTarget} className="h-full min-h-0" />
-                ) : sidebarControls.length > 0 ? (
+                {sidebarControls.length > 0 ? (
                   <ChatControlWrapper
                     controls={sidebarControls}
                     panelId="sidebar"
@@ -754,7 +684,6 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
               <DocumentsWorkspace
                 currentProjectId={currentProjectId}
                 onAskDocuments={handleAskDocuments}
-                sidebarPortalTarget={documentsSidebarTarget}
               />
             </React.Suspense>
           )}

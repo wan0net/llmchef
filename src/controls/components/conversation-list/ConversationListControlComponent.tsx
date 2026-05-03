@@ -13,9 +13,19 @@ import {
 } from "@/store/conversation.store";
 import { useProjectStore } from "@/store/project.store";
 import { useVfsStore } from "@/store/vfs.store";
+import { useUIStateStore } from "@/store/ui.store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusIcon, FolderPlusIcon, SearchIcon, DownloadIcon } from "lucide-react";
+import {
+  BookOpenTextIcon,
+  DownloadIcon,
+  FilesIcon,
+  FolderPlusIcon,
+  GitBranchIcon,
+  MessagesSquareIcon,
+  PlusIcon,
+  SearchIcon,
+} from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import type { SidebarItemType } from "@/types/llmchef/chat";
 import {
@@ -39,13 +49,26 @@ import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
 import { joinPath } from "@/lib/llmchef/file-manager-utils";
 import { createDirectoryOp } from "@/lib/llmchef/vfs-operations";
+import { cn } from "@/lib/utils";
+import { emitter } from "@/lib/llmchef/event-emitter";
+import { uiEvent } from "@/types/llmchef/events/ui.events";
+import { vfsEvent } from "@/types/llmchef/events/vfs.events";
+
+type ProjectSectionKind = "chats" | "wiki" | "files" | "git";
+
+interface ProjectSectionItem {
+  itemType: "project-section";
+  project: Project;
+  section: ProjectSectionKind;
+  count?: number;
+}
 
 export interface VirtualListItem {
   id: string; // Unique ID for the virtual list item (e.g., `project-${projectId}` or `conversation-${conversationId}`)
   originalId: string; // The actual ID of the project or conversation
-  type: SidebarItemType;
+  type: SidebarItemType | "project-section";
   level: number;
-  data: Project | Conversation; // The actual project or conversation data
+  data: Project | Conversation | ProjectSectionItem; // The actual project, conversation, or project section data
   updatedAt: Date; // For sorting
 }
 
@@ -131,6 +154,88 @@ const ensureAppVfs = async () => {
     return current.fs;
   }
   return current.initializeVFS(APP_VFS_KEY);
+};
+
+const projectSectionConfig = {
+  chats: {
+    label: "Chats",
+    icon: MessagesSquareIcon,
+    description: "Project conversations",
+  },
+  wiki: {
+    label: "Wiki",
+    icon: BookOpenTextIcon,
+    description: "Notes and knowledge base",
+  },
+  files: {
+    label: "Files",
+    icon: FilesIcon,
+    description: "Project filesystem",
+  },
+  git: {
+    label: "Git",
+    icon: GitBranchIcon,
+    description: "Project sync",
+  },
+} satisfies Record<
+  ProjectSectionKind,
+  {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    description: string;
+  }
+>;
+
+interface ProjectSectionRowProps {
+  item: ProjectSectionItem;
+  level: number;
+  isActive: boolean;
+  onOpen: (project: Project, section: ProjectSectionKind) => void;
+}
+
+const ProjectSectionRow: React.FC<ProjectSectionRowProps> = ({
+  item,
+  level,
+  isActive,
+  onOpen,
+}) => {
+  const config = projectSectionConfig[item.section];
+  const Icon = config.icon;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-xs transition-colors",
+              isActive
+                ? "bg-secondary text-secondary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+            style={{ paddingLeft: `${level * 12 + 10}px` }}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpen(item.project, item.section);
+            }}
+            aria-label={`${config.label} for ${item.project.name}`}
+          >
+            <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="min-w-0 flex-1 truncate">{config.label}</span>
+            {typeof item.count === "number" ? (
+              <span className="rounded border border-border px-1 text-[10px] leading-4 text-muted-foreground">
+                {item.count}
+              </span>
+            ) : null}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          <p>{config.description}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 };
 
 interface ConversationListControlComponentProps {
@@ -230,6 +335,12 @@ export const ConversationListControlComponent: React.FC<
         getProjectById: state.getProjectById,
       }))
     );
+  const { workspaceMode, setWorkspaceMode } = useUIStateStore(
+    useShallow((state) => ({
+      workspaceMode: state.workspaceMode,
+      setWorkspaceMode: state.setWorkspaceMode,
+    })),
+  );
 
   const isLoading = module.isLoading;
 
@@ -477,6 +588,50 @@ export const ConversationListControlComponent: React.FC<
     [editingItemId, selectItem],
   );
 
+  const handleOpenProjectSection = useCallback(
+    async (project: Project, section: ProjectSectionKind) => {
+      await Promise.resolve(selectItem(project.id, "project"));
+      setExpandedProjects((prev) => new Set(prev).add(project.id));
+
+      if (section === "chats") {
+        setWorkspaceMode("chat");
+        return;
+      }
+
+      if (section === "wiki") {
+        setWorkspaceMode("documents");
+        return;
+      }
+
+      if (section === "git") {
+        emitter.emit(uiEvent.openModalRequest, {
+          modalId: "projectSettingsModal",
+          targetId: project.id,
+          initialTab: "sync",
+        });
+        return;
+      }
+
+      try {
+        const vfsStore = useVfsStore.getState();
+        if (vfsStore.vfsKey !== APP_VFS_KEY) {
+          vfsStore.setVfsKey(APP_VFS_KEY);
+        }
+        await useVfsStore.getState().initializeVFS(APP_VFS_KEY);
+        useVfsStore.getState().setCurrentPath(project.path);
+        emitter.emit(vfsEvent.setVfsKeyRequest, { key: APP_VFS_KEY });
+        emitter.emit(vfsEvent.setCurrentPathRequest, { path: project.path });
+        emitter.emit(uiEvent.openModalRequest, {
+          modalId: "core-vfs-modal-panel",
+        });
+      } catch (error) {
+        console.error("Failed to open project files:", error);
+        toast.error("Failed to open project files.");
+      }
+    },
+    [selectItem, setWorkspaceMode],
+  );
+
   const repoNameMap = useMemo(() => {
     return new Map((syncRepos || []).map((r) => [r.id, r.name]));
   }, [syncRepos]);
@@ -508,8 +663,89 @@ export const ConversationListControlComponent: React.FC<
     const lowerCaseFilter = filterText.toLowerCase();
     const memoCache: Record<string, boolean> = {};
 
-    function addChildren(parentId: string | null, level: number) {
-      const childProjects = (projectsByParentId.get(parentId) || []).filter(
+    const sortNewestFirst = <T extends { updatedAt: Date }>(items: T[]): T[] =>
+      [...items].sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
+
+    function addProjectSection(
+      project: Project,
+      section: ProjectSectionKind,
+      level: number,
+      count?: number,
+    ) {
+      flatList.push({
+        id: `project-section-${project.id}-${section}`,
+        originalId: project.id,
+        type: "project-section",
+        level,
+        data: {
+          itemType: "project-section",
+          project,
+          section,
+          count,
+        },
+        updatedAt: project.updatedAt,
+      });
+    }
+
+    function addProject(project: Project, level: number) {
+      flatList.push({
+        id: `project-${project.id}`,
+        originalId: project.id,
+        type: "project",
+        level,
+        data: project,
+        updatedAt: project.updatedAt,
+      });
+
+      if (!expandedProjects.has(project.id)) {
+        return;
+      }
+
+      const projectConversations = sortNewestFirst(
+        (conversationsByProjectId.get(project.id) || []).filter((c) =>
+          c.title.toLowerCase().includes(lowerCaseFilter),
+        ),
+      );
+      const childProjects = sortNewestFirst(
+        (projectsByParentId.get(project.id) || []).filter(
+          (p) =>
+            itemMatchesFilterOrHasMatchingDescendant(
+              p.id,
+              "project",
+              lowerCaseFilter,
+              projects,
+              conversations,
+              projectsById,
+              conversationsByProjectId,
+              projectsByParentId,
+              memoCache,
+            ),
+        ),
+      );
+
+      addProjectSection(project, "chats", level + 1, projectConversations.length);
+      projectConversations.forEach((conversation) => {
+        flatList.push({
+          id: `conversation-${conversation.id}`,
+          originalId: conversation.id,
+          type: "conversation",
+          level: level + 2,
+          data: conversation,
+          updatedAt: conversation.updatedAt,
+        });
+      });
+      addProjectSection(project, "wiki", level + 1);
+      addProjectSection(project, "files", level + 1);
+      addProjectSection(project, "git", level + 1);
+
+      childProjects.forEach((childProject) => addProject(childProject, level + 1));
+    }
+
+    function addRootChildren() {
+      const childProjects = (projectsByParentId.get(null) || []).filter(
         (p) =>
           itemMatchesFilterOrHasMatchingDescendant(
             p.id,
@@ -525,7 +761,7 @@ export const ConversationListControlComponent: React.FC<
       );
 
       const childConversations = (
-        conversationsByProjectId.get(parentId) || []
+        conversationsByProjectId.get(null) || []
       ).filter((c) => c.title.toLowerCase().includes(lowerCaseFilter));
 
       const combinedChildren: (Project | Conversation)[] = [
@@ -540,23 +776,13 @@ export const ConversationListControlComponent: React.FC<
 
       combinedChildren.forEach((item) => {
         if ("path" in item) {
-          flatList.push({
-            id: `project-${item.id}`,
-            originalId: item.id,
-            type: "project",
-            level,
-            data: item,
-            updatedAt: item.updatedAt,
-          });
-          if (expandedProjects.has(item.id)) {
-            addChildren(item.id, level + 1);
-          }
+          addProject(item, 0);
         } else {
           flatList.push({
             id: `conversation-${item.id}`,
             originalId: item.id,
             type: "conversation",
-            level,
+            level: 0,
             data: item,
             updatedAt: item.updatedAt,
           });
@@ -564,7 +790,7 @@ export const ConversationListControlComponent: React.FC<
       });
     }
 
-    addChildren(null, 0);
+    addRootChildren();
     return flatList;
   }, [
     projects,
@@ -579,7 +805,7 @@ export const ConversationListControlComponent: React.FC<
   const rowVirtualizer = useVirtualizer({
     count: flattenedVisibleItems.length,
     getScrollElement: () => viewportRef.current,
-    estimateSize: () => 30,
+    estimateSize: () => 32,
     overscan: 10,
   });
 
@@ -692,6 +918,39 @@ export const ConversationListControlComponent: React.FC<
             rowVirtualizer.getVirtualItems().map((virtualItem) => {
               const item = flattenedVisibleItems[virtualItem.index];
               if (!item) return null;
+
+              if (item.type === "project-section") {
+                const sectionItem = item.data as ProjectSectionItem;
+                const isActive =
+                  selectedItemId === sectionItem.project.id &&
+                  selectedItemType === "project" &&
+                  ((sectionItem.section === "chats" &&
+                    workspaceMode === "chat") ||
+                    (sectionItem.section === "wiki" &&
+                      workspaceMode === "documents"));
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: `${virtualItem.size}px`,
+                      transform: `translateY(${virtualItem.start}px)`,
+                    }}
+                    className="px-1"
+                  >
+                    <ProjectSectionRow
+                      item={sectionItem}
+                      level={item.level}
+                      isActive={isActive}
+                      onOpen={handleOpenProjectSection}
+                    />
+                  </div>
+                );
+              }
 
               // Reconstruct the SidebarItem to include the itemType property, which the
               // VirtualListItem's `data` object lacks.
