@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useMcpStore, type McpServerConfig } from "@/store/mcp.store";
+import { useMcpStore } from "@/store/mcp.store";
+import type { McpServerConfig } from "@/types/llmchef/mcp";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

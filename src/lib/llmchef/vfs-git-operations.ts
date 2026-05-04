@@ -11,17 +11,42 @@ import {
 import git from "isomorphic-git";
 import http from "isomorphic-git/http/web";
 import { useSettingsStore } from "@/store/settings.store";
+import {
+  createGitAuthRuntime,
+  createGitSettingsSnapshot,
+} from "./vfs-git-runtime";
+import { createGitOperationOptionsBuilder } from "./vfs-git-operation-options";
+import { ensureLocalPullBranch } from "./vfs-git-pull-branch";
 
-// --- Helper Functions ---
-function getCorsProxyUrl(): string {
-  return useSettingsStore.getState().corsProxyUrl;
-}
+const getGitSettings = () => createGitSettingsSnapshot(useSettingsStore.getState());
 
-// --- Session Credentials Store ---
-const sessionCredentials = new Map<
-  string,
-  { username?: string; password?: string }
->();
+const gitAuthRuntime = createGitAuthRuntime({
+  promptForCredentials: async (url) => {
+    console.log(
+      `[VFS Git Op] No stored or session credentials found for ${url}. Prompting user.`,
+    );
+
+    const username = window.prompt(`Enter username for ${url}`);
+    if (!username) {
+      toast.error("Authentication cancelled: Username not provided.");
+      return null;
+    }
+
+    const password = window.prompt(
+      `Enter password or token for ${username}@${url}`,
+    );
+    if (!password) {
+      toast.error("Authentication cancelled: Password/token not provided.");
+      return null;
+    }
+
+    console.log(
+      `[VFS Git Op] Stored prompted credentials in session for ${new URL(url).origin}`,
+    );
+
+    return { username, password };
+  },
+});
 
 // --- Helper Functions ---
 
@@ -29,7 +54,7 @@ const ensureGitConfig = async (
   dir: string,
   fsInstance: typeof fs,
 ): Promise<boolean> => {
-  const { gitUserName, gitUserEmail } = useSettingsStore.getState();
+  const { gitUserName, gitUserEmail } = getGitSettings();
   if (!gitUserName || !gitUserEmail) {
     toast.error(
       "Git user name and email must be configured in Settings before committing.",
@@ -74,77 +99,35 @@ const onAuth = async (
   url: string,
   storedCreds?: { username?: string | null; password?: string | null },
 ): Promise<any> => {
-  const urlOrigin = new URL(url).origin;
   console.log(`[VFS Git Op] Auth requested for ${url}`);
-
-  if (storedCreds?.username && storedCreds?.password) {
+  const auth = await gitAuthRuntime.onAuth(url, storedCreds);
+  if (auth && storedCreds?.username && storedCreds?.password) {
     console.log(`[VFS Git Op] Using stored credentials for ${url}`);
-    return {
-      username: storedCreds.username,
-      password: storedCreds.password,
-      authScheme: "Basic",
-    };
-  }
-
-  const sessionCred = sessionCredentials.get(urlOrigin);
-  if (sessionCred?.username && sessionCred?.password) {
+  } else if (auth) {
     console.log(`[VFS Git Op] Using session credentials for ${url}`);
-    return {
-      username: sessionCred.username,
-      password: sessionCred.password,
-      authScheme: "Basic",
-    };
   }
-
-  console.log(
-    `[VFS Git Op] No stored or session credentials found for ${url}. Prompting user.`,
-  );
-  const username = window.prompt(`Enter username for ${url}`);
-  if (!username) {
-    toast.error("Authentication cancelled: Username not provided.");
-    return null;
-  }
-  const password = window.prompt(
-    `Enter password or token for ${username}@${url}`,
-  );
-  if (!password) {
-    toast.error("Authentication cancelled: Password/token not provided.");
-    return null;
-  }
-
-  sessionCredentials.set(urlOrigin, { username, password });
-  console.log(
-    `[VFS Git Op] Stored prompted credentials in session for ${urlOrigin}`,
-  );
-
-  return { username, password, authScheme: "Basic" };
+  return auth;
 };
 
 const onAuthFailure = (url: string, auth: any): any => {
-  const urlOrigin = new URL(url).origin;
   console.error(`[VFS Git Op] Auth FAILED for ${url}`, auth);
-  if (sessionCredentials.has(urlOrigin)) {
-    console.log(
-      `[VFS Git Op] Clearing failed session credentials for ${urlOrigin}`,
-    );
-    sessionCredentials.delete(urlOrigin);
-  }
-  return null;
+  return gitAuthRuntime.onAuthFailure(url, auth);
 };
 
 const onAuthSuccess = (url: string, auth: any): void => {
   console.log(`[VFS Git Op] Auth SUCCESS for ${url}`, auth);
-  const urlOrigin = new URL(url).origin;
-  if (!sessionCredentials.has(urlOrigin) && auth.username && auth.password) {
-    sessionCredentials.set(urlOrigin, {
-      username: auth.username,
-      password: auth.password,
-    });
-    console.log(
-      `[VFS Git Op] Stored successful prompted credentials in session for ${urlOrigin}`,
-    );
-  }
+  gitAuthRuntime.onAuthSuccess(url, auth);
 };
+
+const getGitOperationOptionsBuilder = () =>
+  createGitOperationOptionsBuilder({
+    settings: getGitSettings(),
+    authRuntime: {
+      onAuth,
+      onAuthFailure,
+      onAuthSuccess,
+    },
+  });
 
 const formatGitHttpError = (error: any): string => {
   if (error.name === "HttpError" && error.data) {
@@ -245,6 +228,9 @@ export const gitCloneOp = async (
       // Try cloning with each common default branch until one succeeds
       let cloneSuccess = false;
       let lastError: any = null;
+      const remoteOptions = getGitOperationOptionsBuilder().buildRemoteOptions(
+        credentials,
+      );
       
       for (const defaultBranch of commonDefaultBranches) {
         try {
@@ -254,14 +240,11 @@ export const gitCloneOp = async (
             fs: fsToUse,
             http,
             dir,
-            corsProxy: getCorsProxyUrl(),
             url,
             ref: defaultBranch,
             singleBranch: true,
             depth: 10,
-            onAuth: (authUrl) => onAuth(authUrl, credentials),
-            onAuthFailure,
-            onAuthSuccess,
+            ...remoteOptions,
             onProgress: (e) => {
               if (e.phase === "counting objects" && e.total) {
                 console.log(`Clone progress: ${e.phase} ${e.loaded}/${e.total}`);
@@ -297,18 +280,18 @@ export const gitCloneOp = async (
       }
     } else {
       // If branch is specified, clone with that specific branch
+      const remoteOptions = getGitOperationOptionsBuilder().buildRemoteOptions(
+        credentials,
+      );
       await git.clone({
         fs: fsToUse,
         http,
         dir,
-        corsProxy: getCorsProxyUrl(),
         url,
         ref: branchToCheckout,
         singleBranch: true,
         depth: 10,
-        onAuth: (authUrl) => onAuth(authUrl, credentials),
-        onAuthFailure,
-        onAuthSuccess,
+        ...remoteOptions,
         onProgress: (e) => {
           if (e.phase === "counting objects" && e.total) {
             console.log(`Clone progress: ${e.phase} ${e.loaded}/${e.total}`);
@@ -462,14 +445,12 @@ export const gitCommitOp = async (
       return;
     }
 
+    const author = getGitOperationOptionsBuilder().buildAuthor();
     const sha = await git.commit({
       fs: fsToUse,
       dir,
       message,
-      author: {
-        name: useSettingsStore.getState().gitUserName!,
-        email: useSettingsStore.getState().gitUserEmail!,
-      },
+      author,
     });
     toast.success(`Changes committed: ${sha.substring(0, 7)}`);
   } catch (err: unknown) {
@@ -509,88 +490,44 @@ export const gitPullOp = async (
 
     console.log(`[VFS Git Op] Pulling branch ${branch} for ${dir}`);
 
-    // Ensure the target branch exists locally and is checked out
-    const currentLocalBranch = await git
-      .currentBranch({ fs: fsToUse, dir, fullname: false })
-      .catch(() => null);
+    const remoteOptions = getGitOperationOptionsBuilder().buildRemoteOptions(
+      credentials,
+    );
 
-    if (currentLocalBranch !== branch) {
-      console.log(
-        `[VFS Git Op] Current branch is ${currentLocalBranch}, switching to ${branch} before pull...`,
-      );
-      try {
-        // Try checking out existing local branch
-        await git.checkout({ fs: fsToUse, dir, ref: branch });
-      } catch (checkoutError: any) {
-        // If checkout fails because local branch doesn't exist, try creating it from remote
-        if (checkoutError.code === "NotFoundError") {
-          console.log(
-            `[VFS Git Op] Local branch ${branch} not found. Attempting to fetch and create...`,
-          );
-          try {
-            // Fetch the specific branch first to ensure remote ref exists
-            await git.fetch({
-              fs: fsToUse,
-              http,
-              dir,
-              corsProxy: getCorsProxyUrl(),
-              remote: "origin",
-              ref: branch,
-              depth: 1,
-              singleBranch: true,
-              tags: false,
-              onAuth: (authUrl) => onAuth(authUrl, credentials),
-              onAuthFailure,
-              onAuthSuccess,
-            });
-            // Create local branch pointing to the fetched remote branch
-            await git.branch({
-              fs: fsToUse,
-              dir,
-              ref: branch,
-              checkout: true,
-            });
-            console.log(
-              `[VFS Git Op] Successfully created and checked out local branch ${branch}.`,
-            );
-          } catch (createBranchError) {
-            console.error(
-              `[VFS Git Op] Failed to create local branch ${branch} from remote:`,
-              createBranchError,
-            );
-            throw new Error(
-              `Failed to switch to or create local branch "${branch}": ${formatGitHttpError(createBranchError)}`,
-            );
-          }
-        } else {
-          // Rethrow other checkout errors
-          console.error(
-            `[VFS Git Op] Failed to checkout branch ${branch}:`,
-            checkoutError,
-          );
-          throw new Error(
-            `Failed to checkout branch "${branch}": ${formatGitHttpError(checkoutError)}`,
-          );
-        }
-      }
-    }
+    await ensureLocalPullBranch({
+      branch,
+      gitOps: {
+        getCurrentBranch: () =>
+          git.currentBranch({ fs: fsToUse, dir, fullname: false }).catch(() => null),
+        checkoutBranch: (ref) => git.checkout({ fs: fsToUse, dir, ref }),
+        fetchBranchFromRemote: (ref) =>
+          git.fetch({
+            fs: fsToUse,
+            http,
+            dir,
+            remote: "origin",
+            ref,
+            depth: 1,
+            singleBranch: true,
+            tags: false,
+            ...remoteOptions,
+          }),
+        createAndCheckoutBranch: (ref) =>
+          git.branch({ fs: fsToUse, dir, ref, checkout: true }),
+      },
+      formatError: formatGitHttpError,
+    });
 
-    // Now perform the pull operation on the (now checked out) branch
+    const author = getGitOperationOptionsBuilder().buildAuthor();
+
     await git.pull({
       fs: fsToUse,
       http,
       dir,
       ref: branch,
       singleBranch: true,
-      author: {
-        // Required for potential merge commits
-        name: useSettingsStore.getState().gitUserName!,
-        email: useSettingsStore.getState().gitUserEmail!,
-      },
-      corsProxy: getCorsProxyUrl(),
-      onAuth: (authUrl) => onAuth(authUrl, credentials),
-      onAuthFailure,
-      onAuthSuccess,
+      author,
+      ...remoteOptions,
     });
 
     toast.success(`Pulled changes successfully for "${basename(dir)}"`);
@@ -631,18 +568,18 @@ export const gitPushOp = async (
       throw new Error("Branch name must be provided for push operation.");
     }
     console.log(`[VFS Git Op] Pushing local branch ${branch} for ${dir}`);
+    const remoteOptions = getGitOperationOptionsBuilder().buildRemoteOptions(
+      credentials,
+    );
     const result = await git.push({
       fs: fsToUse,
       http,
       dir,
-      corsProxy: getCorsProxyUrl(),
       ref: branch,
       remote: "origin",
       remoteRef: `refs/heads/${branch}`,
       force: false,
-      onAuth: (authUrl) => onAuth(authUrl, credentials),
-      onAuthFailure,
-      onAuthSuccess,
+      ...remoteOptions,
     });
 
     if (result?.ok) {

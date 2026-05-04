@@ -2,7 +2,8 @@ import { type ControlModule } from "@/types/llmchef/control";
 import {
   type LLMChefModApi,
 } from "@/types/llmchef/modding";
-import { useMcpStore, type McpServerConfig } from "@/store/mcp.store";
+import { useMcpStore } from "@/store/mcp.store";
+import type { McpServerConfig } from "@/types/llmchef/mcp";
 import { mcpEvent } from "@/types/llmchef/events/mcp.events";
 import { experimental_createMCPClient } from "ai";
 import { Tool } from "ai";

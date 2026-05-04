@@ -2,7 +2,7 @@
 import type { DbRule } from './rules';
 import type { PromptTemplate } from './prompt-template';
 import type { WorkflowTemplate } from './workflow';
-import type { McpServerConfig } from '@/store/mcp.store';
+import type { McpServerConfig } from "@/types/llmchef/mcp";
 
 export type MarketplaceItemType = "rule" | "template" | "agent" | "workflow" | "mcp-server" | "config-bundle";
 

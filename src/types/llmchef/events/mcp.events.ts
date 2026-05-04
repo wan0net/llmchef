@@ -1,4 +1,9 @@
-import type { McpPackageImport, McpPackageRuntimeInstall, McpState, McpServerConfig } from "@/store/mcp.store";
+import type {
+  McpPackageImport,
+  McpPackageRuntimeInstall,
+  McpState,
+  McpServerConfig,
+} from "@/types/llmchef/mcp";
 
 export const mcpEvent = {
   // State Change Events

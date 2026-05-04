@@ -1,7 +1,7 @@
 {
   "name": "llmchef",
   "private": true,
-  "version": "0.2.9-beta",
+  "version": "0.2.13-beta",
   "type": "module",
   "homepage": "https://wan0.net/llmchef",
   "repository": {
@@ -24,8 +24,10 @@
     "test:ui": "DEBUG_PRINT_LIMIT=10000 vitest --ui",
     "coverage": "DEBUG_PRINT_LIMIT=10000 vitest run --coverage",
     "vendor:pyodide": "node scripts/vendor-pyodide.mjs",
-    "release:local": "npm run vendor:pyodide && npm run build && bin/releaser",
-    "deploy": "npm run release:local && npm run build:pages && gh-pages -d dist --no-history --dotfiles --remove \".proompts/**/*\"",
+    "release:local": "npm run version:check && npm run vendor:pyodide && npm run build && bin/releaser",
+    "release:verify": "node scripts/verify-release-artifacts.mjs",
+    "version:check": "node scripts/check-version-consistency.mjs",
+    "deploy": "npm run release:local && npm run build:pages && npm run release:verify && gh-pages -d dist --no-history --dotfiles",
     "to2web": "npm run deploy",
     "serve": "npm run build && npx http-server dist --port ${LLMCHEF_PORT:=5173}",
     "update": "git pull ${LLMCHEF_ORIGIN:=origin} ${LLMCHEF_BRANCH:=main} && npm install && npm run serve"

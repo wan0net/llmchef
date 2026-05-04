@@ -5,7 +5,10 @@ import { normalizePath } from "./file-manager-utils";
 import { readFileOp, writeFileOp } from "./vfs-operations";
 import { useVfsStore } from "@/store/vfs.store";
 import { withTransientAllowedOutboundHost } from "@/services/outbound-fetch-guard.service";
-import type { McpPackageImport, McpPackageRuntimeInstall } from "@/store/mcp.store";
+import type {
+  McpPackageImport,
+  McpPackageRuntimeInstall,
+} from "@/types/llmchef/mcp";
 
 export interface McpJsRuntimeInstallOptions {
   registryBaseUrl: string;
