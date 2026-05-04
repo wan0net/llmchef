@@ -146,7 +146,7 @@ export const useCrea8MemoryStore = create(
         });
 
         await PersistenceService.saveCrea8MemoryProposal(updated);
-        toast.success("Memory proposal written to crea8.");
+        toast.success("Memory proposal written to the project wiki.");
       } catch (error) {
         await get().loadProposals();
         throw error;

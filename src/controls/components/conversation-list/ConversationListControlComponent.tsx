@@ -409,10 +409,23 @@ export const ConversationListControlComponent: React.FC<
     return null;
   }, [selectedItemId, selectedItemType, getConversationById]);
 
+  const ensureProjectForNewChat = useCallback(async () => {
+    const parentProjectId = getParentProjectId();
+    if (parentProjectId) return parentProjectId;
+
+    const newProjectId = await addProject({
+      name: t('conversationList.newProject'),
+      parentId: null,
+    });
+    setExpandedProjects((prev) => new Set(prev).add(newProjectId));
+    toast.success("Created a project for this chat.");
+    return newProjectId;
+  }, [addProject, getParentProjectId, t]);
+
   const handleNewChat = useCallback(async () => {
     if (editingItemId) return;
     try {
-      const parentProjectId = getParentProjectId();
+      const parentProjectId = await ensureProjectForNewChat();
       const newId = await addConversation({
         title: t('conversationList.newChat'),
         projectId: parentProjectId,
@@ -422,7 +435,7 @@ export const ConversationListControlComponent: React.FC<
       console.error("Failed to create new chat:", error);
       toast.error(t('conversationList.newChatError'));
     }
-  }, [editingItemId, getParentProjectId, addConversation, selectItem, t]);
+  }, [editingItemId, ensureProjectForNewChat, addConversation, selectItem, t]);
 
   const handleNewProject = useCallback(async () => {
     if (editingItemId) return;
@@ -486,21 +499,24 @@ export const ConversationListControlComponent: React.FC<
       const targetName = window.prompt(
         t(
           "conversationList.moveConversationPrompt",
-          "Move to project name. Leave blank for no project."
+          "Move to project name."
         ),
         ""
       );
       if (targetName === null) return;
 
       const trimmedTargetName = targetName.trim();
-      const targetProject = trimmedTargetName
-        ? projects.find(
-            (project) =>
-              project.name.toLowerCase() === trimmedTargetName.toLowerCase()
-          )
-        : null;
+      if (!trimmedTargetName) {
+        toast.error("Choose a project. Chats cannot live outside a project.");
+        return;
+      }
 
-      if (trimmedTargetName && !targetProject) {
+      const targetProject = projects.find(
+        (project) =>
+          project.name.toLowerCase() === trimmedTargetName.toLowerCase()
+      );
+
+      if (!targetProject) {
         toast.error(
           t("conversationList.moveConversationProjectNotFound", {
             projectName: trimmedTargetName,
@@ -511,15 +527,13 @@ export const ConversationListControlComponent: React.FC<
       }
 
       await updateConversation(conversation.id, {
-        projectId: targetProject?.id ?? null,
+        projectId: targetProject.id,
       });
-      if (targetProject) {
-        setExpandedProjects((prev) => new Set(prev).add(targetProject.id));
-      }
+      setExpandedProjects((prev) => new Set(prev).add(targetProject.id));
       toast.success(
         t("conversationList.moveConversationSuccess", {
-          projectName: targetProject?.name ?? "root",
-          defaultValue: `Moved to ${targetProject?.name ?? "root"}.`,
+          projectName: targetProject.name,
+          defaultValue: `Moved to ${targetProject.name}.`,
         })
       );
     },

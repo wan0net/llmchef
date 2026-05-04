@@ -4,6 +4,12 @@ import {
   type UniversalBlockData,
 } from "@/lib/llmchef/useMarkdownParser";
 
+const MermaidBlockRenderer = React.lazy(() =>
+  import("@/components/LLMChef/common/MermaidBlockRenderer").then((module) => ({
+    default: module.MermaidBlockRenderer,
+  })),
+);
+
 const WikiMarkdownPreview: React.FC<{ markdown: string }> = ({ markdown }) => {
   const parsedContent = useMarkdownParser(markdown);
 
@@ -30,6 +36,21 @@ const WikiMarkdownPreview: React.FC<{ markdown: string }> = ({ markdown }) => {
         }
 
         const block = item as UniversalBlockData;
+        if (block.lang?.toLowerCase() === "mermaid") {
+          return (
+            <React.Suspense
+              key={`block-${index}`}
+              fallback={
+                <div className="rounded-md border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+                  Rendering diagram...
+                </div>
+              }
+            >
+              <MermaidBlockRenderer code={block.code} />
+            </React.Suspense>
+          );
+        }
+
         return (
           <pre
             key={`block-${index}`}

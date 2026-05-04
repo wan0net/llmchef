@@ -28,7 +28,6 @@ const AUTO_MEMORY_TYPES = new Set<Interaction["type"]>([
 const MIN_RESPONSE_LENGTH = 180;
 const MAX_CONTENT_LENGTH = 6000;
 const MAX_TITLE_LENGTH = 80;
-const GLOBAL_DOCUMENTS_ROOT = "/Documents";
 const SECOND_BRAIN_SECTIONS = [
   "Findings",
   "Decisions",
@@ -93,9 +92,10 @@ const slugSegment = (value: string): string =>
     ?.join("-")
     .slice(0, 80) || "memory";
 
-const taxonomyRootForInteraction = (interaction: Interaction): string => {
+const taxonomyRootForInteraction = (interaction: Interaction): string | null => {
   const { project } = projectForInteraction(interaction);
-  return joinPath(project?.path ?? GLOBAL_DOCUMENTS_ROOT, "Wiki", "Second Brain");
+  if (!project) return null;
+  return joinPath(project.path, "Wiki", "Second Brain");
 };
 
 const classifyTaxonomySection = (
@@ -238,11 +238,15 @@ export class Crea8MemoryAutomationService {
     if (!fs) throw new Error("App VFS is not available.");
 
     const { conversation, project } = projectForInteraction(interaction);
+    if (!project || !conversation?.projectId) {
+      return;
+    }
     const scope = scopeFromInteraction(interaction);
     const title = titleFromInteraction(interaction, response);
     const section = classifyTaxonomySection(interaction, response, scope);
     const topic = classifyTopic(interaction, response);
     const rootPath = taxonomyRootForInteraction(interaction);
+    if (!rootPath) return;
     const proposedContent = buildMemoryContent(interaction, response, section, topic);
 
     await this.ensureSecondBrainScaffold(rootPath, project?.name ?? "LLMChef");

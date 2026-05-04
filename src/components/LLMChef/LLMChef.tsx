@@ -48,8 +48,7 @@ import type { LLMChefModApi } from "@/types/llmchef/modding";
 import { WorkflowService } from "@/services/workflow.service";
 import { Crea8MemoryAutomationService } from "@/services/crea8-memory-automation.service";
 import { useTranslation } from "react-i18next";
-import { nanoid } from "nanoid";
-import type { AttachedFileMetadata } from "@/store/input.store";
+import { buildProjectDocumentSearchContext } from "@/lib/llmchef/project-document-search";
 
 let initializedControlModules: ControlModule[] = [];
 let appInitializationPromise: Promise<ControlModule[]> | null = null;
@@ -410,7 +409,7 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
 
   const createAndSelectConversation = async (data: {
     title: string;
-    projectId: string | null;
+    projectId: string;
   }): Promise<string> => {
     const conversationState = useConversationStore.getState();
     const newId = await conversationState.addConversation(data);
@@ -419,6 +418,74 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
     console.log("conv selected:", newId);
     return newId;
   };
+
+  const ensureProjectForActivity = useCallback(async (candidateProjectId: string | null) => {
+    const projectState = useProjectStore.getState();
+    if (candidateProjectId && projectState.getProjectById(candidateProjectId)) {
+      return candidateProjectId;
+    }
+
+    const newProjectId = await projectState.addProject({
+      name: "Untitled Project",
+      parentId: null,
+    });
+    toast.success("Created a project for this chat.");
+    return newProjectId;
+  }, []);
+
+  const withProjectDocumentSearchContext = useCallback(
+    async (turnData: PromptTurnObject, projectId: string): Promise<PromptTurnObject> => {
+      const query = turnData.content.trim();
+      if (!query) return turnData;
+
+      const existingFiles = turnData.metadata?.attachedFiles ?? [];
+      if (existingFiles.some((file) => file.name === "project-documents-search.md")) {
+        return turnData;
+      }
+
+      const project = useProjectStore.getState().getProjectById(projectId);
+      if (!project) return turnData;
+
+      try {
+        const fsInstance = await useVfsStore.getState().initializeVFS(APP_VFS_KEY);
+        const retrieval = await buildProjectDocumentSearchContext({
+          projectPath: project.path,
+          query,
+          fsInstance,
+        });
+
+        if (retrieval.chunkCount === 0) return turnData;
+
+        const contextSize = new TextEncoder().encode(retrieval.content).byteLength;
+        return {
+          ...turnData,
+          metadata: {
+            ...turnData.metadata,
+            attachedFiles: [
+              ...existingFiles,
+              {
+                id: `project-doc-search-${turnData.id}`,
+                source: "direct",
+                name: "project-documents-search.md",
+                type: "text/markdown",
+                size: contextSize,
+                contentText: retrieval.content,
+              },
+            ],
+            projectDocumentSearch: {
+              projectId,
+              docCount: retrieval.docCount,
+              chunkCount: retrieval.chunkCount,
+            },
+          },
+        };
+      } catch (error) {
+        console.warn("[LLMChef] Project document search unavailable.", error);
+        return turnData;
+      }
+    },
+    [],
+  );
 
   const handlePromptSubmit = useCallback(async (turnData: PromptTurnObject) => {
     if (!coreModApiRef.current) {
@@ -432,7 +499,7 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
         ? conversationState.selectedItemId
         : null;
 
-    const currentProjectId =
+    let currentProjectId =
       conversationState.selectedItemType === "project"
         ? conversationState.selectedItemId
         : conversationState.selectedItemType === "conversation"
@@ -440,6 +507,14 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
             conversationState.selectedItemId
           )?.projectId ?? null
         : null;
+
+    try {
+      currentProjectId = await ensureProjectForActivity(currentProjectId);
+    } catch (error) {
+      console.error("[LLMChef] App: Failed to ensure project", error);
+      toast.error("Create or select a project before chatting.");
+      return;
+    }
 
     if (!currentConvId) {
       try {
@@ -456,14 +531,23 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
         toast.error(t('failedToStartNewChat'));
         return;
       }
+    } else {
+      const selectedConversation = conversationState.getConversationById(currentConvId);
+      if (selectedConversation && !selectedConversation.projectId) {
+        await conversationState.updateConversation(currentConvId, {
+          projectId: currentProjectId,
+        });
+      }
     }
 
     try {
       const currentPromptState = usePromptStateStore.getState();
+      const turnDataWithDocumentContext =
+        await withProjectDocumentSearchContext(turnData, currentProjectId);
       const finalTurnData = {
-        ...turnData,
+        ...turnDataWithDocumentContext,
         metadata: {
-          ...turnData.metadata,
+          ...turnDataWithDocumentContext.metadata,
           modelId: currentPromptState.modelId,
         },
       };
@@ -472,7 +556,7 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
       console.error("[LLMChef] App: Error submitting prompt:", error);
       toast.error(t('failedToSendMessage'));
     }
-  }, [t]);
+  }, [ensureProjectForActivity, t, withProjectDocumentSearchContext]);
 
   const currentConversationIdForCanvas =
     selectedItemType === "conversation" ? selectedItemId : null;
@@ -483,25 +567,6 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
     }
     return null;
   }, [getConversationByIdFromStore, selectedItemId, selectedItemType]);
-
-  const handleAskDocuments = useCallback(
-    async (question: string, files: Omit<AttachedFileMetadata, "id">[]) => {
-      setWorkspaceMode("chat");
-      await handlePromptSubmit({
-        id: nanoid(),
-        content: question,
-        parameters: {},
-        metadata: {
-          attachedFiles: files.map((file) => ({
-            id: nanoid(),
-            ...file,
-          })),
-          autoTitleEnabledForTurn: true,
-        },
-      });
-    },
-    [handlePromptSubmit, setWorkspaceMode],
-  );
 
   if (isInitializing) {
     return (
@@ -683,7 +748,6 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
             >
               <DocumentsWorkspace
                 currentProjectId={currentProjectId}
-                onAskDocuments={handleAskDocuments}
               />
             </React.Suspense>
           )}

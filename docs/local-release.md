@@ -13,6 +13,17 @@ This creates:
 - `public/release/latest.zip`
 - `public/release/llmchef-<version>.zip`
 
+## Desktop Bundle
+
+LLMChef also has a Tauri v2 shell for running the same static app as a desktop client:
+
+```bash
+npm run tauri:dev
+npm run tauri:build
+```
+
+The desktop shell uses the regular Vite build output as its frontend (`src-tauri/tauri.conf.json` points at `../dist`). Tauri permissions are intentionally minimal: the default capability grants core app, event, and window APIs only. File, shell, and extra OS capabilities should be added later as explicit, user-visible sync features rather than as ambient desktop privileges.
+
 The ZIP contains the static app under `dist/`, with release and version folders stripped so the archive can be served directly.
 
 ## Python Runtime

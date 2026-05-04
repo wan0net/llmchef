@@ -15,7 +15,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
+import { joinPath, normalizePath } from "@/lib/llmchef/file-manager-utils";
+import { useConversationStore } from "@/store/conversation.store";
 import { useCrea8MemoryStore } from "@/store/crea8-memory.store";
+import { useProjectStore } from "@/store/project.store";
 import { useVfsStore } from "@/store/vfs.store";
 import type {
   Crea8MemoryProposal,
@@ -53,19 +56,29 @@ type MemoryTreeNode = {
   result?: Crea8MemorySearchResult;
 };
 
-const memoryPathParts = (path: string | undefined, fallback: string): string[] => {
-  const normalized = (path || fallback).replace(/^\/+/, "");
-  const withoutRoot = normalized.replace(/^Memory\/?/, "");
-  return withoutRoot.split("/").filter(Boolean);
+const memoryPathParts = (
+  path: string | undefined,
+  fallback: string,
+  rootPath: string,
+): string[] => {
+  const normalized = normalizePath(path || fallback);
+  const normalizedRoot = normalizePath(rootPath);
+  const relative = normalized.startsWith(`${normalizedRoot}/`)
+    ? normalized.slice(normalizedRoot.length + 1)
+    : normalized.replace(/^\/+/, "");
+  return relative.split("/").filter(Boolean);
 };
 
-const buildMemoryTree = (results: Crea8MemorySearchResult[]): MemoryTreeNode => {
-  const root: MemoryTreeNode = { name: "Memory", path: "/Memory", children: [] };
+const buildMemoryTree = (
+  results: Crea8MemorySearchResult[],
+  rootPath: string,
+): MemoryTreeNode => {
+  const root: MemoryTreeNode = { name: "Second Brain", path: rootPath, children: [] };
 
   for (const result of results) {
-    const parts = memoryPathParts(result.note.path, result.note.title);
+    const parts = memoryPathParts(result.note.path, result.note.title, rootPath);
     let current = root;
-    let path = "/Memory";
+    let path = rootPath;
 
     parts.forEach((part, index) => {
       path = `${path}/${part}`;
@@ -166,6 +179,20 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
   const [memoryResults, setMemoryResults] = useState<Crea8MemorySearchResult[]>([]);
   const [memoryLoading, setMemoryLoading] = useState(false);
   const [memoryError, setMemoryError] = useState<string | null>(null);
+  const selectedItemId = useConversationStore((state) => state.selectedItemId);
+  const selectedItemType = useConversationStore((state) => state.selectedItemType);
+  const getConversationById = useConversationStore((state) => state.getConversationById);
+  const getProjectById = useProjectStore((state) => state.getProjectById);
+  const currentProjectId =
+    selectedItemType === "project"
+      ? selectedItemId
+      : selectedItemType === "conversation" && selectedItemId
+        ? getConversationById(selectedItemId)?.projectId ?? null
+        : null;
+  const currentProject = getProjectById(currentProjectId);
+  const memoryRootPath = currentProject
+    ? joinPath(currentProject.path, "Wiki", "Second Brain")
+    : null;
 
   useEffect(() => {
     void loadProposals();
@@ -203,7 +230,10 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
     () => [...proposals].sort(sortProposals),
     [proposals],
   );
-  const memoryTree = useMemo(() => buildMemoryTree(memoryResults), [memoryResults]);
+  const memoryTree = useMemo(
+    () => buildMemoryTree(memoryResults, memoryRootPath ?? "/"),
+    [memoryResults, memoryRootPath],
+  );
 
   const updateDraft = useCallback((proposalId: string, value: string) => {
     setDrafts((currentDrafts) => ({
@@ -213,7 +243,7 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
   }, []);
 
   const loadMemoryTree = useCallback(async () => {
-    if (!fs) {
+    if (!fs || !memoryRootPath) {
       setMemoryResults([]);
       return;
     }
@@ -222,7 +252,7 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
     setMemoryError(null);
     try {
       const connector = createCrea8VfsConnector({
-        rootPath: "/Memory",
+        rootPath: memoryRootPath,
         fsInstance: fs,
       });
       setMemoryResults(await connector.search({ text: "", limit: 500 }));
@@ -234,7 +264,7 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
     } finally {
       setMemoryLoading(false);
     }
-  }, [fs]);
+  }, [fs, memoryRootPath]);
 
   useEffect(() => {
     void loadMemoryTree();
@@ -257,12 +287,18 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
 
   const acceptProposal = useCallback(
     async (proposal: Crea8MemoryProposal) => {
-      if (!fs) {
+      const proposalProject = proposal.source.projectId
+        ? getProjectById(proposal.source.projectId)
+        : null;
+      const rootPath = proposalProject
+        ? joinPath(proposalProject.path, "Wiki", "Second Brain")
+        : memoryRootPath;
+      if (!fs || !rootPath) {
         return;
       }
 
       const connector = createCrea8VfsConnector({
-        rootPath: "/Memory",
+        rootPath,
         fsInstance: fs,
       });
 
@@ -277,7 +313,7 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
         "Failed to accept memory proposal.",
       );
     },
-    [acceptProposalWithConnector, drafts, fs, withBusyProposal],
+    [acceptProposalWithConnector, drafts, fs, getProjectById, memoryRootPath, withBusyProposal],
   );
 
   const rejectProposal = useCallback(
@@ -349,7 +385,7 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
             {!vfsAvailable ? (
               <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
                 No VFS workspace is available. Accepting a proposal needs the
-                current VFS workspace so markdown can be written under /Memory.
+                current project workspace so Markdown can be written under its wiki.
               </p>
             ) : null}
 
@@ -471,7 +507,7 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">Notes {memoryResults.length}</Badge>
                 <span className="text-xs text-muted-foreground">
-                  Markdown memory tree under /Memory
+                  Markdown memory tree for the current project
                 </span>
               </div>
               <Button
@@ -495,6 +531,11 @@ const SettingsCrea8MemoryComponent: React.FC = () => {
             {!vfsAvailable ? (
               <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
                 No VFS workspace is available.
+              </p>
+            ) : null}
+            {vfsAvailable && !currentProject ? (
+              <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
+                Select a project to view its second brain tree.
               </p>
             ) : null}
 

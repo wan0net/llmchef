@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import {
   BookOpenTextIcon,
+  ChartNoAxesCombinedIcon,
   LinkIcon,
   CopyIcon,
   FileAudioIcon,
@@ -22,7 +23,6 @@ import {
   RefreshCwIcon,
   SaveIcon,
   SearchIcon,
-  SendIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +53,7 @@ import {
 } from "@/lib/llmchef/file-preview";
 import { useProjectStore } from "@/store/project.store";
 import { useVfsStore } from "@/store/vfs.store";
-import { useInputStore, type AttachedFileMetadata } from "@/store/input.store";
+import { useInputStore } from "@/store/input.store";
 import { useUIStateStore } from "@/store/ui.store";
 import {
   describeRealFsSyncResult,
@@ -68,10 +68,6 @@ import type {
 
 type DocumentsWorkspaceProps = {
   currentProjectId: string | null;
-  onAskDocuments: (
-    question: string,
-    files: Omit<AttachedFileMetadata, "id">[],
-  ) => Promise<void>;
   sidebarPortalTarget?: HTMLElement | null;
 };
 
@@ -101,7 +97,6 @@ type WorkspaceDocument = {
   memoryNote?: Crea8MemoryNote;
 };
 
-const GLOBAL_DOCUMENTS_ROOT = "/Documents";
 const PROJECT_HOME_FILENAME = "Home.md";
 const MAX_INDEX_BYTES = 200_000;
 const MAX_RETRIEVAL_BYTES = 700_000;
@@ -112,6 +107,7 @@ const MAX_RETRIEVAL_CONTEXT_CHARS = 24_000;
 const SNIPPET_LENGTH = 220;
 const IGNORED_DOCUMENT_TREE_NAMES = new Set([".git", ".llmchef"]);
 const WikiMarkdownPreview = React.lazy(() => import("./WikiMarkdownPreview"));
+const MermaidDiagramStudio = React.lazy(() => import("./MermaidDiagramStudio"));
 
 const workspacePathParts = (path: string, rootPath: string): string[] => {
   const normalizedPath = normalizePath(path);
@@ -184,6 +180,7 @@ const guessMimeType = (name: string, browserType?: string): string => {
   if (ext === "json") return "application/json";
   if (ext === "csv") return "text/csv";
   if (ext === "html" || ext === "htm") return "text/html";
+  if (ext === "mmd") return "text/plain";
   if (ext === "js" || ext === "ts" || ext === "tsx" || ext === "jsx") {
     return "text/plain";
   }
@@ -197,7 +194,7 @@ const isIndexableText = (name: string, mimeType: string): boolean => {
     "application/xml",
     "application/yaml",
     "application/x-yaml",
-  ].includes(mimeType) || /\.(md|markdown|txt|json|csv|html?|ya?ml|log|tsx?|jsx?|css)$/i.test(name);
+  ].includes(mimeType) || /\.(md|markdown|mmd|txt|json|csv|html?|ya?ml|log|tsx?|jsx?|css)$/i.test(name);
 };
 
 const decodeText = (data: Uint8Array): string => new TextDecoder().decode(data);
@@ -306,10 +303,10 @@ const buildRetrievalContext = async (
   }
 
   const content = [
-    "# Notebook Retrieval Context",
+    "# Selected Project Document Context",
     "",
-    "Use these locally selected passages as source context. Cite paths when answering.",
-    `Question: ${question}`,
+    "Use these locally selected passages as source context in chat. Cite paths when answering.",
+    `Selection hint: ${question}`,
     "",
     ...sections,
   ].join("\n\n---\n\n");
@@ -320,6 +317,7 @@ const buildRetrievalContext = async (
 const iconForPreviewKind = (doc: WorkspaceDocument): React.ReactNode => {
   const className = "mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground";
   if (doc.kind === "crea8") return <BookOpenTextIcon className={className} />;
+  if (isMermaidDiagramDoc(doc)) return <ChartNoAxesCombinedIcon className={className} />;
   switch (doc.previewDescriptor.kind) {
     case "image":
     case "svg":
@@ -380,6 +378,20 @@ const wikiLabelForDoc = (doc: WorkspaceDocument): string =>
 
 const isWikiMarkdownDoc = (doc: WorkspaceDocument): boolean =>
   doc.kind === "crea8" || doc.previewDescriptor.kind === "markdown";
+
+const isMermaidDiagramDoc = (doc: WorkspaceDocument): boolean =>
+  /\.mmd$/i.test(doc.name);
+
+const defaultMermaidDiagram = (title: string): string =>
+  [
+    "flowchart TD",
+    `    A[${title}] --> B{What needs to happen?}`,
+    "    B --> C[Draft diagram]",
+    "    B --> D[Review in chat]",
+    "    C --> E[Save to project wiki]",
+    "    D --> E",
+    "",
+  ].join("\n");
 
 const isMissingPathError = (error: unknown): boolean => {
   if (!(error instanceof Error)) return false;
@@ -707,7 +719,6 @@ const TreeNode = <T,>({
 
 export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   currentProjectId,
-  onAskDocuments,
   sidebarPortalTarget,
 }) => {
   const fs = useVfsStore((state) => state.fs);
@@ -729,7 +740,6 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     useState<FilePreviewDescriptor | null>(null);
   const [previewData, setPreviewData] = useState<Uint8Array | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -740,10 +750,10 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const [syncingLocalFolder, setSyncingLocalFolder] = useState(false);
 
   const workspaceRoot = useMemo(
-    () => normalizePath(currentProject?.path ?? GLOBAL_DOCUMENTS_ROOT),
+    () => normalizePath(currentProject?.path ?? "/"),
     [currentProject?.path],
   );
-  const workspaceLabel = currentProject?.name ?? "Global documents";
+  const workspaceLabel = currentProject?.name ?? "Select a project";
   const homePath = useMemo(
     () => joinPath(workspaceRoot, PROJECT_HOME_FILENAME),
     [workspaceRoot],
@@ -797,7 +807,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   }, []);
 
   const loadDocuments = useCallback(async () => {
-    if (!fs) {
+    if (!fs || !currentProject) {
       setWorkspaceDocs([]);
       setActiveDocument(null);
       return;
@@ -827,7 +837,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [currentProjectId, fs, workspaceLabel, workspaceRoot]);
+  }, [currentProject, currentProjectId, fs, workspaceLabel, workspaceRoot]);
 
   useEffect(() => {
     void loadDocuments();
@@ -1073,6 +1083,73 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       setSaving(false);
     }
   }, [activeFolderPath, connector, currentProject, currentProjectId, fs, loadDocuments, workspaceRoot]);
+
+  const createMermaidDiagram = useCallback(async (targetFolder?: string) => {
+    if (!fs || !currentProject) return;
+    const title = window.prompt("Diagram name", `${currentProject.name} diagram`);
+    const trimmedTitle = title?.trim();
+    if (!trimmedTitle) return;
+
+    const safeName =
+      trimmedTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80) || "diagram";
+    const folderPath = normalizePath(
+      targetFolder ?? activeFolderPath ?? joinPath(workspaceRoot, "Diagrams"),
+    );
+    const targetPath = joinPath(folderPath, `${safeName}-${Date.now()}.mmd`);
+
+    setSaving(true);
+    setError(null);
+    try {
+      await writeFileOp(targetPath, defaultMermaidDiagram(trimmedTitle), {
+        fsInstance: fs,
+      });
+      await loadDocuments();
+      const data = await readFileOp(targetPath, { fsInstance: fs, silent: true });
+      const name = basename(targetPath);
+      const type = guessMimeType(name);
+      const content = decodeText(data);
+      const previewDescriptor = inferFilePreviewDescriptor({
+        name,
+        path: targetPath,
+        mimeType: type,
+        size: data.byteLength,
+      });
+      setActiveFolderPath(dirname(targetPath));
+      setPreviewDescriptor(previewDescriptor);
+      setPreviewData(data);
+      setActiveDocument({
+        kind: "file",
+        content,
+        data,
+        doc: {
+          kind: "file",
+          name,
+          path: targetPath,
+          type,
+          size: data.byteLength,
+          updatedAt: new Date(),
+          snippet: content.slice(0, SNIPPET_LENGTH),
+          indexText: `${name} ${targetPath} ${content}`.toLowerCase(),
+          wikiLinks: [],
+          terms: tokenizeWikiText(`${name} ${targetPath} ${content}`),
+          previewDescriptor,
+        },
+      });
+      setDraft(content);
+      toast.success("Mermaid diagram created.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to create diagram.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }, [activeFolderPath, currentProject, fs, loadDocuments, workspaceRoot]);
 
   const copyActiveText = useCallback(async () => {
     if (!activeDocument) return;
@@ -1335,55 +1412,6 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     }
   }, [fs, loadDocuments, selectedDocs]);
 
-  const askSelectedDocuments = useCallback(async () => {
-    const trimmedQuestion = question.trim();
-    if (!fs || !trimmedQuestion || selectedDocs.length === 0) return;
-
-    setAsking(true);
-    setError(null);
-    try {
-      const retrieval = await buildRetrievalContext(
-        selectedDocs,
-        trimmedQuestion,
-        fs,
-      );
-      if (retrieval.chunkCount === 0) {
-        throw new Error("No indexable text passages found in the selected docs.");
-      }
-      const contextSize = new TextEncoder().encode(retrieval.content).byteLength;
-      await onAskDocuments(
-        [
-          "Answer using the attached notebook retrieval context.",
-          "Cite source paths from the context when possible.",
-          "",
-          trimmedQuestion,
-        ].join("\n"),
-        [
-          {
-            source: "direct",
-            name: "notebook-context.md",
-            type: "text/markdown",
-            size: contextSize,
-            contentText: retrieval.content,
-          },
-        ],
-      );
-      toast.success(
-        `Notebook context built from ${retrieval.chunkCount} passage${
-          retrieval.chunkCount === 1 ? "" : "s"
-        }.`,
-      );
-      setQuestion("");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to ask documents.";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setAsking(false);
-    }
-  }, [fs, onAskDocuments, question, selectedDocs]);
-
   const attachSelectedDocumentsToChat = useCallback(async () => {
     if (!fs || selectedDocs.length === 0) return;
 
@@ -1392,7 +1420,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     try {
       const retrieval = await buildRetrievalContext(
         selectedDocs,
-        question.trim() || "selected project context",
+        "selected project context",
         fs,
       );
       if (retrieval.chunkCount === 0) {
@@ -1418,7 +1446,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     } finally {
       setAsking(false);
     }
-  }, [fs, question, selectedDocs]);
+  }, [fs, selectedDocs]);
 
   const connectLocalFolder = useCallback(async () => {
     if (!currentProjectId || !fs) {
@@ -1486,6 +1514,9 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         : undefined;
   const activeIsWikiMarkdown = activeDocument
     ? isWikiMarkdownDoc(activeDocument.doc)
+    : false;
+  const activeIsMermaidDiagram = activeDocument
+    ? isMermaidDiagramDoc(activeDocument.doc)
     : false;
   const isDirty =
     activeDocument?.kind === "crea8"
@@ -1582,7 +1613,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
             <section>
               <div className="mb-2 space-y-2 px-2">
                 <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                  <span className="truncate">{workspaceLabel}</span>
+                  <span className="truncate">Wiki</span>
                   <div className="flex shrink-0 items-center gap-1">
                     <Badge variant="outline">{filteredWorkspaceDocs.length}</Badge>
                     {secondBrainCount > 0 ? (
@@ -1593,6 +1624,9 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     ) : null}
                   </div>
                 </div>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {currentProject ? workspaceLabel : "Create or select a project to start."}
+                </p>
                 <div className="relative">
                   <SearchIcon className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
@@ -1609,7 +1643,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     variant="outline"
                     className="h-7 px-2 text-xs"
                     onClick={() => void createCrea8Page(activeFolderPath ?? workspaceRoot)}
-                    disabled={!fs || saving}
+                    disabled={!currentProject || !fs || saving}
                   >
                     <BookOpenTextIcon className="h-3.5 w-3.5" />
                     Page
@@ -1619,8 +1653,19 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     size="sm"
                     variant="outline"
                     className="h-7 px-2 text-xs"
+                    onClick={() => void createMermaidDiagram(activeFolderPath ?? workspaceRoot)}
+                    disabled={!currentProject || !fs || saving}
+                  >
+                    <ChartNoAxesCombinedIcon className="h-3.5 w-3.5" />
+                    Diagram
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
                     onClick={() => void createFolderInActiveFolder()}
-                    disabled={!fs || saving}
+                    disabled={!currentProject || !fs || saving}
                   >
                     <FolderPlusIcon className="h-3.5 w-3.5" />
                     Folder
@@ -1631,7 +1676,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     variant="outline"
                     className="h-7 px-2 text-xs"
                     onClick={selectVisibleDocs}
-                    disabled={filteredWorkspaceDocs.length === 0}
+                    disabled={!currentProject || filteredWorkspaceDocs.length === 0}
                   >
                     Select results
                   </Button>
@@ -1641,7 +1686,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     variant="outline"
                     className="h-7 px-2 text-xs"
                     onClick={() => void moveSelectedDocsToActiveFolder()}
-                    disabled={!fs || saving || selectedDocs.length === 0}
+                    disabled={!currentProject || !fs || saving || selectedDocs.length === 0}
                   >
                     Move here
                   </Button>
@@ -1661,11 +1706,42 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     variant="ghost"
                     className="h-7 px-2 text-xs text-destructive"
                     onClick={() => void deleteSelectedDocuments()}
-                    disabled={!fs || saving || selectedDocs.length === 0}
+                    disabled={!currentProject || !fs || saving || selectedDocs.length === 0}
                   >
                     Delete
                   </Button>
                 </div>
+                {selectedDocs.length > 0 ? (
+                  <div className="rounded-md border border-border bg-background/60 p-2 text-xs">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="font-medium text-muted-foreground">
+                        Tagged for chat
+                      </span>
+                      <Badge variant="secondary">{selectedDocs.length}</Badge>
+                    </div>
+                    <div className="mb-2 flex flex-wrap gap-1">
+                      {selectedDocs.slice(0, 5).map((doc) => (
+                        <Badge key={doc.path} variant="outline" className="max-w-40 truncate">
+                          {basename(doc.path)}
+                        </Badge>
+                      ))}
+                      {selectedDocs.length > 5 ? (
+                        <Badge variant="outline">+{selectedDocs.length - 5}</Badge>
+                      ) : null}
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 w-full px-2 text-xs"
+                      onClick={() => void attachSelectedDocumentsToChat()}
+                      disabled={asking || selectedDocs.length === 0}
+                    >
+                      <MessageSquarePlusIcon className={asking ? "h-3.5 w-3.5 animate-pulse" : "h-3.5 w-3.5"} />
+                      Attach to chat
+                    </Button>
+                  </div>
+                ) : null}
                 <div className="rounded-md border border-border bg-background/60 p-2 text-xs">
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <span className="font-medium text-muted-foreground">Sync</span>
@@ -1705,7 +1781,9 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
               </div>
               {workspaceDocs.length === 0 ? (
                 <p className="px-2 py-3 text-xs text-muted-foreground">
-                  Import local files into this workspace. Wiki pages are stored as Markdown alongside them.
+                  {currentProject
+                    ? "Import local files into this workspace. Wiki pages are stored as Markdown alongside them."
+                    : "Create or select a project first. LLMChef keeps wiki pages, files, memories, and chats inside a project."}
                 </p>
               ) : filteredWorkspaceDocs.length === 0 ? (
                 <p className="px-2 py-3 text-xs text-muted-foreground">
@@ -1751,54 +1829,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   );
 
   const mainPane = (
-    <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)]">
-      <div className="border-b border-border bg-card p-3">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">
-            Notebook query
-          </span>
-          {selectedDocs.length === 0 ? (
-            <Badge variant="outline">No docs selected</Badge>
-          ) : (
-            selectedDocs.slice(0, 4).map((doc) => (
-              <Badge key={doc.path} variant="secondary" className="max-w-40 truncate">
-                {basename(doc.path)}
-              </Badge>
-            ))
-          )}
-          {selectedDocs.length > 4 ? (
-            <Badge variant="outline">+{selectedDocs.length - 4}</Badge>
-          ) : null}
-        </div>
-        <div className="flex gap-2">
-          <Textarea
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-            placeholder="Ask a question grounded in selected files and wiki pages"
-            className="min-h-16 resize-y text-sm"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            className="self-end"
-            onClick={() => void attachSelectedDocumentsToChat()}
-            disabled={asking || selectedDocs.length === 0}
-          >
-            <MessageSquarePlusIcon className={asking ? "animate-pulse" : ""} />
-            Attach
-          </Button>
-          <Button
-            type="button"
-            className="self-end"
-            onClick={() => void askSelectedDocuments()}
-            disabled={asking || selectedDocs.length === 0 || !question.trim()}
-          >
-            <SendIcon className={asking ? "animate-pulse" : ""} />
-            Ask
-          </Button>
-        </div>
-      </div>
-
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-col">
         {activeDocument ? (
           <>
@@ -1925,7 +1956,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                 >
                   {selectedDocPaths.has(activeDocument.doc.path)
                     ? "Selected"
-                    : "Use in query"}
+                    : "Tag for chat"}
                 </Button>
                 <Button
                   type="button"
@@ -2049,6 +2080,20 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   </React.Suspense>
                 </div>
               </ScrollArea>
+            ) : activeIsMermaidDiagram ? (
+              <React.Suspense
+                fallback={
+                  <div className="flex min-h-40 flex-1 items-center justify-center text-sm text-muted-foreground">
+                    Loading diagram studio...
+                  </div>
+                }
+              >
+                <MermaidDiagramStudio
+                  value={draft}
+                  onChange={setDraft}
+                  title={activeDocument.doc.name}
+                />
+              </React.Suspense>
             ) : (
               <Textarea
                 value={draft}
@@ -2111,7 +2156,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         <div className="min-w-0">
           <h2 className="truncate text-sm font-semibold">Documents</h2>
           <p className="truncate text-xs text-muted-foreground">
-            {workspaceLabel} files, wiki pages, and notebook questions grounded locally
+            {workspaceLabel} files and wiki pages, grounded through chat
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -2134,7 +2179,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
             size="sm"
             variant="outline"
             onClick={() => void createCrea8Page()}
-            disabled={!fs || saving}
+            disabled={!currentProject || !fs || saving}
           >
             <BookOpenTextIcon className={saving ? "animate-pulse" : ""} />
             Page
@@ -2143,8 +2188,18 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
             type="button"
             size="sm"
             variant="outline"
+            onClick={() => void createMermaidDiagram()}
+            disabled={!currentProject || !fs || saving}
+          >
+            <ChartNoAxesCombinedIcon className={saving ? "animate-pulse" : ""} />
+            Diagram
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            disabled={!fs || importing}
+            disabled={!currentProject || !fs || importing}
           >
             <FilePlusIcon className={importing ? "animate-pulse" : ""} />
             Files
@@ -2154,7 +2209,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
             size="sm"
             variant="outline"
             onClick={() => folderInputRef.current?.click()}
-            disabled={!fs || importing}
+            disabled={!currentProject || !fs || importing}
           >
             <FolderPlusIcon className={importing ? "animate-pulse" : ""} />
             Folder

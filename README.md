@@ -45,6 +45,7 @@ This repository is the `wan0net/llmchef` fork, renamed and maintained as LLMChef
 - **Codeblock editor**: you can edit the codeblock content directly in the browser, and use it in the follow up chats !
 - **Virtual File System**: Browser-based filesystem with full CRUD operations
 - **Git Integration**: Clone, commit, push, pull directly in the browser
+- **Desktop Shell**: Tauri v2 packaging for running the same local-first app as a thick desktop client
 - **Structured Output**: you can ask the AI to return a structured output, like a JSON, a table, a list, etc. (untested ^^')
 - **Formedible codeblock**: LLMs can use the `formedible` codeblock to create a form to interact with the user in a deterministice maner using the [Formedible](https://github.com/DimitriGilbert/Formedible) library.
 
@@ -87,6 +88,7 @@ For comprehensive documentation, see the [`docs/`](./docs/) directory:
 - **[MCP Integration](./docs/mcp-integration.md)** - Model Context Protocol server integration and external tools
 - **[Virtual File System](./docs/vfs.md)** - Browser-based filesystem and file operations
 - **[Git Integration](./docs/git.md)** - Repository management and conversation sync
+- **[Desktop App](./docs/desktop-tauri.md)** - Tauri desktop shell and security posture
 - **[Canvas Features](./docs/canvas-features.md)** - Code blocks, diagrams, and interaction controls
 - **[Block Renderer System](./docs/block-renderer-system.md)** - Universal block rendering architecture
 - **[Workflow System](./docs/workflow-system.md)** - Multi-step AI automation and workflow orchestration
@@ -145,6 +147,12 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Run the Tauri desktop shell
+npm run tauri:dev
+
+# Build desktop bundles
+npm run tauri:build
 ```
 
 > **Note**: AI assistance is highly recommended for development. See the [development documentation](./docs/index.md) for detailed setup instructions. 

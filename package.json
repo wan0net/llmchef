@@ -28,7 +28,10 @@
     "deploy": "npm run release:local && npm run build:pages && gh-pages -d dist --no-history --dotfiles --remove \".proompts/**/*\"",
     "to2web": "npm run deploy",
     "serve": "npm run build && npx http-server dist --port ${LLMCHEF_PORT:=5173}",
-    "update": "git pull ${LLMCHEF_ORIGIN:=origin} ${LLMCHEF_BRANCH:=main} && npm install && npm run serve"
+    "update": "git pull ${LLMCHEF_ORIGIN:=origin} ${LLMCHEF_BRANCH:=main} && npm install && npm run serve",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "overrides": {
     "elliptic": "^6.6.1",
@@ -121,6 +124,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.0",
     "@playwright/test": "^1.59.1",
+    "@tauri-apps/cli": "^2.11.0",
     "@types/jszip": "^3.4.1",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.1.0",

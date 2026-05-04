@@ -10,6 +10,8 @@ export default tseslint.config(
       "dist",
       "public/pyodide",
       "public/release",
+      "src-tauri/gen",
+      "src-tauri/target",
       "src/test/setup.ts",
       "tailwind.config.ts",
     ],

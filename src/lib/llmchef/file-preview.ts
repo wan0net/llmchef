@@ -68,6 +68,7 @@ const CODE_EXTENSIONS = new Set([
   ".jsx",
   ".kt",
   ".lua",
+  ".mmd",
   ".php",
   ".pl",
   ".ps1",

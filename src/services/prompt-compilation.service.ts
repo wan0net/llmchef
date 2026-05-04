@@ -24,6 +24,13 @@ import { toast } from "sonner";
 import { cleanPromptParameters } from "@/lib/llmchef/prompt-parameters";
 import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 
+const PROJECT_DOCUMENT_CONTEXT_PROMPT = [
+  "LLMChef project context:",
+  "- All work belongs inside the current project.",
+  "- If `project-documents-search.md` is attached, treat it as the automatic first-pass search over local project wiki pages and files.",
+  "- Prefer explicitly attached or tagged documents when present, cite source paths when useful, and state when the project context is insufficient.",
+].join("\n");
+
 export class PromptCompilationService {
   /**
    * Central method to compile a complete PromptObject from turnData and conversationId
@@ -200,6 +207,12 @@ ${userContent}`;
 ${skillPromptContext}`
         : skillPromptContext;
     }
+
+    baseSystemPrompt = baseSystemPrompt
+      ? `${baseSystemPrompt}
+
+${PROJECT_DOCUMENT_CONTEXT_PROMPT}`
+      : PROJECT_DOCUMENT_CONTEXT_PROMPT;
 
     const crea8MemoryRefs = turnData.metadata?.crea8MemoryRefs ?? [];
     let resolvedCrea8MemoryRefs: Crea8MemoryNoteRef[] = [];

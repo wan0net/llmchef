@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import path from "node:path";
 
 const bootApp = async (page: Page) => {
   await page.goto("/#app");
@@ -63,7 +64,7 @@ test("project sidebar sections replace the old workspace selector", async ({ pag
   await page.getByRole("button", { name: `Wiki for ${projectName}` }).click();
   await expect(page.getByRole("heading", { name: "Documents" })).toBeVisible();
   await expect(
-    page.getByText(`${projectName} files, wiki pages, and notebook questions grounded locally`),
+    page.getByText(`${projectName} files and wiki pages, grounded through chat`),
   ).toBeVisible();
   await expect(page.locator("h1", { hasText: projectName })).toBeVisible();
   await expect(page.getByText("This is the human-facing home for the project knowledge base.")).toBeVisible();
@@ -76,6 +77,17 @@ test("project sidebar sections replace the old workspace selector", async ({ pag
     .getByRole("button", { name: "Page" })
     .click();
   await expect(page.getByRole("heading", { name: `${projectName} note` })).toBeVisible();
+
+  page.once("dialog", async (dialog) => {
+    await dialog.accept(`${projectName} architecture`);
+  });
+  await page
+    .locator(".link42-panel")
+    .getByRole("button", { name: "Diagram" })
+    .click();
+  await expect(page.getByRole("heading", { name: /architecture.*\.mmd/i })).toBeVisible();
+  await expect(page.getByLabel(/Mermaid source/)).toBeVisible();
+  await expect(page.getByText("Diagram preview")).toBeVisible();
 
   await page.getByRole("button", { name: `Chats for ${projectName}` }).click();
   await expect(page.getByLabel("Chat input")).toBeVisible();
@@ -96,6 +108,36 @@ test("project sidebar sections replace the old workspace selector", async ({ pag
     "aria-selected",
     "true",
   );
+});
+
+test("LLMChef can be used as its own project workspace", async ({ page }) => {
+  const projectName = `LLMChef Self ${Date.now()}`;
+  const repoRoot = process.cwd();
+  await bootApp(page);
+
+  await createProject(page, projectName);
+  await expandProject(page, projectName);
+  await page.getByRole("button", { name: `Wiki for ${projectName}` }).click();
+  await expect(page.getByRole("heading", { name: "Documents" })).toBeVisible();
+
+  await page.locator('input[type="file"]').first().setInputFiles([
+    path.join(repoRoot, "package.json"),
+    path.join(repoRoot, "system-prompt.txt"),
+    path.join(repoRoot, "src/lib/llmchef/project-document-search.ts"),
+  ]);
+
+  await expect(page.getByText("package.json", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("system-prompt.txt", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("project-document-search.ts", { exact: true }).first()).toBeVisible();
+
+  await page.getByText("project-document-search.ts", { exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "project-document-search.ts" })).toBeVisible();
+  await page.getByRole("button", { name: "Tag for chat" }).click();
+  await expect(page.getByText("Tagged for chat")).toBeVisible();
+  await page.getByRole("button", { name: "Attach to chat" }).click();
+
+  await expect(page.getByLabel("Chat input")).toBeVisible();
+  await expect(page.getByText(/Attached \d+ passage/)).toBeVisible();
 });
 
 test("mobile project drawer uses the same single-pane sections", async ({ page }) => {
