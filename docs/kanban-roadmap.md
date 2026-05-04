@@ -4,7 +4,7 @@ Status snapshot after lanes 1 and 2:
 - Done: Release foundation
 - Done: Quality hardening
 - Done: Backlog ticketization pass
-- Active next: Continue architecture cleanup from the next bounded ticket
+- Active next: Continue architecture cleanup with AC-006
 
 ## Board
 
@@ -16,23 +16,17 @@ Status snapshot after lanes 1 and 2:
 - AC-002: Split shared workflow query, JSONPath, and mapping logic out of `services/workflow.service.ts` (GH: #5)
 - AC-003: Reuse shared workflow query validation in `WorkflowControlModule.ts` (GH: #6)
 - AC-004: Extract workflow preview/sample context generation into `src/lib/llmchef/workflow-preview-context.ts` (GH: #7)
+- AC-005: Untangle VFS runtime helpers from store/module glue (GH: #8)
+  - Landed helpers: `vfs-git-runtime.ts`, `vfs-git-browser-runtime.ts`, `vfs-git-operation-options.ts`, and `vfs-git-pull-branch.ts`
+  - Result: `vfs-git-operations.ts` now delegates auth/settings/browser wiring, shared remote option building, and pull branch preparation into focused testable seams
 
 ### Ready next (priority order)
-1. AC-005 - Untangle VFS runtime helpers from store/module glue (GH: #8)
-   - Why: VFS code is spread across large service/store/lib files and will become a drag on future features.
-   - Scope:
-     - isolate filesystem operations from store/module orchestration
-     - isolate git operations behind clearer service boundaries
-     - reduce UI synchronization glue living alongside runtime helpers
-     - add focused tests for extracted helpers before broader moves
-   - Success check: file and git operations become testable without store bootstrapping, with lint/build/test still green
-
-2. AC-006 - Introduce typed persistence adapters for app settings slices (GH: #9)
+1. AC-006 - Introduce typed persistence adapters for app settings slices (GH: #9)
    - Why: `store/settings.store.ts` is very large and repeats per-key persistence/event code.
    - Scope: extract grouped settings adapters for sync, auto-title, tool selection, and UI theming.
    - Success check: reducer/store file shrinks materially without behavior change
 
-3. AC-007 - Reduce conversation store/service overlap (GH: #10)
+2. AC-007 - Reduce conversation store/service overlap (GH: #10)
    - Why: `store/conversation.store.ts` and conversation services are both large, increasing coordination complexity.
    - Scope: clarify command/query boundaries and move derived-data helpers out of the store.
    - Success check: store becomes thinner and side effects centralize in services
@@ -52,7 +46,7 @@ Status snapshot after lanes 1 and 2:
 - Low-friction mapping: use labels like `lane:architecture`, `lane:backlog`, and `priority:P1`, and let Hermes update the doc when creating, reordering, or closing issues.
 
 ## Recommended execution order
-1. Execute AC-005 as the next bounded architecture cleanup slice
+1. Execute AC-006 as the next bounded architecture cleanup slice
 2. Keep `docs/kanban-roadmap.md` aligned with GitHub issue numbers and state changes
 3. Consider automating roadmap-to-issue reconciliation under BL-003 once the manual flow feels stable
 

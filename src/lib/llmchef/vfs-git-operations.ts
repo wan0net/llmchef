@@ -10,43 +10,10 @@ import {
 } from "./file-manager-utils";
 import git from "isomorphic-git";
 import http from "isomorphic-git/http/web";
-import { useSettingsStore } from "@/store/settings.store";
-import {
-  createGitAuthRuntime,
-  createGitSettingsSnapshot,
-} from "./vfs-git-runtime";
-import { createGitOperationOptionsBuilder } from "./vfs-git-operation-options";
+import { browserGitOperationRuntime } from "./vfs-git-browser-runtime";
 import { ensureLocalPullBranch } from "./vfs-git-pull-branch";
 
-const getGitSettings = () => createGitSettingsSnapshot(useSettingsStore.getState());
-
-const gitAuthRuntime = createGitAuthRuntime({
-  promptForCredentials: async (url) => {
-    console.log(
-      `[VFS Git Op] No stored or session credentials found for ${url}. Prompting user.`,
-    );
-
-    const username = window.prompt(`Enter username for ${url}`);
-    if (!username) {
-      toast.error("Authentication cancelled: Username not provided.");
-      return null;
-    }
-
-    const password = window.prompt(
-      `Enter password or token for ${username}@${url}`,
-    );
-    if (!password) {
-      toast.error("Authentication cancelled: Password/token not provided.");
-      return null;
-    }
-
-    console.log(
-      `[VFS Git Op] Stored prompted credentials in session for ${new URL(url).origin}`,
-    );
-
-    return { username, password };
-  },
-});
+const getGitSettings = () => browserGitOperationRuntime.getSettings();
 
 // --- Helper Functions ---
 
@@ -95,39 +62,8 @@ const ensureGitConfig = async (
   }
 };
 
-const onAuth = async (
-  url: string,
-  storedCreds?: { username?: string | null; password?: string | null },
-): Promise<any> => {
-  console.log(`[VFS Git Op] Auth requested for ${url}`);
-  const auth = await gitAuthRuntime.onAuth(url, storedCreds);
-  if (auth && storedCreds?.username && storedCreds?.password) {
-    console.log(`[VFS Git Op] Using stored credentials for ${url}`);
-  } else if (auth) {
-    console.log(`[VFS Git Op] Using session credentials for ${url}`);
-  }
-  return auth;
-};
-
-const onAuthFailure = (url: string, auth: any): any => {
-  console.error(`[VFS Git Op] Auth FAILED for ${url}`, auth);
-  return gitAuthRuntime.onAuthFailure(url, auth);
-};
-
-const onAuthSuccess = (url: string, auth: any): void => {
-  console.log(`[VFS Git Op] Auth SUCCESS for ${url}`, auth);
-  gitAuthRuntime.onAuthSuccess(url, auth);
-};
-
 const getGitOperationOptionsBuilder = () =>
-  createGitOperationOptionsBuilder({
-    settings: getGitSettings(),
-    authRuntime: {
-      onAuth,
-      onAuthFailure,
-      onAuthSuccess,
-    },
-  });
+  browserGitOperationRuntime.getOperationOptionsBuilder();
 
 const formatGitHttpError = (error: any): string => {
   if (error.name === "HttpError" && error.data) {
