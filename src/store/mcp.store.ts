@@ -1,236 +1,148 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { PersistenceService } from "@/services/persistence.service";
 import { emitter } from "@/lib/llmchef/event-emitter";
-import { mcpEvent } from "@/types/llmchef/events/mcp.events";
+import {
+  createDefaultMcpState,
+  DEFAULT_MCP_CONNECTION_TIMEOUT,
+  DEFAULT_MCP_MAX_RESPONSE_SIZE,
+  DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL,
+  DEFAULT_MCP_RETRY_ATTEMPTS,
+  DEFAULT_MCP_RETRY_DELAY,
+  McpPersistenceService,
+  normalizeMcpPackageRegistryUrl,
+} from "@/services/mcp-persistence.service";
 import type { RegisteredActionHandler } from "@/types/llmchef/control";
+import { mcpEvent } from "@/types/llmchef/events/mcp.events";
+import type {
+  McpPackageImport,
+  McpPackageRuntimeInstall,
+  McpServerConfig,
+  McpServerStatus,
+  McpState,
+} from "@/types/llmchef/mcp";
 
-export interface McpServerConfig {
-  id: string;
-  name: string;
-  url: string;
-  enabled: boolean;
-  headers?: Record<string, string>;
-  description?: string;
-}
-
-export interface McpPackageImport {
-  id: string;
-  name: string;
-  packageName: string;
-  command: "npx" | "npm exec";
-  args: string[];
-  envKeys: string[];
-  source: "command" | "json";
-  sourceLabel?: string;
-  endpointUrl?: string;
-  warnings: string[];
-  createdAt: Date;
-}
-
-export interface McpPackageRuntimeInstall {
-  id: string;
-  packageImportId: string;
-  packageName: string;
-  entryUrl: string;
-  registryBaseUrl: string;
-  vfsRoot: string;
-  moduleCount: number;
-  moduleUrls: string[];
-  moduleHashes: Record<string, string>;
-  installedAt: Date;
-  runnable: boolean;
-  detectedTools?: string[];
-  lastProbeAt?: Date;
-  lastProbeOk?: boolean;
-  lastProbeMessage?: string;
-  warnings: string[];
-}
-
-export interface McpServerStatus {
-  serverId: string;
-  connected: boolean;
-  error?: string;
-  lastConnected?: Date;
-  toolCount: number;
-  tools: string[];
-}
-
-export interface McpState {
-  servers: McpServerConfig[];
-  packageImports: McpPackageImport[];
-  packageRuntimeInstalls: McpPackageRuntimeInstall[];
-  serverStatuses: Record<string, McpServerStatus>;
-  loading: boolean;
-  error: string | null;
-  // Connection settings
-  retryAttempts: number;
-  retryDelay: number;
-  connectionTimeout: number;
-  packageRuntimeRegistryUrl: string;
-  // Tool response settings
-  maxResponseSize: number;
-}
+export type {
+  McpPackageImport,
+  McpPackageRuntimeInstall,
+  McpServerConfig,
+  McpServerStatus,
+  McpState,
+} from "@/types/llmchef/mcp";
 
 export interface McpActions {
-  // Server Management
   setServers: (servers: McpServerConfig[]) => void;
-  addServer: (server: Omit<McpServerConfig, 'id'>) => void;
+  addServer: (server: Omit<McpServerConfig, "id">) => void;
   updateServer: (id: string, updates: Partial<McpServerConfig>) => void;
   deleteServer: (id: string) => void;
-  addPackageImports: (imports: Array<Omit<McpPackageImport, 'id' | 'createdAt'>>) => void;
+  addPackageImports: (
+    imports: Array<Omit<McpPackageImport, "id" | "createdAt">>,
+  ) => void;
   deletePackageImport: (id: string) => void;
   upsertPackageRuntimeInstall: (install: McpPackageRuntimeInstall) => void;
-  
-  // Connection Management
   setServerStatus: (status: McpServerStatus) => void;
   clearServerStatus: (serverId: string) => void;
-  
-  // Connection Settings
   setRetryAttempts: (attempts: number) => void;
   setRetryDelay: (delay: number) => void;
   setConnectionTimeout: (timeout: number) => void;
   setPackageRuntimeRegistryUrl: (url: string) => void;
-  
-  // Tool Response Settings
   setMaxResponseSize: (size: number) => void;
-  
-  // State Management
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   loadMcpState: () => Promise<void>;
   resetMcpState: () => void;
-  
-  // Event Integration
   getRegisteredActionHandlers: () => RegisteredActionHandler[];
-  
-  // Proxy Configuration Export
-  exportProxyConfig: () => void;
+  exportProxyConfig: () => Array<
+    Pick<McpServerConfig, "id" | "name" | "url" | "enabled">
+  >;
 }
 
-// Default constants
-const DEFAULT_MCP_RETRY_ATTEMPTS = 3;
-const DEFAULT_MCP_RETRY_DELAY = 2000; // 2 seconds
-const DEFAULT_MCP_CONNECTION_TIMEOUT = 10000; // 10 seconds
-const DEFAULT_MCP_MAX_RESPONSE_SIZE = 128000; // 128KB - much more generous default
-const DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL = "https://esm.sh";
+const defaultMcpState: McpState = createDefaultMcpState();
 
-const isLoopbackRegistryHost = (host: string): boolean =>
-  host === "localhost" ||
-  host.startsWith("localhost:") ||
-  host === "127.0.0.1" ||
-  host.startsWith("127.") ||
-  host.startsWith("[::1]");
-
-const normalizeMcpPackageRegistryUrl = (value: string): string => {
-  const parsed = new URL(value);
-  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-    throw new Error("Registry URL must use HTTP(S).");
-  }
-  if (parsed.protocol === "http:" && !isLoopbackRegistryHost(parsed.host)) {
-    throw new Error("HTTP package registries are only allowed on localhost.");
-  }
-  return `${parsed.protocol}//${parsed.host}`;
+const persistServers = (servers: McpServerConfig[]) => {
+  McpPersistenceService.saveServers(servers).catch((error: unknown) => {
+    console.error("Failed to persist MCP servers:", error);
+  });
 };
 
-const defaultMcpState: McpState = {
-  servers: [],
-  packageImports: [],
-  packageRuntimeInstalls: [],
-  serverStatuses: {},
-  loading: false,
-  error: null,
-  retryAttempts: DEFAULT_MCP_RETRY_ATTEMPTS,
-  retryDelay: DEFAULT_MCP_RETRY_DELAY,
-  connectionTimeout: DEFAULT_MCP_CONNECTION_TIMEOUT,
-  packageRuntimeRegistryUrl: DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL,
-  maxResponseSize: DEFAULT_MCP_MAX_RESPONSE_SIZE,
+const persistPackageImports = (imports: McpPackageImport[]) => {
+  McpPersistenceService.savePackageImports(imports).catch((error: unknown) => {
+    console.error("Failed to persist MCP package imports:", error);
+  });
+};
+
+const persistPackageRuntimeInstalls = (
+  installs: McpPackageRuntimeInstall[],
+) => {
+  McpPersistenceService.savePackageRuntimeInstalls(installs).catch(
+    (error: unknown) => {
+      console.error("Failed to persist MCP package runtime installs:", error);
+    },
+  );
 };
 
 export const useMcpStore = create(
   immer<McpState & McpActions>((set, get) => ({
     ...defaultMcpState,
 
-    // Server Management Actions
-    setServers: (servers: McpServerConfig[]) => {
+    setServers: (servers) => {
       set((state) => {
         state.servers = servers;
         state.error = null;
       });
-      
-      // Persist to storage
-      PersistenceService.saveSetting("mcpServers", servers).catch((error: any) => {
-        console.error("Failed to persist MCP servers:", error);
-      });
-      
-      // Emit change event
+
+      persistServers(servers);
       emitter.emit(mcpEvent.serversChanged, { servers });
     },
 
-    addServer: (serverData: Omit<McpServerConfig, 'id'>) => {
+    addServer: (serverData) => {
       const server: McpServerConfig = {
         ...serverData,
-        id: `mcp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `mcp_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       };
-      
+
       set((state) => {
         state.servers.push(server);
         state.error = null;
       });
-      
+
       const updatedServers = get().servers;
-      
-      // Persist to storage
-      PersistenceService.saveSetting("mcpServers", updatedServers).catch((error: any) => {
-        console.error("Failed to persist MCP servers:", error);
-      });
-      
-      // Emit events
+      persistServers(updatedServers);
       emitter.emit(mcpEvent.serverAdded, { server });
       emitter.emit(mcpEvent.serversChanged, { servers: updatedServers });
     },
 
-    updateServer: (id: string, updates: Partial<McpServerConfig>) => {
+    updateServer: (id, updates) => {
       let updatedServer: McpServerConfig | null = null;
-      
+
       set((state) => {
-        const serverIndex = state.servers.findIndex(s => s.id === id);
+        const serverIndex = state.servers.findIndex((server) => server.id === id);
         if (serverIndex !== -1) {
-          state.servers[serverIndex] = { ...state.servers[serverIndex], ...updates };
+          state.servers[serverIndex] = {
+            ...state.servers[serverIndex],
+            ...updates,
+          };
           updatedServer = state.servers[serverIndex];
           state.error = null;
         }
       });
-      
+
       if (updatedServer) {
         const updatedServers = get().servers;
-        
-        // Persist to storage
-        PersistenceService.saveSetting("mcpServers", updatedServers).catch((error: any) => {
-          console.error("Failed to persist MCP servers:", error);
-        });
-        
-        // Emit events
+        persistServers(updatedServers);
         emitter.emit(mcpEvent.serverUpdated, { server: updatedServer });
         emitter.emit(mcpEvent.serversChanged, { servers: updatedServers });
       }
     },
 
-    deleteServer: (id: string) => {
+    deleteServer: (id) => {
       set((state) => {
-        state.servers = state.servers.filter(s => s.id !== id);
+        state.servers = state.servers.filter((server) => server.id !== id);
         delete state.serverStatuses[id];
         state.error = null;
       });
-      
+
       const updatedServers = get().servers;
-      
-      // Persist to storage
-      PersistenceService.saveSetting("mcpServers", updatedServers).catch((error: any) => {
-        console.error("Failed to persist MCP servers:", error);
-      });
-      
-      // Emit events
+      persistServers(updatedServers);
       emitter.emit(mcpEvent.serverDeleted, { serverId: id });
       emitter.emit(mcpEvent.serversChanged, { servers: updatedServers });
     },
@@ -248,37 +160,49 @@ export const useMcpStore = create(
         state.error = null;
       });
 
-      PersistenceService.saveSetting("mcpPackageImports", get().packageImports).catch((error: any) => {
-        console.error("Failed to persist MCP package imports:", error);
-      });
-
-      emitter.emit(mcpEvent.packageImportsChanged, { imports: get().packageImports });
+      const updatedImports = get().packageImports;
+      persistPackageImports(updatedImports);
+      emitter.emit(mcpEvent.packageImportsChanged, { imports: updatedImports });
     },
 
     deletePackageImport: (id) => {
       set((state) => {
         state.packageImports = state.packageImports.filter((item) => item.id !== id);
-        state.packageRuntimeInstalls = state.packageRuntimeInstalls.filter((item) => item.packageImportId !== id);
+        state.packageRuntimeInstalls = state.packageRuntimeInstalls.filter(
+          (item) => item.packageImportId !== id,
+        );
       });
 
+      const updatedImports = get().packageImports;
+      const updatedInstalls = get().packageRuntimeInstalls;
       Promise.all([
-        PersistenceService.saveSetting("mcpPackageImports", get().packageImports),
-        PersistenceService.saveSetting("mcpPackageRuntimeInstalls", get().packageRuntimeInstalls),
-      ]).catch((error: any) => {
+        McpPersistenceService.savePackageImports(updatedImports),
+        McpPersistenceService.savePackageRuntimeInstalls(updatedInstalls),
+      ]).catch((error: unknown) => {
         console.error("Failed to persist MCP package import state:", error);
       });
 
-      emitter.emit(mcpEvent.packageImportsChanged, { imports: get().packageImports });
+      emitter.emit(mcpEvent.packageImportsChanged, { imports: updatedImports });
+      emitter.emit(mcpEvent.packageRuntimeInstallsChanged, {
+        installs: updatedInstalls,
+      });
     },
 
     upsertPackageRuntimeInstall: (install) => {
-      const normalizedInstall = {
+      const normalizedInstall: McpPackageRuntimeInstall = {
         ...install,
-        installedAt: install.installedAt ? new Date(install.installedAt) : new Date(),
+        installedAt: install.installedAt
+          ? new Date(install.installedAt)
+          : new Date(),
+        lastProbeAt: install.lastProbeAt
+          ? new Date(install.lastProbeAt)
+          : undefined,
       };
 
       set((state) => {
-        const index = state.packageRuntimeInstalls.findIndex((item) => item.id === normalizedInstall.id);
+        const index = state.packageRuntimeInstalls.findIndex(
+          (item) => item.id === normalizedInstall.id,
+        );
         if (index === -1) {
           state.packageRuntimeInstalls.push(normalizedInstall);
         } else {
@@ -287,25 +211,24 @@ export const useMcpStore = create(
         state.error = null;
       });
 
-      PersistenceService.saveSetting("mcpPackageRuntimeInstalls", get().packageRuntimeInstalls).catch((error: any) => {
-        console.error("Failed to persist MCP package runtime installs:", error);
+      const updatedInstalls = get().packageRuntimeInstalls;
+      persistPackageRuntimeInstalls(updatedInstalls);
+      emitter.emit(mcpEvent.packageRuntimeInstallsChanged, {
+        installs: updatedInstalls,
       });
-      emitter.emit(mcpEvent.packageRuntimeInstallsChanged, { installs: get().packageRuntimeInstalls });
     },
 
-    // Connection Management Actions
-    setServerStatus: (status: McpServerStatus) => {
+    setServerStatus: (status) => {
       set((state) => {
         state.serverStatuses[status.serverId] = status;
       });
-      
-      // Emit events
+
       emitter.emit(mcpEvent.serverConnectionChanged, {
         serverId: status.serverId,
         connected: status.connected,
         error: status.error,
       });
-      
+
       if (status.tools.length > 0) {
         emitter.emit(mcpEvent.toolsChanged, {
           serverId: status.serverId,
@@ -314,64 +237,72 @@ export const useMcpStore = create(
       }
     },
 
-    clearServerStatus: (serverId: string) => {
+    clearServerStatus: (serverId) => {
       set((state) => {
         delete state.serverStatuses[serverId];
       });
-      
+
       emitter.emit(mcpEvent.serverConnectionChanged, {
         serverId,
         connected: false,
       });
     },
 
-    // Connection Settings Actions
-    setRetryAttempts: (attempts: number) => {
+    setRetryAttempts: (attempts) => {
       const clampedAttempts = Math.max(0, Math.min(10, attempts));
       set((state) => {
         state.retryAttempts = clampedAttempts;
       });
-      
-      PersistenceService.saveSetting("mcpRetryAttempts", clampedAttempts).catch((error: any) => {
-        console.error("Failed to persist MCP retry attempts:", error);
-      });
-      
+
+      McpPersistenceService.saveRetryAttempts(clampedAttempts).catch(
+        (error: unknown) => {
+          console.error("Failed to persist MCP retry attempts:", error);
+        },
+      );
+
       emitter.emit(mcpEvent.retryAttemptsChanged, { attempts: clampedAttempts });
     },
 
-    setRetryDelay: (delay: number) => {
+    setRetryDelay: (delay) => {
       const clampedDelay = Math.max(500, Math.min(30000, delay));
       set((state) => {
         state.retryDelay = clampedDelay;
       });
-      
-      PersistenceService.saveSetting("mcpRetryDelay", clampedDelay).catch((error: any) => {
-        console.error("Failed to persist MCP retry delay:", error);
-      });
-      
+
+      McpPersistenceService.saveRetryDelay(clampedDelay).catch(
+        (error: unknown) => {
+          console.error("Failed to persist MCP retry delay:", error);
+        },
+      );
+
       emitter.emit(mcpEvent.retryDelayChanged, { delay: clampedDelay });
     },
 
-    setConnectionTimeout: (timeout: number) => {
+    setConnectionTimeout: (timeout) => {
       const clampedTimeout = Math.max(1000, Math.min(60000, timeout));
       set((state) => {
         state.connectionTimeout = clampedTimeout;
       });
-      
-      PersistenceService.saveSetting("mcpConnectionTimeout", clampedTimeout).catch((error: any) => {
-        console.error("Failed to persist MCP connection timeout:", error);
+
+      McpPersistenceService.saveConnectionTimeout(clampedTimeout).catch(
+        (error: unknown) => {
+          console.error("Failed to persist MCP connection timeout:", error);
+        },
+      );
+
+      emitter.emit(mcpEvent.connectionTimeoutChanged, {
+        timeout: clampedTimeout,
       });
-      
-      emitter.emit(mcpEvent.connectionTimeoutChanged, { timeout: clampedTimeout });
     },
 
-    setPackageRuntimeRegistryUrl: (url: string) => {
+    setPackageRuntimeRegistryUrl: (url) => {
       let normalized: string;
       try {
         normalized = normalizeMcpPackageRegistryUrl(url);
       } catch {
         set((state) => {
-          state.error = "MCP package registry URL must be HTTPS, or HTTP on localhost.";
+          state.error =
+            "MCP package registry URL must be HTTPS, or HTTP on localhost.";
         });
         return;
       }
@@ -381,33 +312,39 @@ export const useMcpStore = create(
         state.error = null;
       });
 
-      PersistenceService.saveSetting("mcpPackageRuntimeRegistryUrl", normalized).catch((error: any) => {
-        console.error("Failed to persist MCP package runtime registry URL:", error);
-      });
+      McpPersistenceService.savePackageRuntimeRegistryUrl(normalized).catch(
+        (error: unknown) => {
+          console.error(
+            "Failed to persist MCP package runtime registry URL:",
+            error,
+          );
+        },
+      );
       emitter.emit(mcpEvent.packageRuntimeRegistryUrlChanged, { url: normalized });
     },
 
-    setMaxResponseSize: (size: number) => {
-      const clampedSize = Math.max(1000, Math.min(10000000, size)); // 1KB to 10MB range
+    setMaxResponseSize: (size) => {
+      const clampedSize = Math.max(1000, Math.min(10000000, size));
       set((state) => {
         state.maxResponseSize = clampedSize;
       });
-      
-      PersistenceService.saveSetting("mcpMaxResponseSize", clampedSize).catch((error: any) => {
-        console.error("Failed to persist MCP max response size:", error);
-      });
-      
+
+      McpPersistenceService.saveMaxResponseSize(clampedSize).catch(
+        (error: unknown) => {
+          console.error("Failed to persist MCP max response size:", error);
+        },
+      );
+
       emitter.emit(mcpEvent.maxResponseSizeChanged, { size: clampedSize });
     },
 
-    // State Management Actions
-    setLoading: (loading: boolean) => {
+    setLoading: (loading) => {
       set((state) => {
         state.loading = loading;
       });
     },
 
-    setError: (error: string | null) => {
+    setError: (error) => {
       set((state) => {
         state.error = error;
       });
@@ -420,62 +357,45 @@ export const useMcpStore = create(
           state.error = null;
         });
 
-        // Load all MCP settings from persistence
-        const [
-          servers,
-          packageImports,
-          packageRuntimeInstalls,
-          retryAttempts,
-          retryDelay,
-          connectionTimeout,
-          packageRuntimeRegistryUrl,
-          maxResponseSize,
-        ] = await Promise.all([
-          PersistenceService.loadSetting<McpServerConfig[]>("mcpServers", []),
-          PersistenceService.loadSetting<McpPackageImport[]>("mcpPackageImports", []),
-          PersistenceService.loadSetting<McpPackageRuntimeInstall[]>("mcpPackageRuntimeInstalls", []),
-          PersistenceService.loadSetting<number>("mcpRetryAttempts", DEFAULT_MCP_RETRY_ATTEMPTS),
-          PersistenceService.loadSetting<number>("mcpRetryDelay", DEFAULT_MCP_RETRY_DELAY),
-          PersistenceService.loadSetting<number>("mcpConnectionTimeout", DEFAULT_MCP_CONNECTION_TIMEOUT),
-          PersistenceService.loadSetting<string>("mcpPackageRuntimeRegistryUrl", DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL),
-          PersistenceService.loadSetting<number>("mcpMaxResponseSize", DEFAULT_MCP_MAX_RESPONSE_SIZE),
-        ]);
-        
+        const persisted = await McpPersistenceService.loadPersistedState();
+
         set((state) => {
-          state.servers = servers || [];
-          state.packageImports = (packageImports || []).map((item) => ({
-            ...item,
-            createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
-          }));
-          state.packageRuntimeInstalls = (packageRuntimeInstalls || []).map((item) => ({
-            ...item,
-            moduleUrls: item.moduleUrls ?? [],
-            moduleHashes: item.moduleHashes ?? {},
-            installedAt: item.installedAt ? new Date(item.installedAt) : new Date(),
-            lastProbeAt: item.lastProbeAt ? new Date(item.lastProbeAt) : undefined,
-          }));
-          state.retryAttempts = retryAttempts;
-          state.retryDelay = retryDelay;
-          state.connectionTimeout = connectionTimeout;
-          state.packageRuntimeRegistryUrl = packageRuntimeRegistryUrl || DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL;
-          state.maxResponseSize = maxResponseSize;
+          state.servers = persisted.servers;
+          state.packageImports = persisted.packageImports;
+          state.packageRuntimeInstalls = persisted.packageRuntimeInstalls;
+          state.retryAttempts = persisted.retryAttempts;
+          state.retryDelay = persisted.retryDelay;
+          state.connectionTimeout = persisted.connectionTimeout;
+          state.packageRuntimeRegistryUrl = persisted.packageRuntimeRegistryUrl;
+          state.maxResponseSize = persisted.maxResponseSize;
           state.loading = false;
         });
 
-        // Emit change events
-        emitter.emit(mcpEvent.serversChanged, { servers: servers || [] });
-        emitter.emit(mcpEvent.packageImportsChanged, { imports: get().packageImports });
-        emitter.emit(mcpEvent.packageRuntimeInstallsChanged, { installs: get().packageRuntimeInstalls });
-        emitter.emit(mcpEvent.retryAttemptsChanged, { attempts: retryAttempts });
-        emitter.emit(mcpEvent.retryDelayChanged, { delay: retryDelay });
-        emitter.emit(mcpEvent.connectionTimeoutChanged, { timeout: connectionTimeout });
-        emitter.emit(mcpEvent.packageRuntimeRegistryUrlChanged, { url: get().packageRuntimeRegistryUrl });
-        emitter.emit(mcpEvent.maxResponseSizeChanged, { size: maxResponseSize });
-        
-      } catch (error: any) {
+        emitter.emit(mcpEvent.serversChanged, { servers: persisted.servers });
+        emitter.emit(mcpEvent.packageImportsChanged, {
+          imports: persisted.packageImports,
+        });
+        emitter.emit(mcpEvent.packageRuntimeInstallsChanged, {
+          installs: persisted.packageRuntimeInstalls,
+        });
+        emitter.emit(mcpEvent.retryAttemptsChanged, {
+          attempts: persisted.retryAttempts,
+        });
+        emitter.emit(mcpEvent.retryDelayChanged, { delay: persisted.retryDelay });
+        emitter.emit(mcpEvent.connectionTimeoutChanged, {
+          timeout: persisted.connectionTimeout,
+        });
+        emitter.emit(mcpEvent.packageRuntimeRegistryUrlChanged, {
+          url: persisted.packageRuntimeRegistryUrl,
+        });
+        emitter.emit(mcpEvent.maxResponseSizeChanged, {
+          size: persisted.maxResponseSize,
+        });
+      } catch (error) {
         console.error("Failed to load MCP state:", error);
         set((state) => {
-          state.error = error.message || "Failed to load MCP state";
+          state.error =
+            error instanceof Error ? error.message : "Failed to load MCP state";
           state.loading = false;
         });
       }
@@ -490,86 +410,84 @@ export const useMcpStore = create(
         state.retryAttempts = DEFAULT_MCP_RETRY_ATTEMPTS;
         state.retryDelay = DEFAULT_MCP_RETRY_DELAY;
         state.connectionTimeout = DEFAULT_MCP_CONNECTION_TIMEOUT;
-        state.packageRuntimeRegistryUrl = DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL;
+        state.packageRuntimeRegistryUrl =
+          DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL;
         state.maxResponseSize = DEFAULT_MCP_MAX_RESPONSE_SIZE;
         state.loading = false;
         state.error = null;
       });
-      
-      // Clear persistence
-      Promise.all([
-        PersistenceService.saveSetting("mcpServers", []),
-        PersistenceService.saveSetting("mcpPackageImports", []),
-        PersistenceService.saveSetting("mcpPackageRuntimeInstalls", []),
-        PersistenceService.saveSetting("mcpRetryAttempts", DEFAULT_MCP_RETRY_ATTEMPTS),
-        PersistenceService.saveSetting("mcpRetryDelay", DEFAULT_MCP_RETRY_DELAY),
-        PersistenceService.saveSetting("mcpConnectionTimeout", DEFAULT_MCP_CONNECTION_TIMEOUT),
-        PersistenceService.saveSetting("mcpPackageRuntimeRegistryUrl", DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL),
-        PersistenceService.saveSetting("mcpMaxResponseSize", DEFAULT_MCP_MAX_RESPONSE_SIZE),
-      ]).catch((error: any) => {
+
+      McpPersistenceService.resetPersistedState().catch((error: unknown) => {
         console.error("Failed to clear MCP settings from storage:", error);
       });
-      
-      // Emit change events
+
       emitter.emit(mcpEvent.serversChanged, { servers: [] });
       emitter.emit(mcpEvent.packageImportsChanged, { imports: [] });
       emitter.emit(mcpEvent.packageRuntimeInstallsChanged, { installs: [] });
-      emitter.emit(mcpEvent.retryAttemptsChanged, { attempts: DEFAULT_MCP_RETRY_ATTEMPTS });
+      emitter.emit(mcpEvent.retryAttemptsChanged, {
+        attempts: DEFAULT_MCP_RETRY_ATTEMPTS,
+      });
       emitter.emit(mcpEvent.retryDelayChanged, { delay: DEFAULT_MCP_RETRY_DELAY });
-      emitter.emit(mcpEvent.connectionTimeoutChanged, { timeout: DEFAULT_MCP_CONNECTION_TIMEOUT });
-      emitter.emit(mcpEvent.packageRuntimeRegistryUrlChanged, { url: DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL });
-      emitter.emit(mcpEvent.maxResponseSizeChanged, { size: DEFAULT_MCP_MAX_RESPONSE_SIZE });
+      emitter.emit(mcpEvent.connectionTimeoutChanged, {
+        timeout: DEFAULT_MCP_CONNECTION_TIMEOUT,
+      });
+      emitter.emit(mcpEvent.packageRuntimeRegistryUrlChanged, {
+        url: DEFAULT_MCP_PACKAGE_RUNTIME_REGISTRY_URL,
+      });
+      emitter.emit(mcpEvent.maxResponseSizeChanged, {
+        size: DEFAULT_MCP_MAX_RESPONSE_SIZE,
+      });
     },
 
-    // Event Integration
-    getRegisteredActionHandlers: (): RegisteredActionHandler[] => {
+    getRegisteredActionHandlers: () => {
       const actions = get();
       return [
         {
           eventName: mcpEvent.setServersRequest,
-          handler: (payload: { servers: McpServerConfig[] }) => 
+          handler: (payload: { servers: McpServerConfig[] }) =>
             actions.setServers(payload.servers),
           storeId: "mcpStore",
         },
         {
           eventName: mcpEvent.addServerRequest,
-          handler: (payload: { server: Omit<McpServerConfig, 'id'> }) => 
+          handler: (payload: { server: Omit<McpServerConfig, "id"> }) =>
             actions.addServer(payload.server),
           storeId: "mcpStore",
         },
         {
           eventName: mcpEvent.updateServerRequest,
-          handler: (payload: { id: string; updates: Partial<McpServerConfig> }) => 
-            actions.updateServer(payload.id, payload.updates),
+          handler: (payload: {
+            id: string;
+            updates: Partial<McpServerConfig>;
+          }) => actions.updateServer(payload.id, payload.updates),
           storeId: "mcpStore",
         },
         {
           eventName: mcpEvent.deleteServerRequest,
-          handler: (payload: { id: string }) => 
-            actions.deleteServer(payload.id),
+          handler: (payload: { id: string }) => actions.deleteServer(payload.id),
           storeId: "mcpStore",
         },
         {
           eventName: mcpEvent.setRetryAttemptsRequest,
-          handler: (payload: { attempts: number }) => 
+          handler: (payload: { attempts: number }) =>
             actions.setRetryAttempts(payload.attempts),
           storeId: "mcpStore",
         },
         {
           eventName: mcpEvent.setRetryDelayRequest,
-          handler: (payload: { delay: number }) => 
+          handler: (payload: { delay: number }) =>
             actions.setRetryDelay(payload.delay),
           storeId: "mcpStore",
         },
         {
           eventName: mcpEvent.setConnectionTimeoutRequest,
-          handler: (payload: { timeout: number }) => 
+          handler: (payload: { timeout: number }) =>
             actions.setConnectionTimeout(payload.timeout),
           storeId: "mcpStore",
         },
         {
           eventName: mcpEvent.setMaxResponseSizeRequest,
-          handler: (payload: { size: number }) => 
+          handler: (payload: { size: number }) =>
             actions.setMaxResponseSize(payload.size),
           storeId: "mcpStore",
         },
@@ -586,15 +504,12 @@ export const useMcpStore = create(
       ];
     },
 
-    // Proxy Configuration Export
-    exportProxyConfig: () => {
-      const servers = get().servers.map(server => ({
+    exportProxyConfig: () =>
+      get().servers.map((server) => ({
         id: server.id,
         name: server.name,
         url: server.url,
         enabled: server.enabled,
-      }));
-      return servers;
-    },
-  }))
+      })),
+  })),
 );

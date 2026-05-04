@@ -68,5 +68,4 @@ jobs:
           vuln-type: os,library
           severity: CRITICAL,HIGH
           scanners: vuln,secret,misconfig
-          skip-dirs: node_modules,dist,.git
-          skip-files: public/release/latest.zip,public/release/llmchef-0.2.9-beta.zip
+          skip-dirs: node_modules,dist,.git,public/release

@@ -24,6 +24,12 @@ import { useControlRegistryStore } from "@/store/control.store";
 import { useConversationStore } from "@/store/conversation.store";
 import { getContextSnapshot } from "@/lib/llmchef/ai-helpers";
 import { WorkflowFlowGenerator } from "@/lib/llmchef/workflow-flow-generator";
+import {
+  buildWorkflowTransformContext,
+  resolveJsonPath,
+  resolveWorkflowMappingValue,
+  validateJsonQuery,
+} from "@/lib/llmchef/workflow-query-utils";
 import type { StepStatus } from "@/types/llmchef/flow";
 import { CodeExecutionService } from "./code-execution.service";
 import type { PromptTemplateType } from "@/types/llmchef/prompt-template";
@@ -171,101 +177,17 @@ export const WorkflowService = {
     );
   },
 
-  _resolveJsonPath: (obj: any, path: string): any => {
-    if (path.startsWith("$.")) path = path.substring(2);
-
-    try {
-      return path.split(".").reduce((acc, part) => {
-        if (acc === null || acc === undefined) return undefined;
-
-        // Handle array indices (including multi-dimensional arrays)
-        if (part.includes("[") && part.includes("]")) {
-          // Split property name from array indices
-          const propMatch = part.match(/^([^[]*)/);
-          const prop = propMatch ? propMatch[1] : "";
-
-          // Extract all array indices
-          const indexMatches = part.match(/\[(\d+)\]/g);
-          if (!indexMatches) return undefined;
-
-          // Start with the property (if it exists)
-          let current = prop ? getSafePathValue(acc, prop) : acc;
-
-          // Apply each array index in sequence
-          for (const indexMatch of indexMatches) {
-            const indexStr = indexMatch.slice(1, -1); // Remove [ and ]
-            const index = parseInt(indexStr, 10);
-            if (!Number.isSafeInteger(index) || index < 0 || !Array.isArray(current)) {
-              return undefined;
-            }
-            current = current[index];
-          }
-
-          return current;
-        }
-
-        return getSafePathValue(acc, part);
-      }, obj);
-    } catch (error) {
-      console.warn(
-        `[WorkflowService] JSONPath resolution failed for ${path}:`,
-        error
-      );
-      return undefined;
-    }
-  },
+  _resolveJsonPath: (obj: unknown, path: string): unknown =>
+    resolveJsonPath(obj, path),
 
   /**
    * Validate JSON query strings for transform steps
    */
   _validateJsonQuery: (
     query: string,
-    context: Record<string, any>
-  ): { isValid: boolean; error?: string; result?: any } => {
-    if (!query.trim()) {
-      return { isValid: false, error: "Query cannot be empty" };
-    }
-
-    // Check for static values first
-    if (query.startsWith('"') && query.endsWith('"')) {
-      return { isValid: true, result: query.slice(1, -1) }; // Remove quotes
-    }
-
-    if (!isNaN(Number(query))) {
-      return { isValid: true, result: Number(query) };
-    }
-
-    if (query === "true" || query === "false") {
-      return { isValid: true, result: query === "true" };
-    }
-
-    // Basic JSONPath validation
-    if (!query.startsWith("$.")) {
-      return {
-        isValid: false,
-        error:
-          'Query must start with "$." or be a static value ("text", number, true/false)',
-      };
-    }
-
-    // Check for invalid characters or patterns
-    const invalidChars = /[^a-zA-Z0-9_.$[\]]/;
-    if (invalidChars.test(query.replace(/\[(\d+)\]/g, ""))) {
-      return { isValid: false, error: "Invalid characters in query" };
-    }
-
-    // Test the query against the context
-    try {
-      const result = WorkflowService._resolveJsonPath(context, query);
-      return { isValid: true, result };
-    } catch (error) {
-      return {
-        isValid: false,
-        error: `Query execution failed: ${error instanceof Error ? error.message : "Unknown error"
-          }`,
-      };
-    }
-  },
+    context: Record<string, unknown>
+  ): { isValid: boolean; error?: string; result?: unknown } =>
+    validateJsonQuery(query, context),
 
   /**
    * Build full context for transform steps including workflow data and all previous outputs
@@ -273,59 +195,8 @@ export const WorkflowService = {
   _buildTransformContext: (
     run: WorkflowRun,
     stepIndex: number
-  ): Record<string, any> => {
-    // console.log(
-    //   `[WorkflowService] Building transform context for stepIndex ${stepIndex}`
-    // );
-    // console.log(
-    //   `[WorkflowService] Available step outputs:`,
-    //   Object.keys(run.stepOutputs)
-    // );
-
-    // Build outputs array with proper indexing - limit to previous steps only
-    const outputs: any[] = [];
-
-    // outputs[0] = trigger output
-    if (run.stepOutputs.trigger) {
-      outputs[0] = run.stepOutputs.trigger;
-      // console.log(
-      //   `[WorkflowService] Added trigger output to outputs[0]:`,
-      //   outputs[0]
-      // );
-    }
-
-    // outputs[1] = step0, outputs[2] = step1, etc. - only include completed steps before current step
-    for (let i = 0; i < stepIndex; i++) {
-      const actualStep = run.template.steps[i];
-      if (actualStep && run.stepOutputs[actualStep.id]) {
-        outputs[i + 1] = run.stepOutputs[actualStep.id];
-        // console.log(
-        //   `[WorkflowService] Added step[${i}] (${
-        //     actualStep.id
-        //   }) output to outputs[${i + 1}]:`,
-        //   outputs[i + 1]
-        // );
-      } else {
-        console.warn(
-          `[WorkflowService] No output found for step at index ${i} (${actualStep?.id})`
-        );
-      }
-    }
-
-    const context: Record<string, any> = {
-      // Keep original workflow template intact - NO TRANSFORMATIONS
-      workflow: run.template,
-      // Access to initial prompt output
-      initial_step: run.stepOutputs.trigger || {},
-      // Array-based access to previous step outputs
-      outputs: outputs,
-    };
-
-    // console.log(
-    //   `[WorkflowService] Built context with ${outputs.length} outputs`
-    // );
-    return context;
-  },
+  ): Record<string, unknown> =>
+    buildWorkflowTransformContext(run, stepIndex),
 
   _confirmJsFunctionStepExecution: (run: WorkflowRun, step: WorkflowStep): boolean => {
     if (typeof window === "undefined" || typeof window.confirm !== "function") {
@@ -406,8 +277,12 @@ export const WorkflowService = {
       );
 
       // For steps without template variables, pass through the most recent output
-      const context = WorkflowService._buildTransformContext(run, stepIndex);
-      const previousOutput = context.outputs[context.outputs.length - 1] || context.initial_step;
+      const context = WorkflowService._buildTransformContext(run, stepIndex) as {
+        outputs: unknown[];
+        initial_step: unknown;
+      };
+      const previousOutput =
+        context.outputs[context.outputs.length - 1] || context.initial_step;
 
       // console.log(
       //   `[WorkflowService] Transform step "${step.name}" passing through previous output:`,
@@ -418,7 +293,10 @@ export const WorkflowService = {
     }
 
     // Build context using the new unified method
-    const context = WorkflowService._buildTransformContext(run, stepIndex);
+    const context = WorkflowService._buildTransformContext(
+      run,
+      stepIndex,
+    ) as Record<string, unknown>;
     // console.log(
     //   `[WorkflowService] Transform context for step "${step.name}":`,
     //   context
@@ -449,34 +327,10 @@ export const WorkflowService = {
       // );
 
       try {
-        let value: any;
-
-        // Handle static values
-        if (query.startsWith('"') && query.endsWith('"')) {
-          value = query.slice(1, -1); // Remove quotes
-        } else if (!isNaN(Number(query))) {
-          value = Number(query);
-        } else if (query === "true" || query === "false") {
-          value = query === "true";
-        } else if (query.startsWith("$.")) {
-          // JSON query
-          value = WorkflowService._resolveJsonPath(context, query);
-          if (value === undefined) {
-            console.warn(
-              `[WorkflowService] Transform step "${step.name}": Query "${query}" for field "${fieldName}" returned undefined`
-            );
-          }
-        } else {
-          throw new WorkflowError(
-            `Invalid query format: "${query}". Must be a JSON path starting with "$." or a static value.`,
-            "JSONPATH_INVALID",
-            {
-              runId: run.runId,
-              stepId: step.id,
-              stepIndex,
-              stepType: "transform",
-              query,
-            }
+        const value = resolveWorkflowMappingValue(context, query);
+        if (query.startsWith("$.") && value === undefined) {
+          console.warn(
+            `[WorkflowService] Transform step "${step.name}": Query "${query}" for field "${fieldName}" returned undefined`
           );
         }
 
@@ -541,10 +395,16 @@ export const WorkflowService = {
     }
 
     // Build context to access previous step outputs
-    const context = WorkflowService._buildTransformContext(run, stepIndex);
+    const context = WorkflowService._buildTransformContext(
+      run,
+      stepIndex,
+    ) as Record<string, unknown>;
 
     // Resolve the array to iterate over using JSONPath
-    const arrayData = WorkflowService._resolveJsonPath(context, step.parallelOn);
+    const arrayData = WorkflowService._resolveJsonPath(
+      context,
+      step.parallelOn,
+    ) as unknown;
 
     if (!Array.isArray(arrayData)) {
       throw new WorkflowError(
@@ -844,28 +704,17 @@ export const WorkflowService = {
     }
 
     // Build context from previous steps
-    const context = WorkflowService._buildTransformContext(run, stepIndex);
+    const context = WorkflowService._buildTransformContext(
+      run,
+      stepIndex,
+    ) as Record<string, unknown>;
 
     // Map input variables for sub-workflow
-    const subWorkflowInputs: Record<string, any> = {};
+    const subWorkflowInputs: Record<string, unknown> = {};
     if (step.subWorkflowInputMapping) {
       for (const [subVarName, query] of Object.entries(step.subWorkflowInputMapping)) {
         try {
-          if (query.startsWith('"') && query.endsWith('"')) {
-            // Static value
-            subWorkflowInputs[subVarName] = query.slice(1, -1);
-          } else if (!isNaN(Number(query))) {
-            // Numeric value
-            subWorkflowInputs[subVarName] = Number(query);
-          } else if (query === "true" || query === "false") {
-            // Boolean value
-            subWorkflowInputs[subVarName] = query === "true";
-          } else if (query.startsWith("$.")) {
-            // JSONPath query
-            subWorkflowInputs[subVarName] = WorkflowService._resolveJsonPath(context, query);
-          } else {
-            throw new Error(`Invalid query format: "${query}"`);
-          }
+          subWorkflowInputs[subVarName] = resolveWorkflowMappingValue(context, query);
         } catch (error) {
           throw new WorkflowError(
             `Sub-workflow step "${step.name}": Failed to resolve input mapping for "${subVarName}": ${error}`,

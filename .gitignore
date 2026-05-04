@@ -31,6 +31,8 @@ src.*.d
 .update_scripts/*
 todo.*.md
 public/versions/
+public/release/*.zip
+!public/release/.gitkeep
 **/*.bak
 
 # hides all local stuff :)

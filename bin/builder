@@ -663,10 +663,15 @@ handle_version_bump() {
     exit 1
   fi
 
-  # npm version will update package.json, create a commit, and create a tag.
-  # It outputs the new version tag (e.g., v1.2.4) to stdout.
+  # npm version updates package.json, creates a commit, and creates a tag.
+  # Depending on tag-version-prefix, it may output either 1.2.4 or v1.2.4.
+  local version_args=("$VERSION_BUMP_LEVEL")
+  if [[ "$VERSION_BUMP_LEVEL" == "prerelease" ]]; then
+    version_args+=(--preid "${VERSION_PREID:-beta}")
+  fi
+
   local new_version_tag
-  if ! new_version_tag=$(npm version "$VERSION_BUMP_LEVEL"); then
+  if ! new_version_tag=$(npm version "${version_args[@]}"); then
     log_error "npm version bump failed."
     exit 1
   fi

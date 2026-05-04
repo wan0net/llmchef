@@ -7,13 +7,13 @@
 set -e  # Exit on any error
 
 # Check for required tools
-if ! command -v jq &> /dev/null; then
-    echo "Error: jq is required but not installed. Please install jq first."
+if ! command -v node &> /dev/null; then
+    echo "Error: node is required but not installed. Please install Node.js first."
     exit 1
 fi
 
-if ! command -v zip &> /dev/null; then
-    echo "Error: zip is required but not installed. Please install zip first."
+if ! command -v python3 &> /dev/null; then
+    echo "Error: python3 is required but not installed. Please install Python 3 first."
     exit 1
 fi
 
@@ -33,8 +33,8 @@ fi
 mkdir -p public/release
 
 # Extract version from package.json
-VERSION=$(jq -r .version package.json)
-if [ -z "$VERSION" ] || [ "$VERSION" == "null" ]; then
+VERSION=$(node -p "require('./package.json').version")
+if [ -z "$VERSION" ] || [ "$VERSION" == "null" ] || [ "$VERSION" == "undefined" ]; then
     echo "Error: Could not extract version from package.json"
     exit 1
 fi
@@ -72,18 +72,27 @@ rm -rf "$TEMP_DIR/icons/1024.png";
 
 # Create the release zip file
 echo "Creating ZIP archive..."
-cd "$TEMP_DIR";
-zip -r "../llmchef-latest.zip" ./* -q
+cd "$TEMP_DIR"
+python3 - <<'PY'
+import os
+import zipfile
+
+archive_path = os.path.abspath(os.path.join(os.getcwd(), "..", "llmchef-latest.zip"))
+with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+    for root, _, files in os.walk("."):
+        for filename in files:
+            full_path = os.path.join(root, filename)
+            relative_path = os.path.relpath(full_path, ".")
+            zf.write(full_path, relative_path)
+PY
 cd - > /dev/null
 
 # Copy the zip files to public/release/
 echo "Copying ZIP archives to public/release/..."
 rm -f "public/release/latest.zip"
-rm -f public/release/litechat-*.zip public/release/litechat-nightly.zip
+rm -f public/release/llmchef-*.zip
 cp "$TEMP_DIR/../llmchef-latest.zip" "public/release/latest.zip"
-rm -f "public/release/llmchef-${VERSION}.zip"
 cp "public/release/latest.zip" "public/release/llmchef-${VERSION}.zip"
-
 rm "$TEMP_DIR/../llmchef-latest.zip"
 
 # Output file sizes

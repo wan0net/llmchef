@@ -3,10 +3,18 @@
 import type { Conversation } from "@/types/llmchef/chat";
 import type { Interaction } from "@/types/llmchef/interaction";
 import type { Project } from "@/types/llmchef/project";
+import { PersistenceService, type FullExportData } from "@/services/persistence.service";
+import { db } from "@/lib/llmchef/db";
 import {
-  PersistenceService,
-  type FullExportData,
-} from "@/services/persistence.service";
+  agentsBundleSchema,
+  conversationImportSchema,
+  fullExportDataSchema,
+  mcpServersBundleSchema,
+  normalizeImportedAgentTemplates,
+  normalizeImportedPromptTemplates,
+  promptTemplatesBundleSchema,
+  workflowsBundleSchema,
+} from "@/lib/llmchef/import-export-validation";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { formatBytes } from "@/lib/llmchef/file-manager-utils";
@@ -172,27 +180,9 @@ export class ImportExportService {
   ): Promise<void> {
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
-      if (
-        !data ||
-        typeof data !== "object" ||
-        !data.conversation ||
-        !Array.isArray(data.interactions)
-      ) {
-        throw new Error(
-          "Invalid import file format. Expected { conversation: {}, interactions: [] }.",
-        );
-      }
+      const data = conversationImportSchema.parse(JSON.parse(text));
       const importedConversation: Conversation = data.conversation;
       const importedInteractions: Interaction[] = data.interactions;
-      if (
-        !importedConversation.id ||
-        !importedConversation.title ||
-        !importedConversation.createdAt ||
-        !importedConversation.updatedAt
-      ) {
-        throw new Error("Invalid conversation data in import file.");
-      }
       const newId = await addConversationAction({
         title: importedConversation.title || "Imported Chat",
         metadata: importedConversation.metadata,
@@ -471,15 +461,7 @@ export class ImportExportService {
   ): Promise<void> {
     try {
       const text = await file.text();
-      const data = JSON.parse(text) as FullExportData;
-
-      if (!data || typeof data !== "object" || !data.version) {
-        throw new Error(
-          "Invalid import file format. Missing version or basic structure.",
-        );
-      }
-
-      // Add more validation as needed based on FullExportData structure
+      const data = fullExportDataSchema.parse(JSON.parse(text)) as FullExportData;
 
       await PersistenceService.importAllData(data, options);
 
@@ -503,28 +485,20 @@ export class ImportExportService {
   static async importPromptTemplates(file: File): Promise<void> {
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
-      
-      if (!data || typeof data !== "object" || !data.promptTemplates || !Array.isArray(data.promptTemplates)) {
-        throw new Error("Invalid prompt templates file format.");
-      }
-      
-      let importedCount = 0;
-      for (const template of data.promptTemplates) {
-        try {
+      const parsed = promptTemplatesBundleSchema.parse(JSON.parse(text));
+      const templates = normalizeImportedPromptTemplates(parsed.promptTemplates);
+
+      await db.transaction("rw", [db.promptTemplates], async () => {
+        for (const template of templates) {
           await PersistenceService.savePromptTemplate({
             ...template,
-            id: template.id || nanoid(), // Generate new ID if missing
             createdAt: template.createdAt ? new Date(template.createdAt) : new Date(),
             updatedAt: new Date(),
           });
-          importedCount++;
-        } catch (error) {
-          console.warn(`Failed to import template ${template.name}:`, error);
         }
-      }
-      
-      toast.success(`Imported ${importedCount} prompt templates.`);
+      });
+
+      toast.success(`Imported ${templates.length} prompt templates.`);
     } catch (error) {
       console.error("ImportExportService: Error importing prompt templates", error);
       toast.error(
@@ -537,34 +511,28 @@ export class ImportExportService {
   static async importAgents(file: File): Promise<void> {
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
-      
-      if (!data || typeof data !== "object" || !data.agents || !Array.isArray(data.agents)) {
-        throw new Error("Invalid agents file format.");
-      }
-      
+      const parsed = agentsBundleSchema.parse(JSON.parse(text));
+      const templates = normalizeImportedAgentTemplates(parsed.agents);
+
       let importedAgents = 0;
       let importedTasks = 0;
-      
-      for (const template of data.agents) {
-        try {
+
+      await db.transaction("rw", [db.promptTemplates], async () => {
+        for (const template of templates) {
           await PersistenceService.savePromptTemplate({
             ...template,
-            id: template.id || nanoid(), // Generate new ID if missing
             createdAt: template.createdAt ? new Date(template.createdAt) : new Date(),
             updatedAt: new Date(),
           });
-          
+
           if (template.type === "agent") {
             importedAgents++;
           } else if (template.type === "task") {
             importedTasks++;
           }
-        } catch (error) {
-          console.warn(`Failed to import ${template.type} ${template.name}:`, error);
         }
-      }
-      
+      });
+
       toast.success(`Imported ${importedAgents} agents with ${importedTasks} tasks.`);
     } catch (error) {
       console.error("ImportExportService: Error importing agents", error);
@@ -578,13 +546,11 @@ export class ImportExportService {
   static async importMcpServers(file: File): Promise<void> {
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
-      
-      if (!data || typeof data !== "object" || !data.mcpServers || !Array.isArray(data.mcpServers)) {
-        throw new Error("Invalid MCP servers file format.");
-      }
-      
-      await PersistenceService.saveSetting("mcpServers", data.mcpServers);
+      const data = mcpServersBundleSchema.parse(JSON.parse(text));
+
+      await db.transaction("rw", [db.appState], async () => {
+        await PersistenceService.saveSetting("mcpServers", data.mcpServers);
+      });
       toast.success(`Imported ${data.mcpServers.length} MCP server configurations.`);
     } catch (error) {
       console.error("ImportExportService: Error importing MCP servers", error);
@@ -624,28 +590,20 @@ export class ImportExportService {
   static async importWorkflows(file: File): Promise<void> {
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
-      
-      if (!data || typeof data !== "object" || !data.workflows || !Array.isArray(data.workflows)) {
-        throw new Error("Invalid workflows file format.");
-      }
-      
-      let importedCount = 0;
-      for (const workflow of data.workflows) {
-        try {
+      const data = workflowsBundleSchema.parse(JSON.parse(text));
+
+      await db.transaction("rw", [db.workflows], async () => {
+        for (const workflow of data.workflows) {
           await PersistenceService.saveWorkflow({
             ...workflow,
-            id: workflow.id || nanoid(), // Generate new ID if missing
+            id: workflow.id || nanoid(),
             createdAt: workflow.createdAt ? workflow.createdAt : new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           });
-          importedCount++;
-        } catch (error) {
-          console.warn(`Failed to import workflow ${workflow.name}:`, error);
         }
-      }
-      
-      toast.success(`Imported ${importedCount} workflows.`);
+      });
+
+      toast.success(`Imported ${data.workflows.length} workflows.`);
     } catch (error) {
       console.error("ImportExportService: Error importing workflows", error);
       toast.error(
