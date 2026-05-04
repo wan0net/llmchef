@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "LLMChef",
-  "version": "0.2.9-beta",
+  "version": "0.2.13-beta",
   "identifier": "net.wan0.llmchef",
   "build": {
     "frontendDist": "../dist",

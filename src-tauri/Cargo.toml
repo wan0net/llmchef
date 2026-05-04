@@ -1,6 +1,6 @@
 [package]
 name = "llmchef-desktop"
-version = "0.2.9-beta"
+version = "0.2.13-beta"
 description = "LLMChef desktop shell"
 authors = ["wan0net"]
 license = "MIT"
