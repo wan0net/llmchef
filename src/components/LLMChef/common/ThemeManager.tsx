@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useSettingsStore } from "@/store/settings.store";
-import type { CustomThemeColors } from "@/store/settings.store";
+import type { CustomThemeColors } from "@/types/llmchef/settings";
 import { THEME_OPTIONS } from "@/types/llmchef/common";
 
 // Helper to convert camelCase to kebab-case for CSS variables

@@ -14,7 +14,7 @@ import { useSettingsStore } from "@/store/settings.store";
 import { useShallow } from "zustand/react/shallow";
 import { Separator } from "@/components/ui/separator";
 import { SettingsSection } from "@/components/LLMChef/common/SettingsSection";
-import type { CustomThemeColors } from "@/store/settings.store";
+import type { CustomThemeColors } from "@/types/llmchef/settings";
 import { THEME_OPTIONS, type Theme } from "@/types/llmchef/common";
 
 const ColorInput: React.FC<{

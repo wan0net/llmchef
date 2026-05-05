@@ -1,8 +1,40 @@
-// src/store/settings.store.ts
-// FULL FILE
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { PersistenceService } from "@/services/persistence.service";
+import {
+  createDefaultAutoTitleSettings,
+  createDefaultConfigSyncSettings,
+  createDefaultThemeSettings,
+  createDefaultToolSelectionSettings,
+  DEFAULT_AUTO_TITLE_ALWAYS_ON,
+  DEFAULT_AUTO_TITLE_ENABLED,
+  DEFAULT_AUTO_TITLE_INCLUDE_FILES,
+  DEFAULT_AUTO_TITLE_INCLUDE_RULES,
+  DEFAULT_AUTO_TITLE_MODEL_ID,
+  DEFAULT_AUTO_TITLE_PROMPT_MAX_LENGTH,
+  DEFAULT_AUTO_TOOL_SELECTION_ENABLED,
+  DEFAULT_AUTO_TOOL_SELECTION_MODEL_ID,
+  DEFAULT_AUTO_TOOL_SELECTION_PROMPT,
+  DEFAULT_CHAT_MAX_WIDTH,
+  DEFAULT_CONFIG_SYNC_AUTO_SYNC,
+  DEFAULT_CONFIG_SYNC_ENABLED,
+  DEFAULT_CONFIG_SYNC_INCLUDE_AGENTS,
+  DEFAULT_CONFIG_SYNC_INCLUDE_MCP_SERVERS,
+  DEFAULT_CONFIG_SYNC_INCLUDE_PROMPT_TEMPLATES,
+  DEFAULT_CONFIG_SYNC_INCLUDE_RULES,
+  DEFAULT_CONFIG_SYNC_INCLUDE_SETTINGS,
+  DEFAULT_CONFIG_SYNC_INCLUDE_WORKFLOWS,
+  DEFAULT_CONFIG_SYNC_INTERVAL,
+  DEFAULT_CONFIG_SYNC_LAST_SYNCED_AT,
+  DEFAULT_CONFIG_SYNC_REPO_ID,
+  DEFAULT_CUSTOM_FONT_FAMILY,
+  DEFAULT_CUSTOM_FONT_SIZE,
+  DEFAULT_CUSTOM_THEME_COLORS,
+  DEFAULT_PRISM_THEME_URL,
+  DEFAULT_THEME,
+  DEFAULT_TOOL_MAX_STEPS,
+  SettingsPersistenceService,
+} from "@/services/settings-persistence.service";
 import { toast } from "sonner";
 import { emitter } from "@/lib/llmchef/event-emitter";
 import {
@@ -11,119 +43,9 @@ import {
 } from "@/types/llmchef/events/settings.events";
 import { controlRegistryEvent } from "@/types/llmchef/events/control.registry.events";
 import type { RegisteredActionHandler } from "@/types/llmchef/control";
+import type { CustomThemeColors, SettingsState } from "@/types/llmchef/settings";
 import { BUNDLED_SYSTEM_PROMPT } from "virtual:system-prompt";
 import { useControlRegistryStore } from "./control.store";
-import type { Theme } from "@/types/llmchef/common";
-
-export interface CustomThemeColors {
-  background?: string;
-  foreground?: string;
-  card?: string;
-  cardForeground?: string;
-  popover?: string;
-  popoverForeground?: string;
-  primary?: string;
-  primaryForeground?: string;
-  secondary?: string;
-  secondaryForeground?: string;
-  muted?: string;
-  mutedForeground?: string;
-  accent?: string;
-  accentForeground?: string;
-  destructive?: string;
-  destructiveForeground?: string;
-  border?: string;
-  input?: string;
-  ring?: string;
-  sidebar?: string;
-  sidebarForeground?: string;
-  sidebarPrimary?: string;
-  sidebarPrimaryForeground?: string;
-  sidebarAccent?: string;
-  sidebarAccentForeground?: string;
-  sidebarBorder?: string;
-  sidebarRing?: string;
-  chart1?: string;
-  chart2?: string;
-  chart3?: string;
-  chart4?: string;
-  chart5?: string;
-}
-
-
-
-export interface SettingsState {
-  theme: Theme;
-  globalSystemPrompt: string | null;
-  temperature: number | null;
-  maxTokens: number | null;
-  topP: number | null;
-  topK: number | null;
-  presencePenalty: number | null;
-  frequencyPenalty: number | null;
-  enableAdvancedSettings: boolean;
-  enableStreamingMarkdown: boolean;
-  enableStreamingCodeBlockParsing: boolean;
-  foldStreamingCodeBlocks: boolean;
-  foldUserMessagesOnCompletion: boolean;
-  streamingRenderFPS: number;
-  gitUserName: string | null;
-  gitUserEmail: string | null;
-  gitGlobalPat: string | null;
-  toolMaxSteps: number;
-  prismThemeUrl: string | null;
-  autoTitleEnabled: boolean;
-  autoTitleAlwaysOn: boolean;
-  autoTitleModelId: string | null;
-  autoTitlePromptMaxLength: number;
-  autoTitleIncludeFiles: boolean;
-  autoTitleIncludeRules: boolean;
-  forkCompactPrompt: string | null;
-  forkCompactModelId: string | null;
-  customFontFamily: string | null;
-  customFontSize: number | null;
-  chatMaxWidth: string | null;
-  customThemeColors: CustomThemeColors | null;
-  autoScrollInterval: number;
-  enableAutoScrollOnStream: boolean;
-  autoSyncOnStreamComplete: boolean;
-  autoInitializeReposOnStartup: boolean;
-  controlRuleAlwaysOn: Record<string, boolean>;
-  autoRuleSelectionEnabled: boolean;
-  autoRuleSelectionModelId: string | null;
-  autoRuleSelectionPrompt: string | null;
-  runnableBlocksEnabled: boolean;
-  runnableBlocksSecurityCheckEnabled: boolean;
-  runnableBlocksSecurityModelId: string | null;
-  runnableBlocksSecurityPrompt: string | null;
-  
-  // Auto Tool Selection Settings
-  autoToolSelectionEnabled: boolean;
-  autoToolSelectionModelId: string | null;
-  autoToolSelectionPrompt: string | null;
-  
-  // Text Trigger Settings
-  textTriggersEnabled: boolean;
-  textTriggerStartDelimiter: string;
-  textTriggerEndDelimiter: string;
-  
-  // Config Sync Settings
-  configSyncEnabled: boolean;
-  configSyncRepoId: string | null;
-  configSyncAutoSync: boolean;
-  configSyncIncludeSettings: boolean;
-  configSyncIncludeRules: boolean;
-  configSyncIncludePromptTemplates: boolean;
-  configSyncIncludeAgents: boolean;
-  configSyncIncludeWorkflows: boolean;
-  configSyncIncludeMcpServers: boolean;
-  configSyncLastSyncedAt: string | null;
-  configSyncInterval: number;
-  
-  // Service URLs
-  corsProxyUrl: string;
-  markdownServiceUrl: string;
-}
 
 interface SettingsActions {
   setTheme: (theme: SettingsState["theme"]) => void;
@@ -208,7 +130,6 @@ interface SettingsActions {
 }
 
 // Define default constants
-const DEFAULT_THEME: Theme = "link42Dark";
 const DEFAULT_SYSTEM_PROMPT = BUNDLED_SYSTEM_PROMPT;
 const DEFAULT_TEMPERATURE = null;
 const DEFAULT_MAX_TOKENS = null;
@@ -225,20 +146,8 @@ const DEFAULT_STREAMING_FPS = 15;
 const DEFAULT_GIT_USER_NAME = null;
 const DEFAULT_GIT_USER_EMAIL = null;
 const DEFAULT_GIT_GLOBAL_PAT = null;
-const DEFAULT_TOOL_MAX_STEPS = 5;
-const DEFAULT_PRISM_THEME_URL = null;
-const DEFAULT_AUTO_TITLE_ENABLED = true;
-const DEFAULT_AUTO_TITLE_ALWAYS_ON = false;
-const DEFAULT_AUTO_TITLE_MODEL_ID = null;
-const DEFAULT_AUTO_TITLE_PROMPT_MAX_LENGTH = 768;
-const DEFAULT_AUTO_TITLE_INCLUDE_FILES = false;
-const DEFAULT_AUTO_TITLE_INCLUDE_RULES = false;
 const DEFAULT_FORK_COMPACT_PROMPT = null;
 const DEFAULT_FORK_COMPACT_MODEL_ID = null;
-const DEFAULT_CUSTOM_FONT_FAMILY = null;
-const DEFAULT_CUSTOM_FONT_SIZE = 16;
-const DEFAULT_CHAT_MAX_WIDTH = "max-w-7xl";
-const DEFAULT_CUSTOM_THEME_COLORS = null;
 const DEFAULT_AUTO_SCROLL_INTERVAL = 1000;
 const DEFAULT_ENABLE_AUTO_SCROLL_ON_STREAM = true;
 const DEFAULT_AUTO_SYNC_ON_STREAM_COMPLETE = false;
@@ -254,37 +163,16 @@ const DEFAULT_RUNNABLE_BLOCKS_SECURITY_MODEL_ID = null;
 const DEFAULT_RUNNABLE_BLOCKS_SECURITY_PROMPT =
   "Analyze the following code for potential security risks or malicious behavior. Respond with ONLY a number from 0 to 100 where:\n- 0-30: Safe code (reading data, basic calculations, simple DOM manipulation)\n- 31-60: Moderate risk (file operations, network requests, eval usage)\n- 61-90: High risk (system commands, dangerous APIs, potential privacy violations)\n- 91-100: Extremely dangerous (malware, destructive operations, clear security threats)\n\nCode to analyze:\n{{code}}\n\nReturn only the numeric risk score (0-100).";
 
-// Auto Tool Selection Settings
-const DEFAULT_AUTO_TOOL_SELECTION_ENABLED = false;
-const DEFAULT_AUTO_TOOL_SELECTION_MODEL_ID = null;
-const DEFAULT_AUTO_TOOL_SELECTION_PROMPT = 
-  "Analyze the following user prompt and the list of available tools. Select the most relevant tools that would help accomplish the user's task. Respond with ONLY a JSON string array of the selected tool names, for example: [\"tool1\", \"tool2\"]. Do not include any other text, explanation, or markdown formatting.\n\nUSER PROMPT:\n{{prompt}}\n\nAVAILABLE TOOLS:\n{{tools}}";
-
-// Text Trigger Settings  
+// Text Trigger Settings
 const DEFAULT_TEXT_TRIGGERS_ENABLED = true;
 const DEFAULT_TEXT_TRIGGER_START_DELIMITER = "@.";
 const DEFAULT_TEXT_TRIGGER_END_DELIMITER = ";";
-
-// Config Sync Settings
-const DEFAULT_CONFIG_SYNC_ENABLED = false;
-const DEFAULT_CONFIG_SYNC_REPO_ID = null;
-const DEFAULT_CONFIG_SYNC_AUTO_SYNC = false;
-const DEFAULT_CONFIG_SYNC_INCLUDE_SETTINGS = true;
-const DEFAULT_CONFIG_SYNC_INCLUDE_RULES = true;
-const DEFAULT_CONFIG_SYNC_INCLUDE_PROMPT_TEMPLATES = true;
-const DEFAULT_CONFIG_SYNC_INCLUDE_AGENTS = true;
-const DEFAULT_CONFIG_SYNC_INCLUDE_WORKFLOWS = true;
-const DEFAULT_CONFIG_SYNC_INCLUDE_MCP_SERVERS = true;
-const DEFAULT_CONFIG_SYNC_LAST_SYNCED_AT = null;
-const DEFAULT_CONFIG_SYNC_INTERVAL = 3600000; // 1 hour
 
 // Service URLs
 const DEFAULT_CORS_PROXY_URL = "";
 const DEFAULT_MARKDOWN_SERVICE_URL = "";
 
-// Add a static array of all SettingsState keys for robust, type-safe enumeration
-export const SETTINGS_KEYS: (keyof SettingsState)[] = [
-  "theme",
+const LEGACY_SETTINGS_KEYS: (keyof SettingsState)[] = [
   "globalSystemPrompt",
   "temperature",
   "maxTokens",
@@ -301,20 +189,8 @@ export const SETTINGS_KEYS: (keyof SettingsState)[] = [
   "gitUserName",
   "gitUserEmail",
   "gitGlobalPat",
-  "toolMaxSteps",
-  "prismThemeUrl",
-  "autoTitleEnabled",
-  "autoTitleAlwaysOn",
-  "autoTitleModelId",
-  "autoTitlePromptMaxLength",
-  "autoTitleIncludeFiles",
-  "autoTitleIncludeRules",
   "forkCompactPrompt",
   "forkCompactModelId",
-  "customFontFamily",
-  "customFontSize",
-  "chatMaxWidth",
-  "customThemeColors",
   "autoScrollInterval",
   "enableAutoScrollOnStream",
   "autoSyncOnStreamComplete",
@@ -327,23 +203,9 @@ export const SETTINGS_KEYS: (keyof SettingsState)[] = [
   "runnableBlocksSecurityCheckEnabled",
   "runnableBlocksSecurityModelId",
   "runnableBlocksSecurityPrompt",
-  "autoToolSelectionEnabled",
-  "autoToolSelectionModelId", 
-  "autoToolSelectionPrompt",
   "textTriggersEnabled",
   "textTriggerStartDelimiter",
   "textTriggerEndDelimiter",
-  "configSyncEnabled",
-  "configSyncRepoId",
-  "configSyncAutoSync",
-  "configSyncIncludeSettings",
-  "configSyncIncludeRules",
-  "configSyncIncludePromptTemplates",
-  "configSyncIncludeAgents",
-  "configSyncIncludeWorkflows",
-  "configSyncIncludeMcpServers",
-  "configSyncLastSyncedAt",
-  "configSyncInterval",
   "corsProxyUrl",
   "markdownServiceUrl",
 ];
@@ -354,6 +216,20 @@ const persistSetting = async <K extends keyof SettingsState>(
 ) => {
   await PersistenceService.saveSetting(key, value);
   emitter.emit(settingsEvent.settingsChanged, { [key]: value });
+};
+
+const persistSettingsSlice = async (
+  partial: Partial<SettingsState>,
+  persist: () => Promise<void>,
+) => {
+  await persist();
+  emitter.emit(settingsEvent.settingsChanged, partial);
+};
+
+const emitSettingsChangedEntries = (partial: Partial<SettingsState>) => {
+  for (const [key, value] of Object.entries(partial)) {
+    emitter.emit(settingsEvent.settingsChanged, { [key]: value });
+  }
 };
 
 export const useSettingsStore = create(
@@ -376,20 +252,11 @@ export const useSettingsStore = create(
     gitUserName: DEFAULT_GIT_USER_NAME,
     gitUserEmail: DEFAULT_GIT_USER_EMAIL,
     gitGlobalPat: DEFAULT_GIT_GLOBAL_PAT,
-    toolMaxSteps: DEFAULT_TOOL_MAX_STEPS,
-    prismThemeUrl: DEFAULT_PRISM_THEME_URL,
-    autoTitleEnabled: DEFAULT_AUTO_TITLE_ENABLED,
-    autoTitleAlwaysOn: DEFAULT_AUTO_TITLE_ALWAYS_ON,
-    autoTitleModelId: DEFAULT_AUTO_TITLE_MODEL_ID,
-    autoTitlePromptMaxLength: DEFAULT_AUTO_TITLE_PROMPT_MAX_LENGTH,
-    autoTitleIncludeFiles: DEFAULT_AUTO_TITLE_INCLUDE_FILES,
-    autoTitleIncludeRules: DEFAULT_AUTO_TITLE_INCLUDE_RULES,
+    ...createDefaultToolSelectionSettings(),
+    ...createDefaultAutoTitleSettings(),
     forkCompactPrompt: DEFAULT_FORK_COMPACT_PROMPT,
     forkCompactModelId: DEFAULT_FORK_COMPACT_MODEL_ID,
-    customFontFamily: DEFAULT_CUSTOM_FONT_FAMILY,
-    customFontSize: DEFAULT_CUSTOM_FONT_SIZE,
-    chatMaxWidth: DEFAULT_CHAT_MAX_WIDTH,
-    customThemeColors: DEFAULT_CUSTOM_THEME_COLORS,
+    ...createDefaultThemeSettings(),
     autoScrollInterval: DEFAULT_AUTO_SCROLL_INTERVAL,
     enableAutoScrollOnStream: DEFAULT_ENABLE_AUTO_SCROLL_ON_STREAM,
     autoSyncOnStreamComplete: DEFAULT_AUTO_SYNC_ON_STREAM_COMPLETE,
@@ -403,36 +270,23 @@ export const useSettingsStore = create(
     runnableBlocksSecurityModelId: DEFAULT_RUNNABLE_BLOCKS_SECURITY_MODEL_ID,
     runnableBlocksSecurityPrompt: DEFAULT_RUNNABLE_BLOCKS_SECURITY_PROMPT,
     
-    // Auto Tool Selection Settings
-    autoToolSelectionEnabled: DEFAULT_AUTO_TOOL_SELECTION_ENABLED,
-    autoToolSelectionModelId: DEFAULT_AUTO_TOOL_SELECTION_MODEL_ID,
-    autoToolSelectionPrompt: DEFAULT_AUTO_TOOL_SELECTION_PROMPT,
-    
     // Text Trigger Settings
     textTriggersEnabled: DEFAULT_TEXT_TRIGGERS_ENABLED,
     textTriggerStartDelimiter: DEFAULT_TEXT_TRIGGER_START_DELIMITER,
     textTriggerEndDelimiter: DEFAULT_TEXT_TRIGGER_END_DELIMITER,
     
     // Config Sync Settings
-    configSyncEnabled: DEFAULT_CONFIG_SYNC_ENABLED,
-    configSyncRepoId: DEFAULT_CONFIG_SYNC_REPO_ID,
-    configSyncAutoSync: DEFAULT_CONFIG_SYNC_AUTO_SYNC,
-    configSyncIncludeSettings: DEFAULT_CONFIG_SYNC_INCLUDE_SETTINGS,
-    configSyncIncludeRules: DEFAULT_CONFIG_SYNC_INCLUDE_RULES,
-    configSyncIncludePromptTemplates: DEFAULT_CONFIG_SYNC_INCLUDE_PROMPT_TEMPLATES,
-    configSyncIncludeAgents: DEFAULT_CONFIG_SYNC_INCLUDE_AGENTS,
-    configSyncIncludeWorkflows: DEFAULT_CONFIG_SYNC_INCLUDE_WORKFLOWS,
-    configSyncIncludeMcpServers: DEFAULT_CONFIG_SYNC_INCLUDE_MCP_SERVERS,
-    configSyncLastSyncedAt: DEFAULT_CONFIG_SYNC_LAST_SYNCED_AT,
-    configSyncInterval: DEFAULT_CONFIG_SYNC_INTERVAL,
+    ...createDefaultConfigSyncSettings(),
     
     // Service URLs
     corsProxyUrl: DEFAULT_CORS_PROXY_URL,
     markdownServiceUrl: DEFAULT_MARKDOWN_SERVICE_URL,
 
     setTheme: (theme) => {
-      set({ theme: theme });
-      persistSetting("theme", theme);
+      set({ theme });
+      void persistSettingsSlice({ theme }, () =>
+        SettingsPersistenceService.saveThemeSettings({ theme }),
+      );
       emitter.emit(settingsEvent.themeChanged, { theme });
     },
     setGlobalSystemPrompt: (prompt) => {
@@ -525,44 +379,60 @@ export const useSettingsStore = create(
       // Clamp steps to 1-20
       const clamped = Math.max(1, Math.min(20, steps));
       set({ toolMaxSteps: clamped });
-      persistSetting("toolMaxSteps", clamped);
+      void persistSettingsSlice({ toolMaxSteps: clamped }, () =>
+        SettingsPersistenceService.saveToolSelectionSettings({ toolMaxSteps: clamped }),
+      );
       emitter.emit(settingsEvent.toolMaxStepsChanged, { steps: clamped });
     },
     setPrismThemeUrl: (url) => {
       set({ prismThemeUrl: url });
-      persistSetting("prismThemeUrl", url);
+      void persistSettingsSlice({ prismThemeUrl: url }, () =>
+        SettingsPersistenceService.saveThemeSettings({ prismThemeUrl: url }),
+      );
       emitter.emit(settingsEvent.prismThemeUrlChanged, { url });
     },
     setAutoTitleEnabled: (enabled) => {
       set({ autoTitleEnabled: enabled });
-      persistSetting("autoTitleEnabled", enabled);
+      void persistSettingsSlice({ autoTitleEnabled: enabled }, () =>
+        SettingsPersistenceService.saveAutoTitleSettings({ autoTitleEnabled: enabled }),
+      );
       emitter.emit(settingsEvent.autoTitleEnabledChanged, { enabled });
     },
     setAutoTitleAlwaysOn: (enabled) => {
       set({ autoTitleAlwaysOn: enabled });
-      persistSetting("autoTitleAlwaysOn", enabled);
+      void persistSettingsSlice({ autoTitleAlwaysOn: enabled }, () =>
+        SettingsPersistenceService.saveAutoTitleSettings({ autoTitleAlwaysOn: enabled }),
+      );
       emitter.emit(settingsEvent.autoTitleAlwaysOnChanged, { enabled });
     },
     setAutoTitleModelId: (modelId) => {
       set({ autoTitleModelId: modelId });
-      persistSetting("autoTitleModelId", modelId);
+      void persistSettingsSlice({ autoTitleModelId: modelId }, () =>
+        SettingsPersistenceService.saveAutoTitleSettings({ autoTitleModelId: modelId }),
+      );
       emitter.emit(settingsEvent.autoTitleModelIdChanged, { modelId });
     },
     setAutoTitlePromptMaxLength: (length) => {
       // Clamp to 32-4096
       const clamped = Math.max(32, Math.min(4096, length));
       set({ autoTitlePromptMaxLength: clamped });
-      persistSetting("autoTitlePromptMaxLength", clamped);
+      void persistSettingsSlice({ autoTitlePromptMaxLength: clamped }, () =>
+        SettingsPersistenceService.saveAutoTitleSettings({ autoTitlePromptMaxLength: clamped }),
+      );
       emitter.emit(settingsEvent.autoTitlePromptMaxLengthChanged, { length: clamped });
     },
     setAutoTitleIncludeFiles: (include) => {
       set({ autoTitleIncludeFiles: include });
-      persistSetting("autoTitleIncludeFiles", include);
+      void persistSettingsSlice({ autoTitleIncludeFiles: include }, () =>
+        SettingsPersistenceService.saveAutoTitleSettings({ autoTitleIncludeFiles: include }),
+      );
       emitter.emit(settingsEvent.autoTitleIncludeFilesChanged, { include });
     },
     setAutoTitleIncludeRules: (include) => {
       set({ autoTitleIncludeRules: include });
-      persistSetting("autoTitleIncludeRules", include);
+      void persistSettingsSlice({ autoTitleIncludeRules: include }, () =>
+        SettingsPersistenceService.saveAutoTitleSettings({ autoTitleIncludeRules: include }),
+      );
       emitter.emit(settingsEvent.autoTitleIncludeRulesChanged, { include });
     },
     setForkCompactPrompt: (prompt) => {
@@ -577,7 +447,9 @@ export const useSettingsStore = create(
     },
     setCustomFontFamily: (fontFamily) => {
       set({ customFontFamily: fontFamily });
-      persistSetting("customFontFamily", fontFamily);
+      void persistSettingsSlice({ customFontFamily: fontFamily }, () =>
+        SettingsPersistenceService.saveThemeSettings({ customFontFamily: fontFamily }),
+      );
       emitter.emit(settingsEvent.customFontFamilyChanged, { fontFamily });
     },
     setCustomFontSize: (fontSize) => {
@@ -585,22 +457,30 @@ export const useSettingsStore = create(
       if (typeof fontSize === "number") {
         const clamped = Math.max(10, Math.min(24, fontSize));
         set({ customFontSize: clamped });
-        persistSetting("customFontSize", clamped);
+        void persistSettingsSlice({ customFontSize: clamped }, () =>
+          SettingsPersistenceService.saveThemeSettings({ customFontSize: clamped }),
+        );
         emitter.emit(settingsEvent.customFontSizeChanged, { fontSize: clamped });
       } else {
         set({ customFontSize: fontSize });
-        persistSetting("customFontSize", fontSize);
+        void persistSettingsSlice({ customFontSize: fontSize }, () =>
+          SettingsPersistenceService.saveThemeSettings({ customFontSize: fontSize }),
+        );
         emitter.emit(settingsEvent.customFontSizeChanged, { fontSize });
       }
     },
     setChatMaxWidth: (maxWidthClass) => {
       set({ chatMaxWidth: maxWidthClass });
-      persistSetting("chatMaxWidth", maxWidthClass);
+      void persistSettingsSlice({ chatMaxWidth: maxWidthClass }, () =>
+        SettingsPersistenceService.saveThemeSettings({ chatMaxWidth: maxWidthClass }),
+      );
       emitter.emit(settingsEvent.chatMaxWidthChanged, { maxWidth: maxWidthClass });
     },
     setCustomThemeColors: (colors) => {
       set({ customThemeColors: colors });
-      persistSetting("customThemeColors", colors);
+      void persistSettingsSlice({ customThemeColors: colors }, () =>
+        SettingsPersistenceService.saveThemeSettings({ customThemeColors: colors }),
+      );
       emitter.emit(settingsEvent.customThemeColorsChanged, { colors });
     },
     setCustomThemeColor: (colorName, value) => {
@@ -614,8 +494,11 @@ export const useSettingsStore = create(
           delete state.customThemeColors[colorName];
         }
       });
-      persistSetting("customThemeColors", get().customThemeColors);
-      emitter.emit(settingsEvent.customThemeColorsChanged, { colors: get().customThemeColors });
+      const colors = get().customThemeColors;
+      void persistSettingsSlice({ customThemeColors: colors }, () =>
+        SettingsPersistenceService.saveThemeSettings({ customThemeColors: colors }),
+      );
+      emitter.emit(settingsEvent.customThemeColorsChanged, { colors });
     },
     setAutoScrollInterval: (interval) => {
       set({ autoScrollInterval: interval });
@@ -686,17 +569,23 @@ export const useSettingsStore = create(
     // Auto Tool Selection Actions
     setAutoToolSelectionEnabled: (enabled) => {
       set({ autoToolSelectionEnabled: enabled });
-      persistSetting("autoToolSelectionEnabled", enabled);
+      void persistSettingsSlice({ autoToolSelectionEnabled: enabled }, () =>
+        SettingsPersistenceService.saveToolSelectionSettings({ autoToolSelectionEnabled: enabled }),
+      );
       emitter.emit(settingsEvent.autoToolSelectionEnabledChanged, { enabled });
     },
     setAutoToolSelectionModelId: (modelId) => {
       set({ autoToolSelectionModelId: modelId });
-      persistSetting("autoToolSelectionModelId", modelId);
+      void persistSettingsSlice({ autoToolSelectionModelId: modelId }, () =>
+        SettingsPersistenceService.saveToolSelectionSettings({ autoToolSelectionModelId: modelId }),
+      );
       emitter.emit(settingsEvent.autoToolSelectionModelIdChanged, { modelId });
     },
     setAutoToolSelectionPrompt: (prompt) => {
       set({ autoToolSelectionPrompt: prompt });
-      persistSetting("autoToolSelectionPrompt", prompt);
+      void persistSettingsSlice({ autoToolSelectionPrompt: prompt }, () =>
+        SettingsPersistenceService.saveToolSelectionSettings({ autoToolSelectionPrompt: prompt }),
+      );
       emitter.emit(settingsEvent.autoToolSelectionPromptChanged, { prompt });
     },
     
@@ -719,57 +608,85 @@ export const useSettingsStore = create(
     // Config Sync Actions
     setConfigSyncEnabled: (enabled) => {
       set({ configSyncEnabled: enabled });
-      persistSetting("configSyncEnabled", enabled);
+      void persistSettingsSlice({ configSyncEnabled: enabled }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({ configSyncEnabled: enabled }),
+      );
       emitter.emit(settingsEvent.configSyncEnabledChanged, { enabled });
     },
     setConfigSyncRepoId: (repoId) => {
       set({ configSyncRepoId: repoId });
-      persistSetting("configSyncRepoId", repoId);
+      void persistSettingsSlice({ configSyncRepoId: repoId }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({ configSyncRepoId: repoId }),
+      );
       emitter.emit(settingsEvent.configSyncRepoIdChanged, { repoId });
     },
     setConfigSyncAutoSync: (enabled) => {
       set({ configSyncAutoSync: enabled });
-      persistSetting("configSyncAutoSync", enabled);
+      void persistSettingsSlice({ configSyncAutoSync: enabled }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({ configSyncAutoSync: enabled }),
+      );
       emitter.emit(settingsEvent.configSyncAutoSyncChanged, { enabled });
     },
     setConfigSyncIncludeSettings: (include) => {
       set({ configSyncIncludeSettings: include });
-      persistSetting("configSyncIncludeSettings", include);
+      void persistSettingsSlice({ configSyncIncludeSettings: include }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({ configSyncIncludeSettings: include }),
+      );
       emitter.emit(settingsEvent.configSyncIncludeSettingsChanged, { include });
     },
     setConfigSyncIncludePromptTemplates: (include: boolean) => {
       set({ configSyncIncludePromptTemplates: include });
-      persistSetting("configSyncIncludePromptTemplates", include);
+      void persistSettingsSlice({ configSyncIncludePromptTemplates: include }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({
+          configSyncIncludePromptTemplates: include,
+        }),
+      );
       emitter.emit(settingsEvent.configSyncIncludePromptTemplatesChanged, { include });
     },
     setConfigSyncIncludeRules: (include) => {
       set({ configSyncIncludeRules: include });
-      persistSetting("configSyncIncludeRules", include);
+      void persistSettingsSlice({ configSyncIncludeRules: include }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({ configSyncIncludeRules: include }),
+      );
       emitter.emit(settingsEvent.configSyncIncludeRulesChanged, { include });
     },
     setConfigSyncIncludeAgents: (include: boolean) => {
       set({ configSyncIncludeAgents: include });
-      persistSetting("configSyncIncludeAgents", include);
+      void persistSettingsSlice({ configSyncIncludeAgents: include }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({ configSyncIncludeAgents: include }),
+      );
       emitter.emit(settingsEvent.configSyncIncludeAgentsChanged, { include });
     },
     setConfigSyncIncludeWorkflows: (include: boolean) => {
       set({ configSyncIncludeWorkflows: include });
-      persistSetting("configSyncIncludeWorkflows", include);
+      void persistSettingsSlice({ configSyncIncludeWorkflows: include }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({ configSyncIncludeWorkflows: include }),
+      );
       emitter.emit(settingsEvent.configSyncIncludeWorkflowsChanged, { include });
     },
     setConfigSyncIncludeMcpServers: (include: boolean) => {
       set({ configSyncIncludeMcpServers: include });
-      persistSetting("configSyncIncludeMcpServers", include);
+      void persistSettingsSlice({ configSyncIncludeMcpServers: include }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({
+          configSyncIncludeMcpServers: include,
+        }),
+      );
       emitter.emit(settingsEvent.configSyncIncludeMcpServersChanged, { include });
     },
     setConfigSyncLastSyncedAt: (timestamp: string | null) => {
       set({ configSyncLastSyncedAt: timestamp });
-      persistSetting("configSyncLastSyncedAt", timestamp);
+      void persistSettingsSlice({ configSyncLastSyncedAt: timestamp }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({
+          configSyncLastSyncedAt: timestamp,
+        }),
+      );
       emitter.emit(settingsEvent.configSyncLastSyncedAtChanged, { timestamp });
     },
     setConfigSyncInterval: (interval: number) => {
       set({ configSyncInterval: interval });
-      persistSetting("configSyncInterval", interval);
+      void persistSettingsSlice({ configSyncInterval: interval }, () =>
+        SettingsPersistenceService.saveConfigSyncSettings({ configSyncInterval: interval }),
+      );
       emitter.emit(settingsEvent.configSyncIntervalChanged, { interval });
     },
     
@@ -790,15 +707,32 @@ export const useSettingsStore = create(
     loadSettings: async () => {
       try {
         const initialState = get();
-        // Use the static SETTINGS_KEYS array for robust, type-safe key enumeration
-        const settingKeys = SETTINGS_KEYS;
+        const [themeSettings, autoTitleSettings, toolSelectionSettings, configSyncSettings] =
+          await Promise.all([
+            SettingsPersistenceService.loadThemeSettings(),
+            SettingsPersistenceService.loadAutoTitleSettings(),
+            SettingsPersistenceService.loadToolSelectionSettings(),
+            SettingsPersistenceService.loadConfigSyncSettings(),
+          ]);
 
-        const loadedSettings: Partial<SettingsState> = {};
-        for (const key of settingKeys) {
-          const loadedValue = await PersistenceService.loadSetting(key, initialState[key]);
-          // Apply all loaded values, including nulls (do not filter out null)
-          (loadedSettings as any)[key] = loadedValue;
+        const loadedSettings: Partial<SettingsState> = {
+          ...themeSettings,
+          ...autoTitleSettings,
+          ...toolSelectionSettings,
+          ...configSyncSettings,
+        };
+
+        const legacyEntries = await Promise.all(
+          LEGACY_SETTINGS_KEYS.map(async (key) => [
+            key,
+            await PersistenceService.loadSetting(key, initialState[key]),
+          ] as const),
+        );
+
+        for (const [key, value] of legacyEntries) {
+          loadedSettings[key] = value;
         }
+
         set(loadedSettings);
         emitter.emit(settingsEvent.loaded, { settings: get() });
       } catch (error) {
@@ -829,6 +763,8 @@ export const useSettingsStore = create(
     },
 
     resetAssistantSettings: async () => {
+      const autoTitleSettings = await SettingsPersistenceService.resetAutoTitleSettings();
+      const toolSelectionSettings = await SettingsPersistenceService.resetToolSelectionSettings();
       const newSettings = {
         temperature: DEFAULT_TEMPERATURE,
         maxTokens: DEFAULT_MAX_TOKENS,
@@ -836,13 +772,8 @@ export const useSettingsStore = create(
         topK: DEFAULT_TOP_K,
         presencePenalty: DEFAULT_PRESENCE_PENALTY,
         frequencyPenalty: DEFAULT_FREQUENCY_PENALTY,
-        toolMaxSteps: DEFAULT_TOOL_MAX_STEPS,
-        autoTitleEnabled: DEFAULT_AUTO_TITLE_ENABLED,
-        autoTitleAlwaysOn: DEFAULT_AUTO_TITLE_ALWAYS_ON,
-        autoTitleModelId: DEFAULT_AUTO_TITLE_MODEL_ID,
-        autoTitlePromptMaxLength: DEFAULT_AUTO_TITLE_PROMPT_MAX_LENGTH,
-        autoTitleIncludeFiles: DEFAULT_AUTO_TITLE_INCLUDE_FILES,
-        autoTitleIncludeRules: DEFAULT_AUTO_TITLE_INCLUDE_RULES,
+        ...toolSelectionSettings,
+        ...autoTitleSettings,
         forkCompactPrompt: DEFAULT_FORK_COMPACT_PROMPT,
         forkCompactModelId: DEFAULT_FORK_COMPACT_MODEL_ID,
         autoRuleSelectionEnabled: DEFAULT_AUTO_RULE_SELECTION_ENABLED,
@@ -854,25 +785,34 @@ export const useSettingsStore = create(
         runnableBlocksSecurityPrompt: DEFAULT_RUNNABLE_BLOCKS_SECURITY_PROMPT,
       };
       set(newSettings);
-      for (const key of Object.keys(newSettings) as (keyof typeof newSettings)[]) {
-        await persistSetting(key, newSettings[key] as any);
+      for (const key of [
+        "temperature",
+        "maxTokens",
+        "topP",
+        "topK",
+        "presencePenalty",
+        "frequencyPenalty",
+        "forkCompactPrompt",
+        "forkCompactModelId",
+        "autoRuleSelectionEnabled",
+        "autoRuleSelectionModelId",
+        "autoRuleSelectionPrompt",
+        "runnableBlocksEnabled",
+        "runnableBlocksSecurityCheckEnabled",
+        "runnableBlocksSecurityModelId",
+        "runnableBlocksSecurityPrompt",
+      ] as const) {
+        await persistSetting(key, newSettings[key]);
       }
+      emitSettingsChangedEntries(autoTitleSettings);
+      emitSettingsChangedEntries(toolSelectionSettings);
       toast.success("Assistant settings have been reset to their defaults.");
     },
 
     resetThemeSettings: async () => {
-      const newSettings = {
-        theme: DEFAULT_THEME,
-        prismThemeUrl: DEFAULT_PRISM_THEME_URL,
-        customFontFamily: DEFAULT_CUSTOM_FONT_FAMILY,
-        customFontSize: DEFAULT_CUSTOM_FONT_SIZE,
-        chatMaxWidth: DEFAULT_CHAT_MAX_WIDTH,
-        customThemeColors: DEFAULT_CUSTOM_THEME_COLORS,
-      };
+      const newSettings = await SettingsPersistenceService.resetThemeSettings();
       set(newSettings);
-      for (const key of Object.keys(newSettings) as (keyof typeof newSettings)[]) {
-        await persistSetting(key, newSettings[key] as any);
-      }
+      emitSettingsChangedEntries(newSettings);
       toast.success("Theme settings have been reset to their defaults.");
     },
 

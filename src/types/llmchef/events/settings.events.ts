@@ -1,6 +1,6 @@
 // src/types/llmchef/events/settings.events.ts
 // FULL FILE
-import type { SettingsState, CustomThemeColors } from "@/store/settings.store";
+import type { CustomThemeColors, SettingsState } from "@/types/llmchef/settings";
 
 export const settingsEvent = {
   // State Change Events
