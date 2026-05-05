@@ -74,7 +74,7 @@ export function useAsyncOperation<TArgs extends any[], TResult>(
         return result;
       } catch (err: unknown) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        console.error(`[useAsyncOperation Error - ${prefix}]:`, err);
+        console.error("[useAsyncOperation Error - ", prefix, "]:", err);
         setError(errorMsg);
         BackgroundTaskToast.error({
           id: toastId,

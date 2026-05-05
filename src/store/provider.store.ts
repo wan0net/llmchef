@@ -419,8 +419,7 @@ export const useProviderStore = create(
         get()
           .fetchModels(newId)
           .catch((fetchError) => {
-            console.warn(
-              `[ProviderStore] Initial model fetch failed for new provider ${newId}:`,
+            console.warn("[ProviderStore] Initial model fetch failed for new provider ", newId, ":",
               fetchError
             );
           });
@@ -536,7 +535,7 @@ export const useProviderStore = create(
         get()._setProviderFetchStatus(providerConfigId, "success");
         toast.success(`Models fetched successfully for ${config.name}`);
       } catch (error) {
-        console.error(`Error fetching models for ${config.name}:`, error);
+        console.error("Error fetching models for ", config.name, ":", error);
         get()._setProviderFetchStatus(providerConfigId, "error");
       }
     },

@@ -475,7 +475,7 @@ export const ConversationListControlComponent: React.FC<
       try {
         await exportConversation(id, format);
       } catch (error) {
-        console.error(`Failed to export conversation as ${format}:`, error);
+        console.error("Failed to export conversation as ", format, ":", error);
       }
     },
     [exportConversation]

@@ -117,8 +117,7 @@ export const useInteractionStore = create(
           );
         }
       } catch (e) {
-        console.error(
-          `InteractionStore: Error loading interactions for ${conversationId}`,
+        console.error("InteractionStore: Error loading interactions for ", conversationId,
           e
         );
         if (get().currentConversationId === conversationId) {

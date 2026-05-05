@@ -66,7 +66,7 @@ export async function initializeOrSyncRepoLogic(
       setRepoStatus(repo.id, "idle");
     }
   } catch (error: any) {
-    console.error(`Failed to initialize/sync repository ${repo.name}:`, error);
+    console.error("Failed to initialize/sync repository ", repo.name, ":", error);
     setRepoStatus(repo.id, "error");
   }
 }
@@ -146,12 +146,10 @@ export async function syncConversationLogic(
       if (isNaN(remoteTimestamp ?? NaN)) remoteTimestamp = null;
     } catch (e: any) {
       if (e.code === "ENOENT") {
-        console.log(
-          `Conversation file ${convoFilePath} not found in repo. Will push local version.`,
+        console.log("Conversation file ", convoFilePath, " not found in repo. Will push local version.",
         );
       } else {
-        console.error(
-          `Failed to read or parse remote conversation file: ${e.message}`,
+        console.error("Failed to read or parse remote conversation file: ", e.message,
         );
         toast.warning(
           `Could not read remote version of conversation: ${e.message}`,
@@ -230,7 +228,7 @@ export async function syncConversationLogic(
       setConversationStatus(conversation.id, "idle");
     }
   } catch (error: any) {
-    console.error(`Sync failed for conversation ${conversation.id}:`, error);
+    console.error("Sync failed for conversation ", conversation.id, ":", error);
     setConversationStatus(conversation.id, "error", error.message);
   }
 }

@@ -439,7 +439,7 @@ ${skillPromptContext}`
           parentId: finalNewInteractionState.id, // Make them children of the NEW interaction
           index: i, // Children get sequential index starting from 0
         };
-        // console.log(`[ConversationService] Updating old version ${interactionToUpdate.id} to be child of ${finalNewInteractionState.id} with childIndex ${i}`, JSON.parse(JSON.stringify(updatesForOldVersion)));
+        // console.log("[ConversationService] Updating old version ", interactionToUpdate.id, " to be child of ", finalNewInteractionState.id, " with childIndex ", i, JSON.parse(JSON.stringify(updatesForOldVersion)));
 
         interactionStore._updateInteractionInState(
           interactionToUpdate.id,
@@ -558,8 +558,7 @@ Provide a clear, comprehensive explanation that would help someone understand th
         await PersistenceService.saveInteraction(updatedInteraction);
       }
     } catch (error) {
-      console.error(
-        `[ConversationService] Error explaining selection for ${parentInteractionId}:`,
+      console.error("[ConversationService] Error explaining selection for ", parentInteractionId, ":",
         error
       );
       toast.error(
@@ -980,8 +979,7 @@ Keep the summary detailed enough that we can seamlessly continue our discussion,
           fileContentParts.push(contentPart);
         }
       } catch (processingError) {
-        console.error(
-          `[ConversationService] Error processing file ${fileMeta.name}:`,
+        console.error("[ConversationService] Error processing file ", fileMeta.name, ":",
           processingError
         );
         fileContentParts.push({

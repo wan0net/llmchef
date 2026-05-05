@@ -503,7 +503,7 @@ available_packages = list(sys.modules.keys())
       const pyodide = await this.getPyodide();
       await pyodide.loadPackage([packageName]);
     } catch (error) {
-      console.error(`[CodeExecutionService] Failed to install package ${packageName}:`, error);
+      console.error("[CodeExecutionService] Failed to install package ", packageName, ":", error);
       throw new Error(`Failed to install Python package: ${packageName}`);
     }
   },

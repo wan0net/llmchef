@@ -115,7 +115,7 @@ export class WorkflowEventManager {
           
           console.log(`[WorkflowEventManager] Emitted ${event.eventName} for run ${runId} (seq: ${event.metadata.sequence}, priority: ${event.metadata.priority})`);
         } catch (error) {
-          console.error(`[WorkflowEventManager] Error emitting event ${event.eventName}:`, error);
+          console.error("[WorkflowEventManager] Error emitting event ", event.eventName, ":", error);
         }
       }
 

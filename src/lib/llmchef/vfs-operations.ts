@@ -48,7 +48,7 @@ const createDirectoryRecursive = async (
       );
       return;
     }
-    console.error(`[VFS Op] Failed to create directory ${normalized}:`, err);
+    console.error("[VFS Op] Failed to create directory ", normalized, ":", err);
     toast.error(
       `Error creating directory "${basename(normalized)}": ${
         err instanceof Error ? err.message : String(err)
@@ -71,8 +71,7 @@ export const initializeFsOp = async (
     await configureSingle(vfsConf);
     return fs;
   } catch (error) {
-    console.error(
-      `[VFS Op] Failed to initialize VFS for key "${vfsKey}":`,
+    console.error("[VFS Op] Failed to initialize VFS for key \"", vfsKey, "\":",
       error
     );
     toast.error(
@@ -118,7 +117,7 @@ export const listFilesOp = async (
             lastModified: fileStat.mtime,
           };
         } catch (statErr: unknown) {
-          console.error(`[VFS Op] Failed to stat ${fullPath}:`, statErr);
+          console.error("[VFS Op] Failed to stat ", fullPath, ":", statErr);
           return null;
         }
       }
@@ -127,7 +126,7 @@ export const listFilesOp = async (
     const filteredStats = stats.filter((s): s is FileSystemEntry => s !== null);
     return filteredStats;
   } catch (err: unknown) {
-    console.error(`[VFS Op] Failed to list directory ${normalized}:`, err);
+    console.error("[VFS Op] Failed to list directory ", normalized, ":", err);
     toast.error(
       `Error listing files: ${err instanceof Error ? err.message : String(err)}`
     );
@@ -147,7 +146,7 @@ export const readFileOp = async (
     emitter.emit(vfsEvent.fileRead, { path: normalizedPath });
     return data;
   } catch (err: unknown) {
-    console.error(`[VFS Op] Failed to read file ${normalizedPath}:`, err);
+    console.error("[VFS Op] Failed to read file ", normalizedPath, ":", err);
     if (!silent) {
       toast.error(
         `Error reading file "${basename(normalizedPath)}": ${
@@ -179,7 +178,7 @@ export const writeFileOp = async (
         err instanceof Error && err.message.includes("Error creating directory")
       )
     ) {
-      console.error(`[VFS Op] Failed to write file ${normalized}:`, err);
+      console.error("[VFS Op] Failed to write file ", normalized, ":", err);
       toast.error(
         `Error writing file "${basename(normalized)}": ${
           err instanceof Error ? err.message : String(err)
@@ -216,7 +215,7 @@ export const deleteItemOp = async (
       console.warn(`[VFS Op] Item not found for deletion: ${normalized}`);
       return;
     }
-    console.error(`[VFS Op] Failed to delete ${normalized}:`, err);
+    console.error("[VFS Op] Failed to delete ", normalized, ":", err);
     toast.error(
       `Error deleting "${basename(normalized)}": ${
         err instanceof Error ? err.message : String(err)
@@ -253,7 +252,7 @@ export const downloadFileOp = async (
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   } catch (err: unknown) {
-    console.error(`[VFS Op] Failed to initiate download for ${path}:`, err);
+    console.error("[VFS Op] Failed to initiate download for ", path, ":", err);
     if (!(err instanceof Error && err.message.includes("Error reading file"))) {
       toast.error(
         `Download failed: ${err instanceof Error ? err.message : String(err)}`
@@ -288,13 +287,12 @@ export const uploadFilesOp = async (
         successCount++;
       } catch (err: unknown) {
         errorCount++;
-        console.error(`[VFS Op] Failed to upload ${file.name}:`, err);
+        console.error("[VFS Op] Failed to upload ", file.name, ":", err);
       }
     }
   } catch (err: unknown) {
     errorCount = fileArray.length;
-    console.error(
-      `[VFS Op] Failed to prepare target directory ${normalizedTargetPath} for upload:`,
+    console.error("[VFS Op] Failed to prepare target directory ", normalizedTargetPath, " for upload:",
       err
     );
   } finally {
@@ -384,7 +382,7 @@ export const uploadAndExtractZipOp = async (
         err instanceof Error && err.message.includes("Error creating directory")
       )
     ) {
-      console.error(`[VFS Op] Failed to extract zip ${file.name}:`, err);
+      console.error("[VFS Op] Failed to extract zip ", file.name, ":", err);
       toast.error(
         `ZIP extraction failed: ${
           err instanceof Error ? err.message : String(err)
@@ -527,8 +525,7 @@ export const renameOp = async (
         `Rename failed: ${err instanceof Error ? err.message : String(err)}`
       );
     }
-    console.error(
-      `[VFS Op] Failed to rename ${normalizedOld} to ${normalizedNew}:`,
+    console.error("[VFS Op] Failed to rename ", normalizedOld, " to ", normalizedNew, ":",
       err
     );
     throw err;
@@ -572,7 +569,7 @@ export const rmdirRecursive = async (
       return;
     }
     // For other errors, log and re-throw
-    console.error(`[VFS Op] Failed to recursively delete directory ${normalized}:`, err);
+    console.error("[VFS Op] Failed to recursively delete directory ", normalized, ":", err);
     toast.error(
       `Error deleting directory "${basename(normalized)}": ${
         err instanceof Error ? err.message : String(err)

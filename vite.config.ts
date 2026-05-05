@@ -32,7 +32,7 @@ function buildTimeConfigPlugin() {
               console.warn(`⚠️  System prompt file not found: ${customPromptFile}, using default`);
             }
           } catch (error) {
-            console.error(`❌ Error reading system prompt file: ${customPromptFile}`, error);
+            console.error("\u274c Error reading system prompt file: ", customPromptFile, error);
             console.log('Using default system prompt');
           }
         }
@@ -56,7 +56,7 @@ function buildTimeConfigPlugin() {
               console.warn(`⚠️  User config file not found: ${userConfigFile}, using defaults`);
             }
           } catch (error) {
-            console.error(`❌ Error reading user config file: ${userConfigFile}`, error);
+            console.error("\u274c Error reading user config file: ", userConfigFile, error);
             console.log('Using default configuration');
           }
         }

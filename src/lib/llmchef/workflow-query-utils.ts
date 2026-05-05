@@ -41,7 +41,7 @@ export const resolveJsonPath = (source: unknown, path: string): unknown => {
       return getSafePathValue(accumulator, part);
     }, source);
   } catch (error) {
-    console.warn(`[workflow-query-utils] JSONPath resolution failed for ${path}:`, error);
+    console.warn("[workflow-query-utils] JSONPath resolution failed for ", path, ":", error);
     return undefined;
   }
 };

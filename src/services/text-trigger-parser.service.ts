@@ -97,7 +97,7 @@ export class TextTriggerParserService {
 
   private validateTrigger(trigger: TextTrigger): { isValid: boolean; errorMessage?: string } {
     const registeredNamespaces = useControlRegistryStore.getState().getTextTriggerNamespaces();
-    // console.log(`[TextTriggerParser] DEBUG: Validating trigger: ${trigger.namespace}.${trigger.method}`, {
+    // console.log("[TextTriggerParser] DEBUG: Validating trigger: ", trigger.namespace, ".", trigger.method, {
     //   args: trigger.args,
     //   argsLength: trigger.args.length,
     //   registeredNamespaces: Object.keys(registeredNamespaces)
@@ -115,7 +115,7 @@ export class TextTriggerParserService {
 
     const method = namespace.methods[trigger.method];
     if (!method) {
-      // console.log(`[TextTriggerParser] DEBUG: Unknown method: ${trigger.method} in namespace ${trigger.namespace}`, {
+      // console.log("[TextTriggerParser] DEBUG: Unknown method: ", trigger.method, " in namespace ", trigger.namespace, {
       //   availableMethods: Object.keys(namespace.methods)
       // });
       return { 
@@ -125,7 +125,7 @@ export class TextTriggerParserService {
     }
 
     const { argSchema } = method;
-    // console.log(`[TextTriggerParser] DEBUG: Method found:`, {
+    // console.log("[TextTriggerParser] DEBUG: Method found:", {
     //   method: trigger.method,
     //   minArgs: argSchema.minArgs,
     //   maxArgs: argSchema.maxArgs,
@@ -177,7 +177,7 @@ export class TextTriggerParserService {
         await this.executeTrigger(trigger, context);
         // console.log(`[TextTriggerParser] DEBUG: Successfully executed trigger: ${trigger.namespace}.${trigger.method}`);
       } catch (error) {
-        console.error(`[TextTriggerParser] Error executing trigger ${trigger.id}:`, error);
+        console.error("[TextTriggerParser] Error executing trigger ", trigger.id, ":", error);
       }
     }
 

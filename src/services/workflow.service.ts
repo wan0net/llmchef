@@ -352,8 +352,7 @@ export const WorkflowService = {
             expectedFields: [fieldName],
           }
         );
-        console.error(
-          `[WorkflowService] Transform error for field "${fieldName}":`,
+        console.error("[WorkflowService] Transform error for field \"", fieldName, "\":",
           workflowError
         );
         throw workflowError;
@@ -615,7 +614,7 @@ export const WorkflowService = {
       return { success: true, output: branchOutput };
 
     } catch (error) {
-      console.error(`[WorkflowService] Parallel branch ${branchIndex} failed:`, error);
+      console.error("[WorkflowService] Parallel branch ", branchIndex, " failed:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)
@@ -1273,7 +1272,7 @@ export const WorkflowService = {
       // Generate and update with flow content
       const initialFlowContent =
         WorkflowService.flowGenerator.generateInitialFlow(run);
-      console.log(`[WorkflowService] Generated initial flow content:`, {
+      console.log("[WorkflowService] Generated initial flow content:", {
         flowContentLength: initialFlowContent.length,
         flowContentPreview:
           initialFlowContent.substring(0, 200) +
@@ -1283,8 +1282,7 @@ export const WorkflowService = {
       const fullContent = `# ${template.name}\n\nWorkflow starting with ${template.steps.length
         } step${template.steps.length > 1 ? "s" : ""
         }...\n\n\`\`\`flow\n${initialFlowContent}\n\`\`\``;
-      console.log(
-        `[WorkflowService] Setting stream buffer with full content:`,
+      console.log("[WorkflowService] Setting stream buffer with full content:",
         {
           fullContentLength: fullContent.length,
           mainInteractionId: mainInteraction.id,
@@ -1309,8 +1307,7 @@ export const WorkflowService = {
         metadata: createWorkflowEventMetadata(run.runId, "high", 1),
       });
     } catch (error) {
-      console.error(
-        `[WorkflowService] Error during workflow conversion:`,
+      console.error("[WorkflowService] Error during workflow conversion:",
         error
       );
     }
@@ -1349,8 +1346,7 @@ export const WorkflowService = {
             );
 
             triggerParameters.structured_output = schema;
-            console.log(
-              `[WorkflowService] Trigger step will output structured data for step "${nextStep.name}" variables:`,
+            console.log("[WorkflowService] Trigger step will output structured data for step \"", nextStep.name, "\" variables:",
               nextStepTemplate.variables.map((v) => v.name)
             );
           }
@@ -1492,8 +1488,7 @@ ${JSON.stringify(triggerParameters.structured_output, null, 2)}`;
           runId: run.runId,
         }
       );
-      console.error(
-        `[WorkflowService] ${workflowError.message}:`,
+      console.error("[WorkflowService] ", workflowError.message, ":",
         workflowError
       );
 
@@ -1644,8 +1639,7 @@ ${JSON.stringify(triggerParameters.structured_output, null, 2)}`;
               stepType: "transform",
             }
           );
-          console.error(
-            `[WorkflowService] ${workflowError.message}:`,
+          console.error("[WorkflowService] ", workflowError.message, ":",
             workflowError
           );
 
@@ -1814,7 +1808,7 @@ ${JSON.stringify(triggerParameters.structured_output, null, 2)}`;
             stepIndex,
             stepType: "parallel",
           });
-          console.error(`[WorkflowService] ${workflowError.message}:`, workflowError);
+          console.error("[WorkflowService] ", workflowError.message, ":", workflowError);
 
           // Update flow content for failed parallel step
           const currentContent = interactionStore.activeStreamBuffers[run.mainInteractionId] || "";
@@ -1854,7 +1848,7 @@ ${JSON.stringify(triggerParameters.structured_output, null, 2)}`;
             stepIndex,
             stepType: "sub-workflow",
           });
-          console.error(`[WorkflowService] ${workflowError.message}:`, workflowError);
+          console.error("[WorkflowService] ", workflowError.message, ":", workflowError);
 
           // Update flow content for failed sub-workflow
           const currentContent = interactionStore.activeStreamBuffers[run.mainInteractionId] || "";
@@ -1918,7 +1912,7 @@ ${JSON.stringify(triggerParameters.structured_output, null, 2)}`;
         );
       }
 
-      console.log(`[WorkflowService] Step "${stepName}" configuration:`, {
+      console.log("[WorkflowService] Step \"", stepName, "\" configuration:", {
         modelId,
         hasStructuredOutput: !!step.structuredOutput,
         structuredOutputSchema: step.structuredOutput?.schema,
@@ -1956,8 +1950,7 @@ ${JSON.stringify(triggerParameters.structured_output, null, 2)}`;
               );
 
             stepParameters.structured_output = schema;
-            console.log(
-              `[WorkflowService] Step "${stepName}" will output structured data for next step "${nextStep.name}" variables:`,
+            console.log("[WorkflowService] Step \"", stepName, "\" will output structured data for next step \"", nextStep.name, "\" variables:",
               nextStepTemplate.variables.map((v) => v.name)
             );
 
@@ -2081,8 +2074,7 @@ ${JSON.stringify(stepParameters.structured_output, null, 2)}`;
         // );
       }
     } catch (error) {
-      console.error(
-        `[WorkflowService] Error creating step ${stepIndex}:`,
+      console.error("[WorkflowService] Error creating step ", stepIndex, ":",
         error
       );
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -2146,8 +2138,7 @@ ${JSON.stringify(stepParameters.structured_output, null, 2)}`;
       if (payload.status === "ERROR" || payload.status === "CANCELLED") {
         const errorMsg = `Step failed with status ${payload.status}. ${interaction.response || ""
           }`;
-        console.error(
-          `[WorkflowService] Step error for run ${activeRun.runId}:`,
+        console.error("[WorkflowService] Step error for run ", activeRun.runId, ":",
           errorMsg
         );
         useInteractionStore
@@ -2189,8 +2180,7 @@ ${JSON.stringify(stepParameters.structured_output, null, 2)}`;
               fakeStep
             );
           } catch (error) {
-            console.warn(
-              `[WorkflowService] Initial step structured output parsing failed:`,
+            console.warn("[WorkflowService] Initial step structured output parsing failed:",
               error
             );
             // Fallback: use raw response

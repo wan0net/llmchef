@@ -176,8 +176,7 @@ export const InteractionService = {
           // Feedback for starting regeneration might be good, or handled by UI changes
         } catch (error) {
           toast.error(`Failed to regenerate response: ${String(error)}`);
-          console.error(
-            `[InteractionService] Error regenerating interaction ${interactionId}:`,
+          console.error("[InteractionService] Error regenerating interaction ", interactionId, ":",
             error
           );
         } finally {
@@ -259,8 +258,7 @@ export const InteractionService = {
           
         } catch (error) {
           toast.error(`Failed to regenerate response: ${String(error)}`);
-          console.error(
-            `[InteractionService] Error regenerating interaction ${interactionId}:`,
+          console.error("[InteractionService] Error regenerating interaction ", interactionId, ":",
             error
           );
         } finally {
@@ -339,7 +337,7 @@ export const InteractionService = {
                   // console.log(`[InteractionService] Race participant ${index + 1} finished`);
                   resolve({ success: true, modelId, index });
                 } catch (error) {
-                  console.error(`[InteractionService] Race participant ${index + 1} failed:`, error);
+                  console.error("[InteractionService] Race participant ", index + 1, " failed:", error);
                   resolve({ success: false, modelId, index, error });
                 }
               }, index * staggerMs);
@@ -363,7 +361,7 @@ export const InteractionService = {
           
         } catch (error) {
           toast.error(`Race failed: ${String(error)}`);
-          console.error(`[InteractionService] Error during race:`, error);
+          console.error("[InteractionService] Error during race:", error);
         }
       }
     );
@@ -400,8 +398,7 @@ export const InteractionService = {
           await ConversationService.forkConversation(interactionId);
         } catch (error) {
           toast.error(`Failed to fork conversation: ${String(error)}`);
-          console.error(
-            `[InteractionService] Error forking conversation ${interactionId}:`,
+          console.error("[InteractionService] Error forking conversation ", interactionId, ":",
             error
           );
         }
@@ -451,8 +448,7 @@ export const InteractionService = {
           
         } catch (error) {
           toast.error(`Failed to fork conversation: ${String(error)}`);
-          console.error(
-            `[InteractionService] Error forking conversation ${interactionId}:`,
+          console.error("[InteractionService] Error forking conversation ", interactionId, ":",
             error
           );
         }
@@ -495,8 +491,7 @@ export const InteractionService = {
           
         } catch (error) {
           toast.error(`Failed to fork and compact conversation: ${String(error)}`);
-          console.error(
-            `[InteractionService] Error forking and compacting conversation ${interactionId}:`,
+          console.error("[InteractionService] Error forking and compacting conversation ", interactionId, ":",
             error
           );
         }
@@ -564,8 +559,7 @@ export const InteractionService = {
           await ConversationService.explainSelection(selectedText, interactionId);
         } catch (error) {
           toast.error(`Failed to explain selection: ${String(error)}`);
-          console.error(
-            `[InteractionService] Error explaining selection for ${interactionId}:`,
+          console.error("[InteractionService] Error explaining selection for ", interactionId, ":",
             error
           );
         }
@@ -583,8 +577,7 @@ export const InteractionService = {
     initiatingTurnData: PromptTurnObject,
     interactionType: InteractionType = "message.user_assistant"
   ): Promise<Interaction | null> {
-    console.log(
-      `[InteractionService] startInteraction called (Type: ${interactionType})`,
+    console.log("[InteractionService] startInteraction called (Type: ", interactionType, ")",
       prompt,
       conversationId,
       initiatingTurnData
@@ -664,8 +657,7 @@ export const InteractionService = {
       );
     }
     PersistenceService.saveInteraction({ ...interaction }).catch((e) => {
-      console.error(
-        `[InteractionService] Failed initial persistence for ${interactionId}`,
+      console.error("[InteractionService] Failed initial persistence for ", interactionId,
         e
       );
     });
@@ -926,11 +918,11 @@ export const InteractionService = {
         this._handleToolResult(interactionId, toolResult),
       onFinish: (details) =>
         this._handleFinish(interactionId, details, interactionType).catch(finishError => {
-          console.error(`[InteractionService] Error in finish handler for ${interactionId}:`, finishError);
+          console.error("[InteractionService] Error in finish handler for ", interactionId, ":", finishError);
         }),
       onError: (error) =>
         this._handleError(interactionId, error, interactionType).catch(errorHandlerError => {
-          console.error(`[InteractionService] Error in error handler for ${interactionId}:`, errorHandlerError);
+          console.error("[InteractionService] Error in error handler for ", interactionId, ":", errorHandlerError);
         }),
     };
 
@@ -939,8 +931,7 @@ export const InteractionService = {
     );
     AIService.executeInteraction(interactionId, callOptions, callbacks).catch(
       (execError) => {
-        console.error(
-          `[InteractionService] Error during AIService.executeInteraction for ${interactionId}:`,
+        console.error("[InteractionService] Error during AIService.executeInteraction for ", interactionId, ":",
           execError
         );
         const currentInteractionState = useInteractionStore.getState().interactions.find(i => i.id === interactionId);
@@ -951,7 +942,7 @@ export const InteractionService = {
             execError instanceof Error ? execError : new Error(String(execError)),
             interactionType
           ).catch(finalizeError => {
-            console.error(`[InteractionService] Error during finalization after execution error:`, finalizeError);
+            console.error("[InteractionService] Error during finalization after execution error:", finalizeError);
           });
         }
       }
@@ -986,7 +977,7 @@ export const InteractionService = {
           new Error("Interaction aborted manually (controller missing)"),
           interaction?.type ?? "message.user_assistant"
         ).catch(finalizeError => {
-          console.error(`[InteractionService] Error during forced finalization:`, finalizeError);
+          console.error("[InteractionService] Error during forced finalization:", finalizeError);
         });
       }
     }
@@ -1033,8 +1024,7 @@ export const InteractionService = {
         metadata: { toolCalls: [...currentData.calls] },
       });
     } catch (e) {
-      console.error(
-        `[InteractionService] Failed to process tool call for ${interactionId}:`,
+      console.error("[InteractionService] Failed to process tool call for ", interactionId, ":",
         e
       );
     }
@@ -1053,8 +1043,7 @@ export const InteractionService = {
         metadata: { toolResults: [...currentData.results] },
       });
     } catch (e) {
-      console.error(
-        `[InteractionService] Failed to process tool result for ${interactionId}:`,
+      console.error("[InteractionService] Failed to process tool result for ", interactionId, ":",
         e
       );
     }
@@ -1087,8 +1076,7 @@ export const InteractionService = {
     error: Error,
     interactionType: InteractionType
   ): Promise<void> {
-    console.error(
-      `[InteractionService] Handling error for interaction ${interactionId} (Type: ${interactionType}):`,
+    console.error("[InteractionService] Handling error for interaction ", interactionId, " (Type: ", interactionType, "):",
       error
     );
     const isAbort = error.name === "AbortError";
@@ -1206,7 +1194,7 @@ export const InteractionService = {
       }
     }
 
-    //     console.log(`[InteractionService] Checking completion handler conditions for ${interactionId}:`, {
+    //     console.log("[InteractionService] Checking completion handler conditions for ", interactionId, ":", {
     //   interactionType,
     //   status,
     //   hasResponse: !!finalUpdates.response,
@@ -1294,12 +1282,12 @@ export const InteractionService = {
           }
           
         } catch (error) {
-          console.error(`[InteractionService] Error updating combine interaction:`, error);
+          console.error("[InteractionService] Error updating combine interaction:", error);
         }
       }
       // Regular compact completion logic
       else if (compactSummary && targetUserInteractionId && targetConversationId) {
-        // console.log(`[InteractionService] Compact completion handler triggered for ${interactionId}:`, {
+        // console.log("[InteractionService] Compact completion handler triggered for ", interactionId, ":", {
         //   compactSummaryLength: compactSummary.length,
         //   targetUserInteractionId,
         //   targetConversationId
@@ -1324,7 +1312,7 @@ export const InteractionService = {
             throw new Error(`Target interaction ${targetUserInteractionId} not found after loading conversation ${targetConversationId}`);
           }
           
-          // console.log(`[InteractionService] Found target interaction ${targetUserInteractionId} with current response:`, {
+          // console.log("[InteractionService] Found target interaction ", targetUserInteractionId, " with current response:", {
           //   response: targetInteraction.response?.substring(0, 50) + '...',
           //   status: targetInteraction.status,
           //   conversationId: targetInteraction.conversationId,
@@ -1343,7 +1331,7 @@ export const InteractionService = {
           //   },
           // };
           
-          // console.log(`[InteractionService] Applying updates to ${targetUserInteractionId}:`, {
+          // console.log("[InteractionService] Applying updates to ", targetUserInteractionId, ":", {
           //   responseLength: compactSummary.length,
           //   status: updates.status,
           //   targetConversationId,
@@ -1365,7 +1353,7 @@ export const InteractionService = {
             }
           };
           
-          // console.log(`[InteractionService] DIRECT DATABASE UPDATE for ${targetUserInteractionId}:`, {
+          // console.log("[InteractionService] DIRECT DATABASE UPDATE for ", targetUserInteractionId, ":", {
           //   responseLength: compactSummary.length,
           //   status: fullyUpdatedInteraction.status,
           //   oldResponse: targetInteraction.response?.substring(0, 50),
@@ -1398,7 +1386,7 @@ export const InteractionService = {
           // Remove from streaming state
           interactionStore._removeStreamingId(targetUserInteractionId);
         } catch (error) {
-          console.error(`[InteractionService] Error updating user interaction ${targetUserInteractionId} with compact summary:`, error);
+          console.error("[InteractionService] Error updating user interaction ", targetUserInteractionId, " with compact summary:", error);
           
           // Fallback: try to update with error message
           try {
@@ -1431,7 +1419,7 @@ export const InteractionService = {
               await PersistenceService.saveInteraction(fallbackInteraction);
             }
           } catch (fallbackError) {
-            console.error(`[InteractionService] Fallback update also failed for ${targetUserInteractionId}:`, fallbackError);
+            console.error("[InteractionService] Fallback update also failed for ", targetUserInteractionId, ":", fallbackError);
           }
         }
       }
@@ -1452,8 +1440,7 @@ export const InteractionService = {
       // );
       PersistenceService.saveInteraction({ ...finalInteractionState }).catch(
         (e) => {
-          console.error(
-            `[InteractionService] Failed final persistence for ${interactionId}`,
+          console.error("[InteractionService] Failed final persistence for ", interactionId,
             e
           );
         }
@@ -1470,8 +1457,7 @@ export const InteractionService = {
       parsedToolCalls = toolData.calls.map((s) => JSON.parse(s));
       parsedToolResults = toolData.results.map((s) => JSON.parse(s));
     } catch (e) {
-      console.error(
-        `[InteractionService] Failed to parse tool strings for event emitter:`,
+      console.error("[InteractionService] Failed to parse tool strings for event emitter:",
         e
       );
     }

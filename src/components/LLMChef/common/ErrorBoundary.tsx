@@ -38,7 +38,7 @@ const CopyButton: React.FC<{
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       toast.error(t('errorBoundary.copyFailed', { label: label.toLowerCase() }));
-      console.error(`Clipboard copy failed for ${label}:`, err);
+      console.error("Clipboard copy failed for ", label, ":", err);
     }
   };
 

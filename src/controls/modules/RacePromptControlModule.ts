@@ -328,7 +328,7 @@ export class RacePromptControlModule implements ControlModule {
                 
                 resolve({ interaction: childInteraction, modelId });
               } catch (error) {
-                console.error(`[RacePromptControlModule] Error creating child interaction for ${modelId}:`, error);
+                console.error("[RacePromptControlModule] Error creating child interaction for ", modelId, ":", error);
                 resolve({ interaction: null, modelId });
               }
             }, index * staggerMs);
@@ -426,7 +426,7 @@ export class RacePromptControlModule implements ControlModule {
                 
                 resolve({ interaction: childInteraction, modelId });
               } catch (error) {
-                console.error(`[RacePromptControlModule] Error creating child interaction for ${modelId}:`, error);
+                console.error("[RacePromptControlModule] Error creating child interaction for ", modelId, ":", error);
                 resolve({ interaction: null, modelId });
               }
             }, index * staggerMs);
@@ -442,7 +442,7 @@ export class RacePromptControlModule implements ControlModule {
       
     } catch (error) {
       toast.error(`Race conversion failed: ${String(error)}`);
-      console.error(`[RacePromptControlModule] Error during race conversion:`, error);
+      console.error("[RacePromptControlModule] Error during race conversion:", error);
     }
   }
 
@@ -615,7 +615,7 @@ export class RacePromptControlModule implements ControlModule {
                 
                 resolve({ interaction: childInteraction, promptLabel: variant.label });
               } catch (error) {
-                console.error(`[RacePromptControlModule] Error creating child interaction for prompt "${variant.label}":`, error);
+                console.error("[RacePromptControlModule] Error creating child interaction for prompt \"", variant.label, "\":", error);
                 resolve({ interaction: null, promptLabel: variant.label });
               }
             }, index * staggerMs);
@@ -734,7 +734,7 @@ export class RacePromptControlModule implements ControlModule {
                 
                 resolve({ interaction: childInteraction, promptLabel: variant.label });
               } catch (error) {
-                console.error(`[RacePromptControlModule] Error creating child interaction for prompt "${variant.label}":`, error);
+                console.error("[RacePromptControlModule] Error creating child interaction for prompt \"", variant.label, "\":", error);
                 resolve({ interaction: null, promptLabel: variant.label });
               }
             }, index * staggerMs);
@@ -750,7 +750,7 @@ export class RacePromptControlModule implements ControlModule {
       
     } catch (error) {
       toast.error(`Prompt race conversion failed: ${String(error)}`);
-      console.error(`[RacePromptControlModule] Error during prompt race conversion:`, error);
+      console.error("[RacePromptControlModule] Error during prompt race conversion:", error);
     }
   }
 

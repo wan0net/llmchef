@@ -208,7 +208,7 @@ export class BulkSyncService {
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);
           progress.errors.push({ type: 'repo', id: repo.id, error: errorMsg });
-          console.error(`Failed to sync repository ${repo.name}:`, error);
+          console.error("Failed to sync repository ", repo.name, ":", error);
           
           if (!options.continueOnError) {
             throw error;
@@ -246,7 +246,7 @@ export class BulkSyncService {
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);
           progress.errors.push({ type: 'conversation', id: conversation.id, error: errorMsg });
-          console.error(`Failed to sync conversation ${conversation.title}:`, error);
+          console.error("Failed to sync conversation ", conversation.title, ":", error);
           
           if (!options.continueOnError) {
             throw error;

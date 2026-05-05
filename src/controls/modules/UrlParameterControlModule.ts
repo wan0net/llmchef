@@ -24,7 +24,7 @@ export class UrlParameterControlModule implements ControlModule {
       // Corrected: Use appEvent directly
       if (payload.phase === "all") {
         this.processUrlParameters().catch((err) => {
-          console.error(`[${this.id}] Error processing URL parameters:`, err);
+          console.error("[", this.id, "] Error processing URL parameters:", err);
           toast.error("Failed to process URL parameters.");
         });
       }

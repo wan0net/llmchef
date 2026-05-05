@@ -1080,7 +1080,7 @@ export class PersistenceService {
         throw new Error(errMsg);
       }
     } catch (error) {
-      console.error(`PersistenceService: Error clearing table "${tableName}":`, error);
+      console.error("PersistenceService: Error clearing table \"", tableName, "\":", error);
       throw error;
     }
   }

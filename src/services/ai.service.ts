@@ -172,7 +172,7 @@ export class AIService {
             }
             
             // For other errors, handle normally
-            console.error(`[AIService] Stream error for ${interactionId}:`, errorMessage, part);
+            console.error("[AIService] Stream error for ", interactionId, ":", errorMessage, part);
             callbacks.onError(
               new Error(`AI Stream Error Part: ${errorMessage}`)
             );
@@ -182,8 +182,7 @@ export class AIService {
           default:
             // Log unexpected part types but don't spam the console
             if ((part as any).type && !['text-start', 'text-delta', 'text-end', 'reasoning-start', 'reasoning-delta', 'reasoning-end', 'source', 'file', 'tool-call', 'tool-call-streaming-start', 'tool-call-delta', 'tool-call-streaming-end', 'tool-result', 'tool-error', 'start-step', 'finish-step', 'finish', 'error', 'abort', 'raw'].includes((part as any).type)) {
-              console.warn(
-                `[AIService] Received unexpected stream part type: ${(part as any).type} for ${interactionId}`,
+              console.warn("[AIService] Received unexpected stream part type: ", (part as any).type, " for ", interactionId,
                 part,
               );
             }
@@ -207,8 +206,7 @@ export class AIService {
           reasoning: finalReasoning, // Pass the final extracted reasoning
         });
       } else if (!options.abortSignal.aborted && !receivedFinishPart) {
-        console.warn(
-          `[AIService] Stream ${interactionId} ended without a 'finish' part.`,
+        console.warn("[AIService] Stream ", interactionId, " ended without a 'finish' part.",
         );
         callbacks.onError(
           new Error("Stream ended unexpectedly without a finish signal."),
@@ -216,8 +214,7 @@ export class AIService {
       }
       // If aborted, InteractionService handles the CANCELLED state.
     } catch (error: unknown) {
-      console.error(
-        `[AIService] Error during streamText call for ${interactionId}:`,
+      console.error("[AIService] Error during streamText call for ", interactionId, ":",
         error,
       );
       if (!(error instanceof Error && error.name === "AbortError")) {
@@ -226,8 +223,7 @@ export class AIService {
         );
       }
     } finally {
-      console.log(
-        `[AIService] Stream processing finished for ${interactionId}.`,
+      console.log("[AIService] Stream processing finished for ", interactionId, ".",
       );
     }
   }
@@ -296,7 +292,7 @@ export class AIService {
 
       console.log(`[AIService] Image generation completed for ${interactionId}`);
     } catch (error: unknown) {
-      console.error(`[AIService] Error during image generation for ${interactionId}:`, error);
+      console.error("[AIService] Error during image generation for ", interactionId, ":", error);
       if (!(error instanceof Error && error.name === "AbortError")) {
         callbacks.onError(
           error instanceof Error ? error : new Error(String(error)),
@@ -317,7 +313,7 @@ export class AIService {
       const { text } = await generateText(options);
       return text;
     } catch (error: unknown) {
-      console.error(`[AIService] Error during generateText call:`, error);
+      console.error("[AIService] Error during generateText call:", error);
       // Re-throw a standardized error
       throw new Error(
         `AI completion failed: ${

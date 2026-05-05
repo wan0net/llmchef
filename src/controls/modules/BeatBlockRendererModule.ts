@@ -321,7 +321,7 @@ export class BeatBlockRendererModule implements ControlModule {
         this.unregisterRuleCallback = undefined;
       }
     } catch (error) {
-      console.error(`[${this.id}] Error during cleanup:`, error);
+      console.error("[", this.id, "] Error during cleanup:", error);
     }
   }
 }

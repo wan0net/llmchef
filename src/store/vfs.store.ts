@@ -262,8 +262,7 @@ export const useVfsStore = create(
             get()
               .initializeVFS(key)
               .catch((err) => {
-                console.error(
-                  `[VfsStore] Error during re-initialization trigger for ${key}:`,
+                console.error("[VfsStore] Error during re-initialization trigger for ", key, ":",
                   err
                 );
               });
@@ -298,8 +297,7 @@ export const useVfsStore = create(
           get()
             .initializeVFS(key)
             .catch((err) => {
-              console.error(
-                `[VfsStore] Error during initialization trigger for ${key}:`,
+              console.error("[VfsStore] Error during initialization trigger for ", key, ":",
                 err
               );
             });
@@ -326,8 +324,7 @@ export const useVfsStore = create(
       if (typeof vfsKeyParam === 'object' && vfsKeyParam !== null && 'vfsKey' in vfsKeyParam) {
         // Case 1: Called with a single object argument like { vfsKey: 'key', options: { force: true } }
         // This is likely from an incorrectly wired event handler.
-        console.warn(
-          `[VfsStore] initializeVFS called with a single object payload. Correcting. Input:`, 
+        console.warn("[VfsStore] initializeVFS called with a single object payload. Correcting. Input:", 
           JSON.parse(JSON.stringify(vfsKeyParam)) // Deep clone for logging complex objects
         );
         vfsKey = String(vfsKeyParam.vfsKey);
@@ -339,13 +336,13 @@ export const useVfsStore = create(
       } else {
         // Case 3: Invalid first argument type
         const errorMessage = `[VfsStore] initializeVFS called with invalid vfsKey type. Type: ${typeof vfsKeyParam}, Value: "${String(vfsKeyParam)}". Aborting.`;
-        console.error(errorMessage, vfsKeyParam);
+        console.error("[VfsStore] initializeVFS called with invalid vfsKey type.", errorMessage, vfsKeyParam);
         throw new Error("VFS key must be a string and cannot be empty.");
       }
 
       if (!vfsKey || vfsKey.trim() === "") {
          const errorMessage = `[VfsStore] initializeVFS: Derived vfsKey is empty or invalid. Original param: ${String(vfsKeyParam)}, Derived key: "${vfsKey}". Aborting.`;
-         console.error(errorMessage, {originalVfsKeyParam: vfsKeyParam, originalOptionsParam: optionsParam});
+         console.error("[VfsStore] initializeVFS derived invalid key.", errorMessage, {originalVfsKeyParam: vfsKeyParam, originalOptionsParam: optionsParam});
          throw new Error("VFS key cannot be empty after processing.");
       }
 
@@ -503,7 +500,7 @@ export const useVfsStore = create(
         const errorMessage = `Failed to initialize VFS (${vfsKey}): ${
           err instanceof Error ? err.message : String(err)
         }`;
-        console.error(`[VfsStore DEBUG] Error in initializeVFS catch block: ${errorMessage}`, err);
+        console.error("[VfsStore DEBUG] Error in initializeVFS catch block: ", errorMessage, err);
         if (get().initializingKey === vfsKey) {
           _setError(errorMessage);
           if (!isForced) {

@@ -198,8 +198,7 @@ export async function initializeControlModules(
     console.error("[Init] Control Modules: Dependency resolution FAILED.");
     throw new Error("Failed to resolve control module dependency order.");
   }
-  console.log(
-    `[Init] Control Modules: Dependency order resolved (${sortedModules.length} modules):`,
+  console.log("[Init] Control Modules: Dependency order resolved (", sortedModules.length, " modules):",
     sortedModules.map((m) => m.id)
   );
   console.log(
@@ -211,8 +210,7 @@ export async function initializeControlModules(
     try {
       await module.initialize(modApi);
     } catch (initError) {
-      console.error(
-        `[Init] Error initializing module "${module.id}":`,
+      console.error("[Init] Error initializing module \"", module.id, "\":",
         initError
       );
       toast.error(
@@ -238,8 +236,7 @@ export function registerControlModules(
     try {
       module.register(modApi);
     } catch (regError) {
-      console.error(
-        `[Init] Error registering module "${module.id}":`,
+      console.error("[Init] Error registering module \"", module.id, "\":",
         regError
       );
       toast.error(

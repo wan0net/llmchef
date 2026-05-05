@@ -70,8 +70,7 @@ export async function runMiddleware<H extends ModMiddlewareHookName>(
         currentPayload = result as any;
       }
     } catch (error) {
-      console.error(
-        `Middleware error in mod ${middleware.modId} for hook ${hookName}:`,
+      console.error("Middleware error in mod ", middleware.modId, " for hook ", hookName, ":",
         error
       );
       return false as ModMiddlewareReturnMap[H];
@@ -193,8 +192,7 @@ export function processFileMetaToUserContent(
       throw new Error(`Missing or unusable content for file: ${fileMeta.name}`);
     }
   } catch (error) {
-    console.error(
-      `AIService: Failed to process content for ${fileMeta.name}:`,
+    console.error("AIService: Failed to process content for ", fileMeta.name, ":",
       error
     );
     toast.error(

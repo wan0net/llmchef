@@ -150,7 +150,7 @@ export class WebSearchService {
       const content = await response.text();
       return content || `Failed to extract content from ${url}`;
     } catch (error) {
-      console.error(`Content extraction failed for ${url}:`, error);
+      console.error("Content extraction failed for ", url, ":", error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
       // Only show toast if we haven't already shown one for HTTP errors

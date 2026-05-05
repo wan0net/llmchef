@@ -41,8 +41,7 @@ export async function loadMods(dbMods: DbMod[]): Promise<ModInstance[]> {
               `[ModLoader] Successfully fetched script for ${mod.name}`
             );
           } catch (fetchError) {
-            console.error(
-              `[ModLoader] Error fetching script from ${mod.sourceUrl}:`,
+            console.error("[ModLoader] Error fetching script from ", mod.sourceUrl, ":",
               fetchError
             );
             throw fetchError;
@@ -55,7 +54,7 @@ export async function loadMods(dbMods: DbMod[]): Promise<ModInstance[]> {
         console.log(`[ModLoader] Successfully executed script for ${mod.name}`);
       } catch (e) {
         instanceError = e instanceof Error ? e : String(e);
-        console.error(`[ModLoader] Error loading mod "${mod.name}":`, e);
+        console.error("[ModLoader] Error loading mod \"", mod.name, "\":", e);
         toast.error(
           `Error loading mod "${mod.name}": ${
             instanceError instanceof Error

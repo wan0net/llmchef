@@ -283,7 +283,7 @@ export function instantiateModelInstance(
         return null;
     }
   } catch (e) {
-    console.error(`Failed instantiate model ${modelId} for ${config.name}:`, e);
+    console.error("Failed instantiate model ", modelId, " for ", config.name, ":", e);
     return null;
   }
 }
@@ -304,8 +304,7 @@ export function createAiModelConfig(
 
   // If model definition not found, return undefined
   if (!modelInfo) {
-    console.warn(
-      `Model definition not found for ${modelId} in provider ${config.name}`,
+    console.warn("Model definition not found for ", modelId, " in provider ", config.name,
     );
     return undefined;
   }
@@ -313,8 +312,7 @@ export function createAiModelConfig(
   // Instantiate the AI SDK model instance
   const instance = instantiateModelInstance(config, modelId, apiKey);
   if (!instance) {
-    console.warn(
-      `Failed to instantiate AI SDK instance for ${modelId} from provider ${config.name}`,
+    console.warn("Failed to instantiate AI SDK instance for ", modelId, " from provider ", config.name,
     );
     return undefined;
   }

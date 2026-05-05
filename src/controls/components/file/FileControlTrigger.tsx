@@ -70,7 +70,7 @@ export const FileControlTrigger: React.FC<FileControlTriggerProps> = ({
             ...fileData,
           });
         } catch (error) {
-          console.error(`Error processing file ${file.name}:`, error);
+          console.error("Error processing file ", file.name, ":", error);
           toast.error(
             t('fileControl.processingError', {
               fileName: file.name,

@@ -77,7 +77,7 @@ export class McpToolsModule implements ControlModule {
           client.client.disconnect();
         }
       } catch (error) {
-        console.error(`[${this.id}] Error disconnecting MCP client ${client.id}:`, error);
+        console.error("[", this.id, "] Error disconnecting MCP client ", client.id, ":", error);
       }
     });
     this.mcpClients.clear();
@@ -96,7 +96,7 @@ export class McpToolsModule implements ControlModule {
     const handleServersChanged = () => {
 
       this.initializeMcpClients().catch(error => {
-        console.error(`[${this.id}] Error reinitializing MCP clients:`, error);
+        console.error("[", this.id, "] Error reinitializing MCP clients:", error);
       });
     };
 
@@ -138,7 +138,7 @@ export class McpToolsModule implements ControlModule {
             client.client.disconnect();
           }
         } catch (error) {
-          console.error(`[${this.id}] Error disconnecting existing MCP client ${client.id}:`, error);
+          console.error("[", this.id, "] Error disconnecting existing MCP client ", client.id, ":", error);
         }
       });
       this.mcpClients.clear();
@@ -153,7 +153,7 @@ export class McpToolsModule implements ControlModule {
       }
 
     } catch (error) {
-      console.error(`[${this.id}] Error initializing MCP clients:`, error);
+      console.error("[", this.id, "] Error initializing MCP clients:", error);
       toast.error("Failed to initialize MCP clients", {
         description: error instanceof Error ? error.message : "Unknown error occurred",
       });
@@ -184,7 +184,7 @@ export class McpToolsModule implements ControlModule {
       });
 
     } catch (error) {
-      console.error(`[${this.id}] Failed to connect to MCP server ${server.name} (attempt ${currentAttempt + 1}):`, error);
+      console.error("[", this.id, "] Failed to connect to MCP server ", server.name, " (attempt ", currentAttempt + 1, "):", error);
 
       // Update server status to indicate connection failure
       const mcpState = useMcpStore.getState();
@@ -258,7 +258,7 @@ export class McpToolsModule implements ControlModule {
         ]);
         transportType = 'streamable-http';
       } catch (streamableError) {
-        console.debug(`[${this.id}] Streamable HTTP transport failed, falling back to SSE:`, streamableError);
+        console.debug("[", this.id, "] Streamable HTTP transport failed, falling back to SSE:", streamableError);
         mcpClient = await Promise.race([
           this.connectWithSseTransport(server),
           timeoutPromise,
@@ -290,7 +290,7 @@ export class McpToolsModule implements ControlModule {
         }
       }
 
-      console.error(`[${this.id}] Failed to connect to MCP server ${server.name}:`, enhancedError);
+      console.error("[", this.id, "] Failed to connect to MCP server ", server.name, ":", enhancedError);
       throw enhancedError;
     }
   }
@@ -479,7 +479,7 @@ export class McpToolsModule implements ControlModule {
               headers: getMcpHttpHeaders(server, sessionId, protocolVersion),
             });
           } catch (error) {
-            console.debug(`[${this.id}] MCP session close request failed:`, error);
+            console.debug("[", this.id, "] MCP session close request failed:", error);
           }
         }
         isConnected = false;
@@ -527,8 +527,8 @@ export class McpToolsModule implements ControlModule {
 
 
     } catch (error) {
-      console.error(`[${this.id}] Failed to retrieve tools from ${server.name}:`, error);
-      console.error(`[${this.id}] Error stack:`, error instanceof Error ? error.stack : 'No stack trace available');
+      console.error("[", this.id, "] Failed to retrieve tools from ", server.name, ":", error);
+      console.error("[", this.id, "] Error stack:", error instanceof Error ? error.stack : 'No stack trace available');
       throw error;
     }
 
@@ -726,7 +726,7 @@ export class McpToolsModule implements ControlModule {
           existingClient.client.disconnect();
         }
       } catch (error) {
-        console.error(`[${this.id}] Error disconnecting existing client for ${server.name}:`, error);
+        console.error("[", this.id, "] Error disconnecting existing client for ", server.name, ":", error);
       }
       this.mcpClients.delete(serverId);
     }
@@ -847,7 +847,7 @@ export class McpToolsModule implements ControlModule {
       return unregisterTool;
 
     } catch (error) {
-      console.error(`[${this.id}] Error registering MCP tool ${toolName} with AI SDK:`, error);
+      console.error("[", this.id, "] Error registering MCP tool ", toolName, " with AI SDK:", error);
       return () => {};
          }
    }

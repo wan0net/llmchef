@@ -299,8 +299,7 @@ export const useProjectStore = create(
           await deleteProjectFolder(projectToDelete.path);
         } catch (error) {
           folderDeleteError = error;
-          console.warn(
-            `ProjectStore: Project ${id} was deleted from the database, but its VFS folder could not be removed.`,
+          console.warn("ProjectStore: Project ", id, " was deleted from the database, but its VFS folder could not be removed.",
             error
           );
         }

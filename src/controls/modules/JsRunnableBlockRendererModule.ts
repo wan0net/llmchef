@@ -453,7 +453,7 @@ export class JsRunnableBlockRendererModule implements ControlModule {
 
             return module;
           } catch (error) {
-            console.error(`Error loading module ${moduleName}:`, error);
+            console.error("Error loading module ", moduleName, ":", error);
             window.dispatchEvent(
               new CustomEvent(`${moduleName.toLowerCase()}-error`, {
                 detail: error,
@@ -536,7 +536,7 @@ export class JsRunnableBlockRendererModule implements ControlModule {
                 loadedModules[key] = module;
                 return module;
               } catch (error) {
-                console.error(`Error loading module ${config.name}:`, error);
+                console.error("Error loading module ", config.name, ":", error);
                 throw error;
               }
             })();

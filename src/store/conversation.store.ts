@@ -618,7 +618,7 @@ export const useConversationStore = create(
                     // Directory doesn't exist, which is fine.
                   }
                 } catch (e) {
-                  console.warn(`[ConversationStore] Could not delete VFS dir ${conversationDir}`, e);
+                  console.warn("[ConversationStore] Could not delete VFS dir ", conversationDir, e);
                 }
               }
             }
@@ -698,7 +698,7 @@ export const useConversationStore = create(
         try {
           await get().initializeOrSyncRepo(newId);
         } catch (initError) {
-          console.warn(`Failed to automatically initialize repository "${newRepo.name}":`, initError);
+          console.warn("Failed to automatically initialize repository \"", newRepo.name, "\":", initError);
           toast.warning(`Repository "${newRepo.name}" added but initialization failed. You can manually sync it later.`);
           // Don't fail the entire operation if initialization fails
         }
@@ -792,7 +792,7 @@ export const useConversationStore = create(
           await VfsOps.deleteItemOp(repoDir, true, { fsInstance });
           console.log(`[ConversationStore] Successfully deleted VFS directory: ${repoDir}`);
         } catch (vfsError: any) {
-          console.error(`[ConversationStore] Failed to delete VFS directory ${repoDir}:`, vfsError);
+          console.error("[ConversationStore] Failed to delete VFS directory ", repoDir, ":", vfsError);
           if (vfsError.code !== "ENOENT") {
             console.warn(`Could not remove local sync folder for "${repoToDelete.name}": ${vfsError.message}`);
             // Don't fail the entire operation if VFS cleanup fails

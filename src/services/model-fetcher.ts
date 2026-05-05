@@ -246,8 +246,7 @@ export async function fetchModelsForProvider(
   const cachedPromise = fetchCache.get(cacheKey);
 
   if (cachedPromise) {
-    console.log(
-      `[ModelFetcher] Using cache for provider ${config.name} (ID: ${config.id})`,
+    console.log("[ModelFetcher] Using cache for provider ", config.name, " (ID: ", config.id, ")",
     );
     return cachedPromise;
   }
@@ -328,19 +327,16 @@ export async function fetchModelsForProvider(
           break;
         case "luma":
           // Luma doesn't have a public models API, return default models
-          console.log(
-            `[ModelFetcher] Using default models for Luma AI - no public API available.`,
+          console.log("[ModelFetcher] Using default models for Luma AI - no public API available.",
           );
           return [];
         default:
-          console.log(
-            `[ModelFetcher] Model fetching not supported via API for type: ${config.type}. Returning empty list.`,
+          console.log("[ModelFetcher] Model fetching not supported via API for type: ", config.type, ". Returning empty list.",
           );
           return [];
       }
     } catch (urlError) {
-      console.error(
-        `[ModelFetcher] Error constructing URL for ${config.name}:`,
+      console.error("[ModelFetcher] Error constructing URL for ", config.name, ":",
         urlError,
       );
       toast.error(
@@ -349,8 +345,7 @@ export async function fetchModelsForProvider(
       return [];
     }
 
-    console.log(
-      `[ModelFetcher] Fetching models for ${config.name} (Type: ${config.type}) from ${url}`,
+    console.log("[ModelFetcher] Fetching models for ", config.name, " (Type: ", config.type, ") from ", url,
     );
 
     try {
@@ -389,8 +384,7 @@ export async function fetchModelsForProvider(
       }
 
       if (!Array.isArray(rawModels)) {
-        console.warn(
-          `[ModelFetcher] Unexpected non-array response for ${config.name}:`,
+        console.warn("[ModelFetcher] Unexpected non-array response for ", config.name, ":",
           data,
         );
         return [];
@@ -403,15 +397,13 @@ export async function fetchModelsForProvider(
 
       models.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
 
-      console.log(
-        `[ModelFetcher] Fetched and mapped ${models.length} models for ${config.name}`,
+      console.log("[ModelFetcher] Fetched and mapped ", models.length, " models for ", config.name,
       );
       return models;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      console.error(
-        `[ModelFetcher] Error fetching models for ${config.name}:`,
+      console.error("[ModelFetcher] Error fetching models for ", config.name, ":",
         errorMessage,
       );
       toast.error(`Failed to fetch models for ${config.name}: ${errorMessage}`);
@@ -425,8 +417,7 @@ export async function fetchModelsForProvider(
   setTimeout(() => {
     if (fetchCache.get(cacheKey) === fetchPromise) {
       fetchCache.delete(cacheKey);
-      console.log(
-        `[ModelFetcher] Cache expired for provider ${config.name} (ID: ${config.id})`,
+      console.log("[ModelFetcher] Cache expired for provider ", config.name, " (ID: ", config.id, ")",
       );
     }
   }, CACHE_DURATION_MS);

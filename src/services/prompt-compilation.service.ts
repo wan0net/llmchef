@@ -396,8 +396,7 @@ ${memoryContext.context}`
           fileContentParts.push(contentPart);
         }
       } catch (processingError) {
-        console.error(
-          `[PromptCompilationService] Error processing file ${fileMeta.name}:`,
+        console.error("[PromptCompilationService] Error processing file ", fileMeta.name, ":",
           processingError
         );
         fileContentParts.push({

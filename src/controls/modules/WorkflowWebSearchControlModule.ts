@@ -170,7 +170,7 @@ export class WorkflowWebSearchControlModule implements ControlModule {
         }
       }
     } catch (error) {
-      console.warn(`[${this.id}] Failed to register prompt templates:`, error);
+      console.warn("[", this.id, "] Failed to register prompt templates:", error);
     }
   }
 
@@ -188,7 +188,7 @@ export class WorkflowWebSearchControlModule implements ControlModule {
         console.log(`[${this.id}] Registered workflow template: deep-websearch`);
       }
     } catch (error) {
-      console.warn(`[${this.id}] Failed to register workflow templates:`, error);
+      console.warn("[", this.id, "] Failed to register workflow templates:", error);
     }
   }
 

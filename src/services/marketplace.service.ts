@@ -76,7 +76,7 @@ export class MarketplaceService {
       return marketplaceIndex;
 
     } catch (error) {
-      console.error(`Failed to fetch marketplace index from ${source.url}:`, error);
+      console.error("Failed to fetch marketplace index from ", source.url, ":", error);
       emitter.emit('marketplace.refresh.failed', { 
         sourceId: source.id!, 
         error: error instanceof Error ? error.message : 'Unknown error' 
@@ -137,7 +137,7 @@ export class MarketplaceService {
       return packageData as MarketplacePackage;
 
     } catch (error) {
-      console.error(`Failed to fetch package from ${packageUrl}:`, error);
+      console.error("Failed to fetch package from ", packageUrl, ":", error);
       throw error;
     }
   }
@@ -196,7 +196,7 @@ export class MarketplaceService {
       emitter.emit('marketplace.item.installed', { packageId: item.id, item, installedItem: { packageId: item.id, sourceId, installedAt: new Date(), enabled: true, version: item.version, installedRules: [], installedTemplates: [], installedMcpServers: [] } });
 
     } catch (error) {
-      console.error(`Failed to install marketplace item ${item.id}:`, error);
+      console.error("Failed to install marketplace item ", item.id, ":", error);
       emitter.emit('marketplace.item.install.failed', { 
         sourceId, 
         itemId: item.id, 
@@ -232,7 +232,7 @@ export class MarketplaceService {
       emitter.emit('marketplace.item.uninstalled', { packageId: item.id });
 
     } catch (error) {
-      console.error(`Failed to uninstall marketplace item ${item.id}:`, error);
+      console.error("Failed to uninstall marketplace item ", item.id, ":", error);
       emitter.emit('marketplace.uninstall.failed', { 
         sourceId, 
         item, 
@@ -268,7 +268,7 @@ export class MarketplaceService {
       return await this.refreshMarketplaceIndex(source);
 
     } catch (error) {
-      console.error(`Failed to get marketplace index for source ${source.name}:`, error);
+      console.error("Failed to get marketplace index for source ", source.name, ":", error);
       return null;
     }
   }

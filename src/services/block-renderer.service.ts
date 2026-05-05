@@ -53,7 +53,7 @@ export class BlockRendererService {
     try {
       return renderer.renderer(context);
     } catch (error) {
-      console.error(`[BlockRendererService] Error rendering block with renderer ${renderer.id}:`, error);
+      console.error("[BlockRendererService] Error rendering block with renderer ", renderer.id, ":", error);
       return null;
     }
   }

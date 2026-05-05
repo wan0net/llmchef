@@ -108,8 +108,7 @@ export const isGitRepoOp = async (
     if (err instanceof Error && (err as any).code === "ENOENT") {
       return false;
     }
-    console.error(
-      `[VFS Git Op] Error checking for .git in ${normalized}:`,
+    console.error("[VFS Git Op] Error checking for .git in ", normalized, ":",
       err,
     );
     return false;
@@ -137,8 +136,7 @@ export const gitCloneOp = async (
     }
 
     if (isAlreadyCloned) {
-      console.warn(
-        `[VFS Git Op] Clone target ${dir} already contains a .git directory.`,
+      console.warn("[VFS Git Op] Clone target ", dir, " already contains a .git directory.",
       );
       throw new Error(`Repository already cloned at ${dir}.`);
     }
@@ -157,8 +155,7 @@ export const gitCloneOp = async (
       // Instead of using git.getRemoteInfo() which can fail with Buffer issues,
       // use common default branch names as fallbacks
       const commonDefaultBranches = ['main', 'master', 'develop', 'dev'];
-      console.log(
-        `[VFS Git Op] No branch specified, will try common default branches: ${commonDefaultBranches.join(', ')}`,
+      console.log("[VFS Git Op] No branch specified, will try common default branches: ", commonDefaultBranches.join(', '),
       );
       
       // Try cloning with each common default branch until one succeeds
@@ -197,14 +194,14 @@ export const gitCloneOp = async (
           console.log(`[VFS Git Op] Successfully cloned using branch: ${defaultBranch}`);
           break;
         } catch (branchError: any) {
-          console.warn(`[VFS Git Op] Failed to clone with branch ${defaultBranch}:`, branchError);
+          console.warn("[VFS Git Op] Failed to clone with branch ", defaultBranch, ":", branchError);
           lastError = branchError;
           
           // Clean up partial clone attempt if it exists
           try {
             await fsToUse.promises.rm(dir, { recursive: true, force: true });
           } catch (cleanupErr) {
-            console.warn(`[VFS Git Op] Failed cleanup after branch attempt:`, cleanupErr);
+            console.warn("[VFS Git Op] Failed cleanup after branch attempt:", cleanupErr);
           }
         }
       }
@@ -246,8 +243,7 @@ export const gitCloneOp = async (
       .currentBranch({ fs: fsToUse, dir, fullname: false })
       .catch(() => null);
     if (currentLocalBranch !== branchToCheckout) {
-      console.warn(
-        `[VFS Git Op] Cloned repo HEAD is at ${currentLocalBranch}, expected ${branchToCheckout}. Checking out...`,
+      console.warn("[VFS Git Op] Cloned repo HEAD is at ", currentLocalBranch, ", expected ", branchToCheckout, ". Checking out...",
       );
       await git.checkout({
         fs: fsToUse,
@@ -261,7 +257,7 @@ export const gitCloneOp = async (
     );
     console.log(`[VFS Git Op] Clone successful for ${url}`);
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git clone failed for ${url}:`, err);
+    console.error("[VFS Git Op] Git clone failed for ", url, ":", err);
     const errorMsg = formatGitHttpError(err);
     if (!(err instanceof Error && err.message.includes("already cloned"))) {
       toast.error(`Git clone failed: ${errorMsg}`);
@@ -271,8 +267,7 @@ export const gitCloneOp = async (
         console.log(`[VFS Git Op] Attempting cleanup of failed clone: ${dir}`);
         await fsToUse.promises.rm(dir, { recursive: true, force: true });
       } catch (cleanupErr) {
-        console.warn(
-          `[VFS Git Op] Failed cleanup after clone error:`,
+        console.warn("[VFS Git Op] Failed cleanup after clone error:",
           cleanupErr,
         );
       }
@@ -291,7 +286,7 @@ export const gitInitOp = async (
     await git.init({ fs: fsToUse, dir });
     toast.success(`Initialized empty Git repository in "${basename(dir)}"`);
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git init failed for ${dir}:`, err);
+    console.error("[VFS Git Op] Git init failed for ", dir, ":", err);
     toast.error(
       `Git init failed: ${err instanceof Error ? err.message : String(err)}`,
     );
@@ -390,7 +385,7 @@ export const gitCommitOp = async (
     });
     toast.success(`Changes committed: ${sha.substring(0, 7)}`);
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git commit failed for ${dir}:`, err);
+    console.error("[VFS Git Op] Git commit failed for ", dir, ":", err);
     toast.error(
       `Git commit failed: ${err instanceof Error ? err.message : String(err)}`,
     );
@@ -469,7 +464,7 @@ export const gitPullOp = async (
     toast.success(`Pulled changes successfully for "${basename(dir)}"`);
     console.log(`[VFS Git Op] Pull successful for ${dir}`);
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git pull failed for ${dir}:`, err);
+    console.error("[VFS Git Op] Git pull failed for ", dir, ":", err);
     // Check for "already up-to-date" which isn't an error
     if (
       err instanceof Error &&
@@ -533,7 +528,7 @@ export const gitPushOp = async (
       }
     }
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git push failed for ${dir}:`, err);
+    console.error("[VFS Git Op] Git push failed for ", dir, ":", err);
     if (!(err instanceof Error && err.message.includes("rejected"))) {
       toast.error(`Git push failed: ${formatGitHttpError(err)}`);
     }
@@ -576,7 +571,7 @@ ${formattedStatus || "No changes"}`,
       { duration: 15000 },
     );
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git status failed for ${dir}:`, err);
+    console.error("[VFS Git Op] Git status failed for ", dir, ":", err);
     toast.error(
       `Git status failed: ${err instanceof Error ? err.message : String(err)}`,
     );
@@ -602,7 +597,7 @@ export const gitCurrentBranchOp = async (
     toast.info(`Current branch in "${basename(dir)}": ${branch}`);
     return branch;
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git currentBranch failed for ${dir}:`, err);
+    console.error("[VFS Git Op] Git currentBranch failed for ", dir, ":", err);
     toast.error(
       `Failed to get current branch: ${err instanceof Error ? err.message : String(err)}`,
     );
@@ -622,7 +617,7 @@ export const gitListBranchesOp = async (
 ${branches.join(", ")}`);
     return branches;
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git listBranches failed for ${dir}:`, err);
+    console.error("[VFS Git Op] Git listBranches failed for ", dir, ":", err);
     toast.error(
       `Failed to list branches: ${err instanceof Error ? err.message : String(err)}`,
     );
@@ -645,7 +640,7 @@ ${remotes.map((r) => `${r.remote}: ${r.url}`).join(`
     );
     return remotes;
   } catch (err: unknown) {
-    console.error(`[VFS Git Op] Git listRemotes failed for ${dir}:`, err);
+    console.error("[VFS Git Op] Git listRemotes failed for ", dir, ":", err);
     toast.error(
       `Failed to list remotes: ${err instanceof Error ? err.message : String(err)}`,
     );

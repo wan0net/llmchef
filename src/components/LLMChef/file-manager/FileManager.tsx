@@ -247,7 +247,7 @@ export const FileManager = memo(() => {
             changed = true;
           }
         } catch (e) {
-          console.error(`Error checking git status for ${path}:`, e);
+          console.error("Error checking git status for ", path, ":", e);
           if (gitRepoStatus[path] !== false) {
             statusUpdates[path] = false;
             changed = true;
@@ -766,7 +766,7 @@ export const FileManager = memo(() => {
       try {
         await op();
       } catch (err) {
-        console.error(`[FileManager Git Op Error @ ${path}]:`, err);
+        console.error("[FileManager Git Op Error @ ", path, "]:", err);
       } finally {
         setIsGitOpLoading((prev) => ({ ...prev, [path]: false }));
       }
