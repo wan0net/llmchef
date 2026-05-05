@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
     container:
       image: semgrep/semgrep
-    if: github.actor != 'dependabot[bot]'
+    if: github.actor != 'dependabot[bot]' && github.event_name != 'schedule'
 
     steps:
       - name: Checkout
