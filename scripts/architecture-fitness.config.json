@@ -1,0 +1,24 @@
+{
+  "root": "src",
+  "extensions": [".ts", ".tsx", ".js", ".jsx"],
+  "defaultMaxLines": 900,
+  "reportTopN": 12,
+  "allowlist": {
+    "src/components/LLMChef/common/FormedibleBlockRenderer.tsx": 1000,
+    "src/components/LLMChef/common/JsRunnableBlockRenderer.tsx": 1700,
+    "src/components/LLMChef/common/PythonRunnableBlockRenderer.tsx": 1000,
+    "src/components/LLMChef/documents/DocumentsWorkspace.tsx": 2300,
+    "src/components/LLMChef/file-manager/FileManager.tsx": 1100,
+    "src/controls/components/assistant-settings/SettingsAssistantMcp.tsx": 1300,
+    "src/controls/components/conversation-list/ConversationListControlComponent.tsx": 1100,
+    "src/controls/components/workflow/WorkflowBuilder.tsx": 1600,
+    "src/controls/modules/RacePromptControlModule.ts": 1000,
+    "src/services/conversation.service.ts": 1100,
+    "src/services/interaction.service.ts": 1600,
+    "src/services/persistence.service.ts": 1300,
+    "src/services/workflow.service.ts": 2600,
+    "src/store/conversation.store.ts": 1200,
+    "src/store/settings.store.ts": 1200,
+    "src/store/vfs.store.ts": 1200
+  }
+}

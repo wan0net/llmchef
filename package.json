@@ -17,6 +17,7 @@
     "build:pages": "VITE_BASE=/llmchef/ npm run build",
     "lint": "node scripts/lint-touched.mjs",
     "lint:all": "eslint . --max-warnings=0",
+    "fitness:architecture": "node scripts/check-architecture-fitness.mjs",
     "budget": "node scripts/check-bundle-budget.mjs",
     "preview": "vite preview",
     "test": "DEBUG_PRINT_LIMIT=10000 vitest",

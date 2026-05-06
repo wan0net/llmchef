@@ -48,6 +48,9 @@ jobs:
       - name: Lint repository
         run: npm run lint:all
 
+      - name: Check architecture fitness
+        run: npm run fitness:architecture
+
       - name: Test
         run: npm test -- --run
 

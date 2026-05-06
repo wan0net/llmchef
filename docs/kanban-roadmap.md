@@ -4,6 +4,7 @@ Status snapshot after lanes 1 and 2:
 - Done: Release foundation
 - Done: Quality hardening
 - Done: Backlog ticketization pass
+- Done: Architecture fitness gate for oversized source modules
 - Active next: Continue architecture cleanup with AC-006
 
 ## Board
@@ -19,6 +20,9 @@ Status snapshot after lanes 1 and 2:
 - AC-005: Untangle VFS runtime helpers from store/module glue (GH: #8)
   - Landed helpers: `vfs-git-runtime.ts`, `vfs-git-browser-runtime.ts`, `vfs-git-operation-options.ts`, and `vfs-git-pull-branch.ts`
   - Result: `vfs-git-operations.ts` now delegates auth/settings/browser wiring, shared remote option building, and pull branch preparation into focused testable seams
+- BL-001: Add architecture fitness checks for oversized files/modules (GH: #11)
+  - Landed: `scripts/check-architecture-fitness.mjs` plus `scripts/architecture-fitness.config.json`
+  - Result: CI now gates oversized source modules with a 900-line default cap and explicit per-file allowlist ceilings for existing large modules
 
 ### Ready next (priority order)
 1. AC-006 - Introduce typed persistence adapters for app settings slices (GH: #9)
@@ -32,7 +36,6 @@ Status snapshot after lanes 1 and 2:
    - Success check: store becomes thinner and side effects centralize in services
 
 ### Backlog
-- BL-001 - Add architecture fitness checks for oversized files/modules (GH: #11)
 - BL-002 - Add codeowners/review routing by domain lane (GH: #12)
 - BL-003 - Add roadmap-to-ticket automation for future review passes (GH: #13)
 - BL-004 - Add thin domain docs for MCP, workflow, persistence, and VFS boundaries (GH: #14)
