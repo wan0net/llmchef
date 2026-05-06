@@ -5,7 +5,7 @@ Status snapshot after lanes 1 and 2:
 - Done: Quality hardening
 - Done: Backlog ticketization pass
 - Done: Architecture fitness gate for oversized source modules
-- Active next: Continue architecture cleanup with AC-006
+- Active next: Continue architecture cleanup with AC-007
 
 ## Board
 
@@ -23,14 +23,12 @@ Status snapshot after lanes 1 and 2:
 - BL-001: Add architecture fitness checks for oversized files/modules (GH: #11)
   - Landed: `scripts/check-architecture-fitness.mjs` plus `scripts/architecture-fitness.config.json`
   - Result: CI now gates oversized source modules with a 900-line default cap and explicit per-file allowlist ceilings for existing large modules
+- AC-006: Introduce typed persistence adapters for app settings slices (GH: #9)
+  - Landed: `src/store/settings-slice-actions.ts` plus grouped slice-action factories in `store/settings.store.ts`
+  - Result: theme, auto-title, tool-selection, and config-sync setters now share typed persistence wiring; `settings.store.ts` dropped to about 1109 lines from about 1161 without behavior changes
 
 ### Ready next (priority order)
-1. AC-006 - Introduce typed persistence adapters for app settings slices (GH: #9)
-   - Why: `store/settings.store.ts` is very large and repeats per-key persistence/event code.
-   - Scope: extract grouped settings adapters for sync, auto-title, tool selection, and UI theming.
-   - Success check: reducer/store file shrinks materially without behavior change
-
-2. AC-007 - Reduce conversation store/service overlap (GH: #10)
+1. AC-007 - Reduce conversation store/service overlap (GH: #10)
    - Why: `store/conversation.store.ts` and conversation services are both large, increasing coordination complexity.
    - Scope: clarify command/query boundaries and move derived-data helpers out of the store.
    - Success check: store becomes thinner and side effects centralize in services
