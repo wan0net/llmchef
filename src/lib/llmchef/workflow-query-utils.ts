@@ -32,7 +32,7 @@ export const resolveJsonPath = (source: unknown, path: string): unknown => {
           if (!Number.isSafeInteger(index) || index < 0 || !Array.isArray(current)) {
             return undefined;
           }
-          current = current[index];
+          current = Array.prototype.at.call(current, index);
         }
 
         return current;

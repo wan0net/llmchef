@@ -1,6 +1,7 @@
 // src/components/LLMChef/canvas/interaction/AssistantResponse.tsx
 // FULL FILE
 import React, { useState, useCallback, useMemo } from "react";
+import DOMPurify from "dompurify";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -21,6 +22,24 @@ import { useShallow } from "zustand/react/shallow";
 import type { CanvasControl, CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 import { useTranslation } from "react-i18next";
 import { ImageBlockRenderer } from "@/components/LLMChef/common/ImageBlockRenderer";
+
+const sanitizeRenderedHtml = (html: string): string =>
+  DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    ADD_ATTR: ["target"],
+    FORBID_TAGS: [
+      "audio",
+      "embed",
+      "iframe",
+      "img",
+      "link",
+      "meta",
+      "object",
+      "source",
+      "track",
+      "video",
+    ],
+  });
 
 const StaticContentView: React.FC<{ markdownContent: string | null, interactionId: string }> = ({
   markdownContent,
@@ -89,7 +108,9 @@ const StaticContentView: React.FC<{ markdownContent: string | null, interactionI
                       <div
                         key={`html-${index}-${i}`}
                         className="markdown-content"
-                        dangerouslySetInnerHTML={{ __html: parts[i] }}
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeRenderedHtml(parts[i]),
+                        }}
                       />
                     );
                   }
@@ -104,7 +125,9 @@ const StaticContentView: React.FC<{ markdownContent: string | null, interactionI
               <div
                 key={`html-${index}`}
                 className="markdown-content"
-                dangerouslySetInnerHTML={{ __html: item }}
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeRenderedHtml(item),
+                }}
               />
             );
           } else if (item.type === "block") {

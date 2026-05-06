@@ -1,6 +1,7 @@
 // src/components/LLMChef/canvas/StreamingContentView.tsx
 // FULL FILE
 import React, {useMemo, useCallback } from "react";
+import DOMPurify from "dompurify";
 import { useTranslation } from "react-i18next";
 import {
   useMarkdownParser,
@@ -36,7 +37,24 @@ const renderBlock = (
       <div
         key={`html-${index}`}
         className="markdown-content"
-        dangerouslySetInnerHTML={{ __html: item }}
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(item, {
+            USE_PROFILES: { html: true },
+            ADD_ATTR: ["target"],
+            FORBID_TAGS: [
+              "audio",
+              "embed",
+              "iframe",
+              "img",
+              "link",
+              "meta",
+              "object",
+              "source",
+              "track",
+              "video",
+            ],
+          }),
+        }}
       />
     );
   } else if (item.type === "block") {

@@ -1,13 +1,11 @@
 #!/usr/bin/env php
 <?php
-// Function to safely create directories
 function safeMkdir($dir) {
     if (!file_exists($dir)) {
         mkdir($dir, 0755, true);
     }
 }
 
-// Function to get an option from command line arguments
 function getOption($args, $option, $default = false) {
     foreach ($args as $arg) {
         if ($arg === $option) {
@@ -17,25 +15,21 @@ function getOption($args, $option, $default = false) {
     return $default;
 }
 
-// Parse command line arguments
 $args = array_slice($argv, 1);
 $port = isset($args[0]) && is_numeric($args[0]) ? (int)$args[0] : 3000;
 $hostAll = getOption($args, '--host') || getOption($args, '-h');
 
-// Create temp directory
 $scriptDir = dirname(__FILE__);
 $tempDir = $scriptDir . '/llmchef-app';
 safeMkdir($tempDir);
 
-// Download the zip file
 $zipPath = $tempDir . '/llmchef.zip';
 echo "Downloading LLMChef release...\n";
 
-// Create a stream context to handle redirects
 $context = stream_context_create([
     'http' => [
-        'follow_location' => true
-    ]
+        'follow_location' => true,
+    ],
 ]);
 
 $zipContent = file_get_contents('https://wan0.net/llmchef/release/latest.zip', false, $context);
@@ -47,43 +41,75 @@ if ($zipContent === false) {
 file_put_contents($zipPath, $zipContent);
 echo "Download complete. Extracting...\n";
 
-// Extract the zip file
 $zip = new ZipArchive();
 if ($zip->open($zipPath) === TRUE) {
     $zip->extractTo($tempDir);
     $zip->close();
     echo "Extraction complete.\n";
 
-    // Remove the zip file
-    unlink($zipPath);
-
-    // Start the server
     $host = $hostAll ? '0.0.0.0' : 'localhost';
-    $accessUrl = $hostAll ?
-        "http://" . gethostbyname(gethostname()) . ":{$port} (accessible from other devices)" :
-        "http://localhost:{$port} (local access only)";
+    $accessUrl = $hostAll
+        ? "http://" . gethostbyname(gethostname()) . ":{$port} (accessible from other devices)"
+        : "http://localhost:{$port} (local access only)";
 
     echo "LLMChef is running at {$accessUrl}\n";
 
-    // Create router script for SPA
     $routerPath = $tempDir . '/router.php';
-    file_put_contents($routerPath, '<?php
-    $path = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
-    $file = __DIR__ . $path;
-    if (is_file($file)) {
-        return false;
-    } else {
-        include __DIR__ . "/index.html";
-    }
-    ?>');
+    $routerScript = <<<'PHP'
+<?php
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+if (!in_array($method, ['GET', 'HEAD', 'OPTIONS'], true)) {
+    http_response_code(405);
+    header('Allow: GET, HEAD, OPTIONS');
+    echo 'Method Not Allowed';
+    return true;
+}
 
-    // Change to the temp directory and start PHP's built-in server
+if ($method === 'OPTIONS') {
+    http_response_code(204);
+    header('Allow: GET, HEAD, OPTIONS');
+    return true;
+}
+
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$normalizedPath = $requestPath ?: '/';
+$segments = array_filter(explode('/', $normalizedPath), static fn ($segment) => $segment !== '');
+$safeSegments = [];
+
+foreach ($segments as $segment) {
+    $decodedSegment = rawurldecode($segment);
+    if (
+        $decodedSegment === '' ||
+        $decodedSegment === '.' ||
+        $decodedSegment === '..' ||
+        strpos($decodedSegment, DIRECTORY_SEPARATOR) !== false ||
+        strpos($decodedSegment, '/') !== false ||
+        strpos($decodedSegment, "\\") !== false
+    ) {
+        http_response_code(404);
+        return true;
+    }
+    $safeSegments[] = $decodedSegment;
+}
+
+$filePath = __DIR__;
+foreach ($safeSegments as $safeSegment) {
+    $filePath .= DIRECTORY_SEPARATOR . $safeSegment;
+}
+
+if (is_file($filePath)) {
+    return false;
+}
+
+include __DIR__ . '/index.html';
+PHP;
+    file_put_contents($routerPath, $routerScript);
+
     chdir($tempDir);
     $command = "php -S {$host}:{$port} router.php";
     system($command);
 } else {
     echo "Failed to extract the zip file.\n";
-    unlink($zipPath);
     exit(1);
 }
 ?>
