@@ -19,6 +19,7 @@
     "lint:all": "eslint . --max-warnings=0",
     "fitness:architecture": "node scripts/check-architecture-fitness.mjs",
     "budget": "node scripts/check-bundle-budget.mjs",
+    "roadmap:sync": "node scripts/sync-roadmap-issues.mjs",
     "preview": "vite preview",
     "test": "DEBUG_PRINT_LIMIT=10000 vitest",
     "test:e2e": "playwright test",

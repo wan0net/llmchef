@@ -5,7 +5,8 @@ Status snapshot after lanes 1 and 2:
 - Done: Quality hardening
 - Done: Backlog ticketization pass
 - Done: Architecture fitness gate for oversized source modules
-- Active next: Backlog lane queue (starting with BL-003)
+- Done: Roadmap-to-ticket backlog sync automation
+- Active next: Backlog lane queue (starting with BL-004)
 
 ## Board
 
@@ -31,13 +32,15 @@ Status snapshot after lanes 1 and 2:
   - Result: derived conversation/project/sync selection logic now lives outside `conversation.store.ts`; the store dropped to about 1084 lines while services/modules share the same query boundary
 - BL-002: Add codeowners/review routing by domain lane (GH: #12)
   - Landed: `.github/CODEOWNERS` with release-foundation, architecture, UI/control, and knowledge/backlog path ownership sections
-  - Result: review routing is now explicit, lane-shaped, and repo-local instead of tribal knowledge
+  - Result: review requests now follow repo lanes instead of relying on ad-hoc path memory
+- BL-003: Add roadmap-to-ticket automation for future review passes (GH: #13)
+  - Landed: `scripts/sync-roadmap-issues.mjs` plus `npm run roadmap:sync` dry-run wiring
+  - Result: backlog tickets in `docs/kanban-roadmap.md` can now be reconciled against GitHub issues for title, lane, priority, and open/closed state without touching historical done-ticket bodies by default
 
 ### Ready next (priority order)
 - Backlog lane items only; no additional architecture ticket is currently queued ahead of backlog work.
 
 ### Backlog
-- BL-003 - Add roadmap-to-ticket automation for future review passes (GH: #13)
 - BL-004 - Add thin domain docs for MCP, workflow, persistence, and VFS boundaries (GH: #14)
 - BL-005 - Review remaining control modules for event/persistence leakage (GH: #15)
 - BL-006 - Sync Kanban tickets with GitHub Issues once repository issues are enabled (GH: #16)
@@ -49,9 +52,9 @@ Status snapshot after lanes 1 and 2:
 - Low-friction mapping: use labels like `lane:architecture`, `lane:backlog`, and `priority:P1`, and let Hermes update the doc when creating, reordering, or closing issues.
 
 ## Recommended execution order
-1. Execute AC-006 as the next bounded architecture cleanup slice
-2. Keep `docs/kanban-roadmap.md` aligned with GitHub issue numbers and state changes
-3. Consider automating roadmap-to-issue reconciliation under BL-003 once the manual flow feels stable
+1. Keep `docs/kanban-roadmap.md` aligned with GitHub issue numbers and state changes via `npm run roadmap:sync`
+2. Execute BL-004 as the next bounded backlog documentation slice
+3. Revisit BL-006 after BL-004/BL-005 if a second-stage sync between GitHub Issues and Kanban still needs automation
 
 ## Notes
 - This board intentionally keeps the roadmap ticket-driven instead of trying to land one mega-refactor.
