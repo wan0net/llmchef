@@ -6,7 +6,8 @@ Status snapshot after lanes 1 and 2:
 - Done: Backlog ticketization pass
 - Done: Architecture fitness gate for oversized source modules
 - Done: Roadmap-to-ticket backlog sync automation
-- Active next: Backlog lane queue (starting with BL-004)
+- Done: Thin domain boundary docs for MCP, workflow, persistence, and VFS
+- Active next: Backlog lane queue (starting with BL-005)
 
 ## Board
 
@@ -36,12 +37,14 @@ Status snapshot after lanes 1 and 2:
 - BL-003: Add roadmap-to-ticket automation for future review passes (GH: #13)
   - Landed: `scripts/sync-roadmap-issues.mjs` plus `npm run roadmap:sync` dry-run wiring
   - Result: backlog tickets in `docs/kanban-roadmap.md` can now be reconciled against GitHub issues for title, lane, priority, and open/closed state without touching historical done-ticket bodies by default
+- BL-004: Add thin domain docs for MCP, workflow, persistence, and VFS boundaries (GH: #14)
+  - Landed: `docs/mcp-boundaries.md`, `docs/workflow-boundaries.md`, `docs/persistence-boundaries.md`, and `docs/vfs-boundaries.md`, all linked from `docs/readme.md`
+  - Result: contributors now have short ownership maps for the main boundary seams touched by AC-001 through AC-005 without having to reverse-engineer the larger architecture docs first
 
 ### Ready next (priority order)
 - Backlog lane items only; no additional architecture ticket is currently queued ahead of backlog work.
 
 ### Backlog
-- BL-004 - Add thin domain docs for MCP, workflow, persistence, and VFS boundaries (GH: #14)
 - BL-005 - Review remaining control modules for event/persistence leakage (GH: #15)
 - BL-006 - Sync Kanban tickets with GitHub Issues once repository issues are enabled (GH: #16)
 
@@ -53,8 +56,8 @@ Status snapshot after lanes 1 and 2:
 
 ## Recommended execution order
 1. Keep `docs/kanban-roadmap.md` aligned with GitHub issue numbers and state changes via `npm run roadmap:sync`
-2. Execute BL-004 as the next bounded backlog documentation slice
-3. Revisit BL-006 after BL-004/BL-005 if a second-stage sync between GitHub Issues and Kanban still needs automation
+2. Execute BL-005 as the next bounded backlog hygiene slice
+3. Revisit BL-006 after BL-005 if a second-stage sync between GitHub Issues and Kanban still needs automation
 
 ## Notes
 - This board intentionally keeps the roadmap ticket-driven instead of trying to land one mega-refactor.

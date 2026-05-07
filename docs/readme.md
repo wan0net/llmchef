@@ -20,6 +20,10 @@ LLMChef follows a modular, event-driven architecture designed for extensibility 
 - [Event System](./event-system.md) - Event-driven communication patterns and implementation
 - [State Management](./state-management.md) - Zustand stores, actions, and data flow
 - [Persistence Layer](./persistence.md) - Database schema, transactions, and data operations
+- [MCP Boundaries](./mcp-boundaries.md) - One-page ownership map for MCP types, store, persistence, and runtime helpers
+- [Workflow Boundaries](./workflow-boundaries.md) - Thin guide to workflow store/service/helper responsibilities
+- [Persistence Boundaries](./persistence-boundaries.md) - Quick split between Dexie schema, generic CRUD, and narrow persistence helpers
+- [VFS Boundaries](./vfs-boundaries.md) - Short map for VFS store, file ops, and git runtime seams
 
 ### Key Features
 - [Virtual File System](./vfs.md) - Browser-based filesystem implementation and usage
