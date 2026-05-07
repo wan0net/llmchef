@@ -1,6 +1,11 @@
 import { useConversationStore } from "@/store/conversation.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { BulkSyncService } from "@/services/bulk-sync.service";
+import {
+  getLinkedConversations,
+  getPendingSyncConversations,
+  getUninitializedSyncRepos,
+} from "@/services/conversation-query.service";
 
 export class StartupSyncService {
   private static hasRunStartupSync = false;
@@ -24,7 +29,7 @@ export class StartupSyncService {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const repos = conversationStore.syncRepos;
-      const conversations = conversationStore.conversations.filter(c => c.syncRepoId);
+      const conversations = getLinkedConversations(conversationStore.conversations);
 
       if (repos.length === 0) {
         console.log("[StartupSync] No repositories configured, skipping startup sync");
@@ -34,10 +39,7 @@ export class StartupSyncService {
       console.log(`[StartupSync] Found ${repos.length} repositories and ${conversations.length} synced conversations`);
 
       // Check if any repositories need initialization
-      const uninitializedRepos = repos.filter(repo => {
-        const status = conversationStore.repoInitializationStatus[repo.id];
-        return !status || status === 'error';
-      });
+      const uninitializedRepos = getUninitializedSyncRepos(conversationStore);
 
       if (uninitializedRepos.length > 0 && settingsStore.autoInitializeReposOnStartup) {
         console.log(`[StartupSync] Initializing ${uninitializedRepos.length} repositories in background`);
@@ -60,10 +62,7 @@ export class StartupSyncService {
       }
 
       // Check for conversations that need syncing
-      const pendingConversations = conversations.filter(c => {
-        const status = conversationStore.conversationSyncStatus[c.id];
-        return status === 'needs-sync';
-      });
+      const pendingConversations = getPendingSyncConversations(conversationStore);
 
       if (pendingConversations.length > 0 && settingsStore.autoSyncOnStreamComplete) {
         console.log(`[StartupSync] Found ${pendingConversations.length} conversations pending sync`);

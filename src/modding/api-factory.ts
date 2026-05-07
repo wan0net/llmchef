@@ -23,6 +23,7 @@ import { useInteractionStore } from "@/store/interaction.store";
 import { useConversationStore } from "@/store/conversation.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { useProviderStore } from "@/store/provider.store";
+import { getSelectedConversationId } from "@/services/conversation-query.service";
 import { useModStore } from "@/store/mod.store";
 import { emitter } from "@/lib/llmchef/event-emitter";
 import { toast } from "sonner";
@@ -181,8 +182,7 @@ export function createModApi(mod: DbMod): LLMChefModApi {
       const pS = useProviderStore.getState();
       const { providerId } = splitModelId(pS.selectedModelId);
 
-      const selectedConversationId =
-        cS.selectedItemType === "conversation" ? cS.selectedItemId : null;
+      const selectedConversationId = getSelectedConversationId(cS);
 
       return Object.freeze({
         selectedConversationId: selectedConversationId,

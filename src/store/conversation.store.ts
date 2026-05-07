@@ -33,6 +33,12 @@ import { uiEvent } from "@/types/llmchef/events/ui.events";
 import { useVfsStore } from "./vfs.store";
 import { useProjectStore } from "./project.store";
 import { BulkSyncService } from "@/services/bulk-sync.service";
+import {
+  buildConversationSyncStatusIndex,
+  getConversationById as findConversationById,
+  getConversationSyncStatus,
+  getSelectedConversation,
+} from "@/services/conversation-query.service";
 
 export type SidebarItem =
   | (Conversation & { itemType: "conversation" })
@@ -230,25 +236,7 @@ export const useConversationStore = create(
           PersistenceService.loadSyncRepos(),
         ]);
 
-        const initialStatus: Record<string, SyncStatus> = {};
-        dbConvos.forEach((c) => {
-          if (c.syncRepoId) {
-            const lastSyncTime =
-              c.lastSyncedAt instanceof Date ? c.lastSyncedAt.getTime() : null;
-            const updatedTime =
-              c.updatedAt instanceof Date ? c.updatedAt.getTime() : null;
-
-            if (!lastSyncTime) {
-              initialStatus[c.id] = "needs-sync";
-            } else if (updatedTime && updatedTime > lastSyncTime) {
-              initialStatus[c.id] = "needs-sync";
-            } else {
-              initialStatus[c.id] = "idle";
-            }
-          } else {
-            initialStatus[c.id] = "idle";
-          }
-        });
+        const initialStatus = buildConversationSyncStatusIndex(dbConvos);
 
         set({
           conversations: dbConvos,
@@ -360,13 +348,9 @@ export const useConversationStore = create(
             (field) => field in updates
           );
 
-          const lastSyncTime =
-            state.conversations[index].lastSyncedAt instanceof Date
-              ? state.conversations[index].lastSyncedAt!.getTime()
-              : null;
-          const updatedTime = state.conversations[index].updatedAt.getTime();
-
-          if ("syncRepoId" in updates) {
+          if (
+            "syncRepoId" in updates
+          ) {
             state.conversationSyncStatus[id] = updates.syncRepoId
               ? "needs-sync"
               : "idle";
@@ -375,7 +359,9 @@ export const useConversationStore = create(
             state.conversations[index].syncRepoId &&
             state.conversationSyncStatus[id] === "idle"
           ) {
-            if (!lastSyncTime || updatedTime > lastSyncTime) {
+            if (
+              getConversationSyncStatus(state.conversations[index]) === "needs-sync"
+            ) {
               state.conversationSyncStatus[id] = "needs-sync";
             }
           }
@@ -398,20 +384,9 @@ export const useConversationStore = create(
             const index = state.conversations.findIndex((c) => c.id === id);
             if (index !== -1) {
               state.conversations[index] = originalConversation;
-              const originalLastSyncTime =
-                originalConversation.lastSyncedAt instanceof Date
-                  ? originalConversation.lastSyncedAt.getTime()
-                  : null;
-              const originalUpdatedTime =
-                originalConversation.updatedAt.getTime();
-              state.conversationSyncStatus[id] =
-                originalConversation.syncRepoId &&
-                originalLastSyncTime &&
-                originalUpdatedTime <= originalLastSyncTime
-                  ? "idle"
-                  : originalConversation.syncRepoId
-                  ? "needs-sync"
-                  : "idle";
+              state.conversationSyncStatus[id] = getConversationSyncStatus(
+                originalConversation
+              );
             }
             state.error = "Failed to save conversation update";
           });
@@ -425,20 +400,9 @@ export const useConversationStore = create(
           const index = state.conversations.findIndex((c) => c.id === id);
           if (index !== -1) {
             state.conversations[index] = originalConversation;
-            const originalLastSyncTime =
-              originalConversation.lastSyncedAt instanceof Date
-                ? originalConversation.lastSyncedAt.getTime()
-                : null;
-            const originalUpdatedTime =
-              originalConversation.updatedAt.getTime();
-            state.conversationSyncStatus[id] =
-              originalConversation.syncRepoId &&
-              originalLastSyncTime &&
-              originalUpdatedTime <= originalLastSyncTime
-                ? "idle"
-                : originalConversation.syncRepoId
-                ? "needs-sync"
-                : "idle";
+            state.conversationSyncStatus[id] = getConversationSyncStatus(
+              originalConversation
+            );
           }
           state.error = "Failed to save conversation update (state error)";
         });
@@ -492,20 +456,9 @@ export const useConversationStore = create(
         set((state) => {
           if (conversationToDelete) {
             state.conversations.push(conversationToDelete);
-            const originalLastSyncTime =
-              conversationToDelete.lastSyncedAt instanceof Date
-                ? conversationToDelete.lastSyncedAt.getTime()
-                : null;
-            const originalUpdatedTime =
-              conversationToDelete.updatedAt.getTime();
-            state.conversationSyncStatus[id] =
-              conversationToDelete.syncRepoId &&
-              originalLastSyncTime &&
-              originalUpdatedTime <= originalLastSyncTime
-                ? "idle"
-                : conversationToDelete.syncRepoId
-                ? "needs-sync"
-                : "idle";
+            state.conversationSyncStatus[id] = getConversationSyncStatus(
+              conversationToDelete
+            );
           }
           if (
             currentSelectedId === id &&
@@ -946,8 +899,7 @@ export const useConversationStore = create(
     },
 
     getConversationById: (id) => {
-      if (!id) return undefined;
-      return get().conversations.find((c) => c.id === id);
+      return findConversationById(get().conversations, id);
     },
 
     syncAllConversations: async () => {
@@ -968,18 +920,11 @@ export const useConversationStore = create(
     },
 
     updateCurrentConversationToolSettings: async (settings) => {
-      const { selectedItemId, selectedItemType, updateConversation } = get();
+      const { updateConversation } = get();
+      const currentConversation = getSelectedConversation(get());
 
-      if (selectedItemType !== "conversation" || !selectedItemId) {
-        console.warn("Cannot update tool settings: No conversation selected.");
-        return;
-      }
-
-      const currentConversation = get().getConversationById(selectedItemId);
       if (!currentConversation) {
-        console.warn(
-          "Cannot update tool settings: Selected conversation not found."
-        );
+        console.warn("Cannot update tool settings: No conversation selected.");
         return;
       }
 
@@ -997,7 +942,7 @@ export const useConversationStore = create(
         JSON.stringify(newMeta) !== JSON.stringify(currentMeta) ||
         !currentConversation.metadata
       ) {
-        await updateConversation(selectedItemId, { metadata: newMeta });
+        await updateConversation(currentConversation.id, { metadata: newMeta });
       }
     },
 

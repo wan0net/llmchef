@@ -25,6 +25,8 @@ import { projectEvent } from "@/types/llmchef/events/project.events";
 import { InteractionService } from "@/services/interaction.service";
 import { BundledConfigService } from "@/services/bundled-config.service";
 import { StartupSyncService } from "@/services/startup-sync.service";
+import { getCurrentProjectId } from "@/services/conversation-query.service";
+import type { Conversation, SidebarItemType } from "@/types/llmchef/chat";
 import i18next from "i18next";
 
 interface CoreStores {
@@ -39,7 +41,7 @@ interface CoreStores {
   getEffectiveProjectSettings: (projectId: string | null) => any;
   initializePromptState: (settings: any) => void; // This will be unused after refactor
   selectedItemId: string | null;
-  selectedItemType: string | null;
+  selectedItemType: SidebarItemType | null;
 }
 
 function resolveDependencyOrder(
@@ -287,12 +289,11 @@ export function initializeCoreUiStates(
   const initialSelItemId = stores.selectedItemId;
   const initialSelItemType = stores.selectedItemType;
 
-  const initialProjectId =
-    initialSelItemType === "project"
-      ? initialSelItemId
-      : initialSelItemType === "conversation"
-      ? stores.getConversationById(initialSelItemId)?.projectId ?? null
-      : null;
+  const initialProjectId = getCurrentProjectId({
+    conversations: useConversationStore.getState().conversations,
+    selectedItemId: initialSelItemId,
+    selectedItemType: initialSelItemType,
+  });
 
   const initialEffectiveSettings =
     stores.getEffectiveProjectSettings(initialProjectId);

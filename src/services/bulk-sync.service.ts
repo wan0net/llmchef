@@ -4,6 +4,10 @@ import type { SyncRepo } from "@/types/llmchef/sync";
 import { emitter } from "@/lib/llmchef/event-emitter";
 import { syncEvent } from "@/types/llmchef/events/sync.events";
 import { BackgroundTaskToast } from "@/services/background-task-toast.service";
+import {
+  getLinkedConversations,
+  getPendingSyncConversations,
+} from "@/services/conversation-query.service";
 
 export interface BulkSyncProgress {
   totalRepos: number;
@@ -51,7 +55,7 @@ export class BulkSyncService {
     
     const conversationStore = useConversationStore.getState();
     const repos = conversationStore.syncRepos;
-    const conversations = conversationStore.conversations.filter(c => c.syncRepoId);
+    const conversations = getLinkedConversations(conversationStore.conversations);
 
     const progress: BulkSyncProgress = {
       totalRepos: opts.syncRepos ? repos.length : 0,
@@ -117,10 +121,7 @@ export class BulkSyncService {
    */
   static async syncPendingConversations(): Promise<void> {
     const conversationStore = useConversationStore.getState();
-    const pendingConversations = conversationStore.conversations.filter(c => {
-      const status = conversationStore.conversationSyncStatus[c.id];
-      return c.syncRepoId && status === 'needs-sync';
-    });
+    const pendingConversations = getPendingSyncConversations(conversationStore);
 
     if (pendingConversations.length === 0) {
       BackgroundTaskToast.info({

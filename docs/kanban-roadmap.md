@@ -5,7 +5,7 @@ Status snapshot after lanes 1 and 2:
 - Done: Quality hardening
 - Done: Backlog ticketization pass
 - Done: Architecture fitness gate for oversized source modules
-- Active next: Continue architecture cleanup with AC-007
+- Active next: Backlog lane queue (starting with BL-002)
 
 ## Board
 
@@ -26,12 +26,12 @@ Status snapshot after lanes 1 and 2:
 - AC-006: Introduce typed persistence adapters for app settings slices (GH: #9)
   - Landed: `src/store/settings-slice-actions.ts` plus grouped slice-action factories in `store/settings.store.ts`
   - Result: theme, auto-title, tool-selection, and config-sync setters now share typed persistence wiring; `settings.store.ts` dropped to about 1109 lines from about 1161 without behavior changes
+- AC-007: Reduce conversation store/service overlap (GH: #10)
+  - Landed: `src/services/conversation-query.service.ts` plus query-helper adoption across startup sync, bulk sync, UI control modules, initialization, and modding context snapshots
+  - Result: derived conversation/project/sync selection logic now lives outside `conversation.store.ts`; the store dropped to about 1084 lines while services/modules share the same query boundary
 
 ### Ready next (priority order)
-1. AC-007 - Reduce conversation store/service overlap (GH: #10)
-   - Why: `store/conversation.store.ts` and conversation services are both large, increasing coordination complexity.
-   - Scope: clarify command/query boundaries and move derived-data helpers out of the store.
-   - Success check: store becomes thinner and side effects centralize in services
+- Backlog lane items only; no additional architecture ticket is currently queued ahead of backlog work.
 
 ### Backlog
 - BL-002 - Add codeowners/review routing by domain lane (GH: #12)

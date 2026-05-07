@@ -12,6 +12,7 @@ import { useConversationStore } from "@/store/conversation.store";
 import { useProjectStore } from "@/store/project.store";
 import { useControlRegistryStore } from "@/store/control.store";
 import { APP_VFS_KEY } from "@/lib/llmchef/constants";
+import { getCurrentProjectId } from "@/services/conversation-query.service";
 import type { TriggerNamespace, TriggerExecutionContext } from "@/types/llmchef/text-triggers";
 import { nanoid } from "nanoid";
 
@@ -69,16 +70,10 @@ export class VfsControlModule implements ControlModule {
 
     const targetVfsKey = APP_VFS_KEY;
     let targetPath = "/";
-    if (selectedItemType === "project") {
+    const currentProjectId = getCurrentProjectId(useConversationStore.getState());
+    if (selectedItemType === "project" || selectedItemType === "conversation") {
       targetPath =
-        useProjectStore.getState().getProjectById(selectedItemId)?.path ?? "/";
-    } else if (selectedItemType === "conversation") {
-      const convo = useConversationStore
-        .getState()
-        .getConversationById(selectedItemId);
-      targetPath =
-        useProjectStore.getState().getProjectById(convo?.projectId ?? null)
-          ?.path ?? "/";
+        useProjectStore.getState().getProjectById(currentProjectId)?.path ?? "/";
     }
 
     if (currentVfsStoreKey !== targetVfsKey) {

@@ -12,6 +12,7 @@ import { useInteractionStore } from "@/store/interaction.store";
 import { useProjectStore } from "@/store/project.store";
 import { useConversationStore } from "@/store/conversation.store";
 import { useSettingsStore } from "@/store/settings.store";
+import { getCurrentProjectId } from "@/services/conversation-query.service";
 
 export class SystemPromptControlModule implements ControlModule {
   readonly id = "core-system-prompt";
@@ -67,13 +68,7 @@ export class SystemPromptControlModule implements ControlModule {
     const projState = useProjectStore.getState();
     const settingsState = useSettingsStore.getState();
 
-    const currentProjectId =
-      convState.selectedItemType === "project"
-        ? convState.selectedItemId
-        : convState.selectedItemType === "conversation"
-        ? convState.getConversationById(convState.selectedItemId)?.projectId ??
-          null
-        : null;
+    const currentProjectId = getCurrentProjectId(convState);
     const newEffective =
       projState.getEffectiveProjectSettings(currentProjectId).systemPrompt ??
       settingsState.globalSystemPrompt;
