@@ -5,7 +5,7 @@ Status snapshot after lanes 1 and 2:
 - Done: Quality hardening
 - Done: Backlog ticketization pass
 - Done: Architecture fitness gate for oversized source modules
-- Active next: Backlog lane queue (starting with BL-002)
+- Active next: Backlog lane queue (starting with BL-003)
 
 ## Board
 
@@ -29,12 +29,14 @@ Status snapshot after lanes 1 and 2:
 - AC-007: Reduce conversation store/service overlap (GH: #10)
   - Landed: `src/services/conversation-query.service.ts` plus query-helper adoption across startup sync, bulk sync, UI control modules, initialization, and modding context snapshots
   - Result: derived conversation/project/sync selection logic now lives outside `conversation.store.ts`; the store dropped to about 1084 lines while services/modules share the same query boundary
+- BL-002: Add codeowners/review routing by domain lane (GH: #12)
+  - Landed: `.github/CODEOWNERS` with release-foundation, architecture, UI/control, and knowledge/backlog path ownership sections
+  - Result: review routing is now explicit, lane-shaped, and repo-local instead of tribal knowledge
 
 ### Ready next (priority order)
 - Backlog lane items only; no additional architecture ticket is currently queued ahead of backlog work.
 
 ### Backlog
-- BL-002 - Add codeowners/review routing by domain lane (GH: #12)
 - BL-003 - Add roadmap-to-ticket automation for future review passes (GH: #13)
 - BL-004 - Add thin domain docs for MCP, workflow, persistence, and VFS boundaries (GH: #14)
 - BL-005 - Review remaining control modules for event/persistence leakage (GH: #15)

@@ -1,0 +1,36 @@
+# LLMChef review routing by domain lane.
+# GitHub uses the last matching rule, so keep specific rules below broad ones.
+
+# Default owner for anything not otherwise mapped.
+* @wan0net
+
+# Release foundation lane: CI, release packaging, deployment, repo metadata.
+/.github/ @wan0net
+/package.json @wan0net
+/package-lock.json @wan0net
+/scripts/ @wan0net
+/public/ @wan0net
+/index.html @wan0net
+/vite.config.* @wan0net
+/tsconfig*.json @wan0net
+/eslint.config.* @wan0net
+
+# Architecture lane: stores, services, core runtime/lib glue, and shared types.
+/src/store/ @wan0net
+/src/services/ @wan0net
+/src/lib/llmchef/ @wan0net
+/src/types/ @wan0net
+/src/modding/ @wan0net
+/src/hooks/ @wan0net
+
+# UI/control lane: app shell, controls, and visual components.
+/src/components/ @wan0net
+/src/controls/ @wan0net
+/src/App.tsx @wan0net
+/src/main.tsx @wan0net
+/src/index.css @wan0net
+/src/vite-env.d.ts @wan0net
+
+# Knowledge/backlog lane: roadmap, plans, and contributor docs.
+/docs/ @wan0net
+/*.md @wan0net
