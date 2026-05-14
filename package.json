@@ -20,6 +20,8 @@
     "fitness:architecture": "node scripts/check-architecture-fitness.mjs",
     "budget": "node scripts/check-bundle-budget.mjs",
     "roadmap:sync": "node scripts/sync-roadmap-issues.mjs",
+    "kanban:sync": "python3 scripts/sync-github-kanban-issues.py",
+    "kanban:sync:write": "python3 scripts/sync-github-kanban-issues.py --write",
     "preview": "vite preview",
     "test": "DEBUG_PRINT_LIMIT=10000 vitest",
     "test:e2e": "playwright test",

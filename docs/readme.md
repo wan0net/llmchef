@@ -38,6 +38,7 @@ LLMChef follows a modular, event-driven architecture designed for extensibility 
 - [Build & Deployment](./build-deployment.md) - Development setup, build-time configuration, and deployment strategies
 - [Component Development](./components.md) - UI component patterns and best practices
 - [Service Layer](./services.md) - Business logic organization and patterns
+- [GitHub -> Kanban Sync](./github-kanban-sync.md) - Operator workflow for promoting ready GitHub issues into Hermes Kanban
 
 ### Reference
 - [File Structure](./file-structure.md) - Complete project organization reference

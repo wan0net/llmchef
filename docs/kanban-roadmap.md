@@ -7,6 +7,7 @@ Status snapshot after lanes 1 and 2:
 - Done: Architecture fitness gate for oversized source modules
 - Done: Roadmap-to-ticket backlog sync automation
 - Done: Thin domain boundary docs for MCP, workflow, persistence, and VFS
+- Done: GitHub issue -> Hermes Kanban ready-sync automation
 - Active next: Backlog lane queue (starting with BL-005)
 
 ## Board
@@ -40,6 +41,9 @@ Status snapshot after lanes 1 and 2:
 - BL-004: Add thin domain docs for MCP, workflow, persistence, and VFS boundaries (GH: #14)
   - Landed: `docs/mcp-boundaries.md`, `docs/workflow-boundaries.md`, `docs/persistence-boundaries.md`, and `docs/vfs-boundaries.md`, all linked from `docs/readme.md`
   - Result: contributors now have short ownership maps for the main boundary seams touched by AC-001 through AC-005 without having to reverse-engineer the larger architecture docs first
+- BL-006: Sync Kanban tickets with GitHub Issues once repository issues are enabled (GH: #16)
+  - Landed: `scripts/sync-github-kanban-issues.py`, `npm run kanban:sync`, and `docs/github-kanban-sync.md`
+  - Result: ready-labeled GitHub issues can now be dry-run synced into Hermes Kanban with stable idempotency keys, while closed or non-ready issues are left out of the runnable queue
 
 ### Ready next (priority order)
 - Backlog lane items only; no additional architecture ticket is currently queued ahead of backlog work.
@@ -53,11 +57,15 @@ Status snapshot after lanes 1 and 2:
 - Current state: GitHub Issues are now enabled on `wan0net/llmchef`, and the roadmap has been bootstrapped into issue-backed tickets.
 - Working model: keep one issue per roadmap ticket, keep lane order in `docs/kanban-roadmap.md`, and reference issue numbers instead of duplicating full ticket bodies.
 - Low-friction mapping: use labels like `lane:architecture`, `lane:backlog`, and `priority:P1`, and let Hermes update the doc when creating, reordering, or closing issues.
+- Operator workflow:
+  - `npm run roadmap:sync` keeps `docs/kanban-roadmap.md` aligned with GitHub issues.
+  - `npm run kanban:sync` mirrors open `ready` issues into runnable Hermes Kanban tasks.
+  - See `docs/github-kanban-sync.md` for dry-run/apply commands and ready-gating behavior.
 
 ## Recommended execution order
 1. Keep `docs/kanban-roadmap.md` aligned with GitHub issue numbers and state changes via `npm run roadmap:sync`
-2. Execute BL-005 as the next bounded backlog hygiene slice
-3. Revisit BL-006 after BL-005 if a second-stage sync between GitHub Issues and Kanban still needs automation
+2. Promote ready GitHub issues into Hermes execution flow via `npm run kanban:sync`
+3. Execute BL-005 as the next bounded backlog hygiene slice
 
 ## Notes
 - This board intentionally keeps the roadmap ticket-driven instead of trying to land one mega-refactor.
