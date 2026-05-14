@@ -9,6 +9,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from hermes_cli import kanban_db
 
@@ -55,6 +56,16 @@ class TaskSpec:
     workspace_kind: str
     workspace_path: str | None
     idempotency_key: str
+
+
+TASK_UPDATE_SQL = {
+    "title": "UPDATE tasks SET title = ? WHERE id = ?",
+    "body": "UPDATE tasks SET body = ? WHERE id = ?",
+    "priority": "UPDATE tasks SET priority = ? WHERE id = ?",
+    "assignee": "UPDATE tasks SET assignee = ? WHERE id = ?",
+    "workspace_kind": "UPDATE tasks SET workspace_kind = ? WHERE id = ?",
+    "workspace_path": "UPDATE tasks SET workspace_path = ? WHERE id = ?",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -159,6 +170,10 @@ def parse_workspace(workspace: str) -> tuple[str, str | None]:
 
 
 def github_request(url: str) -> Any:
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or parsed.netloc != "api.github.com":
+        raise ValueError(f"refusing non-GitHub API URL: {url}")
+
     headers = {
         "Accept": "application/vnd.github+json",
         "User-Agent": "llmchef-github-kanban-sync",
@@ -169,7 +184,7 @@ def github_request(url: str) -> Any:
         headers["Authorization"] = f"Bearer {token}"
 
     request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request) as response:
+    with urllib.request.urlopen(request) as response:  # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected -- URL is restricted above to api.github.com over https only.
         return json.load(response)
 
 
@@ -301,21 +316,19 @@ def update_task_fields(conn: Any, task_id: str, spec: TaskSpec) -> list[str]:
         desired_fields["workspace_path"] = spec.workspace_path
 
     changed_fields: list[str] = []
-    sets: list[str] = []
-    params: list[Any] = []
+    changed_values: list[tuple[str, Any]] = []
     for field_name, desired_value in desired_fields.items():
         current_value = getattr(task, field_name)
         if current_value != desired_value:
             changed_fields.append(field_name)
-            sets.append(f"{field_name} = ?")
-            params.append(desired_value)
+            changed_values.append((field_name, desired_value))
 
     if not changed_fields:
         return []
 
     with kanban_db.write_txn(conn):
-        params.append(task_id)
-        conn.execute(f"UPDATE tasks SET {', '.join(sets)} WHERE id = ?", tuple(params))
+        for field_name, desired_value in changed_values:
+            conn.execute(TASK_UPDATE_SQL[field_name], (desired_value, task_id))
         kanban_db._append_event(
             conn,
             task_id,
