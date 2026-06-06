@@ -17,7 +17,7 @@ concurrency:
 jobs:
   mark-ready:
     name: Mark PR ready after review gates
-    runs-on: [self-hosted, linux, llmchef-codex, codex-architect]
+    runs-on: [self-hosted, linux, agentic-codex, codex-architect]
     if: >-
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' &&

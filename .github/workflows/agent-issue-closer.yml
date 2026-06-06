@@ -15,7 +15,7 @@ concurrency:
 jobs:
   review-close:
     name: Review close request
-    runs-on: [self-hosted, linux, llmchef-codex, codex-vv]
+    runs-on: [self-hosted, linux, agentic-codex, codex-vv]
     if: >-
       !github.event.issue.pull_request &&
       !contains(github.event.issue.labels.*.name, 'agent:human-only') &&

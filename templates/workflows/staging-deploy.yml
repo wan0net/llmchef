@@ -16,7 +16,7 @@ concurrency:
 jobs:
   staging:
     name: Deploy staging from trusted base code
-    runs-on: [self-hosted, linux, llmchef-codex, codex-staging]
+    runs-on: [self-hosted, linux, agentic-codex, codex-staging]
     if: >-
       contains(github.event.pull_request.labels.*.name, 'deploy:staging') &&
       !contains(github.event.pull_request.labels.*.name, 'agent:human-only') &&

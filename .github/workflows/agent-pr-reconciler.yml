@@ -19,7 +19,7 @@ concurrency:
 jobs:
   reconcile:
     name: Reconcile open PR state
-    runs-on: [self-hosted, linux, llmchef-codex, codex-architect]
+    runs-on: [self-hosted, linux, agentic-codex, codex-architect]
     if: >-
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||

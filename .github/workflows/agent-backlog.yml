@@ -17,7 +17,7 @@ concurrency:
 jobs:
   backlog:
     name: Create follow-up issues
-    runs-on: [self-hosted, linux, llmchef-codex, codex-architect]
+    runs-on: [self-hosted, linux, agentic-codex, codex-architect]
     if: >-
       !contains(github.event.issue.labels.*.name, 'agent:human-only') &&
       ((github.event_name == 'issue_comment' &&

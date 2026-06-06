@@ -16,7 +16,7 @@ concurrency:
 jobs:
   developer:
     name: Implement issue
-    runs-on: [self-hosted, linux, llmchef-codex, codex-developer]
+    runs-on: [self-hosted, linux, agentic-codex, codex-developer]
     if: >-
       github.event.action == 'labeled' &&
       github.event.label.name == 'agent:approved' &&

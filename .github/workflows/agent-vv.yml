@@ -18,7 +18,7 @@ concurrency:
 jobs:
   vv:
     name: Verify PR
-    runs-on: [self-hosted, linux, llmchef-codex, codex-vv]
+    runs-on: [self-hosted, linux, agentic-codex, codex-vv]
     if: >-
       ((github.event.action == 'labeled' &&
         github.event.label.name == 'agent:vv') ||

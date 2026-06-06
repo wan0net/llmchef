@@ -18,7 +18,7 @@ concurrency:
 jobs:
   security:
     name: Security review PR
-    runs-on: [self-hosted, linux, llmchef-codex, codex-security]
+    runs-on: [self-hosted, linux, agentic-codex, codex-security]
     if: >-
       ((github.event.action == 'labeled' &&
         github.event.label.name == 'agent:security') ||

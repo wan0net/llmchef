@@ -15,7 +15,7 @@ concurrency:
 jobs:
   architect_plan:
     name: Comment plan
-    runs-on: [self-hosted, linux, llmchef-codex, codex-architect]
+    runs-on: [self-hosted, linux, agentic-codex, codex-architect]
     if: >-
       github.event.action == 'labeled' &&
       github.event.label.name == 'agent:approved' &&
@@ -203,7 +203,7 @@ jobs:
 
   architect_handoff:
     name: Publish handoff
-    runs-on: [self-hosted, linux, llmchef-codex, codex-architect]
+    runs-on: [self-hosted, linux, agentic-codex, codex-architect]
     needs: [architect_plan]
     if: ${{ needs.architect_plan.result == 'success' && needs.architect_plan.outputs.decision != '' }}
     env:
