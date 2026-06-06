@@ -188,9 +188,8 @@ run_preflight() {
         fi
 
         local optional_vars missing_vars
-        optional_vars='["CODEX_MODEL","AGENT_MODEL_ARCHITECT","AGENT_MODEL_DEVELOPER","AGENT_MODEL_VV","AGENT_MODEL_SECURITY","AGENT_BASE_BRANCH","PRODUCTION_DEPLOY_BRANCH","AGENT_PROTECTED_PATHS"]'
-        missing_vars="$(gh variable list --repo "$repo" --json name --jq --argjson optional "$optional_vars" '$optional - ([.[].name] | .) | join(", ")' 2>/dev/null || true)"
-        if [ -z "$missing_vars" ]; then
+        optional_vars='["CODEX_MODEL","AGENT_MODEL_ARCHITECT","AGENT_MODEL_DEVELOPER","AGENT_MODEL_VV","AGENT_MODEL_SECURITY","AGENT_RUNNER_BACKEND","AGENT_MAX_ACTIVE_ISSUES","AGENT_BASE_BRANCH","PRODUCTION_DEPLOY_BRANCH","AGENT_PROTECTED_PATHS"]'
+        if ! missing_vars="$(gh variable list --repo "$repo" --json name 2>/dev/null | jq -r --argjson optional "$optional_vars" '$optional - ([.[].name] | .) | join(", ")')"; then
           warn "Could not query repository variables; confirm permissions and set AGENT_MODEL_<ROLE>/CODEX_MODEL/AGENT_BASE_BRANCH/AGENT_PROTECTED_PATHS as needed."
         elif [ -n "$missing_vars" ]; then
           warn "Optional variables not set: $missing_vars"
@@ -315,7 +314,7 @@ install_or_upgrade() {
   info "Next steps:"
   echo "- Run: scripts/bootstrap-labels.sh ${repo:-owner/repo}"
   echo "- Set repo secret: AGENT_GITHUB_TOKEN (workflow scope only if agent edits workflows)"
-  echo "- Set optional vars: AGENT_MODEL_ARCHITECT, AGENT_MODEL_DEVELOPER, AGENT_MODEL_VV, AGENT_MODEL_SECURITY, CODEX_MODEL, AGENT_BASE_BRANCH, PRODUCTION_DEPLOY_BRANCH, AGENT_PROTECTED_PATHS"
+  echo "- Set optional vars: AGENT_MODEL_ARCHITECT, AGENT_MODEL_DEVELOPER, AGENT_MODEL_VV, AGENT_MODEL_SECURITY, CODEX_MODEL, AGENT_RUNNER_BACKEND, AGENT_MAX_ACTIVE_ISSUES, AGENT_BASE_BRANCH, PRODUCTION_DEPLOY_BRANCH, AGENT_PROTECTED_PATHS"
   echo "- Enable GitHub Pages (Settings -> Pages -> GitHub Actions) if publishing docs"
 }
 
