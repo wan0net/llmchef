@@ -123,8 +123,12 @@ managed_files() {
 .github/workflows/agent-security.yml
 .github/workflows/agent-vv.yml
 .github/agent-labels.json
+scripts/adopt-agentic-runners.sh
 scripts/agent-preflight.sh
 scripts/agent-runner.sh
+scripts/agent-ticket-focus.sh
+scripts/auto-resolve-rebase-conflicts.sh
+scripts/bootstrap-labels.sh
 scripts/check-protected-paths.sh
 scripts/issue-approval-gate.sh
 scripts/post-comment-dedup.sh
@@ -321,7 +325,19 @@ install_or_upgrade() {
 verify_install() {
   require_target
   local failures=0
+  local expected_runner_label="agentic-codex"
+  local expected_runner_backend="codex"
+  local expected_role_prefix="codex"
   [ -f "$target/$managed_marker" ] || { err "Missing $managed_marker"; failures=$((failures + 1)); }
+
+  if [ -f "$target/$managed_marker" ]; then
+    expected_runner_label="$(jq -r '.runner_label // "agentic-codex"' "$target/$managed_marker")"
+    expected_runner_backend="$(jq -r '.runner_backend // "codex"' "$target/$managed_marker")"
+  fi
+
+  if [ "$expected_runner_backend" = "claude-code" ]; then
+    expected_role_prefix="claude"
+  fi
 
   while IFS= read -r rel; do
     [ -n "$rel" ] || continue
@@ -342,8 +358,18 @@ verify_install() {
     fi
   fi
 
-  if grep -R "agentic-codex" "$target/.github/workflows/agent-"*.yml >/dev/null 2>&1; then
-    warn "Some workflows still reference agentic-codex; confirm intended runner label wiring."
+  if ! grep -R "runs-on: \\[self-hosted, linux, ${expected_runner_label}," "$target/.github/workflows/agent-"*.yml >/dev/null 2>&1; then
+    err "Managed workflows are not wired to the expected runner label '${expected_runner_label}'."
+    failures=$((failures + 1))
+  fi
+
+  if ! grep -q "${expected_role_prefix}-developer" "$target/.github/workflows/agent-developer.yml"; then
+    err "Developer workflow is not wired to the expected '${expected_role_prefix}-developer' role label."
+    failures=$((failures + 1))
+  fi
+
+  if [ "$expected_runner_label" != "agentic-codex" ] && grep -R "agentic-codex" "$target/.github/workflows/agent-"*.yml >/dev/null 2>&1; then
+    warn "Some workflows still reference the default label 'agentic-codex'; confirm runner-label rewrites completed."
   fi
 
   if [ "$failures" -gt 0 ]; then
