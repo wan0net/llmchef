@@ -42,6 +42,8 @@ jobs:
         run: |
           set -euo pipefail
 
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
           if [[ "$EVENT_NAME" == "pull_request" ]]; then
             git fetch origin "$BASE_REF" --depth=1
             BASE_SHA="$(git merge-base HEAD "origin/$BASE_REF")"
