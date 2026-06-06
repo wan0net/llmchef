@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 require 'open-uri'
 require 'fileutils'
+require 'pathname'
 require 'zip'
 require 'webrick'
 require 'optparse'
@@ -50,7 +51,9 @@ module LLMChefRunner
 
     Zip::File.open(zip_path) do |zip|
       zip.each do |entry|
-        entry_path = File.join(temp_dir, entry.name)
+        entry_path = resolve_bundle_path(temp_dir, entry.name)
+        raise "Archive entry escapes bundle root: #{entry.name}" unless entry_path
+
         if entry.directory?
           FileUtils.mkdir_p(entry_path)
           next
@@ -66,6 +69,27 @@ module LLMChefRunner
     end
   end
 
+  def resolve_bundle_path(root_dir, relative_path)
+    root_path = File.expand_path(root_dir)
+    clean_relative = Pathname.new(relative_path).cleanpath.to_s
+    return nil if clean_relative == '.'
+    return nil if Pathname.new(relative_path).absolute?
+
+    candidate = File.expand_path(File.join(root_path, clean_relative))
+    prefix = "#{root_path}#{File::SEPARATOR}"
+
+    candidate == root_path || candidate.start_with?(prefix) ? candidate : nil
+  end
+
+  def resolve_request_path(root_dir, request_path)
+    request_path = WEBrick::HTTPUtils.unescape(request_path.to_s)
+    relative_path = request_path.sub(%r{\A/+}, '')
+    return nil if request_path.include?("\0")
+    return File.expand_path(root_dir) if relative_path.empty?
+
+    resolve_bundle_path(root_dir, relative_path)
+  end
+
   def build_server(temp_dir, options)
     server_options = {
       Port: options[:port],
@@ -76,7 +100,13 @@ module LLMChefRunner
     server = WEBrick::HTTPServer.new(server_options)
 
     server.mount_proc '/' do |req, res|
-      path = File.join(temp_dir, req.path)
+      path = resolve_request_path(temp_dir, req.path)
+
+      unless path
+        res.status = 404
+        res.body = 'Not found'
+        next
+      end
 
       if File.exist?(path) && !File.directory?(path)
         res.body = File.read(path)

@@ -31,6 +31,45 @@ class LLMChefRunnerTest < Minitest::Test
     end
   end
 
+  def test_extract_release_rejects_entries_that_escape_bundle_root
+    Dir.mktmpdir do |dir|
+      temp_dir = File.join(dir, 'llmchef-app')
+      zip_path = File.join(temp_dir, 'llmchef.zip')
+      escaped_path = File.join(dir, 'escaped.txt')
+      FileUtils.mkdir_p(temp_dir)
+
+      create_zip(zip_path, {'../escaped.txt' => 'ESCAPED'})
+
+      error = assert_raises(RuntimeError) do
+        LLMChefRunner.extract_release(zip_path, temp_dir)
+      end
+
+      assert_match(/escapes bundle root/, error.message)
+      refute File.exist?(escaped_path)
+    end
+  end
+
+  def test_resolve_request_path_rejects_traversal
+    Dir.mktmpdir do |dir|
+      temp_dir = File.join(dir, 'llmchef-app')
+      FileUtils.mkdir_p(temp_dir)
+
+      assert_nil LLMChefRunner.resolve_request_path(temp_dir, '/../etc/passwd')
+      assert_nil LLMChefRunner.resolve_request_path(temp_dir, '/%2e%2e/secret.txt')
+    end
+  end
+
+  def test_resolve_request_path_keeps_in_bundle_assets
+    Dir.mktmpdir do |dir|
+      temp_dir = File.join(dir, 'llmchef-app')
+      FileUtils.mkdir_p(temp_dir)
+
+      assert_equal temp_dir, LLMChefRunner.resolve_request_path(temp_dir, '/')
+      assert_equal File.join(temp_dir, 'assets/app.js'),
+                   LLMChefRunner.resolve_request_path(temp_dir, '/assets/app.js')
+    end
+  end
+
   private
 
   def create_zip(zip_path, entries)
