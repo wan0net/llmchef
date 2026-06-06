@@ -40,15 +40,21 @@ jobs:
           token: ${{ github.token }}
 
       - name: Reconcile PRs
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          COMMENT_BODY: ${{ github.event.comment.body || '' }}
+          IS_PR_COMMENT: ${{ github.event.issue.pull_request && 'true' || 'false' }}
+          AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association || '' }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || '' }}
         run: |
           set -euo pipefail
 
           auth_json="$(mktemp)"
           jq -n \
-            --arg event_name "${{ github.event_name }}" \
-            --arg comment_body "${{ github.event.comment.body || '' }}" \
-            --argjson is_pr_comment ${{ github.event.issue.pull_request && 'true' || 'false' }} \
-            --arg author_association "${{ github.event.comment.author_association || '' }}" \
+            --arg event_name "$EVENT_NAME" \
+            --arg comment_body "$COMMENT_BODY" \
+            --argjson is_pr_comment "$IS_PR_COMMENT" \
+            --arg author_association "$AUTHOR_ASSOCIATION" \
             '{event_name:$event_name,comment_body:$comment_body,is_pr_comment:$is_pr_comment,author_association:$author_association}' \
             > "$auth_json"
           auth_result="$(scripts/pr-reconciler-trigger-gate.sh "$auth_json")"
@@ -66,8 +72,8 @@ jobs:
           gh label create "agent:human-only" --color "000000" --description "Disable agent automation" --force >/dev/null 2>&1 || true
           gh label create "agent:reconcile" --color "0E8A16" --description "Run PR reconciler for this PR" --force >/dev/null 2>&1 || true
 
-          if [ "${{ github.event_name }}" = "issue_comment" ]; then
-            pr_numbers="${{ github.event.issue.number }}"
+          if [ "$EVENT_NAME" = "issue_comment" ]; then
+            pr_numbers="$ISSUE_NUMBER"
           else
             pr_numbers="$(gh pr list --repo "$REPO" --state open --limit 200 --json number --jq '.[].number')"
           fi
