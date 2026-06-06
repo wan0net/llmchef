@@ -1,0 +1,76 @@
+name: Agent PR Ready
+
+on:
+  workflow_run:
+    workflows: ["Agent V&V", "Agent Security"]
+    types: [completed]
+
+permissions:
+  checks: read
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: agent-pr-ready-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  mark-ready:
+    name: Mark PR ready after review gates
+    runs-on: [self-hosted, linux, llmchef-codex, codex-architect]
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    env:
+      GH_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN || github.token }}
+      REPO: ${{ github.repository }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Checkout trusted workflow helpers
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Mark ready when both review gates passed
+        run: |
+          set -euo pipefail
+
+          prs_json="$(gh api "repos/$REPO/commits/$HEAD_SHA/pulls" -H "Accept: application/vnd.github+json")"
+          pr_number="$(jq -r '[.[] | select(.state == "open")] | first | .number // empty' <<<"$prs_json")"
+          if [ -z "$pr_number" ]; then
+            echo "No open PR found for $HEAD_SHA."
+            exit 0
+          fi
+
+          pr_json="$(gh pr view "$pr_number" --repo "$REPO" --json isDraft,isCrossRepository,headRefOid,labels)"
+          if [ "$(jq -r '.isCrossRepository' <<<"$pr_json")" = "true" ]; then
+            echo "PR #$pr_number is cross-repository; not marking ready from a privileged workflow."
+            exit 0
+          fi
+          if [ "$(jq -r '.headRefOid' <<<"$pr_json")" != "$HEAD_SHA" ]; then
+            echo "PR #$pr_number has moved since this workflow_run event."
+            exit 0
+          fi
+          if [ "$(jq -r '.isDraft' <<<"$pr_json")" != "true" ]; then
+            echo "PR #$pr_number is already ready."
+            exit 0
+          fi
+
+          labels_json="$(jq '[.labels[].name]' <<<"$pr_json")"
+          if jq -e 'index("agent:human-only") != null' <<<"$labels_json" >/dev/null; then
+            echo "PR #$pr_number is human-only; leaving draft state unchanged."
+            exit 0
+          fi
+          if ! jq -e 'index("agent:vv") != null and index("agent:security") != null' <<<"$labels_json" >/dev/null; then
+            echo "PR #$pr_number does not carry both review labels; leaving draft state unchanged."
+            exit 0
+          fi
+
+          if ! scripts/review-gates-ready.sh "$REPO" "$HEAD_SHA" "Verify PR" "Security review PR"; then
+            echo "Both latest review gates are not green yet for PR #$pr_number."
+            exit 0
+          fi
+
+          gh pr ready "$pr_number" --repo "$REPO"
+          gh pr comment "$pr_number" --repo "$REPO" --body "Both V&V and Security gates are green. Marking this PR ready for human review."

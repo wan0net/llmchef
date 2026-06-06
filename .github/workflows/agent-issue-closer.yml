@@ -1,0 +1,121 @@
+name: Agent Issue Closer
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: agent-issue-closer-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  review-close:
+    name: Review close request
+    runs-on: [self-hosted, linux, llmchef-codex, codex-vv]
+    if: >-
+      !github.event.issue.pull_request &&
+      !contains(github.event.issue.labels.*.name, 'agent:human-only') &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER' ||
+       github.event.comment.author_association == 'COLLABORATOR') &&
+      (contains(github.event.comment.body, '/agent review-close') ||
+       contains(github.event.comment.body, '/agent close-if-done'))
+    env:
+      HAS_AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN != '' }}
+      CODEX_MODEL: ${{ vars.CODEX_MODEL || 'gpt-5.4' }}
+      RUNNER_BACKEND: ${{ vars.AGENT_RUNNER_BACKEND || 'codex' }}
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      COMMENT_URL: ${{ github.event.comment.html_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.AGENT_GITHUB_TOKEN || github.token }}
+          persist-credentials: false
+
+      - name: Preflight setup validation
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          required_role_label="codex-vv"
+          if [ "$RUNNER_BACKEND" = "claude-code" ]; then
+            required_role_label="claude-vv"
+          fi
+          scripts/agent-preflight.sh \
+            --workflow "agent-issue-closer" \
+            --required-runner-label "$required_role_label" \
+            --require-agent-token true \
+            --runner-backend "$RUNNER_BACKEND" \
+            --require-backend-cli true \
+            --require-package-manager false
+
+      - name: Capture issue context
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          gh issue view "$ISSUE_NUMBER" --json number,title,body,state,labels,comments,url,author,assignees,milestone > /tmp/agent-close-issue.json
+
+      - name: Run Codex close review
+        run: |
+          set -euo pipefail
+          cat > /tmp/close-schema.json <<'SCHEMA'
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["decision", "confidence", "summary", "evidence", "risks", "next_action"],
+            "properties": {
+              "decision": { "type": "string", "enum": ["close", "keep_open", "needs_human"] },
+              "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+              "summary": { "type": "string" },
+              "evidence": { "type": "array", "items": { "type": "string" } },
+              "risks": { "type": "array", "items": { "type": "string" } },
+              "next_action": { "type": "string" }
+            }
+          }
+          SCHEMA
+          cat > /tmp/close-prompt.md <<'PROMPT'
+          You are the repository issue closer agent. Review /tmp/agent-close-issue.json and the repository context.
+
+          The human explicitly requested close review with a slash command. Decide whether the issue can be closed.
+
+          Hard rules:
+          - Close only when acceptance criteria are satisfied or the latest human comment clearly says the issue is resolved/no longer needed.
+          - Do not close if evidence is missing, checks failed, linked PRs are unmerged, the request is ambiguous, or the issue needs owner/business judgement.
+          - If the issue is out of scope for agents, choose needs_human and say what the human must decide.
+          - Do not modify files, commit, push, deploy, rotate secrets, or change DNS.
+          - Keep output concise and evidence-based.
+          PROMPT
+          scripts/agent-runner.sh exec --backend "$RUNNER_BACKEND" --model "$CODEX_MODEL" --cwd "$GITHUB_WORKSPACE" --output-schema /tmp/close-schema.json --output-last-message /tmp/close-decision.json --prompt-file /tmp/close-prompt.md
+
+      - name: Comment decision and close if safe
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          decision="$(jq -r '.decision' /tmp/close-decision.json)"
+          confidence="$(jq -r '.confidence' /tmp/close-decision.json)"
+          summary="$(jq -r '.summary' /tmp/close-decision.json)"
+          next_action="$(jq -r '.next_action' /tmp/close-decision.json)"
+          {
+            printf '## Issue Closer Agent\n\n'
+            printf '**Decision:** `%s`\n\n' "$decision"
+            printf '**Confidence:** `%s`\n\n' "$confidence"
+            printf '**Trigger:** %s\n\n' "$COMMENT_URL"
+            printf '### Summary\n\n%s\n\n' "$summary"
+            printf '### Evidence\n\n'
+            jq -r '.evidence[] | "- " + .' /tmp/close-decision.json
+            printf '\n### Risks / Gaps\n\n'
+            jq -r '.risks[] | "- " + .' /tmp/close-decision.json
+            printf '\n### Next Action\n\n%s\n' "$next_action"
+          } > /tmp/close-comment.md
+          gh issue comment "$ISSUE_NUMBER" --body-file /tmp/close-comment.md
+          if [ "$decision" = "close" ] && [ "$confidence" = "high" ]; then
+            gh issue close "$ISSUE_NUMBER" --reason completed
+          fi

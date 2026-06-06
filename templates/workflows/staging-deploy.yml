@@ -1,0 +1,109 @@
+name: Agent Staging
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, ready_for_review]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: agent-staging
+  cancel-in-progress: false
+
+jobs:
+  staging:
+    name: Deploy staging from trusted base code
+    runs-on: [self-hosted, linux, llmchef-codex, codex-staging]
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'deploy:staging') &&
+      !contains(github.event.pull_request.labels.*.name, 'agent:human-only') &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.STAGING_DEPLOY_ENABLED == 'true'
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      STAGING_DEPLOY_TOKEN: ${{ secrets.STAGING_DEPLOY_TOKEN }}
+    steps:
+      - name: Checkout trusted base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          path: trusted
+
+      - name: Checkout PR content
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          path: pr
+
+      - name: Validate staging gates
+        run: |
+          set -euo pipefail
+          if [ -z "${STAGING_DEPLOY_TOKEN:-}" ]; then
+            echo "Missing required secret STAGING_DEPLOY_TOKEN"
+            exit 1
+          fi
+          if [ ! -x trusted/scripts/staging-deploy-trusted.sh ]; then
+            echo "Missing executable trusted/scripts/staging-deploy-trusted.sh"
+            exit 1
+          fi
+          echo "::add-mask::${STAGING_DEPLOY_TOKEN}"
+
+      - name: Run trusted staging deploy
+        id: deploy
+        run: |
+          set -euo pipefail
+          deploy_status=0
+          trusted/scripts/staging-deploy-trusted.sh > /tmp/staging-agent.raw 2>&1 || deploy_status="$?"
+          if [ "$deploy_status" = "0" ]; then
+            echo "result=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=failure" >> "$GITHUB_OUTPUT"
+          fi
+          exit "$deploy_status"
+        env:
+          PR_CHECKOUT_DIR: ${{ github.workspace }}/pr
+          TRUSTED_CHECKOUT_DIR: ${{ github.workspace }}/trusted
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+
+      - name: Sanitize deploy output
+        if: always()
+        run: |
+          set -euo pipefail
+          trusted/scripts/sanitize-staging-output.sh /tmp/staging-agent.raw /tmp/staging-agent.sanitized 120
+
+      - name: Comment decision packet
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ "${DEPLOY_RESULT:-failure}" = "success" ]; then
+            decision_text="staging deploy succeeded"
+          else
+            decision_text="staging deploy failed"
+          fi
+          {
+            printf '## Staging Agent\n\n'
+            printf '### Output\n\n```text\n'
+            cat /tmp/staging-agent.sanitized 2>/dev/null || true
+            printf '\n```\n\n'
+            printf '### Decision Packet\n\n'
+            printf '**Decision:** %s\n\n' "$decision_text"
+            printf '**Evidence:** Trusted base-branch deploy logic executed against PR artifacts.\n\n'
+            printf '**Risks:** Output is allowlisted and non-matching lines are redacted by default.\n\n'
+            printf '**Next Action:** Human reviews staging, V&V, and security comments before merge.\n'
+          } > /tmp/staging-comment.md
+          gh pr comment "$PR_NUMBER" --body-file /tmp/staging-comment.md
+        env:
+          DEPLOY_RESULT: ${{ steps.deploy.outputs.result }}
+
+      - name: Cleanup staging temp files
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f /tmp/staging-agent.raw /tmp/staging-agent.sanitized /tmp/staging-agent.sanitized.tmp /tmp/staging-comment.md

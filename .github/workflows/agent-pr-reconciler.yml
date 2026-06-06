@@ -1,0 +1,267 @@
+name: Agent PR Reconciler
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: agent-pr-reconciler
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    name: Reconcile open PR state
+    runs-on: [self-hosted, linux, llmchef-codex, codex-architect]
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '/agent reconcile') &&
+       (github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR'))
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Reconcile PRs
+        run: |
+          set -euo pipefail
+
+          auth_json="$(mktemp)"
+          jq -n \
+            --arg event_name "${{ github.event_name }}" \
+            --arg comment_body "${{ github.event.comment.body || '' }}" \
+            --argjson is_pr_comment ${{ github.event.issue.pull_request && 'true' || 'false' }} \
+            --arg author_association "${{ github.event.comment.author_association || '' }}" \
+            '{event_name:$event_name,comment_body:$comment_body,is_pr_comment:$is_pr_comment,author_association:$author_association}' \
+            > "$auth_json"
+          auth_result="$(scripts/pr-reconciler-trigger-gate.sh "$auth_json")"
+          rm -f "$auth_json"
+          if [ "$(jq -r '.allow' <<<"$auth_result")" != "true" ]; then
+            echo "Reconciler trigger denied: $(jq -r '.reason' <<<"$auth_result")"
+            exit 0
+          fi
+
+          default_branch="$(gh repo view "$REPO" --json defaultBranchRef --jq '.defaultBranchRef.name')"
+          git fetch origin "$default_branch"
+
+          gh label create "agent:approved" --color "0E8A16" --description "Human approved agent execution" --force >/dev/null 2>&1 || true
+          gh label create "agent:developer" --color "5319E7" --description "Run developer agent on this issue" --force >/dev/null 2>&1 || true
+          gh label create "agent:human-only" --color "000000" --description "Disable agent automation" --force >/dev/null 2>&1 || true
+          gh label create "agent:reconcile" --color "0E8A16" --description "Run PR reconciler for this PR" --force >/dev/null 2>&1 || true
+
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            pr_numbers="${{ github.event.issue.number }}"
+          else
+            pr_numbers="$(gh pr list --repo "$REPO" --state open --limit 200 --json number --jq '.[].number')"
+          fi
+
+          if [ -z "$pr_numbers" ]; then
+            echo "No open PRs to reconcile."
+            exit 0
+          fi
+
+          for pr in $pr_numbers; do
+            echo "Reconciling PR #$pr"
+
+            pr_json="$(gh pr view "$pr" --repo "$REPO" --json number,title,url,isDraft,mergeStateStatus,reviewDecision,headRefOid,headRefName,headRepository,isCrossRepository,baseRefName,commits,updatedAt,labels)"
+            head_sha="$(jq -r '.headRefOid' <<<"$pr_json")"
+            merge_state="$(jq -r '.mergeStateStatus // "UNKNOWN"' <<<"$pr_json")"
+            is_draft="$(jq -r '.isDraft' <<<"$pr_json")"
+            review_decision="$(jq -r '.reviewDecision // "REVIEW_REQUIRED"' <<<"$pr_json")"
+            base_ref="$(jq -r '.baseRefName' <<<"$pr_json")"
+            head_repo="$(jq -r '.headRepository.nameWithOwner // ""' <<<"$pr_json")"
+            is_cross_repository="$(jq -r '.isCrossRepository // true' <<<"$pr_json")"
+            labels_json="$(jq '[.labels[].name]' <<<"$pr_json")"
+
+            link_json="$(scripts/pr-issue-link.sh "$REPO" "$pr" branch-only)"
+            linked_issue_number="$(jq -r '.linked_issue // empty' <<<"$link_json")"
+            link_verified="$(jq -r '.binding_verified' <<<"$link_json")"
+            link_reason="$(jq -r '.reason' <<<"$link_json")"
+            linked_issue_count=0
+            linked_open_issue_count=0
+            if [ -n "$linked_issue_number" ] && [ "$link_verified" = "true" ]; then
+              linked_issue_count=1
+              linked_issue_state="$(gh issue view "$linked_issue_number" --repo "$REPO" --json state --jq '.state' 2>/dev/null || printf 'UNKNOWN')"
+              if [ "$linked_issue_state" = "OPEN" ]; then
+                linked_open_issue_count=1
+              fi
+            fi
+
+            checks_json="$(gh pr checks "$pr" --repo "$REPO" --json state --jq '.' 2>/dev/null || echo '[]')"
+            failing_checks="$(jq '[.[] | select(.state == "FAILURE" or .state == "ERROR" or .state == "CANCELLED" or .state == "TIMED_OUT" or .state == "ACTION_REQUIRED" or .state == "STALE")] | length' <<<"$checks_json")"
+            pending_checks="$(jq '[.[] | select(.state == "PENDING" or .state == "IN_PROGRESS" or .state == "QUEUED" or .state == "WAITING" or .state == "REQUESTED")] | length' <<<"$checks_json")"
+            has_vv_label="$(jq -r 'index("agent:vv") != null' <<<"$labels_json")"
+            has_security_label="$(jq -r 'index("agent:security") != null' <<<"$labels_json")"
+            has_human_only_label="$(jq -r 'index("agent:human-only") != null' <<<"$labels_json")"
+
+            if [ "$has_human_only_label" != "true" ] && [ "$link_verified" = "true" ]; then
+              # Watchdog: if expected review labels are missing, re-add them.
+              if [ "$has_vv_label" != "true" ] || [ "$has_security_label" != "true" ]; then
+                gh pr edit "$pr" --repo "$REPO" --add-label "agent:vv" --add-label "agent:security" >/dev/null || true
+                printf '%s\n' 'PR Reconciler restored missing review labels (`agent:vv`, `agent:security`) so review gates can run.' > /tmp/reconciler-watchdog-labels.md
+                scripts/post-comment-dedup.sh "$REPO" "$pr" "reconciler-watchdog-labels-$head_sha" /tmp/reconciler-watchdog-labels.md
+              fi
+
+              # Watchdog: if review labels exist but no latest gate check runs are present, force requeue labels.
+              vv_latest_count="$(gh api "repos/$REPO/commits/$head_sha/check-runs" --jq '[.check_runs[] | select(.app.slug == "github-actions" and .name == "Verify PR")] | length' 2>/dev/null || printf '0')"
+              security_latest_count="$(gh api "repos/$REPO/commits/$head_sha/check-runs" --jq '[.check_runs[] | select(.app.slug == "github-actions" and .name == "Security review PR")] | length' 2>/dev/null || printf '0')"
+              if [ "$has_vv_label" = "true" ] && [ "$has_security_label" = "true" ] && { [ "$vv_latest_count" = "0" ] || [ "$security_latest_count" = "0" ]; }; then
+                gh pr edit "$pr" --repo "$REPO" --remove-label "agent:vv" --remove-label "agent:security" >/dev/null || true
+                gh pr edit "$pr" --repo "$REPO" --add-label "agent:vv" --add-label "agent:security" >/dev/null || true
+                printf '%s\n' 'PR Reconciler detected missing review gate check runs for the latest head SHA and requeued review labels.' > /tmp/reconciler-watchdog-checks.md
+                scripts/post-comment-dedup.sh "$REPO" "$pr" "reconciler-watchdog-checks-$head_sha" /tmp/reconciler-watchdog-checks.md
+              fi
+            fi
+
+            needs_branch_update="false"
+            branch_update_failed="false"
+            can_update_branch="false"
+
+            if [ "$merge_state" = "BEHIND" ]; then
+              needs_branch_update="true"
+              if [ "$head_repo" = "$REPO" ] || [ "$is_cross_repository" = "false" ]; then
+                can_update_branch="true"
+                if gh api -X PUT "repos/$REPO/pulls/$pr/update-branch" -f expected_head_sha="$head_sha" >/tmp/reconcile-update-branch.json 2>/dev/null; then
+                  needs_branch_update="false"
+                else
+                  branch_update_failed="true"
+                fi
+              fi
+            fi
+
+            commit_count="$(jq '.commits | length' <<<"$pr_json")"
+            on_main_count=0
+            while IFS= read -r sha; do
+              [ -n "$sha" ] || continue
+              if git merge-base --is-ancestor "$sha" "origin/$default_branch"; then
+                on_main_count=$((on_main_count + 1))
+              fi
+            done < <(jq -r '.commits[].oid' <<<"$pr_json")
+
+            all_commits_on_main="false"
+            if [ "$commit_count" -gt 0 ] && [ "$on_main_count" -eq "$commit_count" ]; then
+              all_commits_on_main="true"
+            fi
+
+            classifier_input="$(mktemp)"
+            cat > "$classifier_input" <<JSON
+          {
+            "is_draft": $is_draft,
+            "merge_state": "$merge_state",
+            "needs_branch_update": $needs_branch_update,
+            "can_update_branch": $can_update_branch,
+            "branch_update_failed": $branch_update_failed,
+            "failing_checks": $failing_checks,
+            "pending_checks": $pending_checks,
+            "review_decision": "$review_decision",
+            "all_commits_on_main": $all_commits_on_main,
+            "linked_issue_count": $linked_issue_count,
+            "linked_open_issue_count": $linked_open_issue_count
+          }
+          JSON
+            result_json="$(scripts/pr-reconciler-classify.sh "$classifier_input")"
+            state="$(jq -r '.state' <<<"$result_json")"
+            summary="$(jq -r '.summary' <<<"$result_json")"
+            next_action="$(jq -r '.next_action' <<<"$result_json")"
+            apply_human_only="$(jq -r '.apply_human_only' <<<"$result_json")"
+            needs_issue_repair="$(jq -r '.needs_issue_repair' <<<"$result_json")"
+
+            evidence_file="$(mktemp)"
+            {
+              printf -- '- Merge state: `%s`\n' "$merge_state"
+              printf -- '- Draft: `%s`\n' "$is_draft"
+              printf -- '- Review decision: `%s`\n' "$review_decision"
+              printf -- '- Failing checks: `%s`\n' "$failing_checks"
+              printf -- '- Pending checks: `%s`\n' "$pending_checks"
+              printf -- '- Linked issues (open/total): `%s/%s`\n' "$linked_open_issue_count" "$linked_issue_count"
+              printf -- '- Link binding: `%s` (%s)\n' "$link_verified" "$link_reason"
+              printf -- '- Commits on `%s`: `%s/%s`\n' "$default_branch" "$on_main_count" "$commit_count"
+            } > "$evidence_file"
+
+            comment_file="$(mktemp)"
+            {
+              printf '## PR Reconciler\n\n'
+              printf '**State:** `%s`\n\n' "$state"
+              printf '**Summary:** %s\n\n' "$summary"
+              printf '### Evidence\n\n'
+              cat "$evidence_file"
+              printf '\n### Next Action\n\n%s\n' "$next_action"
+            } > "$comment_file"
+            scripts/post-comment-dedup.sh "$REPO" "$pr" "reconciler-state-$head_sha" "$comment_file"
+
+            if [ "$needs_issue_repair" = "true" ]; then
+              if [ -n "$linked_issue_number" ] && [ "$link_verified" = "true" ]; then
+                gh issue edit "$linked_issue_number" --repo "$REPO" --add-label "agent:approved" --add-label "agent:developer" >/dev/null
+                repair_comment="$(mktemp)"
+                {
+                  printf '## PR Reconciler Repair Request\n\n'
+                  printf 'Linked PR: %s\n\n' "$(jq -r '.url' <<<"$pr_json")"
+                  printf '### Required Repair\n\n'
+                  printf '%s\n\n' "$summary"
+                  printf '### Exact Instructions\n\n'
+                  printf '1. Refresh branch `%s` from `%s` and resolve any conflicts.\n' "$(jq -r '.headRefName' <<<"$pr_json")" "$base_ref"
+                  printf '2. Fix failing checks and ensure all required checks are green.\n'
+                  printf '3. Address review feedback until review decision is approved.\n'
+                  printf '4. Push updates and rerun reconciliation if needed using `/agent reconcile`.\n\n'
+                  printf '### Evidence\n\n'
+                  cat "$evidence_file"
+                } > "$repair_comment"
+                scripts/post-comment-dedup.sh "$REPO" "$linked_issue_number" "reconciler-repair-$head_sha" "$repair_comment"
+              else
+                issue_body="$(mktemp)"
+                {
+                  printf '## Context\n\n'
+                  printf 'PR %s needs reconciliation work and has no linked issue.\n\n' "$(jq -r '.url' <<<"$pr_json")"
+                  printf '## Scope\n\n'
+                  printf '%s\n\n' "$summary"
+                  printf '## Acceptance criteria\n\n'
+                  printf -- '- Branch is current with `%s` and conflict-free.\n' "$base_ref"
+                  printf -- '- Required checks are complete and passing.\n'
+                  printf -- '- Review decision is approved or explicitly addressed.\n\n'
+                  printf '## Suggested validation\n\n'
+                  printf -- '- Run relevant repo tests for changed files.\n'
+                  printf -- '- Confirm PR checks are green in GitHub UI.\n\n'
+                  printf 'Source: PR #%s\n' "$pr"
+                } > "$issue_body"
+                gh issue create --repo "$REPO" --title "Repair PR #$pr: ${summary}" --body-file "$issue_body" --label "agent:approved" --label "agent:developer" >/dev/null
+              fi
+            fi
+
+            if [ "$state" = "superseded" ]; then
+              if [ -n "$linked_issue_number" ] && [ "$link_verified" = "true" ]; then
+                superseded_note="$(mktemp)"
+                {
+                  printf '## PR Reconciler Superseded Notice\n\n'
+                  printf 'PR %s appears superseded because all of its commits are already on `%s`.\n\n' "$(jq -r '.url' <<<"$pr_json")" "$default_branch"
+                  printf 'Recommend closing this PR and this issue after human confirmation.\n'
+                } > "$superseded_note"
+                scripts/post-comment-dedup.sh "$REPO" "$linked_issue_number" "reconciler-superseded-$head_sha" "$superseded_note"
+              fi
+            fi
+
+            if [ "$apply_human_only" = "true" ]; then
+              gh pr edit "$pr" --repo "$REPO" --add-label "agent:human-only" >/dev/null || true
+              if [ -n "$linked_issue_number" ] && [ "$link_verified" = "true" ]; then
+                gh issue edit "$linked_issue_number" --repo "$REPO" --add-label "agent:human-only" >/dev/null || true
+              fi
+            fi
+
+            rm -f "$classifier_input" "$evidence_file" "$comment_file"
+          done

@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "labels": [
+    {
+      "name": "agent:approved",
+      "color": "0E8A16",
+      "description": "Human approved agent execution",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "agent:architect",
+      "color": "1D76DB",
+      "description": "Run architect agent on this issue",
+      "allow_backlog_label": true
+    },
+    {
+      "name": "agent:developer",
+      "color": "5319E7",
+      "description": "Run developer agent on this issue",
+      "allow_backlog_label": true
+    },
+    {
+      "name": "P1",
+      "color": "B60205",
+      "description": "Highest priority, urgent production or security-impacting work",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "P2",
+      "color": "D93F0B",
+      "description": "High priority, significant user impact or near-term deadline",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "P3",
+      "color": "FBCA04",
+      "description": "Normal priority, default for planned feature and maintenance work",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "P4",
+      "color": "0E8A16",
+      "description": "Low priority, useful improvements with limited urgency",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "P5",
+      "color": "C2E0C6",
+      "description": "Lowest priority, nice-to-have work safe to defer",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "agent:protected-paths",
+      "color": "D93F0B",
+      "description": "Maintainer approves protected repo automation path edits for this issue",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "agent:repair-requeue",
+      "color": "FBCA04",
+      "description": "Transient marker for verified V&V/Security repair requeues",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "agent:active",
+      "color": "0052CC",
+      "description": "Runner focus is currently reserved for this issue",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "agent:queued",
+      "color": "C5DEF5",
+      "description": "Approved agent work deferred until active issue releases",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "agent:focus-dequeue",
+      "color": "BFDADC",
+      "description": "Transient marker for safe queued issue reactivation",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "agent:vv",
+      "color": "FBCA04",
+      "description": "Run validation and verification agent on this PR",
+      "allow_backlog_label": true
+    },
+    {
+      "name": "agent:security",
+      "color": "B60205",
+      "description": "Run security review agent on this PR",
+      "allow_backlog_label": true
+    },
+    {
+      "name": "agent:backlog",
+      "color": "C2E0C6",
+      "description": "Run backlog gardener to create follow-up issues",
+      "allow_backlog_label": true
+    },
+    {
+      "name": "agent:reconcile",
+      "color": "0E8A16",
+      "description": "Run PR reconciliation workflow",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "deploy:staging",
+      "color": "C5DEF5",
+      "description": "Deploy this PR to staging and run smoke checks",
+      "allow_backlog_label": false
+    },
+    {
+      "name": "agent:human-only",
+      "color": "000000",
+      "description": "Stop automation until a human provides required context, authority, secret, or external permission.",
+      "allow_backlog_label": true
+    }
+  ]
+}

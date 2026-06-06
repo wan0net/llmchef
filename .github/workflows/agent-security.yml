@@ -1,0 +1,318 @@
+name: Agent Security
+
+on:
+  pull_request:
+    types: [synchronize, labeled]
+
+permissions:
+  checks: read
+  contents: read
+  issues: write
+  pull-requests: write
+  statuses: write
+
+concurrency:
+  group: agent-security-${{ github.event.pull_request.number }}-${{ github.event.action == 'labeled' && github.event.label.name || github.event.action }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    name: Security review PR
+    runs-on: [self-hosted, linux, llmchef-codex, codex-security]
+    if: >-
+      ((github.event.action == 'labeled' &&
+        github.event.label.name == 'agent:security') ||
+       github.event.action == 'synchronize') &&
+      contains(github.event.pull_request.labels.*.name, 'agent:security') &&
+      !contains(github.event.pull_request.labels.*.name, 'agent:human-only') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      HAS_AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN != '' }}
+      CODEX_MODEL: ${{ vars.AGENT_MODEL_SECURITY || vars.CODEX_MODEL || 'gpt-5.4' }}
+      RUNNER_BACKEND: ${{ vars.AGENT_RUNNER_BACKEND || 'codex' }}
+      MAX_ACTIVE_ISSUES: ${{ vars.AGENT_MAX_ACTIVE_ISSUES || '1' }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Initialize failure context
+        run: |
+          set -euo pipefail
+          tmp_dir="$(mktemp -d "${RUNNER_TEMP:-/tmp}/agent-security-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-XXXXXX")"
+          chmod 700 "$tmp_dir"
+          echo "AGENT_SECURITY_TMP=$tmp_dir" >> "$GITHUB_ENV"
+          echo "Checkout PR" > "$tmp_dir/current_step.txt"
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Mark checkout complete
+        run: |
+          set -euo pipefail
+          echo "Capture PR context" > "$AGENT_SECURITY_TMP/current_step.txt"
+
+      - name: Preflight setup validation
+        run: |
+          set -euo pipefail
+          required_role_label="codex-security"
+          if [ "$RUNNER_BACKEND" = "claude-code" ]; then
+            required_role_label="claude-security"
+          fi
+          scripts/agent-preflight.sh \
+            --workflow "agent-security" \
+            --required-runner-label "$required_role_label" \
+            --require-agent-token false \
+            --runner-backend "$RUNNER_BACKEND" \
+            --require-backend-cli true \
+            --require-package-manager false
+
+      - name: Capture PR context
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh pr view "$PR_NUMBER" --json number,title,body,labels,url,baseRefName,headRefName,files > "$AGENT_SECURITY_TMP/agent-pr.json"
+          gh pr diff "$PR_NUMBER" > "$AGENT_SECURITY_TMP/agent-pr.diff"
+          echo "Run Codex security review" > "$AGENT_SECURITY_TMP/current_step.txt"
+
+      - name: Run Codex security review
+        run: |
+          set -euo pipefail
+          cat > "$AGENT_SECURITY_TMP/security-schema.json" <<'SCHEMA'
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["decision", "comment"],
+            "properties": {
+              "decision": { "type": "string", "enum": ["go", "no-go", "request-changes", "uncertain"] },
+              "comment": { "type": "string", "minLength": 1 }
+            }
+          }
+          SCHEMA
+          cat > "$AGENT_SECURITY_TMP/security-prompt.md" <<PROMPT
+          You are the repository security review agent. Review "$AGENT_SECURITY_TMP/agent-pr.json" and "$AGENT_SECURITY_TMP/agent-pr.diff" for security risk.
+
+          Hard rules:
+          - Respect AGENTS.md and PLAN.md when present.
+          - Do not modify files, commit, push, or deploy.
+          - Do not expose secrets.
+          - Do not run production deployment commands.
+          - Focus on secrets, auth/session behavior, tenant isolation, input validation, SSRF, injection, unsafe HTML, dependency risk, CI/CD blast radius, and staging/production separation.
+          - Keep the GitHub comment concise and decision-oriented.
+
+          Return only JSON that satisfies "$AGENT_SECURITY_TMP/security-schema.json":
+          - decision: go | no-go | request-changes | uncertain
+          - comment: Markdown body for the PR comment, including security findings ordered by severity, secret/config review notes, auth/data boundary concerns, evidence, risks, and next action.
+          - Choose no-go or request-changes when requesting changes.
+          - Choose uncertain when decision cannot be determined safely.
+          - Do not put the decision source in PR-visible prose outside the JSON field.
+          PROMPT
+          if scripts/agent-runner.sh exec --backend "$RUNNER_BACKEND" --model "$CODEX_MODEL" --cwd "$GITHUB_WORKSPACE" --output-schema "$AGENT_SECURITY_TMP/security-schema.json" --output-last-message "$AGENT_SECURITY_TMP/security-result.json" --prompt-file "$AGENT_SECURITY_TMP/security-prompt.md"; then
+            printf '0\n' > "$AGENT_SECURITY_TMP/security-codex-status"
+          else
+            status="$?"
+            printf '%s\n' "$status" > "$AGENT_SECURITY_TMP/security-codex-status"
+          fi
+          echo "Validate structured decision" > "$AGENT_SECURITY_TMP/current_step.txt"
+
+      - name: Validate structured decision
+        id: decision
+        run: |
+          set -euo pipefail
+          codex_status="$(cat "$AGENT_SECURITY_TMP/security-codex-status" 2>/dev/null || printf '1')"
+          if [[ "$codex_status" != "0" ]]; then
+            jq -n --arg comment "Security Agent could not produce schema-valid structured output. Failing closed with an uncertain decision." '{decision:"uncertain", comment:$comment}' > "$AGENT_SECURITY_TMP/security-gate.json"
+          elif ! jq -e 'type == "object" and (keys == ["comment", "decision"]) and (.decision | type == "string") and (.comment | type == "string" and length > 0) and (.decision as $decision | ["go", "no-go", "request-changes", "uncertain"] | index($decision) != null)' "$AGENT_SECURITY_TMP/security-result.json" >/dev/null; then
+            jq -n --arg comment "Security Agent produced invalid structured output. Failing closed with an uncertain decision." '{decision:"uncertain", comment:$comment}' > "$AGENT_SECURITY_TMP/security-gate.json"
+          else
+            jq '{decision, comment}' "$AGENT_SECURITY_TMP/security-result.json" > "$AGENT_SECURITY_TMP/security-gate.json"
+          fi
+          decision="$(jq -r '.decision' "$AGENT_SECURITY_TMP/security-gate.json")"
+          echo "decision=$decision" >> "$GITHUB_OUTPUT"
+          echo "Comment on PR" > "$AGENT_SECURITY_TMP/current_step.txt"
+
+      - name: Comment on PR
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          {
+            printf '## Security Agent\n\n'
+            jq -r '.comment' "$AGENT_SECURITY_TMP/security-gate.json"
+          } > "$AGENT_SECURITY_TMP/security-gh-comment.md"
+          gh pr comment "$PR_NUMBER" --body-file "$AGENT_SECURITY_TMP/security-gh-comment.md"
+          touch "$AGENT_SECURITY_TMP/normal-comment-posted"
+          echo "Enforce decision gate" > "$AGENT_SECURITY_TMP/current_step.txt"
+
+      - name: Requeue developer after review feedback
+        if: steps.decision.outputs.decision == 'request-changes' || steps.decision.outputs.decision == 'no-go'
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN || github.token }}
+          HAS_AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          link_json="$(scripts/pr-issue-link.sh "$GITHUB_REPOSITORY" "$PR_NUMBER" strict)"
+          pr_url="$(jq -r '.pr_url // ""' <<<"$link_json")"
+          linked_issue="$(jq -r '.linked_issue // ""' <<<"$link_json")"
+          if [ -z "$linked_issue" ]; then
+            link_reason="$(jq -r '.reason // "unknown reason"' <<<"$link_json")"
+            gh pr comment "$PR_NUMBER" --body "Security requested changes, but this PR could not be bound to a governing issue (${link_reason}), so Developer Agent was not requeued automatically."
+            exit 0
+          fi
+          labels_json="$(gh issue view "$linked_issue" --json labels --jq '[.labels[].name]')"
+          if jq -e 'index("agent:human-only") != null' <<<"$labels_json" >/dev/null; then
+            gh pr comment "$PR_NUMBER" --body "Security requested changes, but linked issue #${linked_issue} is marked agent:human-only, so Developer Agent was not requeued."
+            exit 0
+          fi
+          # Automatic repair requeue needs AGENT_GITHUB_TOKEN because events caused by GITHUB_TOKEN do not trigger follow-on workflows.
+          if [ "$HAS_AGENT_GITHUB_TOKEN" != "true" ]; then
+            msg="Security requested changes, but automatic repair requeue could not be triggered because AGENT_GITHUB_TOKEN is not configured. Configure the AGENT_GITHUB_TOKEN secret with a PAT or GitHub App token that can trigger workflows, or manually reapply agent:approved to linked issue #${linked_issue}."
+            gh pr comment "$PR_NUMBER" --body "$msg"
+            gh issue comment "$linked_issue" --body "$msg"
+            exit 0
+          fi
+          {
+            printf '## Security Feedback Requeue\n\n'
+            printf 'Linked PR: %s\n\n' "$pr_url"
+            printf 'Security returned `%s`. Developer Agent should update the existing PR in response to this review packet.\n\n' "${{ steps.decision.outputs.decision }}"
+            jq -r '.comment' "$AGENT_SECURITY_TMP/security-gate.json"
+          } > "$AGENT_SECURITY_TMP/security-requeue-issue-comment.md"
+          gh issue comment "$linked_issue" --body-file "$AGENT_SECURITY_TMP/security-requeue-issue-comment.md"
+          gh label create "agent:approved" --color "0E8A16" --description "Human approved agent execution" --force >/dev/null 2>&1 || true
+          gh label create "agent:developer" --color "1D76DB" --description "Developer agent role" --force >/dev/null 2>&1 || true
+          gh label create "agent:repair-requeue" --color "FBCA04" --description "Transient marker for verified repair requeue approvals" --force >/dev/null 2>&1 || true
+          gh issue edit "$linked_issue" --remove-label "agent:approved" >/dev/null 2>&1 || true
+          gh issue edit "$linked_issue" --remove-label "agent:developer" >/dev/null 2>&1 || true
+          gh issue edit "$linked_issue" --remove-label "agent:repair-requeue" >/dev/null 2>&1 || true
+          gh issue edit "$linked_issue" --add-label "agent:repair-requeue" >/dev/null
+          gh issue edit "$linked_issue" --add-label "agent:developer" >/dev/null
+          gh issue edit "$linked_issue" --add-label "agent:approved" >/dev/null
+          gh pr comment "$PR_NUMBER" --body "Security requested changes and requeued Developer Agent through linked issue #${linked_issue}."
+
+      - name: Update aggregate review status
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN || github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          helper="${RUNNER_TEMP:-/tmp}/update-review-gate-status.sh"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/update-review-gate-status.sh?ref=$DEFAULT_BRANCH" --jq .content | base64 -d > "$helper"
+          chmod 700 "$helper"
+          "$helper" "$GITHUB_REPOSITORY" "$HEAD_SHA" "Security review PR" "${{ steps.decision.outputs.decision }}"
+
+      - name: Enforce decision gate
+        run: |
+          set -euo pipefail
+          case "${{ steps.decision.outputs.decision }}" in
+            go)
+              echo "Security decision is go; passing check."
+              ;;
+            no-go)
+              echo "Security decision is no-go; failing check."
+              exit 1
+              ;;
+            request-changes)
+              echo "Security decision is request-changes; failing check."
+              exit 1
+              ;;
+            uncertain|*)
+              echo "Security decision is uncertain or missing; failing check to avoid false green."
+              exit 1
+              ;;
+          esac
+
+      - name: Mark ready after review gates
+        if: steps.decision.outputs.decision == 'go'
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          release_linked_issue() {
+            linked_issue="$(scripts/pr-issue-link.sh "$GITHUB_REPOSITORY" "$PR_NUMBER" strict | jq -r '.linked_issue // empty')"
+            if [ -n "$linked_issue" ]; then
+              scripts/agent-ticket-focus.sh release "$linked_issue" "PR #${PR_NUMBER} passed V&V and Security and is ready for human review." || true
+            fi
+          }
+          for attempt in 1 2 3 4 5 6; do
+            if scripts/review-gates-ready.sh "$GITHUB_REPOSITORY" "$HEAD_SHA" "Verify PR"; then
+              break
+            fi
+            if [ "$attempt" = "6" ]; then
+              echo "Latest V&V gate is not green yet; leaving PR as draft."
+              exit 0
+            fi
+            sleep 10
+          done
+          if [ "$(gh pr view "$PR_NUMBER" --json isDraft --jq .isDraft)" != "true" ]; then
+            echo "PR is already ready for review."
+            release_linked_issue
+            exit 0
+          fi
+          if gh pr ready "$PR_NUMBER"; then
+            gh pr comment "$PR_NUMBER" --body "Both V&V and Security gates are green. Marking this PR ready for human review."
+            release_linked_issue
+            exit 0
+          fi
+          if [ "$(gh pr view "$PR_NUMBER" --json isDraft --jq .isDraft)" != "true" ]; then
+            echo "Another review gate already marked this PR ready."
+            release_linked_issue
+            exit 0
+          fi
+          echo "Failed to mark PR ready while it is still a draft." >&2
+          exit 1
+
+      - name: Finalize aggregate review status
+        if: steps.decision.outputs.decision == 'go'
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN || github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          helper="${RUNNER_TEMP:-/tmp}/update-review-gate-status.sh"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/update-review-gate-status.sh?ref=$DEFAULT_BRANCH" --jq .content | base64 -d > "$helper"
+          chmod 700 "$helper"
+          "$helper" "$GITHUB_REPOSITORY" "$HEAD_SHA" "Security review PR" "${{ steps.decision.outputs.decision }}"
+
+      - name: Comment failure packet
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -z "${AGENT_SECURITY_TMP:-}" ]; then
+            echo "AGENT_SECURITY_TMP is not set; cannot create failure comment safely." >&2
+            exit 1
+          fi
+          if [ -f "$AGENT_SECURITY_TMP/normal-comment-posted" ]; then
+            echo "Normal security review comment already posted; skipping fallback failure comment."
+            exit 0
+          fi
+          workflow_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/attempts/${GITHUB_RUN_ATTEMPT}"
+          failed_step="$(cat "$AGENT_SECURITY_TMP/current_step.txt" 2>/dev/null || true)"
+          if [ -z "$failed_step" ]; then
+            failed_step="Unknown step"
+          fi
+          {
+            printf '## Security Agent\n\n'
+            printf 'Workflow failed before completing the security review comment.\n\n'
+            printf '### Failure Context\n\n'
+            printf -- '- Workflow: %s\n' "$workflow_url"
+            printf -- '- Failing step (best available): %s\n' "$failed_step"
+            printf -- '- Error detail: Check sanitized workflow logs for this run.\n\n'
+            printf '### Next Action\n\n'
+            printf 'Fix the failing step, then rerun this workflow so security can post a full decision packet.\n'
+          } > "$AGENT_SECURITY_TMP/security-failure-comment.md"
+          scripts/post-comment-dedup.sh "$GITHUB_REPOSITORY" "$PR_NUMBER" "security-failure-${HEAD_SHA}" "$AGENT_SECURITY_TMP/security-failure-comment.md"
+
+      - name: Cleanup private temp dir
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -n "${AGENT_SECURITY_TMP:-}" ]; then
+            rm -rf "$AGENT_SECURITY_TMP"
+          fi

@@ -1,0 +1,58 @@
+name: Agent task
+description: Request GitHub-native Codex agent work.
+title: "[agent] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Add `agent:approved` plus the desired role label after filing. Add `agent:human-only` only when automation lacks required context, authority, a human decision, a secret, or external permission.
+  - type: dropdown
+    id: requested_role
+    attributes:
+      label: Requested role
+      options:
+        - architect
+        - developer
+        - human-only
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What files, systems, or behavior are in scope?
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: What must not change?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How will this be verified?
+    validations:
+      required: true
+  - type: textarea
+    id: decision_packet
+    attributes:
+      label: Decision packet
+      value: |
+        **Decision needed:**
+        **Evidence expected:**
+        **Risks or unknowns:**
+        **Next action:**
+    validations:
+      required: true

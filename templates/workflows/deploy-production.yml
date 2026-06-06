@@ -1,0 +1,36 @@
+name: Deploy Production
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  production:
+    name: Deploy production from base branch
+    runs-on: [self-hosted, linux, llmchef-codex, codex-production]
+    if: github.ref_name == (vars.PRODUCTION_DEPLOY_BRANCH || github.event.repository.default_branch)
+    environment:
+      name: production
+    steps:
+      - name: Checkout selected ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Run project production deploy
+        run: |
+          set -euo pipefail
+          if [ ! -x scripts/production-deploy.sh ]; then
+            echo "Missing executable scripts/production-deploy.sh"
+            exit 1
+          fi
+          scripts/production-deploy.sh
