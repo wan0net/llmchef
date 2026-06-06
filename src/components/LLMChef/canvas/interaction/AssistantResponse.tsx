@@ -1,7 +1,6 @@
 // src/components/LLMChef/canvas/interaction/AssistantResponse.tsx
 // FULL FILE
 import React, { useState, useCallback, useMemo } from "react";
-import DOMPurify from "dompurify";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -13,33 +12,16 @@ import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipBu
 import {
   useMarkdownParser,
 } from "@/lib/llmchef/useMarkdownParser";
+import { sanitizeRichTextHtml } from "@/lib/llmchef/render-sanitizer";
+import { parseToolCallSteps } from "@/lib/llmchef/tool-call-steps";
 import { UniversalBlockRenderer } from "@/components/LLMChef/common/UniversalBlockRenderer";
 import { SelectionDetector } from "@/components/LLMChef/canvas/SelectionDetector";
-import { type ToolCallPart, type ToolResultPart } from "ai";
 import { toast } from "sonner";
 import { useControlRegistryStore } from "@/store/control.store";
 import { useShallow } from "zustand/react/shallow";
 import type { CanvasControl, CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 import { useTranslation } from "react-i18next";
 import { ImageBlockRenderer } from "@/components/LLMChef/common/ImageBlockRenderer";
-
-const sanitizeRenderedHtml = (html: string): string =>
-  DOMPurify.sanitize(html, {
-    USE_PROFILES: { html: true },
-    ADD_ATTR: ["target"],
-    FORBID_TAGS: [
-      "audio",
-      "embed",
-      "iframe",
-      "img",
-      "link",
-      "meta",
-      "object",
-      "source",
-      "track",
-      "video",
-    ],
-  });
 
 const StaticContentView: React.FC<{ markdownContent: string | null, interactionId: string }> = ({
   markdownContent,
@@ -109,7 +91,7 @@ const StaticContentView: React.FC<{ markdownContent: string | null, interactionI
                         key={`html-${index}-${i}`}
                         className="markdown-content"
                         dangerouslySetInnerHTML={{
-                          __html: sanitizeRenderedHtml(parts[i]),
+                          __html: sanitizeRichTextHtml(parts[i]),
                         }}
                       />
                     );
@@ -126,7 +108,7 @@ const StaticContentView: React.FC<{ markdownContent: string | null, interactionI
                 key={`html-${index}`}
                 className="markdown-content"
                 dangerouslySetInnerHTML={{
-                  __html: sanitizeRenderedHtml(item),
+                  __html: sanitizeRichTextHtml(item),
                 }}
               />
             );
@@ -209,14 +191,11 @@ export const AssistantResponse: React.FC<AssistantResponseProps> = ({
   );
 
   const parsedToolSteps = useMemo(() => {
-    if (!toolCallStrings) return [];
-    const calls = toolCallStrings.map(str => JSON.parse(str) as ToolCallPart);
-    const results = toolResultStrings?.map(str => JSON.parse(str) as ToolResultPart) ?? [];
-    
-    return calls.map(call => {
-      const result = results.find(res => res.toolCallId === call.toolCallId);
-      return { call, result };
-    });
+    return parseToolCallSteps(
+      toolCallStrings,
+      toolResultStrings,
+      "AssistantResponse"
+    );
   }, [toolCallStrings, toolResultStrings]);
 
   const toggleReasoningFold = useCallback(

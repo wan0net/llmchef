@@ -1,7 +1,7 @@
 // src/lib/llmchef/useMarkdownParser.ts
 import { useMemo } from "react";
 import MarkdownIt from "markdown-it";
-import DOMPurify from "dompurify";
+import { sanitizeRichTextHtml } from "./render-sanitizer";
 
 export interface UniversalBlockData {
   type: "block";
@@ -19,24 +19,6 @@ const md = new MarkdownIt({
   breaks: true,
   typographer: false,
 });
-
-const sanitizeMarkdownHtml = (html: string): string =>
-  DOMPurify.sanitize(html, {
-    USE_PROFILES: { html: true },
-    ADD_ATTR: ["target"],
-    FORBID_TAGS: [
-      "audio",
-      "embed",
-      "iframe",
-      "img",
-      "link",
-      "meta",
-      "object",
-      "source",
-      "track",
-      "video",
-    ],
-  });
 
 export function parseMarkdownContent(
   markdownString: string | null | undefined,
@@ -87,7 +69,7 @@ export function parseMarkdownContent(
           index++;
         }
         if (nonFenceTokens.length > 0) {
-          currentHtmlBuffer += sanitizeMarkdownHtml(
+          currentHtmlBuffer += sanitizeRichTextHtml(
             md.renderer.render(nonFenceTokens, md.options, {})
           );
         }

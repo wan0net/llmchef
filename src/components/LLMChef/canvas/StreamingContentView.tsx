@@ -1,18 +1,18 @@
 // src/components/LLMChef/canvas/StreamingContentView.tsx
 // FULL FILE
-import React, {useMemo, useCallback } from "react";
-import DOMPurify from "dompurify";
+import React, { useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
   useMarkdownParser,
   UniversalBlockData,
   ParsedContent,
 } from "@/lib/llmchef/useMarkdownParser";
+import { sanitizeRichTextHtml } from "@/lib/llmchef/render-sanitizer";
+import { parseToolCallSteps } from "@/lib/llmchef/tool-call-steps";
 import { UniversalBlockRenderer } from "@/components/LLMChef/common/UniversalBlockRenderer";
 import { useSettingsStore } from "@/store/settings.store";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
-import { type ToolCallPart, type ToolResultPart } from "ai";
 import { useControlRegistryStore } from "@/store/control.store";
 import type { CanvasControl, CanvasControlRenderContext } from "@/types/llmchef/canvas/control";
 import { useInteractionStore } from "@/store/interaction.store";
@@ -38,22 +38,7 @@ const renderBlock = (
         key={`html-${index}`}
         className="markdown-content"
         dangerouslySetInnerHTML={{
-          __html: DOMPurify.sanitize(item, {
-            USE_PROFILES: { html: true },
-            ADD_ATTR: ["target"],
-            FORBID_TAGS: [
-              "audio",
-              "embed",
-              "iframe",
-              "img",
-              "link",
-              "meta",
-              "object",
-              "source",
-              "track",
-              "video",
-            ],
-          }),
+          __html: sanitizeRichTextHtml(item),
         }}
       />
     );
@@ -133,18 +118,11 @@ export const StreamingContentView: React.FC<StreamingContentViewProps> = ({
   );
 
   const parsedToolSteps = useMemo(() => {
-    if (!toolCallStrings) return [];
-    try {
-      const calls = toolCallStrings.map(str => JSON.parse(str) as ToolCallPart);
-      const results = toolResultStrings?.map(str => JSON.parse(str) as ToolResultPart) ?? [];
-      return calls.map(call => {
-        const result = results.find(res => res.toolCallId === call.toolCallId);
-        return { call, result };
-      });
-    } catch (e) {
-      console.error("[StreamingContentView] Error parsing tool call/result strings:", e);
-      return [];
-    }
+    return parseToolCallSteps(
+      toolCallStrings,
+      toolResultStrings,
+      "StreamingContentView"
+    );
   }, [toolCallStrings, toolResultStrings]);
 
   const renderedMarkdownElements = useMemo(() => {
