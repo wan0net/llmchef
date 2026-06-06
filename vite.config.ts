@@ -77,8 +77,25 @@ const vendorChunkGroups: { name: string; match: string[] }[] = [
     match: ['/node_modules/react/', '/node_modules/react-dom/', '/node_modules/scheduler/'],
   },
   {
+    name: 'vendor-model-providers',
+    match: [
+      '/node_modules/@ai-sdk/anthropic/',
+      '/node_modules/@ai-sdk/deepinfra/',
+      '/node_modules/@ai-sdk/fal/',
+      '/node_modules/@ai-sdk/fireworks/',
+      '/node_modules/@ai-sdk/google/',
+      '/node_modules/@ai-sdk/luma/',
+      '/node_modules/@ai-sdk/mistral/',
+      '/node_modules/@ai-sdk/openai-compatible/',
+      '/node_modules/@ai-sdk/openai/',
+      '/node_modules/@ai-sdk/replicate/',
+      '/node_modules/@ai-sdk/xai/',
+      '/node_modules/@openrouter/',
+    ],
+  },
+  {
     name: 'vendor-ai',
-    match: ['/node_modules/ai/', '/node_modules/@ai-sdk/', '/node_modules/@openrouter/', '/node_modules/ollama-ai-provider/'],
+    match: ['/node_modules/ai/', '/node_modules/@ai-sdk/'],
   },
   {
     name: 'vendor-data',

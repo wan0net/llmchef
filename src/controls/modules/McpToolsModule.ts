@@ -5,7 +5,7 @@ import {
 import { useMcpStore } from "@/store/mcp.store";
 import type { McpServerConfig } from "@/types/llmchef/mcp";
 import { mcpEvent } from "@/types/llmchef/events/mcp.events";
-import { experimental_createMCPClient } from "ai";
+import { experimental_createMCPClient } from "@ai-sdk/mcp";
 import { Tool } from "ai";
 import { emitter } from "@/lib/llmchef/event-emitter";
 import { assertAllowedOutboundUrl } from "@/lib/llmchef/outbound-policy";

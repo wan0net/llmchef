@@ -2,9 +2,6 @@ import { init, parse } from "es-module-lexer";
 import { APP_VFS_KEY } from "./constants";
 import { assertAllowedOutboundUrl, getOutboundHost } from "./outbound-policy";
 import { normalizePath } from "./file-manager-utils";
-import { readFileOp, writeFileOp } from "./vfs-operations";
-import { useVfsStore } from "@/store/vfs.store";
-import { withTransientAllowedOutboundHost } from "@/services/outbound-fetch-guard.service";
 import type {
   McpPackageImport,
   McpPackageRuntimeInstall,
@@ -45,10 +42,36 @@ interface ModuleRecord {
   imports: string[];
 }
 
+type VfsRuntime = {
+  fsInstance: {
+    promises: {
+      readdir: (path: string) => Promise<string[]>;
+    };
+  };
+  readFileOp: (path: string, options: { fsInstance: unknown; silent?: boolean }) => Promise<Uint8Array>;
+  writeFileOp: (path: string, content: string, options: { fsInstance: unknown }) => Promise<void>;
+};
+
 const DEFAULT_MAX_MODULES = 80;
 const MCP_PACKAGE_CACHE_ROOT = "/packages/mcp";
 const HTTP_URL_PATTERN = /^https?:\/\//i;
 const UNSUPPORTED_SPECIFIER_PATTERN = /^(node:|data:|blob:)/i;
+
+const loadOutboundFetchGuard = async (): Promise<{
+  withTransientAllowedOutboundHost: (
+    host: string,
+    callback: () => Promise<Map<string, ModuleRecord>>,
+  ) => Promise<Map<string, ModuleRecord>>;
+}> => import("@/services/outbound-fetch-guard.service");
+
+const loadVfsRuntime = async (): Promise<VfsRuntime> => {
+  const [{ useVfsStore }, { readFileOp, writeFileOp }] = await Promise.all([
+    import("@/store/vfs.store"),
+    import("./vfs-operations"),
+  ]);
+  const fsInstance = await useVfsStore.getState().initializeVFS(APP_VFS_KEY, { force: true });
+  return { fsInstance, readFileOp, writeFileOp };
+};
 
 export const packageSpecToEsmPath = (packageName: string): string => {
   const trimmed = packageName.trim();
@@ -124,6 +147,7 @@ export const installMcpJsRuntimePackage = async (
   const registryBaseUrl = normalizeMcpPackageRegistryBaseUrl(options.registryBaseUrl);
   const entryUrl = buildEsmPackageEntryUrl(registryBaseUrl, options.packageImport.packageName);
   const registryHost = getOutboundHost(registryBaseUrl);
+  const { withTransientAllowedOutboundHost } = await loadOutboundFetchGuard();
   const modules = await withTransientAllowedOutboundHost(registryHost, () =>
     fetchModuleGraph({
       entryUrl,
@@ -135,7 +159,7 @@ export const installMcpJsRuntimePackage = async (
 
   const installId = await stableInstallId(options.packageImport.packageName, entryUrl);
   const vfsRoot = normalizePath(`${MCP_PACKAGE_CACHE_ROOT}/${installId}`);
-  const fsInstance = await useVfsStore.getState().initializeVFS(APP_VFS_KEY, { force: true });
+  const { fsInstance, writeFileOp } = await loadVfsRuntime();
   const moduleHashes: Record<string, string> = {};
   for (const moduleRecord of modules.values()) {
     moduleHashes[moduleRecord.url] = await sha256Hex(moduleRecord.code);
@@ -170,7 +194,7 @@ export const smokeTestMcpJsRuntimePackage = async (
   install: McpPackageRuntimeInstall,
   timeoutMs = 5000,
 ): Promise<McpJsRuntimeSmokeResult> => {
-  const fsInstance = await useVfsStore.getState().initializeVFS(APP_VFS_KEY, { force: true });
+  const { fsInstance, readFileOp } = await loadVfsRuntime();
   const manifestBytes = await readFileOp(`${install.vfsRoot}/manifest.json`, { fsInstance, silent: true });
   const manifest = JSON.parse(new TextDecoder().decode(manifestBytes)) as McpPackageRuntimeInstall;
   const moduleGraph = await readInstalledModuleGraph(manifest);
@@ -208,7 +232,7 @@ export const smokeTestMcpJsRuntimePackage = async (
 export const startMcpJsRuntimeSession = async (
   install: McpPackageRuntimeInstall,
 ): Promise<McpJsRuntimeSession> => {
-  const fsInstance = await useVfsStore.getState().initializeVFS(APP_VFS_KEY, { force: true });
+  const { fsInstance, readFileOp } = await loadVfsRuntime();
   const manifestBytes = await readFileOp(`${install.vfsRoot}/manifest.json`, { fsInstance, silent: true });
   const manifest = JSON.parse(new TextDecoder().decode(manifestBytes)) as McpPackageRuntimeInstall;
   const moduleGraph = await readInstalledModuleGraph(manifest);
@@ -358,7 +382,7 @@ const fetchModuleGraph = async ({
 const readInstalledModuleGraph = async (
   install: McpPackageRuntimeInstall,
 ): Promise<Map<string, string>> => {
-  const fsInstance = await useVfsStore.getState().initializeVFS(APP_VFS_KEY, { force: true });
+  const { fsInstance, readFileOp } = await loadVfsRuntime();
   const manifestBytes = await readFileOp(`${install.vfsRoot}/manifest.json`, { fsInstance, silent: true });
   const manifest = JSON.parse(new TextDecoder().decode(manifestBytes)) as McpPackageRuntimeInstall;
   const moduleUrls = manifest.moduleUrls?.length
@@ -537,7 +561,7 @@ const modulePathForUrl = (vfsRoot: string, url: string): string =>
   `${vfsRoot}/modules/${encodeURIComponent(url)}.mjs`;
 
 const readModuleUrlsFromManifestRoot = async (vfsRoot: string): Promise<string[]> => {
-  const fsInstance = await useVfsStore.getState().initializeVFS(APP_VFS_KEY, { force: true });
+  const { fsInstance } = await loadVfsRuntime();
   const entries = await fsInstance.promises.readdir(`${vfsRoot}/modules`);
   return entries.map((entry) => decodeURIComponent(entry.replace(/\.mjs$/, "")));
 };

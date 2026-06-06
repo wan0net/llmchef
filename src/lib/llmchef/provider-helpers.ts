@@ -9,7 +9,6 @@ import type {
 import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { createOllama } from "ollama-ai-provider";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createMistral } from "@ai-sdk/mistral";
 import { createAnthropic } from "@ai-sdk/anthropic";
@@ -250,8 +249,11 @@ export function instantiateModelInstance(
           },
         })(modelId);
       case "ollama":
-        // Always ensure /api is present in the base URL
-        return createOllama({ baseURL: config.baseURL ? ensureOllamaApiBase(config.baseURL) : undefined })(modelId);
+        return createOpenAICompatible({
+          baseURL: config.baseURL ? ensureV1Path(config.baseURL) : undefined,
+          apiKey: apiKey || "ollama",
+          name: "Ollama",
+        })(modelId);
       case "openai-compatible":
         if (!config.baseURL) throw new Error("Base URL required");
         return createOpenAICompatible({

@@ -52,6 +52,7 @@ export const InputArea = memo(
     ) => {
       const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
       const highlightRef = useRef<HTMLDivElement>(null);
+      const previousInitialValueRef = useRef(initialValue);
       const [internalValue, setInternalValue] = useState(initialValue);
       const [triggers, setTriggers] = useState<TextTrigger[]>([]);
       const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -395,14 +396,17 @@ export const InputArea = memo(
       }, [internalValue]);
 
       useEffect(() => {
-        if (initialValue !== internalValue) {
-          setInternalValue(initialValue);
-          setPromptInputValue(initialValue);
-          if (onValueChange) {
-            onValueChange(initialValue);
-          }
+        if (previousInitialValueRef.current === initialValue) {
+          return;
         }
-      }, [initialValue, internalValue, onValueChange, setPromptInputValue]);
+
+        previousInitialValueRef.current = initialValue;
+        setInternalValue(initialValue);
+        setPromptInputValue(initialValue);
+        if (onValueChange) {
+          onValueChange(initialValue);
+        }
+      }, [initialValue, onValueChange, setPromptInputValue]);
 
       // Parse triggers when value changes
       useEffect(() => {

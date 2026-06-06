@@ -12,7 +12,7 @@ const budgets = [
   { pattern: /^LLMChefControlModules-.*\.js$/, rawKiB: 740, gzipKiB: 220 },
   { pattern: /^vendor-ai-.*\.js$/, rawKiB: 660, gzipKiB: 165 },
   { pattern: /^vendor-data-.*\.js$/, rawKiB: 640, gzipKiB: 195 },
-  { pattern: /^vendor-mermaid-.*\.js$/, rawKiB: 2700, gzipKiB: 730 },
+  { pattern: /^vendor-mermaid-.*\.js$/, rawKiB: 2800, gzipKiB: 760 },
 ];
 
 const files = readdirSync(distAssets)

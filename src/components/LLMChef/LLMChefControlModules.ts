@@ -8,6 +8,7 @@ import { CopyActionControlModule } from "@/controls/modules/canvas/CopyActionCon
 import { CopyCodeBlockControlModule } from "@/controls/modules/canvas/codeblock/CopyCodeBlockControlModule";
 import { Crea8MemoryControlModule } from "@/controls/modules/Crea8MemoryControlModule";
 import { Crea8MemoryProposalActionControlModule } from "@/controls/modules/canvas/Crea8MemoryProposalActionControlModule";
+import { DocumentReadToolsModule } from "@/controls/modules/DocumentReadToolsModule";
 import { DownloadCodeBlockControlModule } from "@/controls/modules/canvas/codeblock/DownloadCodeBlockControlModule";
 import { EditCodeBlockControlModule } from "@/controls/modules/canvas/EditCodeBlockControlModule";
 import { EditResponseControlModule } from "@/controls/modules/canvas/EditResponseControlModule";
@@ -28,6 +29,7 @@ import { ParameterControlModule } from "@/controls/modules/ParameterControlModul
 import { ProjectSettingsControlModule } from "@/controls/modules/ProjectSettingsControlModule";
 import { PromoteInteractionControlModule } from "@/controls/modules/canvas/PromoteInteractionControlModule";
 import { PWAControlModule } from "@/controls/modules/PWAControlModule";
+import { PythonInterpreterToolModule } from "@/controls/modules/PythonInterpreterToolModule";
 import { PythonRunnableBlockRendererModule } from "@/controls/modules/PythonRunnableBlockRendererModule";
 import { QuoteSelectionControlModule } from "@/controls/modules/canvas/QuoteSelectionControlModule";
 import { RatingActionControlModule } from "@/controls/modules/canvas/RatingActionControlModule";
@@ -81,6 +83,8 @@ export const controlModulesToRegister: ControlModuleConstructor[] = [
   ChartBlockRendererModule,
   JsRunnableBlockRendererModule,
   PythonRunnableBlockRendererModule,
+  PythonInterpreterToolModule,
+  DocumentReadToolsModule,
   BeatBlockRendererModule,
   WorkflowBlockRendererModule,
   CopyActionControlModule,

@@ -1,4 +1,5 @@
 import { PYODIDE_VERSION_URL } from "@/lib/llmchef/constants";
+import { recordOutboundRequest } from "@/lib/llmchef/outbound-policy";
 
 // Global pyodide instance for reuse
 let pyodidePromise: Promise<any> | null = null;
@@ -29,6 +30,7 @@ export interface PyExecutionOptions {
     storage?: boolean;
     provider?: boolean;
   };
+  allowedNetworkHosts?: string[];
   timeoutMs?: number;
 }
 
@@ -73,6 +75,82 @@ const buildPythonWorkerSource = (pyodideScriptUrl: string, pyodideIndexUrl: stri
     return pyodidePromise;
   };
 
+  const inputToUrl = (input) => {
+    if (typeof input === "string") return input;
+    if (input instanceof URL) return input.toString();
+    return input.url;
+  };
+
+  const hostMatchesAllowed = (host, allowedHost) =>
+    host === allowedHost || host.endsWith("." + allowedHost);
+
+  const isHostAllowed = (host, allowedHosts) =>
+    allowedHosts.some((allowedHost) => hostMatchesAllowed(host, allowedHost));
+
+  const isLocalOrSameOriginHost = (host) => {
+    const currentHost = self.location?.host;
+    if (currentHost && host === currentHost) return true;
+    return (
+      host === "localhost" ||
+      host.startsWith("localhost:") ||
+      host === "127.0.0.1" ||
+      host.startsWith("127.") ||
+      host.startsWith("127.0.0.1:") ||
+      host === "[::1]" ||
+      host.startsWith("[::1]:")
+    );
+  };
+
+  const assertAllowedNetworkUrl = (url, method, allowedHosts) => {
+      let parsed;
+      try {
+        parsed = new URL(url, self.location?.origin || pyodideIndexUrl);
+      } catch {
+        throw new Error("Blocked outbound Python request with invalid URL: " + url);
+      }
+
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new Error("Blocked non-HTTP Python fetch request: " + parsed.protocol);
+      }
+
+      if (!isLocalOrSameOriginHost(parsed.host) && !isHostAllowed(parsed.host, allowedHosts)) {
+        throw new Error(
+          "Blocked outbound Python request to " + parsed.host + ". Configure this host before LLMChef can contact it."
+        );
+      }
+
+      self.postMessage({
+        type: "outbound-request",
+        url: parsed.toString(),
+        purpose: "python:" + (method || "GET"),
+      });
+      return parsed.toString();
+  };
+
+  const installNetworkGuard = (allowedHosts) => {
+    const originalFetch = self.fetch.bind(self);
+    self.fetch = async (input, init) => {
+      const url = inputToUrl(input);
+      const allowedUrl = assertAllowedNetworkUrl(url, init?.method, allowedHosts);
+      return originalFetch(allowedUrl, init);
+    };
+
+    const OriginalXMLHttpRequest = self.XMLHttpRequest;
+    if (OriginalXMLHttpRequest) {
+      const GuardedXMLHttpRequest = function () {
+        const request = new OriginalXMLHttpRequest();
+        const originalOpen = request.open.bind(request);
+        request.open = (method, url, ...rest) => {
+          const allowedUrl = assertAllowedNetworkUrl(url, method, allowedHosts);
+          return originalOpen(method, allowedUrl, ...rest);
+        };
+        return request;
+      };
+      GuardedXMLHttpRequest.prototype = OriginalXMLHttpRequest.prototype;
+      disableGlobal("XMLHttpRequest", GuardedXMLHttpRequest);
+    }
+  };
+
   const applyPermissions = (permissions) => {
     disableGlobal("Worker", function () { throw new Error("Child workers are not permitted for this workflow step."); });
     disableGlobal("SharedWorker", function () { throw new Error("Shared workers are not permitted for this workflow step."); });
@@ -90,6 +168,11 @@ const buildPythonWorkerSource = (pyodideScriptUrl: string, pyodideIndexUrl: stri
     if (!permissions.network) {
       disableGlobal("fetch", deny("Network access"));
       disableGlobal("XMLHttpRequest", undefined);
+      disableGlobal("WebSocket", undefined);
+      disableGlobal("EventSource", undefined);
+      disableGlobal("importScripts", deny("Script imports"));
+    } else {
+      installNetworkGuard(permissions.allowedNetworkHosts || []);
       disableGlobal("WebSocket", undefined);
       disableGlobal("EventSource", undefined);
       disableGlobal("importScripts", deny("Script imports"));
@@ -112,14 +195,13 @@ const buildPythonWorkerSource = (pyodideScriptUrl: string, pyodideIndexUrl: stri
       const pyodide = await loadPyodideRuntime();
       const effectivePermissions = permissions || {};
       applyPermissions(effectivePermissions);
-      pyodide.globals.set("_workflow_result", null);
-      pyodide.globals.set("USER_CODE", code);
-      pyodide.globals.set("_LLMCHEF_BLOCKED_MODULES_JSON", JSON.stringify([
-        ...(!effectivePermissions.network ? ["pyodide.http", "urllib", "requests", "socket", "micropip"] : []),
-        ...(!effectivePermissions.network || !effectivePermissions.storage || !effectivePermissions.provider ? ["js"] : []),
+      const pythonGlobals = pyodide.runPython("dict()");
+      pythonGlobals.set("_workflow_result", null);
+      pythonGlobals.set("_LLMCHEF_BLOCKED_MODULES_JSON", JSON.stringify([
+        ...(!effectivePermissions.network ? ["pyodide.http", "urllib", "requests", "socket", "micropip", "js"] : []),
       ]));
       for (const key of contextKeys) {
-        pyodide.globals.set(key, context[key]);
+        pythonGlobals.set(key, context[key]);
       }
 
       pyodide.runPython(\`
@@ -150,22 +232,26 @@ def workflow_return(value):
     global _workflow_result
     _workflow_result = value
     return value
-\`);
+\`, { globals: pythonGlobals, locals: pythonGlobals });
 
-      pyodide.runPython(\`
-try:
-    exec(USER_CODE, globals())
-except Exception as e:
-    _workflow_result = {"error": str(e)}
-    raise
-\`);
+      await pyodide.runPythonAsync(code, {
+        globals: pythonGlobals,
+        locals: pythonGlobals,
+      });
 
-      const result = pyodide.globals.get("_workflow_result");
+      const result = pythonGlobals.get("_workflow_result");
+      const jsResult = result && typeof result.toJs === "function"
+        ? result.toJs({ dict_converter: Object.fromEntries })
+        : result;
+      if (result && typeof result.destroy === "function") {
+        result.destroy();
+      }
+      if (typeof pythonGlobals.destroy === "function") {
+        pythonGlobals.destroy();
+      }
       self.postMessage({
         ok: true,
-        result: result && typeof result.toJs === "function"
-          ? result.toJs({ dict_converter: Object.fromEntries })
-          : result,
+        result: jsResult,
       });
     } catch (error) {
       self.postMessage({
@@ -437,6 +523,11 @@ export const CodeExecutionService = {
         }, timeoutMs);
 
         worker.onmessage = (event) => {
+          if (event.data?.type === "outbound-request") {
+            recordOutboundRequest(event.data.url, event.data.purpose || "python");
+            return;
+          }
+
           window.clearTimeout(timer);
           worker.terminate();
           URL.revokeObjectURL(blobUrl);
@@ -463,6 +554,7 @@ export const CodeExecutionService = {
               network: permissions.network === true,
               storage: permissions.storage === true,
               provider: permissions.provider === true,
+              allowedNetworkHosts: options.allowedNetworkHosts ?? [],
             },
           });
         } catch (error) {
