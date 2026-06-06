@@ -127,7 +127,6 @@ scripts/adopt-agentic-runners.sh
 scripts/agent-preflight.sh
 scripts/agent-runner.sh
 scripts/agent-ticket-focus.sh
-scripts/auto-resolve-rebase-conflicts.sh
 scripts/bootstrap-labels.sh
 scripts/check-protected-paths.sh
 scripts/issue-approval-gate.sh
@@ -328,6 +327,7 @@ verify_install() {
   local expected_runner_label="agentic-codex"
   local expected_runner_backend="codex"
   local expected_role_prefix="codex"
+  local expected_runner_binding_prefix=""
   [ -f "$target/$managed_marker" ] || { err "Missing $managed_marker"; failures=$((failures + 1)); }
 
   if [ -f "$target/$managed_marker" ]; then
@@ -338,6 +338,28 @@ verify_install() {
   if [ "$expected_runner_backend" = "claude-code" ]; then
     expected_role_prefix="claude"
   fi
+  expected_runner_binding_prefix="runs-on: [self-hosted, linux, ${expected_runner_label},"
+
+  verify_runner_binding() {
+    local rel="$1"
+    local expected_role_label="$2"
+    local path="$target/$rel"
+    local expected_binding="runs-on: [self-hosted, linux, ${expected_runner_label}, ${expected_role_label}]"
+
+    if [ ! -f "$path" ]; then
+      return
+    fi
+
+    if ! grep -Fq "$expected_binding" "$path"; then
+      err "${rel} is not wired to the expected runner binding '${expected_binding}'."
+      failures=$((failures + 1))
+    fi
+
+    if grep -F "runs-on: [self-hosted, linux," "$path" | grep -Fv "$expected_runner_binding_prefix" >/dev/null 2>&1; then
+      err "${rel} contains a self-hosted runner binding that does not use the expected runner label '${expected_runner_label}'."
+      failures=$((failures + 1))
+    fi
+  }
 
   while IFS= read -r rel; do
     [ -n "$rel" ] || continue
@@ -358,19 +380,16 @@ verify_install() {
     fi
   fi
 
-  if ! grep -R "runs-on: \\[self-hosted, linux, ${expected_runner_label}," "$target/.github/workflows/agent-"*.yml >/dev/null 2>&1; then
-    err "Managed workflows are not wired to the expected runner label '${expected_runner_label}'."
-    failures=$((failures + 1))
-  fi
-
-  if ! grep -q "${expected_role_prefix}-developer" "$target/.github/workflows/agent-developer.yml"; then
-    err "Developer workflow is not wired to the expected '${expected_role_prefix}-developer' role label."
-    failures=$((failures + 1))
-  fi
-
-  if [ "$expected_runner_label" != "agentic-codex" ] && grep -R "agentic-codex" "$target/.github/workflows/agent-"*.yml >/dev/null 2>&1; then
-    warn "Some workflows still reference the default label 'agentic-codex'; confirm runner-label rewrites completed."
-  fi
+  verify_runner_binding ".github/workflows/agent-architect.yml" "${expected_role_prefix}-architect"
+  verify_runner_binding ".github/workflows/agent-backlog.yml" "${expected_role_prefix}-architect"
+  verify_runner_binding ".github/workflows/agent-developer.yml" "${expected_role_prefix}-developer"
+  verify_runner_binding ".github/workflows/agent-issue-closer.yml" "${expected_role_prefix}-vv"
+  verify_runner_binding ".github/workflows/agent-pr-ready.yml" "${expected_role_prefix}-architect"
+  verify_runner_binding ".github/workflows/agent-pr-reconciler.yml" "${expected_role_prefix}-architect"
+  verify_runner_binding ".github/workflows/agent-security.yml" "${expected_role_prefix}-security"
+  verify_runner_binding ".github/workflows/agent-vv.yml" "${expected_role_prefix}-vv"
+  verify_runner_binding "templates/workflows/staging-deploy.yml" "${expected_role_prefix}-staging"
+  verify_runner_binding "templates/workflows/deploy-production.yml" "${expected_role_prefix}-production"
 
   if [ "$failures" -gt 0 ]; then
     err "Verification failed with $failures error(s)."

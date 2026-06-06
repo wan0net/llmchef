@@ -28,6 +28,7 @@ jobs:
       HAS_AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN != '' }}
       CODEX_MODEL: ${{ vars.AGENT_MODEL_DEVELOPER || vars.CODEX_MODEL || 'gpt-5.4' }}
       RUNNER_BACKEND: ${{ vars.AGENT_RUNNER_BACKEND || 'codex' }}
+      ENABLE_REBASE_AUTO_RESOLVE: ${{ vars.AGENT_ENABLE_REBASE_AUTO_RESOLVE || 'false' }}
       MAX_ACTIVE_ISSUES: ${{ vars.AGENT_MAX_ACTIVE_ISSUES || '1' }}
       ISSUE_NUMBER: ${{ github.event.issue.number }}
       BASE_BRANCH: ${{ vars.AGENT_BASE_BRANCH || github.event.repository.default_branch }}
@@ -124,7 +125,12 @@ jobs:
             git_with_auth fetch origin "$branch"
             git checkout "$branch"
             if ! git rebase "origin/$BASE_BRANCH"; then
-              if ! scripts/auto-resolve-rebase-conflicts.sh --phase "branch-prep" --model "$CODEX_MODEL" --base-branch "$BASE_BRANCH" --issue-branch "$branch"; then
+              if [ "$ENABLE_REBASE_AUTO_RESOLVE" = "true" ] && [ -x scripts/auto-resolve-rebase-conflicts.sh ]; then
+                if ! scripts/auto-resolve-rebase-conflicts.sh --phase "branch-prep" --model "$CODEX_MODEL" --base-branch "$BASE_BRANCH" --issue-branch "$branch"; then
+                  report_branch_rebase_conflict
+                  exit 1
+                fi
+              else
                 report_branch_rebase_conflict
                 exit 1
               fi
@@ -660,7 +666,12 @@ jobs:
             if is_push_race "$push_stderr"; then
               git_with_push_auth fetch origin "$BASE_BRANCH" "$BRANCH_NAME"
               if ! git rebase "origin/$BRANCH_NAME"; then
-                if ! scripts/auto-resolve-rebase-conflicts.sh --phase "push-retry" --model "$CODEX_MODEL" --base-branch "$BASE_BRANCH" --issue-branch "$BRANCH_NAME"; then
+                if [ "$ENABLE_REBASE_AUTO_RESOLVE" = "true" ] && [ -x scripts/auto-resolve-rebase-conflicts.sh ]; then
+                  if ! scripts/auto-resolve-rebase-conflicts.sh --phase "push-retry" --model "$CODEX_MODEL" --base-branch "$BASE_BRANCH" --issue-branch "$BRANCH_NAME"; then
+                    report_push_rebase_conflict
+                    exit 1
+                  fi
+                else
                   report_push_rebase_conflict
                   exit 1
                 fi
