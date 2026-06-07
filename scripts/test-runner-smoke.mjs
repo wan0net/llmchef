@@ -15,6 +15,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const defaultReleaseUrl = "https://wan0.net/llmchef/release/latest.zip";
 const expectedIndex = "<!doctype html><title>Runner Smoke</title><div id=\"app\">runner smoke fixture</div>";
 const expectedAsset = "console.log('runner smoke fixture');";
+const launcherProbeHost = "localhost";
 
 const args = new Set(process.argv.slice(2));
 const staticOnly = args.has("--static-only");
@@ -216,15 +217,15 @@ async function runLauncherSmoke(launcher, fixtureRoot, releaseUrl) {
   try {
     await waitForHealthyServer(port, child, () => output);
 
-    const rootResponse = await fetchText(`http://127.0.0.1:${port}/`);
+    const rootResponse = await fetchText(buildLauncherUrl(port, "/"));
     assert.equal(rootResponse.statusCode, 200, `${launcher.id} did not serve the root document.`);
     assert.match(rootResponse.body, /runner smoke fixture/, `${launcher.id} served unexpected root content.`);
 
-    const assetResponse = await fetchText(`http://127.0.0.1:${port}/assets/app.js`);
+    const assetResponse = await fetchText(buildLauncherUrl(port, "/assets/app.js"));
     assert.equal(assetResponse.statusCode, 200, `${launcher.id} did not serve the extracted asset.`);
     assert.equal(assetResponse.body.trim(), expectedAsset, `${launcher.id} did not refresh the extracted asset.`);
 
-    const spaResponse = await fetchText(`http://127.0.0.1:${port}/missing/route`);
+    const spaResponse = await fetchText(buildLauncherUrl(port, "/missing/route"));
     assert.equal(spaResponse.statusCode, 200, `${launcher.id} did not serve index.html for SPA routing.`);
     assert.match(spaResponse.body, /runner smoke fixture/, `${launcher.id} did not fall back to index.html for SPA routing.`);
 
@@ -264,7 +265,7 @@ async function waitForHealthyServer(port, child, readOutput) {
     }
 
     try {
-      const response = await fetchText(`http://127.0.0.1:${port}/`);
+      const response = await fetchText(buildLauncherUrl(port, "/"));
       if (response.statusCode === 200) {
         return;
       }
@@ -276,6 +277,10 @@ async function waitForHealthyServer(port, child, readOutput) {
   }
 
   throw new Error(`Timed out waiting for launcher server:\n${readOutput()}`);
+}
+
+function buildLauncherUrl(port, pathname) {
+  return `http://${launcherProbeHost}:${port}${pathname}`;
 }
 
 async function stopProcess(child) {
