@@ -85,11 +85,18 @@ export class WorkflowWebSearchPersistenceService {
 
     const normalized = normalizeWorkflowWebSearchSettings(legacySettings);
 
-    await PersistenceService.saveSetting(
-      WORKFLOW_WEBSEARCH_CONFIG_KEY,
-      normalized,
-    );
-    globalThis.localStorage?.removeItem(LEGACY_WORKFLOW_WEBSEARCH_CONFIG_KEY);
+    try {
+      await PersistenceService.saveSetting(
+        WORKFLOW_WEBSEARCH_CONFIG_KEY,
+        normalized,
+      );
+      globalThis.localStorage?.removeItem(LEGACY_WORKFLOW_WEBSEARCH_CONFIG_KEY);
+    } catch (error) {
+      console.warn(
+        "Failed to migrate legacy workflow websearch settings:",
+        error,
+      );
+    }
 
     return normalized;
   }

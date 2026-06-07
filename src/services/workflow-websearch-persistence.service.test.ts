@@ -112,6 +112,39 @@ describe("workflow websearch persistence service", () => {
     expect(window.localStorage.getItem("workflow-websearch-config")).toBeNull();
   });
 
+  it("keeps legacy settings in use when migration persistence fails", async () => {
+    mocks.loadSetting.mockResolvedValue(null);
+    mocks.saveSetting.mockRejectedValue(new Error("save failed"));
+    window.localStorage.setItem(
+      "workflow-websearch-config",
+      JSON.stringify({
+        searchConfig: {
+          maxResults: 8,
+          timeRange: "day",
+        },
+        deepSearchConfig: {
+          enabled: true,
+        },
+        selectedWorkflow: "deep-websearch",
+      }),
+    );
+
+    await expect(
+      WorkflowWebSearchPersistenceService.loadSettings(),
+    ).resolves.toMatchObject({
+      searchConfig: expect.objectContaining({
+        maxResults: 8,
+        timeRange: "day",
+      }),
+      deepSearchConfig: expect.objectContaining({
+        enabled: true,
+      }),
+      selectedWorkflow: "deep-websearch",
+    });
+
+    expect(window.localStorage.getItem("workflow-websearch-config")).not.toBeNull();
+  });
+
   it("saves normalized settings via app-state persistence", async () => {
     mocks.saveSetting.mockResolvedValue(undefined);
 
