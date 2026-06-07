@@ -99,6 +99,7 @@ async function run() {
   }
 
   await runRedirectOverrideChecks(launcherConfigs);
+  await runUnsafeArchiveChecks(launcherConfigs);
 
   const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), "llmchef-runner-smoke-"));
   try {
@@ -207,6 +208,13 @@ async function createFixtureZip() {
   return zip.generateAsync({ type: "nodebuffer" });
 }
 
+async function createUnsafeFixtureZip() {
+  const zip = new JSZip();
+  zip.file("index.html", expectedIndex);
+  zip.file("../evil.txt", "path traversal smoke");
+  return zip.generateAsync({ type: "nodebuffer" });
+}
+
 async function startReleaseServer(zipBuffer) {
   const server = http.createServer((req, res) => {
     if ((req.url || "").startsWith("/release/latest.zip")) {
@@ -284,6 +292,7 @@ async function runLauncherSmoke(launcher, fixtureRoot, releaseUrl) {
 
     assert.equal((await fs.readFile(path.join(appDir, "index.html"), "utf8")).trim(), expectedIndex);
     assert.equal((await fs.readFile(path.join(appDir, "assets", "app.js"), "utf8")).trim(), expectedAsset);
+    assert.equal(await fileExists(path.join(appDir, "stale.txt")), false, `${launcher.id} left stale files after extraction.`);
   } finally {
     await stopProcess(child);
   }
@@ -357,6 +366,40 @@ async function runRedirectOverrideChecks(launchers) {
     }
   } finally {
     await new Promise((resolve, reject) => redirectServer.server.close((error) => (error ? reject(error) : resolve())));
+  }
+}
+
+async function runUnsafeArchiveChecks(launchers) {
+  const unsafeZip = await createUnsafeFixtureZip();
+  const releaseServer = await startReleaseServer(unsafeZip);
+
+  try {
+    for (const launcher of launchers) {
+      const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), `llmchef-unsafe-archive-${launcher.id}-`));
+      const appDir = path.join(fixtureRoot, "app");
+      const outsidePath = path.join(fixtureRoot, "evil.txt");
+
+      try {
+        const preparedLauncher = await prepareLauncherSpawn(launcher, fixtureRoot);
+        const result = await spawnAndCollect(launcher.command, [...preparedLauncher.args, "0"], {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            LLMCHEF_RELEASE_URL: releaseServer.releaseUrl,
+            LLMCHEF_RUNNER_APP_DIR: appDir,
+            ...launcher.env,
+          },
+        });
+
+        assert.equal(result.timedOut, false, `${launcher.id} timed out while rejecting an unsafe archive:\n${result.output}`);
+        assert.notEqual(result.code, 0, `${launcher.id} accepted an unsafe archive with path traversal.`);
+        assert.equal(await fileExists(outsidePath), false, `${launcher.id} wrote outside the app dir while extracting an unsafe archive.`);
+      } finally {
+        await fs.rm(fixtureRoot, { recursive: true, force: true });
+      }
+    }
+  } finally {
+    await new Promise((resolve, reject) => releaseServer.server.close((error) => (error ? reject(error) : resolve())));
   }
 }
 
@@ -542,6 +585,15 @@ async function getFreePort() {
       server.close((error) => (error ? reject(error) : resolve(port)));
     });
   });
+}
+
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function delay(ms) {

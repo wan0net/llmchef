@@ -92,16 +92,101 @@ fi
 
 echo "Download complete. Extracting..."
 
-# Extract the zip file
-if command -v unzip &> /dev/null; then
-  unzip -o "$ZIP_PATH" -d "$TEMP_DIR"
-  if [ $? -ne 0 ]; then
-    echo "Error extracting files."
-    rm -f "$ZIP_PATH"
-    exit 1
-  fi
+# Remove previous bundle contents while keeping the newly downloaded archive.
+find "$TEMP_DIR" -mindepth 1 ! -name "$(basename "$ZIP_PATH")" -exec rm -rf {} +
+if [ $? -ne 0 ]; then
+  echo "Error clearing previous LLMChef bundle."
+  rm -f "$ZIP_PATH"
+  exit 1
+fi
+
+# Validate and extract the zip file without allowing paths outside TEMP_DIR.
+if command -v python3 &> /dev/null; then
+  PYTHON_BIN=python3
+elif command -v python &> /dev/null; then
+  PYTHON_BIN=python
 else
-  echo "Error: unzip is not installed. Please install it."
+  echo "Error: Python is not installed. Please install Python to extract LLMChef safely."
+  rm -f "$ZIP_PATH"
+  exit 1
+fi
+
+"$PYTHON_BIN" - "$ZIP_PATH" "$TEMP_DIR" << 'PYTHON_EXTRACT'
+from __future__ import print_function
+
+import os
+import posixpath
+import shutil
+import sys
+import zipfile
+
+zip_path = sys.argv[1]
+dest_dir = os.path.abspath(sys.argv[2])
+
+try:
+    archive = zipfile.ZipFile(zip_path)
+except zipfile.BadZipfile:
+    print("Error: downloaded LLMChef archive is not a valid zip file.", file=sys.stderr)
+    sys.exit(1)
+
+try:
+    entries = []
+
+    for info in archive.infolist():
+        name = info.filename
+        normalized_name = name.replace("\\", "/")
+        normalized_path = posixpath.normpath(normalized_name)
+        path_parts = normalized_name.split("/")
+        mode = (info.external_attr >> 16) & 0o170000
+
+        if (
+            normalized_name.startswith("/")
+            or (len(normalized_name) >= 2 and normalized_name[1] == ":")
+            or ".." in path_parts
+            or normalized_path == ".."
+            or normalized_path.startswith("../")
+            or posixpath.isabs(normalized_path)
+            or os.path.isabs(normalized_name)
+        ):
+            print("Error: unsafe archive path rejected: {0}".format(name), file=sys.stderr)
+            sys.exit(1)
+
+        if mode == 0o120000:
+            print("Error: unsafe archive symlink rejected: {0}".format(name), file=sys.stderr)
+            sys.exit(1)
+
+        target_path = os.path.abspath(os.path.join(dest_dir, *normalized_path.split("/")))
+        if target_path != dest_dir and not target_path.startswith(dest_dir + os.sep):
+            print("Error: archive path escapes destination: {0}".format(name), file=sys.stderr)
+            sys.exit(1)
+
+        entries.append((info, target_path, normalized_path))
+
+    for info, target_path, normalized_path in entries:
+        if normalized_path == ".":
+            continue
+
+        is_directory = info.filename.endswith("/") or normalized_path.endswith("/")
+
+        if is_directory:
+            if not os.path.isdir(target_path):
+                os.makedirs(target_path)
+            continue
+
+        parent_dir = os.path.dirname(target_path)
+        if parent_dir and not os.path.isdir(parent_dir):
+            os.makedirs(parent_dir)
+
+        with archive.open(info, "r") as source:
+            with open(target_path, "wb") as target:
+                shutil.copyfileobj(source, target)
+except Exception as exc:
+    print("Error extracting files: {0}".format(exc), file=sys.stderr)
+    sys.exit(1)
+finally:
+    archive.close()
+PYTHON_EXTRACT
+if [ $? -ne 0 ]; then
   rm -f "$ZIP_PATH"
   exit 1
 fi

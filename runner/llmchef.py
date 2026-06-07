@@ -59,6 +59,43 @@ def download_release(release_url, zip_path):
 
     raise ValueError('Too many redirects while downloading LLMChef release.')
 
+
+def clear_bundle_dir(temp_dir, zip_path):
+    for entry in os.listdir(temp_dir):
+        entry_path = os.path.join(temp_dir, entry)
+        if os.path.realpath(entry_path) == os.path.realpath(zip_path):
+            continue
+        if os.path.isdir(entry_path) and not os.path.islink(entry_path):
+            shutil.rmtree(entry_path)
+        else:
+            os.remove(entry_path)
+
+
+def resolve_zip_entry_path(temp_dir, entry_name):
+    if os.path.isabs(entry_name):
+        raise ValueError(f'Unsafe zip entry path: {entry_name}')
+
+    target_dir = os.path.realpath(temp_dir)
+    target_path = os.path.realpath(os.path.join(target_dir, entry_name))
+    if os.path.commonpath([target_dir, target_path]) != target_dir:
+        raise ValueError(f'Unsafe zip entry path: {entry_name}')
+
+    return target_path
+
+
+def extract_release(zip_path, temp_dir):
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        for member in zip_ref.infolist():
+            target_path = resolve_zip_entry_path(temp_dir, member.filename)
+
+            if member.is_dir():
+                os.makedirs(target_path, exist_ok=True)
+                continue
+
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            with zip_ref.open(member, 'r') as source, open(target_path, 'wb') as target:
+                shutil.copyfileobj(source, target)
+
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Download and serve LLMChef')
 parser.add_argument('port', nargs='?', type=int, default=3000, help='Port number to serve on')
@@ -81,8 +118,8 @@ try:
     print("Download complete. Extracting...")
 
     # Extract the zip file
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        zip_ref.extractall(temp_dir)
+    clear_bundle_dir(temp_dir, zip_path)
+    extract_release(zip_path, temp_dir)
 
     # Remove the zip file
     os.remove(zip_path)

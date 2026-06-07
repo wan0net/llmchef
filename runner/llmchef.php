@@ -135,6 +135,138 @@ function downloadRelease(string $releaseUrl, string $zipPath): void {
     throw new RuntimeException('Too many redirects while downloading LLMChef release.');
 }
 
+function removeDirectoryContentsExcept(string $dir, string $keepPath): void {
+    $entries = scandir($dir);
+    if ($entries === false) {
+        throw new RuntimeException("Unable to read {$dir}.");
+    }
+
+    $keepRealPath = realpath($keepPath) ?: $keepPath;
+
+    foreach ($entries as $entry) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
+        }
+
+        $path = $dir . DIRECTORY_SEPARATOR . $entry;
+        if ((realpath($path) ?: $path) === $keepRealPath) {
+            continue;
+        }
+
+        removePath($path);
+    }
+}
+
+function removePath(string $path): void {
+    if (is_link($path) || is_file($path)) {
+        if (!unlink($path)) {
+            throw new RuntimeException("Unable to remove {$path}.");
+        }
+        return;
+    }
+
+    if (is_dir($path)) {
+        $entries = scandir($path);
+        if ($entries === false) {
+            throw new RuntimeException("Unable to read {$path}.");
+        }
+
+        foreach ($entries as $entry) {
+            if ($entry !== '.' && $entry !== '..') {
+                removePath($path . DIRECTORY_SEPARATOR . $entry);
+            }
+        }
+
+        if (!rmdir($path)) {
+            throw new RuntimeException("Unable to remove {$path}.");
+        }
+    }
+}
+
+function isAbsoluteZipEntry(string $entryName): bool {
+    return str_starts_with($entryName, '/')
+        || str_starts_with($entryName, "\\")
+        || preg_match('/^[A-Za-z]:[\/\\\\]/', $entryName) === 1;
+}
+
+function resolveZipEntryPath(string $tempDir, string $entryName): string {
+    if ($entryName === '' || isAbsoluteZipEntry($entryName)) {
+        throw new RuntimeException("Unsafe zip entry path: {$entryName}");
+    }
+
+    $tempRealPath = realpath($tempDir);
+    if ($tempRealPath === false) {
+        throw new RuntimeException("Unable to resolve {$tempDir}.");
+    }
+
+    $parts = [];
+    foreach (preg_split('#[\/\\\\]+#', $entryName) as $part) {
+        if ($part === '' || $part === '.') {
+            continue;
+        }
+
+        if ($part === '..') {
+            if (count($parts) === 0) {
+                throw new RuntimeException("Unsafe zip entry path: {$entryName}");
+            }
+            array_pop($parts);
+            continue;
+        }
+
+        $parts[] = $part;
+    }
+
+    if (count($parts) === 0) {
+        throw new RuntimeException("Unsafe zip entry path: {$entryName}");
+    }
+
+    $targetPath = $tempRealPath;
+    foreach ($parts as $part) {
+        $targetPath .= DIRECTORY_SEPARATOR . $part;
+    }
+
+    $normalizedBase = rtrim($tempRealPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    $normalizedTarget = rtrim($targetPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    if ($normalizedTarget !== $normalizedBase && !str_starts_with($normalizedTarget, $normalizedBase)) {
+        throw new RuntimeException("Unsafe zip entry path: {$entryName}");
+    }
+
+    return $targetPath;
+}
+
+function extractZipSafely(ZipArchive $zip, string $tempDir): void {
+    for ($index = 0; $index < $zip->numFiles; $index++) {
+        $entryName = $zip->getNameIndex($index);
+        if ($entryName === false) {
+            throw new RuntimeException("Unable to read zip entry {$index}.");
+        }
+
+        $targetPath = resolveZipEntryPath($tempDir, $entryName);
+        $isDirectory = str_ends_with($entryName, '/') || str_ends_with($entryName, "\\");
+
+        if ($isDirectory) {
+            safeMkdir($targetPath);
+            continue;
+        }
+
+        safeMkdir(dirname($targetPath));
+        $source = $zip->getStream($entryName);
+        if ($source === false) {
+            throw new RuntimeException("Unable to read zip entry {$entryName}.");
+        }
+
+        $target = fopen($targetPath, 'wb');
+        if ($target === false) {
+            fclose($source);
+            throw new RuntimeException("Unable to write {$targetPath}.");
+        }
+
+        stream_copy_to_stream($source, $target);
+        fclose($source);
+        fclose($target);
+    }
+}
+
 $args = array_slice($argv, 1);
 $port = isset($args[0]) && is_numeric($args[0]) ? (int)$args[0] : 3000;
 $hostAll = getOption($args, '--host') || getOption($args, '-h');
@@ -152,7 +284,8 @@ echo "Download complete. Extracting...\n";
 
 $zip = new ZipArchive();
 if ($zip->open($zipPath) === TRUE) {
-    $zip->extractTo($tempDir);
+    removeDirectoryContentsExcept($tempDir, $zipPath);
+    extractZipSafely($zip, $tempDir);
     $zip->close();
     echo "Extraction complete.\n";
 

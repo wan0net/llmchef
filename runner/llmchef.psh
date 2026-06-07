@@ -53,6 +53,91 @@ $ReleaseUrl = Resolve-ReleaseUrl
 $ForegroundServer = $env:LLMCHEF_RUNNER_FOREGROUND -eq "1"
 $MaxRequests = if ($env:LLMCHEF_TEST_MAX_REQUESTS) { [int]$env:LLMCHEF_TEST_MAX_REQUESTS } else { 0 }
 
+function Clear-BundleContents {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$BundlePath,
+
+        [Parameter(Mandatory=$true)]
+        [string]$ZipPath
+    )
+
+    $zipFullPath = [System.IO.Path]::GetFullPath($ZipPath)
+    Get-ChildItem -Path $BundlePath -Force | Where-Object {
+        [System.IO.Path]::GetFullPath($_.FullName) -ne $zipFullPath
+    } | Remove-Item -Recurse -Force
+}
+
+function Expand-SafeZip {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$ZipPath,
+
+        [Parameter(Mandatory=$true)]
+        [string]$DestinationPath
+    )
+
+    Add-Type -AssemblyName System.IO.Compression | Out-Null
+    Add-Type -AssemblyName System.IO.Compression.FileSystem | Out-Null
+
+    $destinationRoot = [System.IO.Path]::GetFullPath($DestinationPath)
+    $destinationRootWithSeparator = $destinationRoot.TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    ) + [System.IO.Path]::DirectorySeparatorChar
+
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
+    try {
+        foreach ($entry in $archive.Entries) {
+            $entryName = $entry.FullName
+
+            if ([string]::IsNullOrWhiteSpace($entryName)) {
+                throw "ZIP contains an empty entry name."
+            }
+
+            if ($entryName.StartsWith("/") -or $entryName.StartsWith("\")) {
+                throw "ZIP entry uses an absolute path: $entryName"
+            }
+
+            if ($entryName -match "^[A-Za-z]:") {
+                throw "ZIP entry uses a drive-qualified path: $entryName"
+            }
+
+            $segments = $entryName -split "[\\/]+"
+            if ($segments -contains "..") {
+                throw "ZIP entry attempts path traversal: $entryName"
+            }
+
+            $targetPath = [System.IO.Path]::GetFullPath((Join-Path -Path $destinationRoot -ChildPath $entryName))
+            if (
+                $targetPath -ne $destinationRoot -and
+                -not $targetPath.StartsWith($destinationRootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)
+            ) {
+                throw "ZIP entry escapes destination: $entryName"
+            }
+        }
+
+        foreach ($entry in $archive.Entries) {
+            $targetPath = [System.IO.Path]::GetFullPath((Join-Path -Path $destinationRoot -ChildPath $entry.FullName))
+
+            if ([string]::IsNullOrEmpty($entry.Name)) {
+                New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
+                continue
+            }
+
+            $targetDirectory = [System.IO.Path]::GetDirectoryName($targetPath)
+            if (-not (Test-Path -Path $targetDirectory)) {
+                New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+            }
+
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
+        }
+    }
+    finally {
+        $archive.Dispose()
+    }
+}
+
 # Create temp directory
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $TempDir = if ($env:LLMCHEF_RUNNER_APP_DIR) { $env:LLMCHEF_RUNNER_APP_DIR } else { Join-Path -Path $ScriptDir -ChildPath "llmchef-app" }
@@ -71,8 +156,9 @@ try {
     Invoke-WebRequest -Uri $ReleaseUrl -OutFile $ZipPath -MaximumRedirection $maximumRedirection
     Write-Host "Download complete. Extracting..."
 
-    # Extract the zip file
-    Expand-Archive -Path $ZipPath -DestinationPath $TempDir -Force
+    # Remove stale bundle files before safely extracting the downloaded archive.
+    Clear-BundleContents -BundlePath $TempDir -ZipPath $ZipPath
+    Expand-SafeZip -ZipPath $ZipPath -DestinationPath $TempDir
 
     # Remove the zip file
     Remove-Item -Path $ZipPath -Force
