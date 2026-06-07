@@ -248,6 +248,7 @@ async function runLauncherSmoke(launcher, fixtureRoot, releaseUrl) {
   const preparedLauncher = await prepareLauncherSpawn(launcher, fixtureRoot);
   const child = spawn(launcher.command, [...preparedLauncher.args, String(port)], {
     cwd: repoRoot,
+    detached: process.platform !== "win32",
     env: {
       ...process.env,
       LLMCHEF_RELEASE_URL: releaseUrl,
@@ -309,6 +310,7 @@ async function runInvalidOverrideChecks(launchers) {
           },
         });
 
+        assert.equal(result.timedOut, false, `${launcher.id} timed out while rejecting override (${invalidReleaseUrl}):\n${result.output}`);
         assert.notEqual(result.code, 0, `${launcher.id} accepted an invalid override: ${invalidReleaseUrl}`);
         assert.match(
           result.output,
@@ -340,6 +342,7 @@ async function runRedirectOverrideChecks(launchers) {
           },
         });
 
+        assert.equal(result.timedOut, false, `${launcher.id} timed out while rejecting a malicious redirect override:\n${result.output}`);
         assert.notEqual(result.code, 0, `${launcher.id} followed a malicious redirect override.`);
         assert.match(
           result.output,
@@ -403,14 +406,50 @@ async function stopProcess(child) {
     return;
   }
 
-  child.kill("SIGTERM");
+  await terminateProcessTree(child, "SIGTERM");
   const exited = await waitForExit(child, 5000);
   if (exited) {
     return;
   }
 
-  child.kill("SIGKILL");
+  await terminateProcessTree(child, "SIGKILL");
   await waitForExit(child, 5000);
+}
+
+async function terminateProcessTree(child, signal) {
+  if (!child.pid) {
+    child.kill(signal);
+    return;
+  }
+
+  if (process.platform === "win32") {
+    await runBestEffort("taskkill", ["/PID", String(child.pid), "/T", "/F"], 5000);
+    return;
+  }
+
+  try {
+    process.kill(-child.pid, signal);
+  } catch {
+    child.kill(signal);
+  }
+}
+
+async function runBestEffort(command, commandArgs, timeoutMs) {
+  await new Promise((resolve) => {
+    const child = spawn(command, commandArgs, {
+      cwd: repoRoot,
+      stdio: "ignore",
+    });
+    const timer = setTimeout(resolve, timeoutMs);
+    child.once("error", () => {
+      clearTimeout(timer);
+      resolve();
+    });
+    child.once("exit", () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
 }
 
 async function waitForExit(child, timeoutMs) {
@@ -427,7 +466,7 @@ async function waitForExit(child, timeoutMs) {
   });
 }
 
-async function spawnAndCollect(command, commandArgs, options) {
+async function spawnAndCollect(command, commandArgs, options, timeoutMs = 30000) {
   const child = spawn(command, commandArgs, {
     ...options,
     stdio: ["ignore", "pipe", "pipe"],
@@ -441,12 +480,19 @@ async function spawnAndCollect(command, commandArgs, options) {
     output += chunk.toString();
   });
 
-  const code = await new Promise((resolve, reject) => {
+  const { code, timedOut } = await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      resolve({ code: child.exitCode, timedOut: true });
+    }, timeoutMs);
     child.once("error", reject);
-    child.once("exit", resolve);
+    child.once("exit", (code) => {
+      clearTimeout(timer);
+      resolve({ code, timedOut: false });
+    });
   });
 
-  return { code, output };
+  return { code, output, timedOut };
 }
 
 async function fetchText(url) {
