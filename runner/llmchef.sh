@@ -29,12 +29,11 @@ resolve_release_url() {
     host="${host%%:*}"
   fi
 
-  case "$host" in
-    localhost|127.0.0.1|::1)
-      printf '%s\n' "$candidate"
-      return 0
-      ;;
-  esac
+  local octet='(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])'
+  if [[ "$host" == "localhost" || "$host" == "::1" || "$host" =~ ^127\.${octet}\.${octet}\.${octet}$ ]]; then
+    printf '%s\n' "$candidate"
+    return 0
+  fi
 
   echo "Error: LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback http(s) host." >&2
   return 1

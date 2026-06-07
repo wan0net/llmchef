@@ -42,8 +42,20 @@ function Resolve-ReleaseUrl {
         throw "LLMCHEF_RELEASE_URL must include a hostname."
     }
 
-    if ($uri.Host -eq "localhost" -or $uri.Host -eq "127.0.0.1" -or $uri.Host -eq "::1") {
+    if ($uri.Host -eq "localhost") {
         return $candidate
+    }
+
+    $parsedAddress = $null
+    if ([System.Net.IPAddress]::TryParse($uri.Host, [ref]$parsedAddress)) {
+        $bytes = $parsedAddress.GetAddressBytes()
+        if ($parsedAddress.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork -and $bytes[0] -eq 127) {
+            return $candidate
+        }
+
+        if ($parsedAddress.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetworkV6 -and $parsedAddress.Equals([System.Net.IPAddress]::IPv6Loopback)) {
+            return $candidate
+        }
     }
 
     throw "LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host."

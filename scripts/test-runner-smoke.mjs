@@ -16,6 +16,7 @@ const defaultReleaseUrl = "https://wan0.net/llmchef/release/latest.zip";
 const expectedIndex = "<!doctype html><title>Runner Smoke</title><div id=\"app\">runner smoke fixture</div>";
 const expectedAsset = "console.log('runner smoke fixture');";
 const launcherProbeHost = "localhost";
+const releaseServerHost = "127.0.0.2";
 
 const args = new Set(process.argv.slice(2));
 const staticOnly = args.has("--static-only");
@@ -25,7 +26,7 @@ const launcherSet = launcherSetArg ? launcherSetArg.split("=")[1] : null;
 const staticContracts = [
   {
     file: "runner/llmchef.js",
-    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html", "127.0.0.1"],
+    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html", "startsWith(\"127.\")"],
     disallowed: ["wan0net.github.io/llmchef/release/latest.zip"],
   },
   {
@@ -35,7 +36,7 @@ const staticContracts = [
   },
   {
     file: "runner/llmchef.psh",
-    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html", "127.0.0.1"],
+    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html", "InterNetwork"],
     disallowed: ["wan0net.github.io/llmchef/release/latest.zip", "Creating a placeholder"],
   },
   {
@@ -217,10 +218,10 @@ async function startReleaseServer(zipBuffer) {
     res.end("Not found");
   });
 
-  const port = await listenOnRandomPort(server, "127.0.0.1");
+  const port = await listenOnRandomPort(server, releaseServerHost);
   return {
     server,
-    releaseUrl: `http://127.0.0.1:${port}/release/latest.zip`,
+    releaseUrl: `http://${releaseServerHost}:${port}/release/latest.zip`,
   };
 }
 
