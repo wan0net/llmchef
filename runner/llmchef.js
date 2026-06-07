@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-const fs = require("fs");
-const path = require("path");
-const https = require("https");
-const http = require("http");
-const { execFile } = require("child_process");
-const { URL } = require("url");
+import fs from "node:fs";
+import http from "node:http";
+import https from "node:https";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath, URL } from "node:url";
+import JSZip from "jszip";
 
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
@@ -22,6 +23,142 @@ const MIME_TYPES = {
 };
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const DEFAULT_RELEASE_URL = "https://wan0.net/llmchef/release/latest.zip";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const releaseUrl = resolveReleaseUrl(process.env.LLMCHEF_RELEASE_URL);
+const isReleaseOverride = releaseUrl !== DEFAULT_RELEASE_URL;
+const tempDir = process.env.LLMCHEF_RUNNER_APP_DIR || path.join(__dirname, "llmchef-app");
+
+function resolveReleaseUrl(candidate = DEFAULT_RELEASE_URL) {
+  if (!candidate || candidate === DEFAULT_RELEASE_URL) {
+    return DEFAULT_RELEASE_URL;
+  }
+
+  const parsed = new URL(candidate);
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    throw new Error("LLMCHEF_RELEASE_URL only supports http(s) loopback overrides.");
+  }
+
+  const hostname = parsed.hostname.replace(/^\[(.*)\]$/, "$1");
+  if (!["localhost", "127.0.0.1", "::1"].includes(hostname)) {
+    throw new Error("LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.");
+  }
+
+  return candidate;
+}
+
+function getDownloadClient(url) {
+  return new URL(url).protocol === "http:" ? http : https;
+}
+
+function downloadRelease(url, destinationPath, redirectCount = 0) {
+  if (redirectCount > 5) {
+    throw new Error("Too many redirects while downloading LLMChef release.");
+  }
+
+  return new Promise((resolve, reject) => {
+    const request = getDownloadClient(url).get(url, (response) => {
+      const statusCode = response.statusCode || 0;
+      const location = response.headers.location;
+
+      if (statusCode >= 300 && statusCode < 400 && location) {
+        response.resume();
+
+        if (isReleaseOverride) {
+          reject(new Error("Redirects are not allowed for LLMCHEF_RELEASE_URL overrides."));
+          return;
+        }
+
+        downloadRelease(new URL(location, url).toString(), destinationPath, redirectCount + 1)
+          .then(resolve)
+          .catch(reject);
+        return;
+      }
+
+      if (statusCode !== 200) {
+        response.resume();
+        reject(new Error(`Unexpected HTTP status ${statusCode} while downloading LLMChef release.`));
+        return;
+      }
+
+      const file = fs.createWriteStream(destinationPath);
+      file.on("error", reject);
+      response.on("error", reject);
+      file.on("finish", () => {
+        file.close((error) => (error ? reject(error) : resolve()));
+      });
+      response.pipe(file);
+    });
+
+    request.on("error", reject);
+  });
+}
+
+const isPathInside = (parentPath, childPath) => {
+  const relativePath = path.relative(parentPath, childPath);
+  return relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath));
+};
+
+const resolveSafeZipEntryPath = (entryName) => {
+  if (
+    !entryName ||
+    entryName.includes("\0") ||
+    entryName.includes("\\") ||
+    path.posix.isAbsolute(entryName) ||
+    path.win32.isAbsolute(entryName)
+  ) {
+    return null;
+  }
+
+  const normalizedName = path.posix.normalize(entryName);
+  if (normalizedName === "." || normalizedName === ".." || normalizedName.startsWith("../")) {
+    return null;
+  }
+
+  const destinationPath = path.resolve(tempDir, ...normalizedName.split("/"));
+  return isPathInside(path.resolve(tempDir), destinationPath) ? destinationPath : null;
+};
+
+const clearExtractedBundle = (zipPathToKeep) => {
+  const zipPathResolved = path.resolve(zipPathToKeep);
+
+  for (const entryName of fs.readdirSync(tempDir)) {
+    const entryPath = path.join(tempDir, entryName);
+    if (path.resolve(entryPath) === zipPathResolved) {
+      continue;
+    }
+
+    fs.rmSync(entryPath, { recursive: true, force: true });
+  }
+};
+
+const extractRelease = async (sourceZipPath) => {
+  const zip = await JSZip.loadAsync(fs.readFileSync(sourceZipPath));
+  const entries = Object.values(zip.files).map((entry) => ({
+    entry,
+    originalName: entry.unsafeOriginalName || entry.name,
+    destinationPath: resolveSafeZipEntryPath(entry.unsafeOriginalName || entry.name),
+  }));
+  const unsafeEntry = entries.find(({ destinationPath }) => !destinationPath);
+
+  if (unsafeEntry) {
+    throw new Error(`Refusing to extract unsafe ZIP entry: ${unsafeEntry.originalName}`);
+  }
+
+  clearExtractedBundle(sourceZipPath);
+
+  for (const { entry, destinationPath } of entries) {
+    if (entry.dir) {
+      fs.mkdirSync(destinationPath, { recursive: true });
+      continue;
+    }
+
+    fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+    fs.writeFileSync(destinationPath, await entry.async("nodebuffer"));
+  }
+};
 
 const decodeSafePathSegment = (segment) => {
   try {
@@ -119,51 +256,36 @@ const port = args[0] || 3000;
 const hostAllInterfaces = args.includes("--host") || args.includes("-h");
 
 // Create temp directory if it doesn't exist
-const tempDir = path.join(__dirname, "llmchef-app");
 if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
 
 console.log("Downloading LLMChef release...");
 const zipPath = path.join(tempDir, "llmchef.zip");
-const file = fs.createWriteStream(zipPath);
 
-https
-  .get("https://wan0.net/llmchef/release/latest.zip", (response) => {
-    response.pipe(file);
-    file.on("finish", () => {
-      file.close();
-      console.log("Download complete. Extracting...");
+downloadRelease(releaseUrl, zipPath)
+  .then(async () => {
+    console.log("Download complete. Extracting...");
 
-      const extractCommand = process.platform === "win32" ? "powershell" : "unzip";
-      const extractArgs = process.platform === "win32"
-        ? ["-NoProfile", "-Command", "Expand-Archive", "-Path", zipPath, "-DestinationPath", tempDir, "-Force"]
-        : ["-o", zipPath, "-d", tempDir];
+    await extractRelease(zipPath);
 
-      execFile(extractCommand, extractArgs, (error) => {
-        if (error) {
-          console.error("Error extracting files:", error);
-          return;
-        }
+    console.log("Extraction complete.");
+    fs.unlinkSync(zipPath);
 
-        console.log("Extraction complete.");
-        fs.unlinkSync(zipPath);
+    const host = hostAllInterfaces ? "0.0.0.0" : "localhost";
+    const server = createStaticServer();
+    server.listen(port, host, () => {
+      const accessUrl = hostAllInterfaces
+        ? `http://${os.hostname()}:${port} (accessible from other devices)`
+        : `http://localhost:${port} (local access only)`;
 
-        const host = hostAllInterfaces ? "0.0.0.0" : "localhost";
-        const server = createStaticServer();
-        server.listen(port, host, () => {
-          const accessUrl = hostAllInterfaces
-            ? `http://${require("os").hostname()}:${port} (accessible from other devices)`
-            : `http://localhost:${port} (local access only)`;
-
-          console.log(`LLMChef is running at ${accessUrl}`);
-        });
-      });
+      console.log(`LLMChef is running at ${accessUrl}`);
     });
   })
-  .on("error", (err) => {
+  .catch((err) => {
     if (fs.existsSync(zipPath)) {
       fs.unlinkSync(zipPath);
     }
     console.error("Error downloading LLMChef:", err);
+    process.exitCode = 1;
   });

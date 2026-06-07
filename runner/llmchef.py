@@ -4,9 +4,97 @@ import sys
 import shutil
 import zipfile
 import argparse
-from urllib import request
+from urllib import error, request
+from urllib.parse import urlparse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import socket
+
+DEFAULT_RELEASE_URL = 'https://wan0.net/llmchef/release/latest.zip'
+
+
+def resolve_release_url():
+    raw_url = os.environ.get('LLMCHEF_RELEASE_URL')
+    if not raw_url:
+        return DEFAULT_RELEASE_URL
+    if raw_url == DEFAULT_RELEASE_URL:
+        return raw_url
+
+    parsed = urlparse(raw_url)
+    if parsed.scheme not in ('http', 'https'):
+        raise ValueError('LLMCHEF_RELEASE_URL only supports http(s) loopback overrides.')
+
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError('LLMCHEF_RELEASE_URL must include a hostname.')
+
+    if hostname in ('localhost', '127.0.0.1', '::1'):
+        return raw_url
+
+    raise ValueError('LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.')
+
+
+class NoRedirectHandler(request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def download_release(release_url, zip_path):
+    allow_redirects = release_url == DEFAULT_RELEASE_URL
+    current_url = release_url
+    opener = request.build_opener(NoRedirectHandler)
+
+    for redirect_count in range(6):
+        req = request.Request(current_url)
+        try:
+            with opener.open(req) as response, open(zip_path, 'wb') as target:
+                shutil.copyfileobj(response, target)
+                return
+        except error.HTTPError as exc:
+            if 300 <= exc.code < 400 and exc.headers.get('Location'):
+                if not allow_redirects:
+                    raise ValueError('Redirects are not allowed for LLMCHEF_RELEASE_URL overrides.') from exc
+                current_url = request.urljoin(current_url, exc.headers['Location'])
+                continue
+            raise
+
+    raise ValueError('Too many redirects while downloading LLMChef release.')
+
+
+def clear_bundle_dir(temp_dir, zip_path):
+    for entry in os.listdir(temp_dir):
+        entry_path = os.path.join(temp_dir, entry)
+        if os.path.realpath(entry_path) == os.path.realpath(zip_path):
+            continue
+        if os.path.isdir(entry_path) and not os.path.islink(entry_path):
+            shutil.rmtree(entry_path)
+        else:
+            os.remove(entry_path)
+
+
+def resolve_zip_entry_path(temp_dir, entry_name):
+    if os.path.isabs(entry_name):
+        raise ValueError(f'Unsafe zip entry path: {entry_name}')
+
+    target_dir = os.path.realpath(temp_dir)
+    target_path = os.path.realpath(os.path.join(target_dir, entry_name))
+    if os.path.commonpath([target_dir, target_path]) != target_dir:
+        raise ValueError(f'Unsafe zip entry path: {entry_name}')
+
+    return target_path
+
+
+def extract_release(zip_path, temp_dir):
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        for member in zip_ref.infolist():
+            target_path = resolve_zip_entry_path(temp_dir, member.filename)
+
+            if member.is_dir():
+                os.makedirs(target_path, exist_ok=True)
+                continue
+
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            with zip_ref.open(member, 'r') as source, open(target_path, 'wb') as target:
+                shutil.copyfileobj(source, target)
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Download and serve LLMChef')
@@ -15,7 +103,8 @@ parser.add_argument('--host', '-H', action='store_true', help='Allow external co
 args = parser.parse_args()
 
 # Create temp directory
-temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'llmchef-app')
+release_url = resolve_release_url()
+temp_dir = os.environ.get('LLMCHEF_RUNNER_APP_DIR', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'llmchef-app'))
 os.makedirs(temp_dir, exist_ok=True)
 
 # Change to temp directory
@@ -25,12 +114,12 @@ os.chdir(temp_dir)
 print("Downloading LLMChef release...")
 zip_path = os.path.join(temp_dir, 'llmchef.zip')
 try:
-    request.urlretrieve('https://wan0.net/llmchef/release/latest.zip', zip_path)  # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
+    download_release(release_url, zip_path)
     print("Download complete. Extracting...")
 
     # Extract the zip file
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        zip_ref.extractall(temp_dir)
+    clear_bundle_dir(temp_dir, zip_path)
+    extract_release(zip_path, temp_dir)
 
     # Remove the zip file
     os.remove(zip_path)

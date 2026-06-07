@@ -1,14 +1,15 @@
 #!/usr/bin/env ruby
-require 'open-uri'
 require 'fileutils'
 require 'pathname'
 require 'zip'
 require 'webrick'
 require 'optparse'
 require 'socket'
+require 'net/http'
+require 'uri'
 
 module LLMChefRunner
-  RELEASE_URL = 'https://wan0net.github.io/llmchef/release/latest.zip'
+  DEFAULT_RELEASE_URL = 'https://wan0.net/llmchef/release/latest.zip'
 
   module_function
 
@@ -25,15 +26,48 @@ module LLMChefRunner
   end
 
   def temp_dir(script_dir = File.dirname(File.expand_path(__FILE__)))
-    File.join(script_dir, 'llmchef-app')
+    ENV.fetch('LLMCHEF_RUNNER_APP_DIR', File.join(script_dir, 'llmchef-app'))
   end
 
-  def download_release(zip_path, release_url = RELEASE_URL)
-    URI.open(release_url) do |zip_file|
-      File.open(zip_path, 'wb') do |file|
-        file.write(zip_file.read)
+  def resolve_release_url(raw_url = ENV['LLMCHEF_RELEASE_URL'])
+    return DEFAULT_RELEASE_URL if raw_url.nil? || raw_url.empty?
+    return raw_url if raw_url == DEFAULT_RELEASE_URL
+
+    uri = URI.parse(raw_url)
+    raise 'LLMCHEF_RELEASE_URL only supports http(s) loopback overrides.' unless %w[http https].include?(uri.scheme)
+    raise 'LLMCHEF_RELEASE_URL must include a hostname.' if uri.host.nil? || uri.host.empty?
+    return raw_url if %w[localhost 127.0.0.1 ::1].include?(uri.host)
+
+    raise 'LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.'
+  end
+
+  def download_release(zip_path, release_url = resolve_release_url)
+    allow_redirects = release_url == DEFAULT_RELEASE_URL
+    current_uri = URI.parse(release_url)
+
+    6.times do
+      response = Net::HTTP.start(current_uri.host, current_uri.port, use_ssl: current_uri.scheme == 'https') do |http|
+        http.request(Net::HTTP::Get.new(current_uri))
+      end
+
+      case response
+      when Net::HTTPSuccess
+        File.open(zip_path, 'wb') do |file|
+          file.write(response.body)
+        end
+        return
+      when Net::HTTPRedirection
+        raise 'Redirects are not allowed for LLMCHEF_RELEASE_URL overrides.' unless allow_redirects
+        location = response['location']
+        raise 'Received redirect without Location header.' if location.nil? || location.empty?
+
+        current_uri = URI.join(current_uri, location)
+      else
+        raise "Unexpected HTTP status #{response.code} while downloading LLMChef release."
       end
     end
+
+    raise 'Too many redirects while downloading LLMChef release.'
   end
 
   def clear_previous_bundle(temp_dir, zip_path)

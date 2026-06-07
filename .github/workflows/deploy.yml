@@ -17,6 +17,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  runner-smoke:
+    name: runner smoke (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux
+            os: ubuntu-24.04
+            launcher_set: posix
+          - name: macos
+            os: macos-15
+            launcher_set: posix
+          - name: windows
+            os: windows-2022
+            launcher_set: windows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Ruby zip dependency
+        if: matrix.launcher_set == 'posix'
+        env:
+          GEM_HOME: ${{ runner.temp }}/ruby-gems
+          GEM_PATH: ${{ runner.temp }}/ruby-gems
+        run: |
+          gem install rubyzip --version 2.4.1 --no-document
+          gem install webrick --version 1.9.1 --no-document
+          gem install minitest --version 5.25.5 --no-document
+
+      - name: Runner smoke tests
+        env:
+          GEM_HOME: ${{ runner.temp }}/ruby-gems
+          GEM_PATH: ${{ runner.temp }}/ruby-gems
+        run: npm run test:runner-smoke -- --launcher-set=${{ matrix.launcher_set }}
+
   build:
     name: build, verify, and package
     runs-on: ubuntu-24.04
@@ -96,7 +142,9 @@ jobs:
 
   deploy:
     name: deploy to GitHub Pages
-    needs: build
+    needs:
+      - build
+      - runner-smoke
     runs-on: ubuntu-24.04
     permissions:
       pages: write

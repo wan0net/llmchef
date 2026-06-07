@@ -20,9 +20,127 @@ param (
     [switch]$AllowExternalConnections
 )
 
+$DefaultReleaseUrl = "https://wan0.net/llmchef/release/latest.zip"
+
+function Resolve-ReleaseUrl {
+    $candidate = if ($env:LLMCHEF_RELEASE_URL) { $env:LLMCHEF_RELEASE_URL } else { $DefaultReleaseUrl }
+    if ($candidate -eq $DefaultReleaseUrl) {
+        return $candidate
+    }
+
+    try {
+        $uri = [Uri]$candidate
+    } catch {
+        throw "Invalid LLMCHEF_RELEASE_URL."
+    }
+
+    if ($uri.Scheme -notin @("http", "https")) {
+        throw "LLMCHEF_RELEASE_URL only supports http(s) loopback overrides."
+    }
+
+    if ([string]::IsNullOrWhiteSpace($uri.Host)) {
+        throw "LLMCHEF_RELEASE_URL must include a hostname."
+    }
+
+    if ($uri.Host -eq "localhost" -or $uri.Host -eq "127.0.0.1" -or $uri.Host -eq "::1") {
+        return $candidate
+    }
+
+    throw "LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host."
+}
+
+$ReleaseUrl = Resolve-ReleaseUrl
+$ForegroundServer = $env:LLMCHEF_RUNNER_FOREGROUND -eq "1"
+$MaxRequests = if ($env:LLMCHEF_TEST_MAX_REQUESTS) { [int]$env:LLMCHEF_TEST_MAX_REQUESTS } else { 0 }
+
+function Clear-BundleContents {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$BundlePath,
+
+        [Parameter(Mandatory=$true)]
+        [string]$ZipPath
+    )
+
+    $zipFullPath = [System.IO.Path]::GetFullPath($ZipPath)
+    Get-ChildItem -Path $BundlePath -Force | Where-Object {
+        [System.IO.Path]::GetFullPath($_.FullName) -ne $zipFullPath
+    } | Remove-Item -Recurse -Force
+}
+
+function Expand-SafeZip {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$ZipPath,
+
+        [Parameter(Mandatory=$true)]
+        [string]$DestinationPath
+    )
+
+    Add-Type -AssemblyName System.IO.Compression | Out-Null
+    Add-Type -AssemblyName System.IO.Compression.FileSystem | Out-Null
+
+    $destinationRoot = [System.IO.Path]::GetFullPath($DestinationPath)
+    $destinationRootWithSeparator = $destinationRoot.TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    ) + [System.IO.Path]::DirectorySeparatorChar
+
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
+    try {
+        foreach ($entry in $archive.Entries) {
+            $entryName = $entry.FullName
+
+            if ([string]::IsNullOrWhiteSpace($entryName)) {
+                throw "ZIP contains an empty entry name."
+            }
+
+            if ($entryName.StartsWith("/") -or $entryName.StartsWith("\")) {
+                throw "ZIP entry uses an absolute path: $entryName"
+            }
+
+            if ($entryName -match "^[A-Za-z]:") {
+                throw "ZIP entry uses a drive-qualified path: $entryName"
+            }
+
+            $segments = $entryName -split "[\\/]+"
+            if ($segments -contains "..") {
+                throw "ZIP entry attempts path traversal: $entryName"
+            }
+
+            $targetPath = [System.IO.Path]::GetFullPath((Join-Path -Path $destinationRoot -ChildPath $entryName))
+            if (
+                $targetPath -ne $destinationRoot -and
+                -not $targetPath.StartsWith($destinationRootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)
+            ) {
+                throw "ZIP entry escapes destination: $entryName"
+            }
+        }
+
+        foreach ($entry in $archive.Entries) {
+            $targetPath = [System.IO.Path]::GetFullPath((Join-Path -Path $destinationRoot -ChildPath $entry.FullName))
+
+            if ([string]::IsNullOrEmpty($entry.Name)) {
+                New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
+                continue
+            }
+
+            $targetDirectory = [System.IO.Path]::GetDirectoryName($targetPath)
+            if (-not (Test-Path -Path $targetDirectory)) {
+                New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+            }
+
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
+        }
+    }
+    finally {
+        $archive.Dispose()
+    }
+}
+
 # Create temp directory
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$TempDir = Join-Path -Path $ScriptDir -ChildPath "llmchef-app"
+$TempDir = if ($env:LLMCHEF_RUNNER_APP_DIR) { $env:LLMCHEF_RUNNER_APP_DIR } else { Join-Path -Path $ScriptDir -ChildPath "llmchef-app" }
 
 if (-not (Test-Path -Path $TempDir)) {
     New-Item -ItemType Directory -Path $TempDir | Out-Null
@@ -34,45 +152,39 @@ Write-Host "Downloading LLMChef release..."
 
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri "https://wan0net.github.io/llmchef/release/latest.zip" -OutFile $ZipPath
+    $maximumRedirection = if ($ReleaseUrl -eq $DefaultReleaseUrl) { 5 } else { 0 }
+    Invoke-WebRequest -Uri $ReleaseUrl -OutFile $ZipPath -MaximumRedirection $maximumRedirection
     Write-Host "Download complete. Extracting..."
 
-    # Extract the zip file
-    Expand-Archive -Path $ZipPath -DestinationPath $TempDir -Force
+    # Remove stale bundle files before safely extracting the downloaded archive.
+    Clear-BundleContents -BundlePath $TempDir -ZipPath $ZipPath
+    Expand-SafeZip -ZipPath $ZipPath -DestinationPath $TempDir
 
     # Remove the zip file
     Remove-Item -Path $ZipPath -Force
     Write-Host "Extraction complete."
 
-    # Create a simple HTML file for routing (in case index.html doesn't exist)
-    if (-not (Test-Path -Path (Join-Path -Path $TempDir -ChildPath "index.html"))) {
-        Write-Host "Warning: index.html not found. Creating a placeholder..."
-        @"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>LLMChef</title>
-</head>
-<body>
-    <h1>LLMChef</h1>
-    <p>The files may not have extracted correctly.</p>
-</body>
-</html>
-"@ | Out-File -FilePath (Join-Path -Path $TempDir -ChildPath "index.html") -Encoding utf8
-    }
-
     # Create PS web server file
     $WebServerScript = @"
+    param (
+        [Parameter(Mandatory=`$true)]
+        [string]`$BasePath
+    )
+
+    `$ErrorActionPreference = "Stop"
     `$listener = New-Object System.Net.HttpListener
     `$hostAddress = "$(if ($AllowExternalConnections) { '+' } else { 'localhost' })"
-    `$listener.Prefixes.Add("http://`$hostAddress:$Port/")
+    `$listener.Prefixes.Add("http://`${hostAddress}:$Port/")
     `$listener.Start()
 
     Write-Host "LLMChef is running at http://$(if ($AllowExternalConnections) { (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch 'Loopback'} | Select-Object -First 1).IPAddress } else { 'localhost' }):$Port $(if ($AllowExternalConnections) { '(accessible from other devices)' } else { '(local access only)' })"
 
-    `$basePath = "$($TempDir.Replace('\', '\\'))"
+    `$basePath = [System.IO.Path]::GetFullPath(`$BasePath)
+    `$directorySeparator = [System.IO.Path]::DirectorySeparatorChar.ToString()
+    `$basePathPrefix = `$basePath.TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)) + `$directorySeparator
 
     try {
+        `$handledRequests = 0
         while (`$listener.IsListening) {
             `$context = `$listener.GetContext()
             `$request = `$context.Request
@@ -81,7 +193,14 @@ try {
             `$localPath = `$request.Url.LocalPath
             if (`$localPath -eq "/") { `$localPath = "/index.html" }
 
-            `$filePath = Join-Path -Path `$basePath -ChildPath `$localPath.TrimStart("/")
+            `$relativePath = ([System.Net.WebUtility]::UrlDecode(`$localPath)).TrimStart([char[]]@("/", "\"))
+            `$filePath = [System.IO.Path]::GetFullPath((Join-Path -Path `$basePath -ChildPath `$relativePath))
+            `$isInBasePath = (`$filePath -eq `$basePath) -or `$filePath.StartsWith(`$basePathPrefix, [System.StringComparison]::OrdinalIgnoreCase)
+            if (-not `$isInBasePath) {
+                `$response.StatusCode = 403
+                `$response.Close()
+                continue
+            }
 
             if (Test-Path -Path `$filePath -PathType Leaf) {
                 `$content = [System.IO.File]::ReadAllBytes(`$filePath)
@@ -120,6 +239,11 @@ try {
                     `$response.Close()
                 }
             }
+
+            `$handledRequests++
+            if ($MaxRequests -gt 0 -and `$handledRequests -ge $MaxRequests) {
+                break
+            }
         }
     }
     finally {
@@ -131,7 +255,12 @@ try {
     $WebServerScript | Out-File -FilePath $WebServerScriptPath -Encoding utf8
 
     # Run the web server
-    Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$WebServerScriptPath`"" -NoNewWindow
+    $WebServerArgs = @("-ExecutionPolicy", "Bypass", "-File", $WebServerScriptPath, "-BasePath", $TempDir)
+    if ($ForegroundServer) {
+        & powershell @WebServerArgs
+    } else {
+        Start-Process powershell -ArgumentList $WebServerArgs -NoNewWindow
+    }
 
 } catch {
     if (Test-Path -Path $ZipPath) {

@@ -24,6 +24,7 @@
     "kanban:sync:write": "python3 scripts/sync-github-kanban-issues.py --write",
     "preview": "vite preview",
     "test": "DEBUG_PRINT_LIMIT=10000 vitest",
+    "test:runner-smoke": "node scripts/test-runner-smoke.mjs",
     "test:e2e": "playwright test",
     "test:ui": "DEBUG_PRINT_LIMIT=10000 vitest --ui",
     "coverage": "DEBUG_PRINT_LIMIT=10000 vitest run --coverage",
