@@ -9,8 +9,23 @@ resolve_release_url() {
     return 0
   fi
 
-  case "$candidate" in
-    http://localhost/*|https://localhost/*|http://127.*|https://127.*|http://[::1]/*|https://[::1]/*)
+  if [[ ! "$candidate" =~ ^https?:// ]]; then
+    echo "Error: LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback http(s) host." >&2
+    return 1
+  fi
+
+  local remainder="${candidate#*://}"
+  local authority="${remainder%%/*}"
+  local host="$authority"
+
+  if [[ "$host" =~ ^\[(.*)\](:[0-9]+)?$ ]]; then
+    host="${BASH_REMATCH[1]}"
+  else
+    host="${host%%:*}"
+  fi
+
+  case "$host" in
+    localhost|127.0.0.1|::1)
       printf '%s\n' "$candidate"
       return 0
       ;;

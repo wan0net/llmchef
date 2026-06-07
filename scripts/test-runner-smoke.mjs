@@ -237,23 +237,30 @@ async function runLauncherSmoke(launcher, fixtureRoot, releaseUrl) {
 }
 
 async function runInvalidOverrideChecks(launchers) {
-  for (const launcher of launchers) {
-    const result = await spawnAndCollect(launcher.command, [...launcher.args, "0"], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        LLMCHEF_RELEASE_URL: "file:///etc/passwd",
-        LLMCHEF_RUNNER_APP_DIR: path.join(os.tmpdir(), `llmchef-invalid-override-${launcher.id}`),
-        ...launcher.env,
-      },
-    });
+  const invalidOverrides = [
+    "file:///etc/passwd",
+    "http://127.attacker.tld/payload.zip",
+  ];
 
-    assert.notEqual(result.code, 0, `${launcher.id} accepted a non-loopback override.`);
-    assert.match(
-      result.output,
-      /LLMCHEF_RELEASE_URL.*(loopback|default release origin|http\(s\))/i,
-      `${launcher.id} reported an unexpected error for a rejected override:\n${result.output}`,
-    );
+  for (const launcher of launchers) {
+    for (const invalidReleaseUrl of invalidOverrides) {
+      const result = await spawnAndCollect(launcher.command, [...launcher.args, "0"], {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          LLMCHEF_RELEASE_URL: invalidReleaseUrl,
+          LLMCHEF_RUNNER_APP_DIR: path.join(os.tmpdir(), `llmchef-invalid-override-${launcher.id}`),
+          ...launcher.env,
+        },
+      });
+
+      assert.notEqual(result.code, 0, `${launcher.id} accepted an invalid override: ${invalidReleaseUrl}`);
+      assert.match(
+        result.output,
+        /LLMCHEF_RELEASE_URL.*(loopback|default release origin|http\(s\))/i,
+        `${launcher.id} reported an unexpected error for a rejected override (${invalidReleaseUrl}):\n${result.output}`,
+      );
+    }
   }
 }
 

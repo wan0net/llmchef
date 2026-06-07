@@ -50,7 +50,7 @@ jobs:
 
       - name: Install Ruby zip dependency
         if: matrix.launcher_set == 'posix'
-        run: gem install rubyzip
+        run: gem install rubyzip --version 2.4.1 --no-document
 
       - name: Runner smoke tests
         run: npm run test:runner-smoke -- --launcher-set=${{ matrix.launcher_set }}
