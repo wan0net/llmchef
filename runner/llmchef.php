@@ -1,5 +1,7 @@
 #!/usr/bin/env php
 <?php
+const DEFAULT_RELEASE_URL = 'https://wan0.net/llmchef/release/latest.zip';
+
 function safeMkdir($dir) {
     if (!file_exists($dir)) {
         mkdir($dir, 0755, true);
@@ -16,13 +18,12 @@ function getOption($args, $option, $default = false) {
 }
 
 function resolveReleaseUrl() {
-    $defaultUrl = 'https://wan0.net/llmchef/release/latest.zip';
     $rawUrl = getenv('LLMCHEF_RELEASE_URL');
     if ($rawUrl === false || $rawUrl === '') {
-        return $defaultUrl;
+        return DEFAULT_RELEASE_URL;
     }
 
-    if ($rawUrl === $defaultUrl) {
+    if ($rawUrl === DEFAULT_RELEASE_URL) {
         return $rawUrl;
     }
 
@@ -58,6 +59,86 @@ function resolveReleaseUrl() {
     return $rawUrl;
 }
 
+function extractHeader(array $headers, string $headerName): ?string {
+    foreach ($headers as $header) {
+        $prefix = $headerName . ':';
+        if (stripos($header, $prefix) === 0) {
+            return trim(substr($header, strlen($prefix)));
+        }
+    }
+
+    return null;
+}
+
+function resolveRedirectUrl(string $currentUrl, string $location): string {
+    if (preg_match('#^https?://#i', $location)) {
+        return $location;
+    }
+
+    $currentParts = parse_url($currentUrl);
+    if ($currentParts === false || !isset($currentParts['scheme'], $currentParts['host'])) {
+        throw new RuntimeException('Unable to resolve redirect target.');
+    }
+
+    $scheme = $currentParts['scheme'];
+    $host = $currentParts['host'];
+    $port = isset($currentParts['port']) ? ':' . $currentParts['port'] : '';
+
+    if (str_starts_with($location, '/')) {
+        return "{$scheme}://{$host}{$port}{$location}";
+    }
+
+    $basePath = $currentParts['path'] ?? '/';
+    $baseDir = preg_replace('#/[^/]*$#', '/', $basePath) ?: '/';
+    return "{$scheme}://{$host}{$port}{$baseDir}{$location}";
+}
+
+function downloadRelease(string $releaseUrl, string $zipPath): void {
+    $allowRedirects = $releaseUrl === DEFAULT_RELEASE_URL;
+    $currentUrl = $releaseUrl;
+
+    for ($redirectCount = 0; $redirectCount <= 5; $redirectCount++) {
+        $context = stream_context_create([
+            'http' => [
+                'follow_location' => 0,
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        $zipContent = @file_get_contents($currentUrl, false, $context);
+        $responseHeaders = $http_response_header ?? [];
+        $statusLine = $responseHeaders[0] ?? '';
+        $statusCode = preg_match('/\s(\d{3})\s/', $statusLine, $matches) ? (int)$matches[1] : 0;
+
+        if ($statusCode >= 300 && $statusCode < 400) {
+            if (!$allowRedirects) {
+                throw new RuntimeException('Redirects are not allowed for LLMCHEF_RELEASE_URL overrides.');
+            }
+
+            $location = extractHeader($responseHeaders, 'Location');
+            if ($location === null || $location === '') {
+                throw new RuntimeException('Received redirect without Location header.');
+            }
+
+            $currentUrl = resolveRedirectUrl($currentUrl, $location);
+            continue;
+        }
+
+        if ($statusCode === 200 && $zipContent !== false) {
+            file_put_contents($zipPath, $zipContent);
+            return;
+        }
+
+        if ($zipContent === false) {
+            throw new RuntimeException('Error downloading LLMChef.');
+        }
+
+        throw new RuntimeException("Unexpected HTTP status {$statusCode} while downloading LLMChef.");
+    }
+
+    throw new RuntimeException('Too many redirects while downloading LLMChef release.');
+}
+
 $args = array_slice($argv, 1);
 $port = isset($args[0]) && is_numeric($args[0]) ? (int)$args[0] : 3000;
 $hostAll = getOption($args, '--host') || getOption($args, '-h');
@@ -70,19 +151,7 @@ safeMkdir($tempDir);
 $zipPath = $tempDir . '/llmchef.zip';
 echo "Downloading LLMChef release...\n";
 
-$context = stream_context_create([
-    'http' => [
-        'follow_location' => true,
-    ],
-]);
-
-$zipContent = file_get_contents($releaseUrl, false, $context);
-if ($zipContent === false) {
-    echo "Error downloading LLMChef.\n";
-    exit(1);
-}
-
-file_put_contents($zipPath, $zipContent);
+downloadRelease($releaseUrl, $zipPath);
 echo "Download complete. Extracting...\n";
 
 $zip = new ZipArchive();

@@ -4,7 +4,7 @@ import sys
 import shutil
 import zipfile
 import argparse
-from urllib import request
+from urllib import error, request
 from urllib.parse import urlparse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import socket
@@ -39,6 +39,33 @@ def resolve_release_url():
 
     raise ValueError('LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.')
 
+
+class NoRedirectHandler(request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def download_release(release_url, zip_path):
+    allow_redirects = release_url == DEFAULT_RELEASE_URL
+    current_url = release_url
+    opener = request.build_opener(NoRedirectHandler)
+
+    for redirect_count in range(6):
+        req = request.Request(current_url)
+        try:
+            with opener.open(req) as response, open(zip_path, 'wb') as target:
+                shutil.copyfileobj(response, target)
+                return
+        except error.HTTPError as exc:
+            if 300 <= exc.code < 400 and exc.headers.get('Location'):
+                if not allow_redirects:
+                    raise ValueError('Redirects are not allowed for LLMCHEF_RELEASE_URL overrides.') from exc
+                current_url = request.urljoin(current_url, exc.headers['Location'])
+                continue
+            raise
+
+    raise ValueError('Too many redirects while downloading LLMChef release.')
+
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Download and serve LLMChef')
 parser.add_argument('port', nargs='?', type=int, default=3000, help='Port number to serve on')
@@ -57,7 +84,7 @@ os.chdir(temp_dir)
 print("Downloading LLMChef release...")
 zip_path = os.path.join(temp_dir, 'llmchef.zip')
 try:
-    request.urlretrieve(release_url, zip_path)  # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
+    download_release(release_url, zip_path)
     print("Download complete. Extracting...")
 
     # Extract the zip file

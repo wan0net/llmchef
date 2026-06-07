@@ -35,6 +35,10 @@ resolve_release_url() {
   return 1
 }
 
+release_url_uses_override() {
+  [[ "${1:-}" != "$DEFAULT_RELEASE_URL" ]]
+}
+
 # Parse command line arguments
 PORT=${1:-3000}
 HOST_PARAM=${2}
@@ -55,10 +59,23 @@ mkdir -p "$TEMP_DIR"
 # Download the zip file
 ZIP_PATH="$TEMP_DIR/llmchef.zip"
 echo "Downloading LLMChef release..."
+USE_OVERRIDE_REDIRECT_GUARD=false
+if release_url_uses_override "$RELEASE_URL"; then
+  USE_OVERRIDE_REDIRECT_GUARD=true
+fi
+
 if command -v curl &> /dev/null; then
-  curl -L "$RELEASE_URL" -o "$ZIP_PATH"
+  CURL_ARGS=(-L -o "$ZIP_PATH")
+  if [[ "$USE_OVERRIDE_REDIRECT_GUARD" == true ]]; then
+    CURL_ARGS+=(--max-redirs 0)
+  fi
+  curl "${CURL_ARGS[@]}" "$RELEASE_URL"
 elif command -v wget &> /dev/null; then
-  wget "$RELEASE_URL" -O "$ZIP_PATH"
+  WGET_ARGS=(-O "$ZIP_PATH")
+  if [[ "$USE_OVERRIDE_REDIRECT_GUARD" == true ]]; then
+    WGET_ARGS+=(--max-redirect=0)
+  fi
+  wget "${WGET_ARGS[@]}" "$RELEASE_URL"
 else
   echo "Error: Neither curl nor wget is installed. Please install one of them."
   exit 1

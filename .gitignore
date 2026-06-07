@@ -38,3 +38,5 @@ public/release/*.zip
 # hides all local stuff :)
 *.local.*
 build
+__pycache__/
+*.py[cod]

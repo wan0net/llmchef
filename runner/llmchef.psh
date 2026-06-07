@@ -67,7 +67,8 @@ Write-Host "Downloading LLMChef release..."
 
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri $ReleaseUrl -OutFile $ZipPath
+    $maximumRedirection = if ($ReleaseUrl -eq $DefaultReleaseUrl) { 5 } else { 0 }
+    Invoke-WebRequest -Uri $ReleaseUrl -OutFile $ZipPath -MaximumRedirection $maximumRedirection
     Write-Host "Download complete. Extracting..."
 
     # Extract the zip file

@@ -95,6 +95,8 @@ async function run() {
     throw new Error(`No launcher set available for platform ${process.platform}.`);
   }
 
+  await runRedirectOverrideChecks(launcherConfigs);
+
   const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), "llmchef-runner-smoke-"));
   try {
     const fixtureZip = await createFixtureZip();
@@ -187,6 +189,19 @@ async function startReleaseServer(zipBuffer) {
   };
 }
 
+async function startRedirectServer(location) {
+  const server = http.createServer((_req, res) => {
+    res.writeHead(302, { Location: location });
+    res.end("redirect");
+  });
+
+  const port = await listenOnRandomPort(server, "127.0.0.1");
+  return {
+    server,
+    releaseUrl: `http://127.0.0.1:${port}/release/latest.zip`,
+  };
+}
+
 async function runLauncherSmoke(launcher, fixtureRoot, releaseUrl) {
   const appDir = path.join(fixtureRoot, `${launcher.id}-app`);
   await fs.mkdir(path.join(appDir, "assets"), { recursive: true });
@@ -261,6 +276,33 @@ async function runInvalidOverrideChecks(launchers) {
         `${launcher.id} reported an unexpected error for a rejected override (${invalidReleaseUrl}):\n${result.output}`,
       );
     }
+  }
+}
+
+async function runRedirectOverrideChecks(launchers) {
+  const redirectServer = await startRedirectServer("http://127.attacker.tld/payload.zip");
+
+  try {
+    for (const launcher of launchers) {
+      const result = await spawnAndCollect(launcher.command, [...launcher.args, "0"], {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          LLMCHEF_RELEASE_URL: redirectServer.releaseUrl,
+          LLMCHEF_RUNNER_APP_DIR: path.join(os.tmpdir(), `llmchef-redirect-override-${launcher.id}`),
+          ...launcher.env,
+        },
+      });
+
+      assert.notEqual(result.code, 0, `${launcher.id} followed a malicious redirect override.`);
+      assert.match(
+        result.output,
+        /(redirect|max(?:imum)? redir|maximum redirection)/i,
+        `${launcher.id} reported an unexpected error for a rejected redirect override:\n${result.output}`,
+      );
+    }
+  } finally {
+    await new Promise((resolve, reject) => redirectServer.server.close((error) => (error ? reject(error) : resolve())));
   }
 }
 
