@@ -179,7 +179,9 @@ try {
 
     Write-Host "LLMChef is running at http://$(if ($AllowExternalConnections) { (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch 'Loopback'} | Select-Object -First 1).IPAddress } else { 'localhost' }):$Port $(if ($AllowExternalConnections) { '(accessible from other devices)' } else { '(local access only)' })"
 
-    `$basePath = `$BasePath
+    `$basePath = [System.IO.Path]::GetFullPath(`$BasePath)
+    `$directorySeparator = [System.IO.Path]::DirectorySeparatorChar.ToString()
+    `$basePathPrefix = `$basePath.TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)) + `$directorySeparator
 
     try {
         `$handledRequests = 0
@@ -191,7 +193,14 @@ try {
             `$localPath = `$request.Url.LocalPath
             if (`$localPath -eq "/") { `$localPath = "/index.html" }
 
-            `$filePath = Join-Path -Path `$basePath -ChildPath `$localPath.TrimStart("/")
+            `$relativePath = ([System.Net.WebUtility]::UrlDecode(`$localPath)).TrimStart([char[]]@("/", "\"))
+            `$filePath = [System.IO.Path]::GetFullPath((Join-Path -Path `$basePath -ChildPath `$relativePath))
+            `$isInBasePath = (`$filePath -eq `$basePath) -or `$filePath.StartsWith(`$basePathPrefix, [System.StringComparison]::OrdinalIgnoreCase)
+            if (-not `$isInBasePath) {
+                `$response.StatusCode = 403
+                `$response.Close()
+                continue
+            }
 
             if (Test-Path -Path `$filePath -PathType Leaf) {
                 `$content = [System.IO.File]::ReadAllBytes(`$filePath)

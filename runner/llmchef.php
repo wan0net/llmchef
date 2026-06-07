@@ -135,7 +135,37 @@ function downloadRelease(string $releaseUrl, string $zipPath): void {
     throw new RuntimeException('Too many redirects while downloading LLMChef release.');
 }
 
-function removeDirectoryContentsExcept(string $dir, string $keepPath): void {
+function pathIsUnderDirectory(string $path, string $dir): bool {
+    $normalizedDir = rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    $normalizedPath = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+    return $normalizedPath === $normalizedDir || str_starts_with($normalizedPath, $normalizedDir);
+}
+
+function assertCleanupPathWithinRoot(string $path, string $trustedRoot): void {
+    $parentRealPath = realpath(dirname($path));
+    if ($parentRealPath === false || !pathIsUnderDirectory($parentRealPath, $trustedRoot)) {
+        throw new RuntimeException("Refusing to remove path outside trusted root: {$path}.");
+    }
+
+    if (is_link($path)) {
+        return;
+    }
+
+    $pathRealPath = realpath($path);
+    if ($pathRealPath === false || !pathIsUnderDirectory($pathRealPath, $trustedRoot)) {
+        throw new RuntimeException("Refusing to remove path outside trusted root: {$path}.");
+    }
+}
+
+function unlinkCleanupFile(string $path): void {
+    // nosemgrep: php.lang.security.unlink-use.unlink-use - removePath validates this path is under the trusted cleanup root immediately before calling this helper.
+    if (!unlink($path)) {
+        throw new RuntimeException("Unable to remove {$path}.");
+    }
+}
+
+function removeDirectoryContentsExcept(string $dir, string $keepPath, string $trustedRoot): void {
     $entries = scandir($dir);
     if ($entries === false) {
         throw new RuntimeException("Unable to read {$dir}.");
@@ -153,15 +183,15 @@ function removeDirectoryContentsExcept(string $dir, string $keepPath): void {
             continue;
         }
 
-        removePath($path);
+        removePath($path, $trustedRoot);
     }
 }
 
-function removePath(string $path): void {
+function removePath(string $path, string $trustedRoot): void {
+    assertCleanupPathWithinRoot($path, $trustedRoot);
+
     if (is_link($path) || is_file($path)) {
-        if (!unlink($path)) {
-            throw new RuntimeException("Unable to remove {$path}.");
-        }
+        unlinkCleanupFile($path);
         return;
     }
 
@@ -173,10 +203,11 @@ function removePath(string $path): void {
 
         foreach ($entries as $entry) {
             if ($entry !== '.' && $entry !== '..') {
-                removePath($path . DIRECTORY_SEPARATOR . $entry);
+                removePath($path . DIRECTORY_SEPARATOR . $entry, $trustedRoot);
             }
         }
 
+        assertCleanupPathWithinRoot($path, $trustedRoot);
         if (!rmdir($path)) {
             throw new RuntimeException("Unable to remove {$path}.");
         }
@@ -275,6 +306,10 @@ $releaseUrl = resolveReleaseUrl();
 $scriptDir = dirname(__FILE__);
 $tempDir = getenv('LLMCHEF_RUNNER_APP_DIR') ?: ($scriptDir . '/llmchef-app');
 safeMkdir($tempDir);
+$tempRealDir = realpath($tempDir);
+if ($tempRealDir === false) {
+    throw new RuntimeException("Unable to resolve {$tempDir}.");
+}
 
 $zipPath = $tempDir . '/llmchef.zip';
 echo "Downloading LLMChef release...\n";
@@ -284,7 +319,7 @@ echo "Download complete. Extracting...\n";
 
 $zip = new ZipArchive();
 if ($zip->open($zipPath) === TRUE) {
-    removeDirectoryContentsExcept($tempDir, $zipPath);
+    removeDirectoryContentsExcept($tempDir, $zipPath, $tempRealDir);
     extractZipSafely($zip, $tempDir);
     $zip->close();
     echo "Extraction complete.\n";
