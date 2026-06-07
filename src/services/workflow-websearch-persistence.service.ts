@@ -12,6 +12,7 @@ import type {
 import type { WorkflowTemplate } from "@/types/llmchef/workflow";
 
 const WORKFLOW_WEBSEARCH_CONFIG_KEY = "workflowWebSearchConfig";
+const LEGACY_WORKFLOW_WEBSEARCH_CONFIG_KEY = "workflow-websearch-config";
 const WEBSEARCH_TEMPLATE_UPDATE_CUTOFF_DATE = new Date("2025-07-14T19:02:00Z");
 
 export interface WorkflowWebSearchSettings {
@@ -68,9 +69,29 @@ export class WorkflowWebSearchPersistenceService {
   static async loadSettings(): Promise<WorkflowWebSearchSettings> {
     const persisted = await PersistenceService.loadSetting<
       Partial<WorkflowWebSearchSettings>
-    >(WORKFLOW_WEBSEARCH_CONFIG_KEY, createDefaultWorkflowWebSearchSettings());
+    >(
+      WORKFLOW_WEBSEARCH_CONFIG_KEY,
+      null as Partial<WorkflowWebSearchSettings> | null,
+    );
 
-    return normalizeWorkflowWebSearchSettings(persisted);
+    if (persisted) {
+      return normalizeWorkflowWebSearchSettings(persisted);
+    }
+
+    const legacySettings = this.loadLegacySettings();
+    if (!legacySettings) {
+      return createDefaultWorkflowWebSearchSettings();
+    }
+
+    const normalized = normalizeWorkflowWebSearchSettings(legacySettings);
+
+    await PersistenceService.saveSetting(
+      WORKFLOW_WEBSEARCH_CONFIG_KEY,
+      normalized,
+    );
+    globalThis.localStorage?.removeItem(LEGACY_WORKFLOW_WEBSEARCH_CONFIG_KEY);
+
+    return normalized;
   }
 
   static async saveSettings(settings: WorkflowWebSearchSettings): Promise<void> {
@@ -145,5 +166,27 @@ export class WorkflowWebSearchPersistenceService {
   ): Promise<WorkflowTemplate | undefined> {
     const workflows = await PersistenceService.loadWorkflows();
     return workflows.find((workflow) => workflow.id === workflowId);
+  }
+
+  private static loadLegacySettings():
+    | Partial<WorkflowWebSearchSettings>
+    | null {
+    try {
+      const serialized = globalThis.localStorage?.getItem(
+        LEGACY_WORKFLOW_WEBSEARCH_CONFIG_KEY,
+      );
+
+      if (!serialized) {
+        return null;
+      }
+
+      const parsed = JSON.parse(serialized);
+      return parsed && typeof parsed === "object"
+        ? (parsed as Partial<WorkflowWebSearchSettings>)
+        : null;
+    } catch (error) {
+      console.warn("Failed to load legacy workflow websearch settings:", error);
+      return null;
+    }
   }
 }

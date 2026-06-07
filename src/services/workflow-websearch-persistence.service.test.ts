@@ -31,6 +31,7 @@ import { WEBSEARCH_TEMPLATE_IDS } from "@/lib/llmchef/websearch-prompt-templates
 describe("workflow websearch persistence service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   it("hydrates defaults when no settings are persisted", async () => {
@@ -67,6 +68,48 @@ describe("workflow websearch persistence service", () => {
       }),
       selectedWorkflow: "deep-websearch",
     });
+  });
+
+  it("migrates legacy localStorage settings into app-state persistence", async () => {
+    mocks.loadSetting.mockResolvedValue(null);
+    mocks.saveSetting.mockResolvedValue(undefined);
+    window.localStorage.setItem(
+      "workflow-websearch-config",
+      JSON.stringify({
+        searchConfig: {
+          maxResults: 7,
+          timeRange: "month",
+        },
+        deepSearchConfig: {
+          enabled: true,
+          avenuesPerDepth: 4,
+        },
+        selectedWorkflow: "deep-websearch",
+      }),
+    );
+
+    await expect(
+      WorkflowWebSearchPersistenceService.loadSettings(),
+    ).resolves.toMatchObject({
+      searchConfig: expect.objectContaining({
+        maxResults: 7,
+        timeRange: "month",
+      }),
+      deepSearchConfig: expect.objectContaining({
+        enabled: true,
+        avenuesPerDepth: 4,
+      }),
+      selectedWorkflow: "deep-websearch",
+    });
+
+    expect(mocks.saveSetting).toHaveBeenCalledWith(
+      "workflowWebSearchConfig",
+      expect.objectContaining({
+        searchConfig: expect.objectContaining({ maxResults: 7 }),
+        selectedWorkflow: "deep-websearch",
+      }),
+    );
+    expect(window.localStorage.getItem("workflow-websearch-config")).toBeNull();
   });
 
   it("saves normalized settings via app-state persistence", async () => {
