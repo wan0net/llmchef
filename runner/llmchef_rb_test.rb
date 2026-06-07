@@ -70,6 +70,18 @@ class LLMChefRunnerTest < Minitest::Test
     end
   end
 
+  def test_resolve_release_url_allows_only_default_or_loopback_overrides
+    assert_equal LLMChefRunner::DEFAULT_RELEASE_URL, LLMChefRunner.resolve_release_url(nil)
+    assert_equal 'http://127.0.0.1:4010/release/latest.zip',
+                 LLMChefRunner.resolve_release_url('http://127.0.0.1:4010/release/latest.zip')
+
+    error = assert_raises(RuntimeError) do
+      LLMChefRunner.resolve_release_url('file:///etc/passwd')
+    end
+
+    assert_match(/loopback/, error.message)
+  end
+
   private
 
   def create_zip(zip_path, entries)

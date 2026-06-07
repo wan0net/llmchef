@@ -2,6 +2,7 @@
 require 'open-uri'
 require 'fileutils'
 require 'pathname'
+require 'ipaddr'
 require 'zip'
 require 'webrick'
 require 'optparse'
@@ -28,7 +29,25 @@ module LLMChefRunner
     ENV.fetch('LLMCHEF_RUNNER_APP_DIR', File.join(script_dir, 'llmchef-app'))
   end
 
-  def download_release(zip_path, release_url = ENV.fetch('LLMCHEF_RELEASE_URL', DEFAULT_RELEASE_URL))
+  def resolve_release_url(raw_url = ENV['LLMCHEF_RELEASE_URL'])
+    return DEFAULT_RELEASE_URL if raw_url.nil? || raw_url.empty?
+    return raw_url if raw_url == DEFAULT_RELEASE_URL
+
+    uri = URI.parse(raw_url)
+    raise 'LLMCHEF_RELEASE_URL only supports http(s) loopback overrides.' unless %w[http https].include?(uri.scheme)
+    raise 'LLMCHEF_RELEASE_URL must include a hostname.' if uri.host.nil? || uri.host.empty?
+    return raw_url if uri.host == 'localhost'
+
+    begin
+      return raw_url if IPAddr.new(uri.host).loopback?
+    rescue IPAddr::InvalidAddressError
+      nil
+    end
+
+    raise 'LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.'
+  end
+
+  def download_release(zip_path, release_url = resolve_release_url)
     URI.open(release_url) do |zip_file|
       File.open(zip_path, 'wb') do |file|
         file.write(zip_file.read)

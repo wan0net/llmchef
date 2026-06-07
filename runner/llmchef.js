@@ -27,9 +27,26 @@ const DEFAULT_RELEASE_URL = "https://wan0.net/llmchef/release/latest.zip";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const releaseUrl = process.env.LLMCHEF_RELEASE_URL || DEFAULT_RELEASE_URL;
+const releaseUrl = resolveReleaseUrl(process.env.LLMCHEF_RELEASE_URL);
 const tempDir = process.env.LLMCHEF_RUNNER_APP_DIR || path.join(__dirname, "llmchef-app");
 const downloadClient = new URL(releaseUrl).protocol === "http:" ? http : https;
+
+function resolveReleaseUrl(candidate = DEFAULT_RELEASE_URL) {
+  if (!candidate || candidate === DEFAULT_RELEASE_URL) {
+    return DEFAULT_RELEASE_URL;
+  }
+
+  const parsed = new URL(candidate);
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    throw new Error("LLMCHEF_RELEASE_URL only supports http(s) loopback overrides.");
+  }
+
+  if (!["localhost", "127.0.0.1", "::1"].includes(parsed.hostname)) {
+    throw new Error("LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.");
+  }
+
+  return candidate;
+}
 
 const decodeSafePathSegment = (segment) => {
   try {

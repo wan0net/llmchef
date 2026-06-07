@@ -24,32 +24,32 @@ const launcherSet = launcherSetArg ? launcherSetArg.split("=")[1] : null;
 const staticContracts = [
   {
     file: "runner/llmchef.js",
-    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html"],
+    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html", "127.0.0.1"],
     disallowed: ["wan0net.github.io/llmchef/release/latest.zip"],
   },
   {
     file: "runner/llmchef.php",
-    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html"],
+    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html", "localhost"],
     disallowed: ["wan0net.github.io/llmchef/release/latest.zip"],
   },
   {
     file: "runner/llmchef.psh",
-    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html"],
+    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html", "127.0.0.1"],
     disallowed: ["wan0net.github.io/llmchef/release/latest.zip", "Creating a placeholder"],
   },
   {
     file: "runner/llmchef.py",
-    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html"],
+    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html", "ipaddress"],
     disallowed: ["wan0net.github.io/llmchef/release/latest.zip"],
   },
   {
     file: "runner/llmchef.rb",
-    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html"],
+    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html", "loopback"],
     disallowed: ["wan0net.github.io/llmchef/release/latest.zip"],
   },
   {
     file: "runner/llmchef.sh",
-    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html"],
+    required: ["LLMCHEF_RELEASE_URL", "LLMCHEF_RUNNER_APP_DIR", defaultReleaseUrl, "index.html", "loopback http(s) host"],
     disallowed: ["wan0net.github.io/llmchef/release/latest.zip", "Creating a placeholder"],
   },
 ];
@@ -82,6 +82,7 @@ async function run() {
   if (shouldRunRubyRegression()) {
     await runRubyRegressionTest();
   }
+  await runInvalidOverrideChecks(selectLaunchers());
 
   if (staticOnly) {
     console.log("Runner smoke static checks passed.");
@@ -231,6 +232,27 @@ async function runLauncherSmoke(launcher, fixtureRoot, releaseUrl) {
     assert.equal((await fs.readFile(path.join(appDir, "assets", "app.js"), "utf8")).trim(), expectedAsset);
   } finally {
     await stopProcess(child);
+  }
+}
+
+async function runInvalidOverrideChecks(launchers) {
+  for (const launcher of launchers) {
+    const result = await spawnAndCollect(launcher.command, [...launcher.args, "0"], {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        LLMCHEF_RELEASE_URL: "file:///etc/passwd",
+        LLMCHEF_RUNNER_APP_DIR: path.join(os.tmpdir(), `llmchef-invalid-override-${launcher.id}`),
+        ...launcher.env,
+      },
+    });
+
+    assert.notEqual(result.code, 0, `${launcher.id} accepted a non-loopback override.`);
+    assert.match(
+      result.output,
+      /LLMCHEF_RELEASE_URL.*(loopback|default release origin|http\(s\))/i,
+      `${launcher.id} reported an unexpected error for a rejected override:\n${result.output}`,
+    );
   }
 }
 

@@ -5,8 +5,39 @@ import shutil
 import zipfile
 import argparse
 from urllib import request
+from urllib.parse import urlparse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import socket
+import ipaddress
+
+DEFAULT_RELEASE_URL = 'https://wan0.net/llmchef/release/latest.zip'
+
+
+def resolve_release_url():
+    raw_url = os.environ.get('LLMCHEF_RELEASE_URL')
+    if not raw_url:
+        return DEFAULT_RELEASE_URL
+    if raw_url == DEFAULT_RELEASE_URL:
+        return raw_url
+
+    parsed = urlparse(raw_url)
+    if parsed.scheme not in ('http', 'https'):
+        raise ValueError('LLMCHEF_RELEASE_URL only supports http(s) loopback overrides.')
+
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError('LLMCHEF_RELEASE_URL must include a hostname.')
+
+    if hostname == 'localhost':
+        return raw_url
+
+    try:
+        if ipaddress.ip_address(hostname).is_loopback:
+            return raw_url
+    except ValueError:
+        pass
+
+    raise ValueError('LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.')
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Download and serve LLMChef')
@@ -15,7 +46,7 @@ parser.add_argument('--host', '-H', action='store_true', help='Allow external co
 args = parser.parse_args()
 
 # Create temp directory
-release_url = os.environ.get('LLMCHEF_RELEASE_URL', 'https://wan0.net/llmchef/release/latest.zip')
+release_url = resolve_release_url()
 temp_dir = os.environ.get('LLMCHEF_RUNNER_APP_DIR', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'llmchef-app'))
 os.makedirs(temp_dir, exist_ok=True)
 

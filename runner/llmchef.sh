@@ -1,5 +1,25 @@
 #!/bin/bash
 
+DEFAULT_RELEASE_URL="https://wan0.net/llmchef/release/latest.zip"
+
+resolve_release_url() {
+  local candidate="${LLMCHEF_RELEASE_URL:-$DEFAULT_RELEASE_URL}"
+  if [[ "$candidate" == "$DEFAULT_RELEASE_URL" ]]; then
+    printf '%s\n' "$candidate"
+    return 0
+  fi
+
+  case "$candidate" in
+    http://localhost/*|https://localhost/*|http://127.*|https://127.*|http://[::1]/*|https://[::1]/*)
+      printf '%s\n' "$candidate"
+      return 0
+      ;;
+  esac
+
+  echo "Error: LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback http(s) host." >&2
+  return 1
+}
+
 # Parse command line arguments
 PORT=${1:-3000}
 HOST_PARAM=${2}
@@ -13,7 +33,7 @@ fi
 
 # Create temp directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-RELEASE_URL="${LLMCHEF_RELEASE_URL:-https://wan0.net/llmchef/release/latest.zip}"
+RELEASE_URL="$(resolve_release_url)" || exit 1
 TEMP_DIR="${LLMCHEF_RUNNER_APP_DIR:-$SCRIPT_DIR/llmchef-app}"
 mkdir -p "$TEMP_DIR"
 

@@ -20,7 +20,36 @@ param (
     [switch]$AllowExternalConnections
 )
 
-$ReleaseUrl = if ($env:LLMCHEF_RELEASE_URL) { $env:LLMCHEF_RELEASE_URL } else { "https://wan0.net/llmchef/release/latest.zip" }
+$DefaultReleaseUrl = "https://wan0.net/llmchef/release/latest.zip"
+
+function Resolve-ReleaseUrl {
+    $candidate = if ($env:LLMCHEF_RELEASE_URL) { $env:LLMCHEF_RELEASE_URL } else { $DefaultReleaseUrl }
+    if ($candidate -eq $DefaultReleaseUrl) {
+        return $candidate
+    }
+
+    try {
+        $uri = [Uri]$candidate
+    } catch {
+        throw "Invalid LLMCHEF_RELEASE_URL."
+    }
+
+    if ($uri.Scheme -notin @("http", "https")) {
+        throw "LLMCHEF_RELEASE_URL only supports http(s) loopback overrides."
+    }
+
+    if ([string]::IsNullOrWhiteSpace($uri.Host)) {
+        throw "LLMCHEF_RELEASE_URL must include a hostname."
+    }
+
+    if ($uri.Host -eq "localhost" -or $uri.Host -eq "127.0.0.1" -or $uri.Host -eq "::1") {
+        return $candidate
+    }
+
+    throw "LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host."
+}
+
+$ReleaseUrl = Resolve-ReleaseUrl
 $ForegroundServer = $env:LLMCHEF_RUNNER_FOREGROUND -eq "1"
 $MaxRequests = if ($env:LLMCHEF_TEST_MAX_REQUESTS) { [int]$env:LLMCHEF_TEST_MAX_REQUESTS } else { 0 }
 
