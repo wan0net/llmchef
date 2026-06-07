@@ -8,7 +8,7 @@ require 'optparse'
 require 'socket'
 
 module LLMChefRunner
-  RELEASE_URL = 'https://wan0net.github.io/llmchef/release/latest.zip'
+  DEFAULT_RELEASE_URL = 'https://wan0.net/llmchef/release/latest.zip'
 
   module_function
 
@@ -25,10 +25,10 @@ module LLMChefRunner
   end
 
   def temp_dir(script_dir = File.dirname(File.expand_path(__FILE__)))
-    File.join(script_dir, 'llmchef-app')
+    ENV.fetch('LLMCHEF_RUNNER_APP_DIR', File.join(script_dir, 'llmchef-app'))
   end
 
-  def download_release(zip_path, release_url = RELEASE_URL)
+  def download_release(zip_path, release_url = ENV.fetch('LLMCHEF_RELEASE_URL', DEFAULT_RELEASE_URL))
     URI.open(release_url) do |zip_file|
       File.open(zip_path, 'wb') do |file|
         file.write(zip_file.read)

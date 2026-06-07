@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-const fs = require("fs");
-const path = require("path");
-const https = require("https");
-const http = require("http");
-const { execFile } = require("child_process");
-const { URL } = require("url");
+import { execFile } from "node:child_process";
+import fs from "node:fs";
+import http from "node:http";
+import https from "node:https";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath, URL } from "node:url";
 
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
@@ -22,6 +23,13 @@ const MIME_TYPES = {
 };
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const DEFAULT_RELEASE_URL = "https://wan0.net/llmchef/release/latest.zip";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const releaseUrl = process.env.LLMCHEF_RELEASE_URL || DEFAULT_RELEASE_URL;
+const tempDir = process.env.LLMCHEF_RUNNER_APP_DIR || path.join(__dirname, "llmchef-app");
+const downloadClient = new URL(releaseUrl).protocol === "http:" ? http : https;
 
 const decodeSafePathSegment = (segment) => {
   try {
@@ -119,7 +127,6 @@ const port = args[0] || 3000;
 const hostAllInterfaces = args.includes("--host") || args.includes("-h");
 
 // Create temp directory if it doesn't exist
-const tempDir = path.join(__dirname, "llmchef-app");
 if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
@@ -128,8 +135,8 @@ console.log("Downloading LLMChef release...");
 const zipPath = path.join(tempDir, "llmchef.zip");
 const file = fs.createWriteStream(zipPath);
 
-https
-  .get("https://wan0.net/llmchef/release/latest.zip", (response) => {
+downloadClient
+  .get(releaseUrl, (response) => {
     response.pipe(file);
     file.on("finish", () => {
       file.close();
@@ -153,7 +160,7 @@ https
         const server = createStaticServer();
         server.listen(port, host, () => {
           const accessUrl = hostAllInterfaces
-            ? `http://${require("os").hostname()}:${port} (accessible from other devices)`
+            ? `http://${os.hostname()}:${port} (accessible from other devices)`
             : `http://localhost:${port} (local access only)`;
 
           console.log(`LLMChef is running at ${accessUrl}`);

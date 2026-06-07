@@ -13,16 +13,17 @@ fi
 
 # Create temp directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-TEMP_DIR="$SCRIPT_DIR/llmchef-app"
+RELEASE_URL="${LLMCHEF_RELEASE_URL:-https://wan0.net/llmchef/release/latest.zip}"
+TEMP_DIR="${LLMCHEF_RUNNER_APP_DIR:-$SCRIPT_DIR/llmchef-app}"
 mkdir -p "$TEMP_DIR"
 
 # Download the zip file
 ZIP_PATH="$TEMP_DIR/llmchef.zip"
 echo "Downloading LLMChef release..."
 if command -v curl &> /dev/null; then
-  curl -L https://wan0.net/llmchef/release/latest.zip -o "$ZIP_PATH"
+  curl -L "$RELEASE_URL" -o "$ZIP_PATH"
 elif command -v wget &> /dev/null; then
-  wget https://wan0.net/llmchef/release/latest.zip -O "$ZIP_PATH"
+  wget "$RELEASE_URL" -O "$ZIP_PATH"
 else
   echo "Error: Neither curl nor wget is installed. Please install one of them."
   exit 1
@@ -56,12 +57,6 @@ echo "Extraction complete."
 
 # Serve the files
 cd "$TEMP_DIR"
-
-# Create index.html if it doesn't exist (failsafe)
-if [ ! -f "index.html" ]; then
-  echo "Warning: index.html not found. Creating a placeholder..."
-  echo "<html><body><h1>LLMChef</h1><p>The files may not have extracted correctly.</p></body></html>" > index.html
-fi
 
 # Determine which web server to use
 if command -v python3 &> /dev/null; then

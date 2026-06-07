@@ -15,7 +15,8 @@ parser.add_argument('--host', '-H', action='store_true', help='Allow external co
 args = parser.parse_args()
 
 # Create temp directory
-temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'llmchef-app')
+release_url = os.environ.get('LLMCHEF_RELEASE_URL', 'https://wan0.net/llmchef/release/latest.zip')
+temp_dir = os.environ.get('LLMCHEF_RUNNER_APP_DIR', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'llmchef-app'))
 os.makedirs(temp_dir, exist_ok=True)
 
 # Change to temp directory
@@ -25,7 +26,7 @@ os.chdir(temp_dir)
 print("Downloading LLMChef release...")
 zip_path = os.path.join(temp_dir, 'llmchef.zip')
 try:
-    request.urlretrieve('https://wan0.net/llmchef/release/latest.zip', zip_path)  # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
+    request.urlretrieve(release_url, zip_path)  # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
     print("Download complete. Extracting...")
 
     # Extract the zip file

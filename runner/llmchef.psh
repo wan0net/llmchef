@@ -20,9 +20,13 @@ param (
     [switch]$AllowExternalConnections
 )
 
+$ReleaseUrl = if ($env:LLMCHEF_RELEASE_URL) { $env:LLMCHEF_RELEASE_URL } else { "https://wan0.net/llmchef/release/latest.zip" }
+$ForegroundServer = $env:LLMCHEF_RUNNER_FOREGROUND -eq "1"
+$MaxRequests = if ($env:LLMCHEF_TEST_MAX_REQUESTS) { [int]$env:LLMCHEF_TEST_MAX_REQUESTS } else { 0 }
+
 # Create temp directory
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$TempDir = Join-Path -Path $ScriptDir -ChildPath "llmchef-app"
+$TempDir = if ($env:LLMCHEF_RUNNER_APP_DIR) { $env:LLMCHEF_RUNNER_APP_DIR } else { Join-Path -Path $ScriptDir -ChildPath "llmchef-app" }
 
 if (-not (Test-Path -Path $TempDir)) {
     New-Item -ItemType Directory -Path $TempDir | Out-Null
@@ -34,7 +38,7 @@ Write-Host "Downloading LLMChef release..."
 
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri "https://wan0net.github.io/llmchef/release/latest.zip" -OutFile $ZipPath
+    Invoke-WebRequest -Uri $ReleaseUrl -OutFile $ZipPath
     Write-Host "Download complete. Extracting..."
 
     # Extract the zip file
@@ -43,23 +47,6 @@ try {
     # Remove the zip file
     Remove-Item -Path $ZipPath -Force
     Write-Host "Extraction complete."
-
-    # Create a simple HTML file for routing (in case index.html doesn't exist)
-    if (-not (Test-Path -Path (Join-Path -Path $TempDir -ChildPath "index.html"))) {
-        Write-Host "Warning: index.html not found. Creating a placeholder..."
-        @"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>LLMChef</title>
-</head>
-<body>
-    <h1>LLMChef</h1>
-    <p>The files may not have extracted correctly.</p>
-</body>
-</html>
-"@ | Out-File -FilePath (Join-Path -Path $TempDir -ChildPath "index.html") -Encoding utf8
-    }
 
     # Create PS web server file
     $WebServerScript = @"
@@ -73,6 +60,7 @@ try {
     `$basePath = "$($TempDir.Replace('\', '\\'))"
 
     try {
+        `$handledRequests = 0
         while (`$listener.IsListening) {
             `$context = `$listener.GetContext()
             `$request = `$context.Request
@@ -120,6 +108,11 @@ try {
                     `$response.Close()
                 }
             }
+
+            `$handledRequests++
+            if ($MaxRequests -gt 0 -and `$handledRequests -ge $MaxRequests) {
+                break
+            }
         }
     }
     finally {
@@ -131,7 +124,11 @@ try {
     $WebServerScript | Out-File -FilePath $WebServerScriptPath -Encoding utf8
 
     # Run the web server
-    Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$WebServerScriptPath`"" -NoNewWindow
+    if ($ForegroundServer) {
+        & powershell -ExecutionPolicy Bypass -File "$WebServerScriptPath"
+    } else {
+        Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$WebServerScriptPath`"" -NoNewWindow
+    }
 
 } catch {
     if (Test-Path -Path $ZipPath) {

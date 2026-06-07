@@ -18,9 +18,10 @@ function getOption($args, $option, $default = false) {
 $args = array_slice($argv, 1);
 $port = isset($args[0]) && is_numeric($args[0]) ? (int)$args[0] : 3000;
 $hostAll = getOption($args, '--host') || getOption($args, '-h');
+$releaseUrl = getenv('LLMCHEF_RELEASE_URL') ?: 'https://wan0.net/llmchef/release/latest.zip';
 
 $scriptDir = dirname(__FILE__);
-$tempDir = $scriptDir . '/llmchef-app';
+$tempDir = getenv('LLMCHEF_RUNNER_APP_DIR') ?: ($scriptDir . '/llmchef-app');
 safeMkdir($tempDir);
 
 $zipPath = $tempDir . '/llmchef.zip';
@@ -32,7 +33,7 @@ $context = stream_context_create([
     ],
 ]);
 
-$zipContent = file_get_contents('https://wan0.net/llmchef/release/latest.zip', false, $context);
+$zipContent = file_get_contents($releaseUrl, false, $context);
 if ($zipContent === false) {
     echo "Error downloading LLMChef.\n";
     exit(1);
