@@ -343,7 +343,7 @@ jobs:
             def trusted_author:
               (.authorAssociation // "") as $association
               | (.author.login // "") as $login
-              | ($association == "OWNER" or $association == "MEMBER" or $association == "COLLABORATOR" or $login == "github-actions");
+              | ($association == "OWNER" or $association == "MEMBER" or $association == "COLLABORATOR" or $login == "github-actions" or $login == "github-actions[bot]");
             def redact_secrets:
               gsub("(?i)(github_pat_[A-Za-z0-9_]+|gh[pousr]_[A-Za-z0-9_]+|sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]+|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)"; "[REDACTED]");
             def safe_comment:
@@ -365,7 +365,7 @@ jobs:
             def trusted_author:
               (.authorAssociation // "") as $association
               | (.author.login // "") as $login
-              | ($association == "OWNER" or $association == "MEMBER" or $association == "COLLABORATOR" or $login == "github-actions");
+              | ($association == "OWNER" or $association == "MEMBER" or $association == "COLLABORATOR" or $login == "github-actions" or $login == "github-actions[bot]");
             [
               .comments[]?
               | select(trusted_author)
@@ -384,7 +384,7 @@ jobs:
             def trusted_author:
               (.authorAssociation // "") as $association
               | (.author.login // "") as $login
-              | ($association == "OWNER" or $association == "MEMBER" or $association == "COLLABORATOR" or $login == "github-actions");
+              | ($association == "OWNER" or $association == "MEMBER" or $association == "COLLABORATOR" or $login == "github-actions" or $login == "github-actions[bot]");
             [
               .comments[]?
               | select(trusted_author)

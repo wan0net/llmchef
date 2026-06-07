@@ -90,7 +90,7 @@ jobs:
               def trusted_author:
                 (.authorAssociation // "") as $association
                 | (.author.login // "") as $login
-                | ($association == "OWNER" or $association == "MEMBER" or $association == "COLLABORATOR" or $login == "github-actions");
+                | ($association == "OWNER" or $association == "MEMBER" or $association == "COLLABORATOR" or $login == "github-actions" or $login == "github-actions[bot]");
               [
                 .comments[]?
                 | select(trusted_author)
