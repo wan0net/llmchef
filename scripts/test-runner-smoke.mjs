@@ -61,6 +61,7 @@ const executableLaunchers = {
     { id: "py", command: "python3", args: ["runner/llmchef.py"] },
     { id: "rb", command: "ruby", args: ["runner/llmchef.rb"] },
     { id: "sh", command: "bash", args: ["runner/llmchef.sh"] },
+    { id: "php", command: "php", args: ["runner/llmchef.php"], optional: true },
   ],
   windows: [
     { id: "js", command: "node", args: ["runner/llmchef.js"] },
@@ -68,6 +69,7 @@ const executableLaunchers = {
       id: "psh",
       command: "powershell.exe",
       args: ["-ExecutionPolicy", "Bypass", "-File", "runner/llmchef.psh"],
+      powershellScript: "runner/llmchef.psh",
       env: {
         LLMCHEF_RUNNER_FOREGROUND: "1",
         LLMCHEF_TEST_MAX_REQUESTS: "5",
@@ -83,14 +85,14 @@ async function run() {
   if (shouldRunRubyRegression()) {
     await runRubyRegressionTest();
   }
-  await runInvalidOverrideChecks(selectLaunchers());
+  const launcherConfigs = await selectAvailableLaunchers();
+  await runInvalidOverrideChecks(launcherConfigs);
 
   if (staticOnly) {
     console.log("Runner smoke static checks passed.");
     return;
   }
 
-  const launcherConfigs = selectLaunchers();
   if (launcherConfigs.length === 0) {
     throw new Error(`No launcher set available for platform ${process.platform}.`);
   }
@@ -155,6 +157,39 @@ function selectLaunchers() {
   return [];
 }
 
+async function selectAvailableLaunchers() {
+  const launchers = selectLaunchers();
+  const availableLaunchers = [];
+
+  for (const launcher of launchers) {
+    if (await isCommandAvailable(launcher.command)) {
+      availableLaunchers.push(launcher);
+      continue;
+    }
+
+    if (launcher.optional) {
+      console.log(`Skipping optional ${launcher.id} launcher because ${launcher.command} is not available.`);
+      continue;
+    }
+
+    availableLaunchers.push(launcher);
+  }
+
+  return availableLaunchers;
+}
+
+async function isCommandAvailable(command) {
+  return new Promise((resolve) => {
+    const child = spawn(command, ["--version"], {
+      cwd: repoRoot,
+      stdio: "ignore",
+    });
+
+    child.once("error", () => resolve(false));
+    child.once("exit", () => resolve(true));
+  });
+}
+
 function shouldRunRubyRegression() {
   if (launcherSet) {
     return launcherSet === "posix";
@@ -210,7 +245,8 @@ async function runLauncherSmoke(launcher, fixtureRoot, releaseUrl) {
   await fs.writeFile(path.join(appDir, "stale.txt"), "stale file");
 
   const port = await getFreePort();
-  const child = spawn(launcher.command, [...launcher.args, String(port)], {
+  const preparedLauncher = await prepareLauncherSpawn(launcher, fixtureRoot);
+  const child = spawn(launcher.command, [...preparedLauncher.args, String(port)], {
     cwd: repoRoot,
     env: {
       ...process.env,
@@ -255,26 +291,33 @@ async function runInvalidOverrideChecks(launchers) {
   const invalidOverrides = [
     "file:///etc/passwd",
     "http://127.attacker.tld/payload.zip",
+    "http://localhost:80@attacker.tld/payload.zip",
   ];
 
   for (const launcher of launchers) {
     for (const invalidReleaseUrl of invalidOverrides) {
-      const result = await spawnAndCollect(launcher.command, [...launcher.args, "0"], {
-        cwd: repoRoot,
-        env: {
-          ...process.env,
-          LLMCHEF_RELEASE_URL: invalidReleaseUrl,
-          LLMCHEF_RUNNER_APP_DIR: path.join(os.tmpdir(), `llmchef-invalid-override-${launcher.id}`),
-          ...launcher.env,
-        },
-      });
+      const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), `llmchef-invalid-override-${launcher.id}-`));
+      try {
+        const preparedLauncher = await prepareLauncherSpawn(launcher, fixtureRoot);
+        const result = await spawnAndCollect(launcher.command, [...preparedLauncher.args, "0"], {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            LLMCHEF_RELEASE_URL: invalidReleaseUrl,
+            LLMCHEF_RUNNER_APP_DIR: path.join(fixtureRoot, "app"),
+            ...launcher.env,
+          },
+        });
 
-      assert.notEqual(result.code, 0, `${launcher.id} accepted an invalid override: ${invalidReleaseUrl}`);
-      assert.match(
-        result.output,
-        /LLMCHEF_RELEASE_URL.*(loopback|default release origin|http\(s\))/i,
-        `${launcher.id} reported an unexpected error for a rejected override (${invalidReleaseUrl}):\n${result.output}`,
-      );
+        assert.notEqual(result.code, 0, `${launcher.id} accepted an invalid override: ${invalidReleaseUrl}`);
+        assert.match(
+          result.output,
+        /LLMCHEF_RELEASE_URL.*(loopback|default release origin|http\(s\)|userinfo)/i,
+          `${launcher.id} reported an unexpected error for a rejected override (${invalidReleaseUrl}):\n${result.output}`,
+        );
+      } finally {
+        await fs.rm(fixtureRoot, { recursive: true, force: true });
+      }
     }
   }
 }
@@ -284,26 +327,49 @@ async function runRedirectOverrideChecks(launchers) {
 
   try {
     for (const launcher of launchers) {
-      const result = await spawnAndCollect(launcher.command, [...launcher.args, "0"], {
-        cwd: repoRoot,
-        env: {
-          ...process.env,
-          LLMCHEF_RELEASE_URL: redirectServer.releaseUrl,
-          LLMCHEF_RUNNER_APP_DIR: path.join(os.tmpdir(), `llmchef-redirect-override-${launcher.id}`),
-          ...launcher.env,
-        },
-      });
+      const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), `llmchef-redirect-override-${launcher.id}-`));
+      try {
+        const preparedLauncher = await prepareLauncherSpawn(launcher, fixtureRoot);
+        const result = await spawnAndCollect(launcher.command, [...preparedLauncher.args, "0"], {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            LLMCHEF_RELEASE_URL: redirectServer.releaseUrl,
+            LLMCHEF_RUNNER_APP_DIR: path.join(fixtureRoot, "app"),
+            ...launcher.env,
+          },
+        });
 
-      assert.notEqual(result.code, 0, `${launcher.id} followed a malicious redirect override.`);
-      assert.match(
-        result.output,
-        /(redirect|max(?:imum)? redir|maximum redirection)/i,
-        `${launcher.id} reported an unexpected error for a rejected redirect override:\n${result.output}`,
-      );
+        assert.notEqual(result.code, 0, `${launcher.id} followed a malicious redirect override.`);
+        assert.match(
+          result.output,
+          /(redirect|max(?:imum)? redir|maximum redirection)/i,
+          `${launcher.id} reported an unexpected error for a rejected redirect override:\n${result.output}`,
+        );
+      } finally {
+        await fs.rm(fixtureRoot, { recursive: true, force: true });
+      }
     }
   } finally {
     await new Promise((resolve, reject) => redirectServer.server.close((error) => (error ? reject(error) : resolve())));
   }
+}
+
+async function prepareLauncherSpawn(launcher, fixtureRoot) {
+  if (!launcher.powershellScript) {
+    return launcher;
+  }
+
+  const tempScript = path.join(
+    fixtureRoot,
+    `${launcher.id}-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}.ps1`,
+  );
+  await fs.copyFile(path.join(repoRoot, launcher.powershellScript), tempScript);
+
+  return {
+    ...launcher,
+    args: launcher.args.map((arg) => (arg === launcher.powershellScript ? tempScript : arg)),
+  };
 }
 
 async function waitForHealthyServer(port, child, readOutput) {

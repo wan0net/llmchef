@@ -18,6 +18,11 @@ resolve_release_url() {
   local authority="${remainder%%/*}"
   local host="$authority"
 
+  if [[ "$authority" == *"@"* ]]; then
+    echo "Error: LLMCHEF_RELEASE_URL must not include userinfo." >&2
+    return 1
+  fi
+
   if [[ "$host" =~ ^\[(.*)\](:[0-9]+)?$ ]]; then
     host="${BASH_REMATCH[1]}"
   else
