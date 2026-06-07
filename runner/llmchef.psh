@@ -80,9 +80,10 @@ try {
 
     # Create PS web server file
     $WebServerScript = @"
+    `$ErrorActionPreference = "Stop"
     `$listener = New-Object System.Net.HttpListener
     `$hostAddress = "$(if ($AllowExternalConnections) { '+' } else { 'localhost' })"
-    `$listener.Prefixes.Add("http://`$hostAddress:$Port/")
+    `$listener.Prefixes.Add("http://`${hostAddress}:$Port/")
     `$listener.Start()
 
     Write-Host "LLMChef is running at http://$(if ($AllowExternalConnections) { (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch 'Loopback'} | Select-Object -First 1).IPAddress } else { 'localhost' }):$Port $(if ($AllowExternalConnections) { '(accessible from other devices)' } else { '(local access only)' })"
