@@ -38,7 +38,7 @@ const renderBlock = (
         key={`html-${index}`}
         className="markdown-content"
         dangerouslySetInnerHTML={{
-          __html: sanitizeRichTextHtml(item),
+          __html: sanitizeRichTextHtml(item), // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml -- sanitized before sink.
         }}
       />
     );

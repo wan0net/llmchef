@@ -18,10 +18,12 @@ const parseJsonParts = <T>(
     try {
       return [JSON.parse(value) as T];
     } catch (error) {
-      console.error(
-        `[${source}] Skipping malformed ${label} payload at index ${index}:`,
-        error
-      );
+      console.error("Skipping malformed tool payload", {
+        error,
+        index,
+        label,
+        source,
+      });
       return [];
     }
   });
