@@ -649,7 +649,7 @@ jobs:
           push_branch() {
             local stderr_path="$1"
             GIT_TERMINAL_PROMPT=0 \
-            git_with_push_auth push --set-upstream origin "$BRANCH_NAME" >/tmp/developer-push-stdout.log 2>"$stderr_path"
+            git_with_push_auth push --force-with-lease --set-upstream origin "$BRANCH_NAME" >/tmp/developer-push-stdout.log 2>"$stderr_path"
           }
 
           if git diff --quiet && git diff --cached --quiet; then
