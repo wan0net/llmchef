@@ -80,6 +80,11 @@ try {
 
     # Create PS web server file
     $WebServerScript = @"
+    param (
+        [Parameter(Mandatory=`$true)]
+        [string]`$BasePath
+    )
+
     `$ErrorActionPreference = "Stop"
     `$listener = New-Object System.Net.HttpListener
     `$hostAddress = "$(if ($AllowExternalConnections) { '+' } else { 'localhost' })"
@@ -88,7 +93,7 @@ try {
 
     Write-Host "LLMChef is running at http://$(if ($AllowExternalConnections) { (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch 'Loopback'} | Select-Object -First 1).IPAddress } else { 'localhost' }):$Port $(if ($AllowExternalConnections) { '(accessible from other devices)' } else { '(local access only)' })"
 
-    `$basePath = "$($TempDir.Replace('\', '\\'))"
+    `$basePath = `$BasePath
 
     try {
         `$handledRequests = 0
@@ -155,10 +160,11 @@ try {
     $WebServerScript | Out-File -FilePath $WebServerScriptPath -Encoding utf8
 
     # Run the web server
+    $WebServerArgs = @("-ExecutionPolicy", "Bypass", "-File", $WebServerScriptPath, "-BasePath", $TempDir)
     if ($ForegroundServer) {
-        & powershell -ExecutionPolicy Bypass -File "$WebServerScriptPath"
+        & powershell @WebServerArgs
     } else {
-        Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$WebServerScriptPath`"" -NoNewWindow
+        Start-Process powershell -ArgumentList $WebServerArgs -NoNewWindow
     }
 
 } catch {
