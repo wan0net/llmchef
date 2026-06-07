@@ -8,10 +8,11 @@ import { workflowEvent } from "@/types/llmchef/events/workflow.events";
 import { webSearchEvent } from "@/types/llmchef/events/websearch.events";
 import { WorkflowWebSearchControlTrigger } from "../components/workflow-websearch/WorkflowWebSearchControlTrigger";
 import { useInteractionStore } from "@/store/interaction.store";
-import { PersistenceService } from "@/services/persistence.service";
-import { websearchPromptTemplates, WEBSEARCH_TEMPLATE_IDS } from "@/lib/llmchef/websearch-prompt-templates";
-import basicWebSearchWorkflow from "@/assets/workflows/basic-websearch.json";
-import deepWebSearchWorkflow from "@/assets/workflows/deep-websearch.json";
+import {
+  createDefaultWorkflowWebSearchConfig,
+  createDefaultWorkflowWebSearchDeepConfig,
+  WorkflowWebSearchPersistenceService,
+} from "@/services/workflow-websearch-persistence.service";
 import type { 
   WebSearchConfig, 
   DeepSearchConfig, 
@@ -25,23 +26,10 @@ export class WorkflowWebSearchControlModule implements ControlModule {
   private modApiRef: LLMChefModApi | null = null;
 
   // Configuration state
-  private searchConfig: WebSearchConfig = {
-    maxResults: 5,
-    searchDepth: 1,
-    enableImageSearch: false,
-    condensationEnabled: true,
-    delayBetweenRequests: 1000,
-    maxContentLength: 10000,
-    persistAcrossSubmissions: false,
-    region: 'us-en',
-    safeSearch: 'moderate'
-  };
+  private searchConfig: WebSearchConfig = createDefaultWorkflowWebSearchConfig();
 
-  private deepSearchConfig: DeepSearchConfig = {
-    enabled: false,
-    maxDepth: 2,
-    avenuesPerDepth: 3
-  };
+  private deepSearchConfig: DeepSearchConfig =
+    createDefaultWorkflowWebSearchDeepConfig();
 
   // UI state
   private isEnabled = false;
@@ -56,8 +44,7 @@ export class WorkflowWebSearchControlModule implements ControlModule {
     this.modApiRef = modApi;
     this.isStreaming = useInteractionStore.getState().status === "streaming";
     
-    // Load saved configuration from localStorage
-    this.loadConfiguration();
+    await this.loadConfiguration();
     
     // Register websearch prompt templates and workflows
     await this.registerPromptTemplates();
@@ -96,79 +83,31 @@ export class WorkflowWebSearchControlModule implements ControlModule {
     this.notifyComponentUpdate?.();
   }
 
-  private loadConfiguration(): void {
+  private async loadConfiguration(): Promise<void> {
     try {
-      const savedConfig = localStorage.getItem('workflow-websearch-config');
-      if (savedConfig) {
-        const parsed = JSON.parse(savedConfig);
-        this.searchConfig = { ...this.searchConfig, ...parsed.searchConfig };
-        this.deepSearchConfig = { ...this.deepSearchConfig, ...parsed.deepSearchConfig };
-        this.selectedWorkflow = parsed.selectedWorkflow || this.selectedWorkflow;
-      }
+      const persistedSettings =
+        await WorkflowWebSearchPersistenceService.loadSettings();
+      this.searchConfig = persistedSettings.searchConfig;
+      this.deepSearchConfig = persistedSettings.deepSearchConfig;
+      this.selectedWorkflow = persistedSettings.selectedWorkflow;
     } catch (error) {
       console.warn('Failed to load websearch configuration:', error);
     }
   }
 
-  private saveConfiguration(): void {
-    try {
-      const config = {
-        searchConfig: this.searchConfig,
-        deepSearchConfig: this.deepSearchConfig,
-        selectedWorkflow: this.selectedWorkflow
-      };
-      localStorage.setItem('workflow-websearch-config', JSON.stringify(config));
-    } catch (error) {
-      console.warn('Failed to save websearch configuration:', error);
-    }
+  private persistConfiguration(): void {
+    void WorkflowWebSearchPersistenceService.saveSettings({
+      searchConfig: this.searchConfig,
+      deepSearchConfig: this.deepSearchConfig,
+      selectedWorkflow: this.selectedWorkflow,
+    }).catch((error) => {
+      console.warn("Failed to save websearch configuration:", error);
+    });
   }
 
   private async registerPromptTemplates(): Promise<void> {
     try {
-      // Update cutoff date - templates older than this will be updated
-      const UPDATE_CUTOFF_DATE = new Date('2025-07-14T19:02:00Z');
-      
-      const existingTemplates = await PersistenceService.loadPromptTemplates();
-      const templateIds = Object.values(WEBSEARCH_TEMPLATE_IDS);
-      
-      for (let i = 0; i < websearchPromptTemplates.length; i++) {
-        const template = websearchPromptTemplates[i];
-        const templateId = templateIds[i];
-        
-        // Check for existing template by ID or name (to handle duplicates)
-        const existingById = existingTemplates.find(t => t.id === templateId);
-        const existingByName = existingTemplates.find(t => t.name === template.name);
-        const existing = existingById || existingByName;
-        
-        if (!existing) {
-          // Register new template
-          const fullTemplate = {
-            id: templateId,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            ...template
-          };
-          
-          await PersistenceService.savePromptTemplate(fullTemplate);
-          console.log(`[${this.id}] Registered new prompt template: ${templateId}`);
-        } else if (existing.updatedAt < UPDATE_CUTOFF_DATE) {
-          // Update existing template if it's older than cutoff
-          if (existing.id !== templateId) {
-            // Delete old template with wrong ID first
-            await PersistenceService.deletePromptTemplate(existing.id);
-          }
-          
-          const updatedTemplate = {
-            ...existing,
-            ...template,
-            id: templateId, // Ensure correct ID
-            updatedAt: new Date()
-          };
-          
-          await PersistenceService.savePromptTemplate(updatedTemplate);
-          console.log(`[${this.id}] Updated prompt template: ${templateId} (was: ${existing.id})`);
-        }
-      }
+      await WorkflowWebSearchPersistenceService.ensurePromptTemplatesRegistered();
     } catch (error) {
       console.warn("[", this.id, "] Failed to register prompt templates:", error);
     }
@@ -176,17 +115,7 @@ export class WorkflowWebSearchControlModule implements ControlModule {
 
   private async registerWorkflowTemplates(): Promise<void> {
     try {
-      const existingWorkflows = await PersistenceService.loadWorkflows();
-
-      if (!existingWorkflows.some(w => w.id === 'basic-websearch')) {
-        await PersistenceService.saveWorkflow(basicWebSearchWorkflow);
-        console.log(`[${this.id}] Registered workflow template: basic-websearch`);
-      }
-
-      if (!existingWorkflows.some(w => w.id === 'deep-websearch')) {
-        await PersistenceService.saveWorkflow(deepWebSearchWorkflow);
-        console.log(`[${this.id}] Registered workflow template: deep-websearch`);
-      }
+      await WorkflowWebSearchPersistenceService.ensureWorkflowTemplatesRegistered();
     } catch (error) {
       console.warn("[", this.id, "] Failed to register workflow templates:", error);
     }
@@ -252,7 +181,7 @@ export class WorkflowWebSearchControlModule implements ControlModule {
   public updateSearchConfig = (config: Partial<WebSearchConfig>): void => {
     const oldConfig = { ...this.searchConfig };
     this.searchConfig = { ...this.searchConfig, ...config };
-    this.saveConfiguration();
+    this.persistConfiguration();
     
     emitter.emit(webSearchEvent.configUpdated, {
       oldConfig,
@@ -265,13 +194,13 @@ export class WorkflowWebSearchControlModule implements ControlModule {
 
   public updateDeepSearchConfig = (config: Partial<DeepSearchConfig>): void => {
     this.deepSearchConfig = { ...this.deepSearchConfig, ...config };
-    this.saveConfiguration();
+    this.persistConfiguration();
     this.notifyComponentUpdate?.();
   };
 
   public selectWorkflow = (workflowId: string): void => {
     this.selectedWorkflow = workflowId;
-    this.saveConfiguration();
+    this.persistConfiguration();
     
     emitter.emit(webSearchEvent.workflowSelected, {
       workflowId,
@@ -310,9 +239,10 @@ export class WorkflowWebSearchControlModule implements ControlModule {
     });
 
     try {
-      // Load workflow templates
-      const workflows = await PersistenceService.loadWorkflows();
-      const workflowTemplate = workflows.find(t => t.id === this.selectedWorkflow);
+      const workflowTemplate =
+        await WorkflowWebSearchPersistenceService.loadWorkflowTemplateById(
+          this.selectedWorkflow,
+        );
       
       if (!workflowTemplate) {
         throw new Error(`Workflow template not found: ${this.selectedWorkflow}`);
