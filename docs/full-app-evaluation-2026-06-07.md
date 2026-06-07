@@ -35,7 +35,7 @@ The evaluation did not identify a reproducible product-code regression in the av
 | Local Node 20, `npx -y -p node@20 -c ...` | `npm run release:verify` | Pass | Release verification completed on 2026-06-07. |
 | Local Node 20, `npx -y -p node@20 -c ...` | `npm run budget` | Pass | Budget checks completed on 2026-06-07. |
 | Local Python | `python3 -m unittest tests/test_adopt_agentic_runners.py` | Pass | 3 tests passed on 2026-06-07. |
-| Local artifact check | `public/release/latest.zip` | Pass | File exists and was 11M after `npm run release:local`. |
+| Local artifact check | `public/release/latest.zip` after `npm run release:local` | Pass | Local verification recorded the generated archive at 11M immediately after the release build; this generated artifact is not committed to the branch. |
 | PR #28 Quality CI, run `27089998896` | `lint, test, build` | Pass | Hosted Ubuntu job succeeded after `npx playwright install --with-deps chromium`; includes `npm run test:e2e`. |
 | PR #28 Quality CI, run `27089998896` | Runner smoke: linux, macos, windows | Pass | All runner smoke jobs succeeded. |
 | PR #28 Security CI, run `27089998893` | Semgrep and Trivy | Pass | Security jobs succeeded. |
@@ -62,4 +62,4 @@ The evaluation did not identify a reproducible product-code regression in the av
 
 ## Conclusion
 
-BL-008 evaluation evidence is recorded here. The authoritative local Node 20 verification passed the listed project, test, lint, release, audit, and budget checks; `public/release/latest.zip` exists and was 11M; and PR #28 CI passed Quality, runner smoke, Semgrep, and Trivy jobs. The only remaining blocked item recorded here is `tests/test_sync_github_kanban_issues.py`, which still needs `hermes_cli`. No product-code regression was reproduced during this pass.
+BL-008 evaluation evidence is recorded here. The authoritative local Node 20 verification passed the listed project, test, lint, release, audit, and budget checks; `npm run release:local` generated `public/release/latest.zip` at 11M during that run; and PR #28 CI passed Quality, runner smoke, Semgrep, and Trivy jobs. The generated release archive is not committed to the branch. The only remaining blocked item recorded here is `tests/test_sync_github_kanban_issues.py`, which still needs `hermes_cli`. No product-code regression was reproduced during this pass.
