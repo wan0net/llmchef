@@ -3,7 +3,6 @@ import { execFile } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
-import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
@@ -43,19 +42,11 @@ function resolveReleaseUrl(candidate = DEFAULT_RELEASE_URL) {
   }
 
   const hostname = parsed.hostname.replace(/^\[(.*)\]$/, "$1");
-  if (hostname !== "localhost" && !isLoopbackHost(hostname)) {
+  if (!["localhost", "127.0.0.1", "::1"].includes(hostname)) {
     throw new Error("LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.");
   }
 
   return candidate;
-}
-
-function isLoopbackHost(hostname) {
-  if (net.isIPv4(hostname)) {
-    return hostname.startsWith("127.");
-  }
-
-  return net.isIPv6(hostname) && hostname === "::1";
 }
 
 function getDownloadClient(url) {

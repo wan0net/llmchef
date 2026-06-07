@@ -29,8 +29,7 @@ resolve_release_url() {
     host="${host%%:*}"
   fi
 
-  local octet='(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])'
-  if [[ "$host" == "localhost" || "$host" == "::1" || "$host" =~ ^127\.${octet}\.${octet}\.${octet}$ ]]; then
+  if [[ "$host" == "localhost" || "$host" == "127.0.0.1" || "$host" == "::1" ]]; then
     printf '%s\n' "$candidate"
     return 0
   fi

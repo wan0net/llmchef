@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 require 'fileutils'
 require 'pathname'
-require 'ipaddr'
 require 'zip'
 require 'webrick'
 require 'optparse'
@@ -37,13 +36,7 @@ module LLMChefRunner
     uri = URI.parse(raw_url)
     raise 'LLMCHEF_RELEASE_URL only supports http(s) loopback overrides.' unless %w[http https].include?(uri.scheme)
     raise 'LLMCHEF_RELEASE_URL must include a hostname.' if uri.host.nil? || uri.host.empty?
-    return raw_url if uri.host == 'localhost'
-
-    begin
-      return raw_url if IPAddr.new(uri.host).loopback?
-    rescue IPAddr::InvalidAddressError
-      nil
-    end
+    return raw_url if %w[localhost 127.0.0.1 ::1].include?(uri.host)
 
     raise 'LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.'
   end

@@ -45,11 +45,7 @@ function resolveReleaseUrl() {
         exit(1);
     }
 
-    $isLoopback = $host === 'localhost'
-        || filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
-            && preg_match('/^127\./', $host)
-        || filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)
-            && $host === '::1';
+    $isLoopback = $host === 'localhost' || $host === '127.0.0.1' || $host === '::1';
 
     if (!$isLoopback) {
         fwrite(STDERR, "LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.\n");

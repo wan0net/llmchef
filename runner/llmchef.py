@@ -8,7 +8,6 @@ from urllib import error, request
 from urllib.parse import urlparse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import socket
-import ipaddress
 
 DEFAULT_RELEASE_URL = 'https://wan0.net/llmchef/release/latest.zip'
 
@@ -28,14 +27,8 @@ def resolve_release_url():
     if not hostname:
         raise ValueError('LLMCHEF_RELEASE_URL must include a hostname.')
 
-    if hostname == 'localhost':
+    if hostname in ('localhost', '127.0.0.1', '::1'):
         return raw_url
-
-    try:
-        if ipaddress.ip_address(hostname).is_loopback:
-            return raw_url
-    except ValueError:
-        pass
 
     raise ValueError('LLMCHEF_RELEASE_URL must stay on the default release origin or a loopback host.')
 
