@@ -56,6 +56,7 @@ jobs:
         run: |
           gem install rubyzip --version 2.4.1 --no-document
           gem install webrick --version 1.9.1 --no-document
+          gem install minitest --version 5.25.5 --no-document
 
       - name: Runner smoke tests
         env:

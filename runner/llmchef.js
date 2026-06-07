@@ -232,4 +232,5 @@ downloadRelease(releaseUrl, zipPath)
       fs.unlinkSync(zipPath);
     }
     console.error("Error downloading LLMChef:", err);
+    process.exitCode = 1;
   });
