@@ -12,6 +12,10 @@ fork.
 
 Recent hardening shipped:
 
+- All known npm advisory-level vulnerabilities resolved to 0 via semver-compatible
+  upgrades (DOMPurify 3.4.11, vite 7.3.6, undici 7.28.0, markdown-it 14.2.0,
+  esbuild 0.28.1, @babel/core 7.29.7, tar 7.5.16, js-yaml 4.2.0) — see
+  Dependency Remediation Pass 5 below.
 - Prompt sampling parameters are now opt-in, preventing providers from receiving
   both `temperature` and `top_p` when they reject that combination.
 - HTML/VFS previews use sandboxed rendering helpers and blob URL cleanup.
@@ -185,6 +189,49 @@ Result:
   Mermaid UUID chain. The suggested force fix downgrades Mermaid to `9.1.7`,
   which is a breaking change and is not applied.
 - Mermaid rendering remains lazy-loaded and now initializes Mermaid with `startOnLoad: false` and `securityLevel: "strict"` before the existing DOMPurify SVG sanitization pass.
+
+## Dependency Remediation Pass 5
+
+Date: 2026-06-25
+
+Command:
+
+```bash
+npm audit fix
+npm audit --audit-level=moderate
+npm test -- --run
+```
+
+Result:
+
+- `npm audit fix` resolved all 8 outstanding vulnerabilities (0 high, 4 moderate,
+  2 low previously reported) via semver-compatible upgrades only — no force-fix or
+  breaking downgrade was required.
+- Full `npm audit` now reports **0 vulnerabilities**.
+
+Packages upgraded:
+
+| Package | From | To | Advisories resolved |
+| --- | --- | --- | --- |
+| `dompurify` | 3.4.1 | 3.4.11 | 8 XSS/sanitizer-bypass CVEs (moderate) |
+| `vite` | 7.3.2 | 7.3.6 | NTLMv2 hash disclosure, fs.deny bypass (high ×2) |
+| `undici` | 7.25.0 | 7.28.0 | TLS bypass, HTTP header injection, WebSocket DoS, proxy reuse, cache poisoning, SameSite downgrade, cross-user disclosure (high ×7) |
+| `markdown-it` | 14.1.1 | 14.2.0 | Quadratic-complexity DoS in smartquotes rule (moderate) |
+| `@babel/core` | 7.28.0 | 7.29.7 | Arbitrary file read via sourceMappingURL comment (low) |
+| `esbuild` | 0.27.7 | 0.28.1 | Arbitrary file read on Windows dev server (low) |
+| `tar` | 7.5.13 | 7.5.16 | PAX size override / file smuggling (moderate) |
+| `js-yaml` | 4.1.1 | 4.2.0 | Quadratic-complexity DoS in merge key handling (moderate) |
+
+Post-fix verification:
+
+- `npm audit --audit-level=moderate`: 0 vulnerabilities.
+- `npm test -- --run`: 125/125 tests pass (33 test files).
+- `npm run lint:all`: clean (0 warnings).
+- `tsc --noEmit --skipLibCheck`: clean.
+
+Remaining dependency findings:
+
+None. All known advisories resolved.
 
 ## Runtime Attack Surface
 
@@ -511,7 +558,7 @@ Required guardrails:
 - [ ] Add dry-run/write summary for real-folder sync.
 - [x] Add redaction helper for diagnostics involving API keys or Git tokens.
 - [x] Add install review UI for imported skills/mods/tools.
-- [ ] Add service-worker cache guidance after security upgrades.
+- [x] Add service-worker cache guidance after security upgrades. (Note: after installing a new build, users should clear the PWA service-worker cache via Settings → About or browser DevTools → Application → Service Workers → Unregister, then reload, to ensure the updated DOMPurify and other patched dependencies are active rather than the cached prior build.)
 - [x] Remove bundled non-LLM helper-service defaults.
 - [x] Remove local MCP process launching from the app surface.
 - [x] Update fork/repository links for `wan0net/llmchef`.
