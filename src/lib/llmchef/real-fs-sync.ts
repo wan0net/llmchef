@@ -269,9 +269,7 @@ const importDirectory = async (
   for await (const [name, handle] of directoryHandle.entries()) {
     if (shouldIgnoreRealFsEntry(name)) {
       result.filesSkipped++;
-      if ("entries" in result) {
-        (result as RealFsSyncPlan).entries.push({ path: `${targetVfsPath}/${name}`, action: "skip" });
-      }
+      addPlanEntry(result, `${targetVfsPath}/${name}`, "skip");
       continue;
     }
 
@@ -285,9 +283,7 @@ const importDirectory = async (
     const file = await handle.getFile();
     if (await isVfsFileNewerOrEqual(childVfsPath, file.lastModified, fsInstance)) {
       result.filesSkipped++;
-      if ("entries" in result) {
-        (result as RealFsSyncPlan).entries.push({ path: childVfsPath, action: "skip" });
-      }
+      addPlanEntry(result, childVfsPath, "skip");
       continue;
     }
 
@@ -296,9 +292,7 @@ const importDirectory = async (
       await VfsOps.writeFileOp(childVfsPath, data, { fsInstance });
     }
     result.filesImported++;
-    if ("entries" in result) {
-      (result as RealFsSyncPlan).entries.push({ path: childVfsPath, action: "import" });
-    }
+    addPlanEntry(result, childVfsPath, "import");
   }
 };
 
@@ -314,9 +308,7 @@ const exportDirectory = async (
   for (const entry of entries) {
     if (shouldIgnoreRealFsEntry(entry.name)) {
       result.filesSkipped++;
-      if ("entries" in result) {
-        (result as RealFsSyncPlan).entries.push({ path: entry.path, action: "skip" });
-      }
+      addPlanEntry(result, entry.path, "skip");
       continue;
     }
 
@@ -335,9 +327,7 @@ const exportDirectory = async (
       (await isRealFileNewerOrEqual(existingFileHandle, entry.lastModified.getTime()))
     ) {
       result.filesSkipped++;
-      if ("entries" in result) {
-        (result as RealFsSyncPlan).entries.push({ path: entry.path, action: "skip" });
-      }
+      addPlanEntry(result, entry.path, "skip");
       continue;
     }
 
@@ -354,9 +344,7 @@ const exportDirectory = async (
       await writable.close();
     }
     result.filesExported++;
-    if ("entries" in result) {
-      (result as RealFsSyncPlan).entries.push({ path: entry.path, action: "export" });
-    }
+    addPlanEntry(result, entry.path, "export");
   }
 };
 
@@ -389,6 +377,12 @@ const createNullDirectoryHandle = (name: string): FileSystemDirectoryHandleLike 
   getDirectoryHandle: async () => { throw new Error("Directory not found."); },
   getFileHandle: async () => { throw new Error("File not found."); },
 });
+
+const addPlanEntry = (result: RealFsSyncResult, path: string, action: RealFsSyncAction): void => {
+  if ("entries" in result) {
+    (result as RealFsSyncPlan).entries.push({ path, action });
+  }
+};
 
 const isVfsFileNewerOrEqual = async (
   path: string,

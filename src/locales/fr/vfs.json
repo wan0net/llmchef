@@ -12,6 +12,7 @@
     "errorLoadingFilesystem": "Erreur lors du chargement du système de fichiers : {{error}}",
     "errorPrefix": "Erreur : ",
     "retry": "Réessayer",
+    "localFolderSyncPlanning": "Vérification des modifications...",
     "toolbar": {
       "goToRootDir": "Aller au répertoire racine",
       "goUpOneLevel": "Monter d'un niveau",
@@ -103,7 +104,7 @@
   "folderSync": {
     "confirmDialog": {
       "title": "Confirmer la synchronisation",
-      "description": "{{changed}} fichier(s) seront écrits depuis/vers «\u202f{{folderName}}\u202f». Vérifiez les modifications ci-dessous avant de confirmer.",
+      "description": "{{changed}} fichier(s) seront écrits depuis/vers « {{folderName}} ». Vérifiez les modifications ci-dessous avant de confirmer.",
       "nothingToSync": "Tout est déjà à jour.",
       "syncNow": "Synchroniser",
       "close": "Fermer",

@@ -13,6 +13,7 @@
     "errorPrefix": "Error: ",
     "filesystemNotReady": "Filesystem is not ready.",
     "retry": "Retry",
+    "localFolderSyncPlanning": "Checking for changes...",
     "toolbar": {
       "goToRootDir": "Go to root directory",
       "goUpOneLevel": "Go up one level",
