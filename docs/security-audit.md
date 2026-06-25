@@ -555,7 +555,7 @@ Required guardrails:
 - [x] Add skill manifest and permission model before repo-imported skills.
 - [x] Add sandboxed VFS previewer for HTML instead of direct DOM render.
 - [x] Audit all `dangerouslySetInnerHTML` sinks and document sanitizer status.
-- [ ] Add dry-run/write summary for real-folder sync.
+- [x] Add dry-run/write summary for real-folder sync.
 - [x] Add redaction helper for diagnostics involving API keys or Git tokens.
 - [x] Add install review UI for imported skills/mods/tools.
 - [x] Add service-worker cache guidance after security upgrades. (Note: after installing a new build, users should clear the PWA service-worker cache via Settings → About or browser DevTools → Application → Service Workers → Unregister, then reload, to ensure the updated DOMPurify and other patched dependencies are active rather than the cached prior build.)

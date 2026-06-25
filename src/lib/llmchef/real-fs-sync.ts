@@ -40,6 +40,17 @@ export interface RealFsSyncResult {
   filesSkipped: number;
 }
 
+export type RealFsSyncAction = "import" | "export" | "skip";
+
+export interface RealFsSyncPlanEntry {
+  path: string;
+  action: RealFsSyncAction;
+}
+
+export interface RealFsSyncPlan extends RealFsSyncResult {
+  entries: RealFsSyncPlanEntry[];
+}
+
 export interface RealFsSyncOptions {
   fsInstance: typeof FsType;
   vfsPath: string;
@@ -141,6 +152,23 @@ export const syncProjectDirectoryTwoWay = async (
   });
 };
 
+export const planProjectDirectoryTwoWay = async (
+  projectId: string,
+  fsInstance: typeof FsType,
+  vfsPath = "/"
+): Promise<RealFsSyncPlan> => {
+  const directoryHandle = await loadProjectDirectoryHandle(projectId);
+  if (!directoryHandle) {
+    throw new Error("No local project folder is connected.");
+  }
+  await ensureReadWritePermission(directoryHandle);
+  return planRealFsSyncTwoWay({
+    fsInstance,
+    vfsPath,
+    directoryHandle,
+  });
+};
+
 export const syncRealDirectoryToVfs = async (
   options: RealFsSyncOptions
 ): Promise<RealFsSyncResult> => {
@@ -171,11 +199,47 @@ export const syncRealDirectoryTwoWay = async (
   };
 };
 
+export const planRealDirectoryToVfs = async (
+  options: RealFsSyncOptions
+): Promise<RealFsSyncPlan> => {
+  const plan = createEmptyPlan();
+  await importDirectory(options.directoryHandle, normalizePath(options.vfsPath), options.fsInstance, plan, true);
+  return plan;
+};
+
+export const planVfsToRealDirectory = async (
+  options: RealFsSyncOptions
+): Promise<RealFsSyncPlan> => {
+  const plan = createEmptyPlan();
+  await exportDirectory(normalizePath(options.vfsPath), options.directoryHandle, options.fsInstance, plan, true);
+  return plan;
+};
+
+export const planRealFsSyncTwoWay = async (
+  options: RealFsSyncOptions
+): Promise<RealFsSyncPlan> => {
+  const importPlan = await planRealDirectoryToVfs(options);
+  const exportPlan = await planVfsToRealDirectory(options);
+
+  return {
+    filesImported: importPlan.filesImported,
+    filesExported: exportPlan.filesExported,
+    directoriesCreated: importPlan.directoriesCreated + exportPlan.directoriesCreated,
+    filesSkipped: importPlan.filesSkipped + exportPlan.filesSkipped,
+    entries: [...importPlan.entries, ...exportPlan.entries],
+  };
+};
+
 const createEmptyResult = (): RealFsSyncResult => ({
   filesImported: 0,
   filesExported: 0,
   directoriesCreated: 0,
   filesSkipped: 0,
+});
+
+const createEmptyPlan = (): RealFsSyncPlan => ({
+  ...createEmptyResult(),
+  entries: [],
 });
 
 export const ensureReadWritePermission = async (
@@ -195,32 +259,46 @@ const importDirectory = async (
   directoryHandle: FileSystemDirectoryHandleLike,
   targetVfsPath: string,
   fsInstance: typeof FsType,
-  result: RealFsSyncResult
+  result: RealFsSyncResult,
+  dryRun = false
 ): Promise<void> => {
-  await VfsOps.createDirectoryOp(targetVfsPath, { fsInstance });
+  if (!dryRun) {
+    await VfsOps.createDirectoryOp(targetVfsPath, { fsInstance });
+  }
 
   for await (const [name, handle] of directoryHandle.entries()) {
     if (shouldIgnoreRealFsEntry(name)) {
       result.filesSkipped++;
+      if ("entries" in result) {
+        (result as RealFsSyncPlan).entries.push({ path: `${targetVfsPath}/${name}`, action: "skip" });
+      }
       continue;
     }
 
     const childVfsPath = joinPath(targetVfsPath, name);
     if (handle.kind === "directory") {
       result.directoriesCreated++;
-      await importDirectory(handle, childVfsPath, fsInstance, result);
+      await importDirectory(handle, childVfsPath, fsInstance, result, dryRun);
       continue;
     }
 
     const file = await handle.getFile();
     if (await isVfsFileNewerOrEqual(childVfsPath, file.lastModified, fsInstance)) {
       result.filesSkipped++;
+      if ("entries" in result) {
+        (result as RealFsSyncPlan).entries.push({ path: childVfsPath, action: "skip" });
+      }
       continue;
     }
 
-    const data = new Uint8Array(await file.arrayBuffer());
-    await VfsOps.writeFileOp(childVfsPath, data, { fsInstance });
+    if (!dryRun) {
+      const data = new Uint8Array(await file.arrayBuffer());
+      await VfsOps.writeFileOp(childVfsPath, data, { fsInstance });
+    }
     result.filesImported++;
+    if ("entries" in result) {
+      (result as RealFsSyncPlan).entries.push({ path: childVfsPath, action: "import" });
+    }
   }
 };
 
@@ -228,22 +306,26 @@ const exportDirectory = async (
   sourceVfsPath: string,
   directoryHandle: FileSystemDirectoryHandleLike,
   fsInstance: typeof FsType,
-  result: RealFsSyncResult
+  result: RealFsSyncResult,
+  dryRun = false
 ): Promise<void> => {
   const entries = await VfsOps.listFilesOp(sourceVfsPath, { fsInstance });
 
   for (const entry of entries) {
     if (shouldIgnoreRealFsEntry(entry.name)) {
       result.filesSkipped++;
+      if ("entries" in result) {
+        (result as RealFsSyncPlan).entries.push({ path: entry.path, action: "skip" });
+      }
       continue;
     }
 
     if (entry.isDirectory) {
-      const childDir = await directoryHandle.getDirectoryHandle(entry.name, {
-        create: true,
-      });
+      const childDir = dryRun
+        ? (await getOrNullRealDirectoryHandle(directoryHandle, entry.name)) ?? createNullDirectoryHandle(entry.name)
+        : await directoryHandle.getDirectoryHandle(entry.name, { create: true });
       result.directoriesCreated++;
-      await exportDirectory(entry.path, childDir, fsInstance, result);
+      await exportDirectory(entry.path, childDir, fsInstance, result, dryRun);
       continue;
     }
 
@@ -253,20 +335,28 @@ const exportDirectory = async (
       (await isRealFileNewerOrEqual(existingFileHandle, entry.lastModified.getTime()))
     ) {
       result.filesSkipped++;
+      if ("entries" in result) {
+        (result as RealFsSyncPlan).entries.push({ path: entry.path, action: "skip" });
+      }
       continue;
     }
 
-    const fileHandle = await directoryHandle.getFileHandle(entry.name, {
-      create: true,
-    });
-    const data = await VfsOps.readFileOp(entry.path, {
-      fsInstance,
-      silent: true,
-    });
-    const writable = await fileHandle.createWritable();
-    await writable.write(data);
-    await writable.close();
+    if (!dryRun) {
+      const fileHandle = await directoryHandle.getFileHandle(entry.name, {
+        create: true,
+      });
+      const data = await VfsOps.readFileOp(entry.path, {
+        fsInstance,
+        silent: true,
+      });
+      const writable = await fileHandle.createWritable();
+      await writable.write(data);
+      await writable.close();
+    }
     result.filesExported++;
+    if ("entries" in result) {
+      (result as RealFsSyncPlan).entries.push({ path: entry.path, action: "export" });
+    }
   }
 };
 
@@ -280,6 +370,25 @@ const getExistingRealFileHandle = async (
     return null;
   }
 };
+
+const getOrNullRealDirectoryHandle = async (
+  directoryHandle: FileSystemDirectoryHandleLike,
+  name: string
+): Promise<FileSystemDirectoryHandleLike | null> => {
+  try {
+    return await directoryHandle.getDirectoryHandle(name);
+  } catch {
+    return null;
+  }
+};
+
+const createNullDirectoryHandle = (name: string): FileSystemDirectoryHandleLike => ({
+  kind: "directory",
+  name,
+  entries: async function* () {},
+  getDirectoryHandle: async () => { throw new Error("Directory not found."); },
+  getFileHandle: async () => { throw new Error("File not found."); },
+});
 
 const isVfsFileNewerOrEqual = async (
   path: string,

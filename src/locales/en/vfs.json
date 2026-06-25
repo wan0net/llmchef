@@ -106,5 +106,18 @@
     "attachVfsFiles": "Attach {{count}} selected VFS file(s)",
     "attachButtonText": "Attach ({{count}})",
     "attachSelectedTooltip": "Attach selected VFS files to prompt"
+  },
+  "folderSync": {
+    "confirmDialog": {
+      "title": "Confirm Folder Sync",
+      "description": "{{changed}} file(s) will be written to/from \"{{folderName}}\". Review the changes below and confirm to proceed.",
+      "nothingToSync": "Everything is already up to date.",
+      "syncNow": "Sync Now",
+      "close": "Close",
+      "willImport": "will import into VFS",
+      "willExport": "will export to local folder",
+      "skip": "skip (up to date)",
+      "andMore": "…and {{count}} more"
+    }
   }
 }

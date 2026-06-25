@@ -22,14 +22,18 @@ import { FileManagerTable } from "./FileManagerTable";
 import { FileManagerToolbar } from "./FileManagerToolbar";
 import { CloneDialog } from "./CloneDialog";
 import { CommitDialog } from "./CommitDialog";
+import { FolderSyncConfirmDialog } from "./FolderSyncConfirmDialog";
 import * as VfsOps from "@/lib/llmchef/vfs-operations";
 import {
   describeRealFsSyncResult,
   getProjectDirectoryHandleInfo,
   isRealFsSyncSupported,
   pickProjectDirectory,
+  planProjectDirectoryTwoWay,
+  planRealFsSyncTwoWay,
   syncProjectDirectoryTwoWay,
   syncRealDirectoryTwoWay,
+  type RealFsSyncPlan,
 } from "@/lib/llmchef/real-fs-sync";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -124,6 +128,10 @@ export const FileManager = memo(() => {
   const [localFolderStatus, setLocalFolderStatus] = useState<string | null>(
     null
   );
+  const [syncPlan, setSyncPlan] = useState<RealFsSyncPlan | null>(null);
+  const [isSyncConfirmOpen, setIsSyncConfirmOpen] = useState(false);
+  const [isSyncConfirming, setIsSyncConfirming] = useState(false);
+  const pendingSyncRef = useRef<(() => Promise<void>) | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
@@ -422,29 +430,55 @@ export const FileManager = memo(() => {
         return;
       }
 
+      const doSync = async () => {
+        try {
+          projectFolderSyncingRef.current = true;
+          setLocalFolderStatus(
+            t("fileManager.localFolderSyncing", "Syncing local folder...")
+          );
+          const result = await syncProjectDirectoryTwoWay(
+            projectIdForLocalFolder,
+            fsInstance,
+            projectFolderVfsPath
+          );
+          const message = describeRealFsSyncResult("two-way", result);
+          setLocalFolderStatus(message);
+          if (showToast) toast.success(message);
+          emitter.emit(vfsEvent.fetchNodesRequest, {
+            parentId: currentParentId,
+          });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error("Project folder sync error:", err);
+          setLocalFolderStatus(message);
+          if (showToast) toast.error(message);
+        } finally {
+          projectFolderSyncingRef.current = false;
+        }
+      };
+
+      if (!showToast) {
+        // Background auto-sync: run directly without confirmation
+        await doSync();
+        return;
+      }
+
+      // Manual sync: show dry-run plan first
       try {
-        projectFolderSyncingRef.current = true;
-        setLocalFolderStatus(
-          t("fileManager.localFolderSyncing", "Syncing local folder...")
-        );
-        const result = await syncProjectDirectoryTwoWay(
+        setLocalFolderStatus(t("fileManager.localFolderSyncPlanning", "Checking for changes..."));
+        const plan = await planProjectDirectoryTwoWay(
           projectIdForLocalFolder,
           fsInstance,
           projectFolderVfsPath
         );
-        const message = describeRealFsSyncResult("two-way", result);
-        setLocalFolderStatus(message);
-        if (showToast) toast.success(message);
-        emitter.emit(vfsEvent.fetchNodesRequest, {
-          parentId: currentParentId,
-        });
+        setSyncPlan(plan);
+        pendingSyncRef.current = doSync;
+        setIsSyncConfirmOpen(true);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error("Project folder sync error:", err);
+        console.error("Project folder sync plan error:", err);
         setLocalFolderStatus(message);
-        if (showToast) toast.error(message);
-      } finally {
-        projectFolderSyncingRef.current = false;
+        toast.error(message);
       }
     },
     [
@@ -456,6 +490,18 @@ export const FileManager = memo(() => {
       t,
     ]
   );
+
+  const handleSyncConfirm = useCallback(async () => {
+    if (!pendingSyncRef.current) return;
+    setIsSyncConfirming(true);
+    try {
+      await pendingSyncRef.current();
+    } finally {
+      setIsSyncConfirming(false);
+      setIsSyncConfirmOpen(false);
+      pendingSyncRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!localFolderName || !projectIdForLocalFolder) return;
@@ -517,17 +563,27 @@ export const FileManager = memo(() => {
           defaultValue: `Local: ${directoryHandle.name} connected`,
         })
       );
-      const result = await syncRealDirectoryTwoWay({
+
+      const plan = await planRealFsSyncTwoWay({
         fsInstance,
         vfsPath: projectFolderVfsPath,
         directoryHandle,
       });
-      const message = describeRealFsSyncResult("two-way", result);
-      setLocalFolderStatus(message);
-      toast.success(message);
-      emitter.emit(vfsEvent.fetchNodesRequest, {
-        parentId: currentParentId,
-      });
+      setSyncPlan(plan);
+      pendingSyncRef.current = async () => {
+        const result = await syncRealDirectoryTwoWay({
+          fsInstance,
+          vfsPath: projectFolderVfsPath,
+          directoryHandle,
+        });
+        const message = describeRealFsSyncResult("two-way", result);
+        setLocalFolderStatus(message);
+        toast.success(message);
+        emitter.emit(vfsEvent.fetchNodesRequest, {
+          parentId: currentParentId,
+        });
+      };
+      setIsSyncConfirmOpen(true);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       const message = err instanceof Error ? err.message : String(err);
@@ -1042,6 +1098,14 @@ export const FileManager = memo(() => {
               }
             : undefined
         }
+      />
+      <FolderSyncConfirmDialog
+        isOpen={isSyncConfirmOpen}
+        onOpenChange={setIsSyncConfirmOpen}
+        plan={syncPlan}
+        folderName={localFolderName ?? ""}
+        isSubmitting={isSyncConfirming}
+        onConfirm={handleSyncConfirm}
       />
     </div>
   );

@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { FilePreviewDialog } from "@/components/LLMChef/file-manager/FilePreviewDialog";
+import { FolderSyncConfirmDialog } from "@/components/LLMChef/file-manager/FolderSyncConfirmDialog";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
 import { parseCrea8MarkdownNote } from "@/lib/llmchef/crea8-memory";
 import {
@@ -60,7 +61,10 @@ import {
   getProjectDirectoryHandleInfo,
   isRealFsSyncSupported,
   pickProjectDirectory,
+  planRealFsSyncTwoWay,
+  planProjectDirectoryTwoWay,
   syncProjectDirectoryTwoWay,
+  type RealFsSyncPlan,
 } from "@/lib/llmchef/real-fs-sync";
 import type {
   Crea8MemoryNote,
@@ -748,6 +752,10 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const [localFolderName, setLocalFolderName] = useState<string | null>(null);
   const [localFolderStatus, setLocalFolderStatus] = useState<string | null>(null);
   const [syncingLocalFolder, setSyncingLocalFolder] = useState(false);
+  const [syncPlan, setSyncPlan] = useState<RealFsSyncPlan | null>(null);
+  const [isSyncConfirmOpen, setIsSyncConfirmOpen] = useState(false);
+  const [isSyncConfirming, setIsSyncConfirming] = useState(false);
+  const pendingSyncRef = useRef<(() => Promise<void>) | null>(null);
 
   const workspaceRoot = useMemo(
     () => normalizePath(currentProject?.path ?? "/"),
@@ -1454,20 +1462,29 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       return;
     }
 
-    setSyncingLocalFolder(true);
     setError(null);
     try {
       const handle = await pickProjectDirectory(currentProjectId);
       setLocalFolderName(handle.name);
-      const result = await syncProjectDirectoryTwoWay(
-        currentProjectId,
-        fs,
-        workspaceRoot,
-      );
-      const message = describeRealFsSyncResult("two-way", result);
-      setLocalFolderStatus(message);
-      await loadDocuments();
-      toast.success(message);
+      setSyncingLocalFolder(true);
+      const plan = await planRealFsSyncTwoWay({
+        fsInstance: fs,
+        vfsPath: workspaceRoot,
+        directoryHandle: handle,
+      });
+      setSyncPlan(plan);
+      pendingSyncRef.current = async () => {
+        const result = await syncProjectDirectoryTwoWay(
+          currentProjectId,
+          fs,
+          workspaceRoot,
+        );
+        const message = describeRealFsSyncResult("two-way", result);
+        setLocalFolderStatus(message);
+        await loadDocuments();
+        toast.success(message);
+      };
+      setIsSyncConfirmOpen(true);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       const message =
@@ -1483,18 +1500,27 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const syncLocalFolderNow = useCallback(async () => {
     if (!currentProjectId || !fs || !localFolderName) return;
 
-    setSyncingLocalFolder(true);
     setError(null);
+    setSyncingLocalFolder(true);
     try {
-      const result = await syncProjectDirectoryTwoWay(
+      const plan = await planProjectDirectoryTwoWay(
         currentProjectId,
         fs,
         workspaceRoot,
       );
-      const message = describeRealFsSyncResult("two-way", result);
-      setLocalFolderStatus(message);
-      await loadDocuments();
-      toast.success(message);
+      setSyncPlan(plan);
+      pendingSyncRef.current = async () => {
+        const result = await syncProjectDirectoryTwoWay(
+          currentProjectId,
+          fs,
+          workspaceRoot,
+        );
+        const message = describeRealFsSyncResult("two-way", result);
+        setLocalFolderStatus(message);
+        await loadDocuments();
+        toast.success(message);
+      };
+      setIsSyncConfirmOpen(true);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to sync local folder.";
@@ -1505,6 +1531,24 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       setSyncingLocalFolder(false);
     }
   }, [currentProjectId, fs, loadDocuments, localFolderName, workspaceRoot]);
+
+  const handleSyncConfirm = useCallback(async () => {
+    if (!pendingSyncRef.current) return;
+    setIsSyncConfirming(true);
+    try {
+      await pendingSyncRef.current();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Sync failed.";
+      setLocalFolderStatus(message);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsSyncConfirming(false);
+      setIsSyncConfirmOpen(false);
+      pendingSyncRef.current = null;
+    }
+  }, []);
 
   const activeTitle =
     activeDocument?.kind === "crea8"
@@ -2246,6 +2290,14 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         onOpenChange={setIsPreviewOpen}
         descriptor={previewDescriptor}
         data={previewData}
+      />
+      <FolderSyncConfirmDialog
+        isOpen={isSyncConfirmOpen}
+        onOpenChange={setIsSyncConfirmOpen}
+        plan={syncPlan}
+        folderName={localFolderName ?? ""}
+        isSubmitting={isSyncConfirming}
+        onConfirm={handleSyncConfirm}
       />
     </div>
   );

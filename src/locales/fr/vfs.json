@@ -99,5 +99,18 @@
     "attachVfsFiles": "Attacher {{count}} fichier(s) VFS sélectionné(s)",
     "attachButtonText": "Attacher ({{count}})",
     "attachSelectedTooltip": "Attacher les fichiers VFS sélectionnés au prompt"
+  },
+  "folderSync": {
+    "confirmDialog": {
+      "title": "Confirmer la synchronisation",
+      "description": "{{changed}} fichier(s) seront écrits depuis/vers «\u202f{{folderName}}\u202f». Vérifiez les modifications ci-dessous avant de confirmer.",
+      "nothingToSync": "Tout est déjà à jour.",
+      "syncNow": "Synchroniser",
+      "close": "Fermer",
+      "willImport": "sera importé dans le VFS",
+      "willExport": "sera exporté vers le dossier local",
+      "skip": "ignoré (déjà à jour)",
+      "andMore": "…et {{count}} de plus"
+    }
   }
 }

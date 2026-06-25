@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   describeRealFsSyncResult,
+  planRealDirectoryToVfs,
+  planRealFsSyncTwoWay,
+  planVfsToRealDirectory,
   shouldIgnoreRealFsEntry,
   syncRealDirectoryToVfs,
   syncVfsToRealDirectory,
@@ -181,5 +184,89 @@ describe("real-fs-sync", () => {
         filesSkipped: 4,
       })
     ).toBe("Sync complete: 3 files changed, 4 skipped.");
+  });
+
+  it("dry-run import produces plan entries without writing to VFS", async () => {
+    const root = new MockDirectoryHandle("root");
+    root.children.set(
+      "hello.txt",
+      new MockFileHandle("hello.txt", createMockFile("hello", "hello.txt", 1))
+    );
+    root.children.set(".env", new MockFileHandle(".env", createMockFile("secret", ".env")));
+
+    const plan = await planRealDirectoryToVfs({
+      fsInstance: createMockFs() as any,
+      vfsPath: "/project",
+      directoryHandle: root as any,
+    });
+
+    expect(plan.filesImported).toBe(1);
+    expect(plan.filesSkipped).toBe(1);
+    expect(plan.entries).toEqual(
+      expect.arrayContaining([
+        { path: "/project/hello.txt", action: "import" },
+        { path: "/project/.env", action: "skip" },
+      ])
+    );
+    // Should NOT have written anything
+    expect(vfsOps.writeFileOp).not.toHaveBeenCalled();
+  });
+
+  it("dry-run export produces plan entries without writing to real FS", async () => {
+    vi.mocked(vfsOps.listFilesOp).mockResolvedValueOnce([
+      {
+        name: "hello.txt",
+        path: "/project/hello.txt",
+        isDirectory: false,
+        size: 5,
+        lastModified: new Date(1),
+      },
+    ]);
+
+    const root = new MockDirectoryHandle("root");
+    const plan = await planVfsToRealDirectory({
+      fsInstance: createMockFs() as any,
+      vfsPath: "/project",
+      directoryHandle: root as any,
+    });
+
+    expect(plan.filesExported).toBe(1);
+    expect(plan.entries).toEqual([{ path: "/project/hello.txt", action: "export" }]);
+    // Should NOT have created any writable or written data
+    expect(root.children.size).toBe(0);
+  });
+
+  it("dry-run two-way plan merges import and export entries", async () => {
+    vi.mocked(vfsOps.listFilesOp).mockResolvedValueOnce([
+      {
+        name: "vfs-only.txt",
+        path: "/project/vfs-only.txt",
+        isDirectory: false,
+        size: 5,
+        lastModified: new Date(1),
+      },
+    ]);
+
+    const root = new MockDirectoryHandle("root");
+    root.children.set(
+      "real-only.txt",
+      new MockFileHandle("real-only.txt", createMockFile("real", "real-only.txt", 1))
+    );
+
+    const plan = await planRealFsSyncTwoWay({
+      fsInstance: createMockFs() as any,
+      vfsPath: "/project",
+      directoryHandle: root as any,
+    });
+
+    expect(plan.filesImported).toBe(1);
+    expect(plan.filesExported).toBe(1);
+    expect(plan.entries).toEqual(
+      expect.arrayContaining([
+        { path: "/project/real-only.txt", action: "import" },
+        { path: "/project/vfs-only.txt", action: "export" },
+      ])
+    );
+    expect(vfsOps.writeFileOp).not.toHaveBeenCalled();
   });
 });
