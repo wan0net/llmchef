@@ -41,7 +41,7 @@ export const useUIStateStore = create(
     isChatControlPanelOpen: {},
     isPromptControlPanelOpen: {},
     isSidebarCollapsed: false,
-    workspaceMode: "chat",
+    workspaceMode: "documents",
     globalLoading: false,
     globalError: null,
     focusInputOnNextRender: false,

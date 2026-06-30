@@ -26,4 +26,56 @@ describe("parseMarkdownContent", () => {
       },
     ]);
   });
+
+  it("does not parse MDX-like tags inside fenced TSX code blocks", () => {
+    const parsed = parseMarkdownContent(
+      '```tsx\n<Embed src="https://example.com" />\n```',
+    );
+
+    expect(parsed).toEqual([
+      {
+        type: "block",
+        lang: "tsx",
+        code: '<Embed src="https://example.com" />\n',
+      },
+    ]);
+  });
+
+  it("parses prose-level Embed as a safe MDX component", () => {
+    const parsed = parseMarkdownContent(
+      '<Embed src="https://example.com" title="Example" />',
+    );
+
+    expect(parsed).toEqual([
+      {
+        type: "mdx-component",
+        component: "Embed",
+        props: {
+          src: "https://example.com",
+          title: "Example",
+        },
+        source: '<Embed src="https://example.com" title="Example" />',
+      },
+    ]);
+  });
+
+  it("parses paired Callout with markdown children as a safe MDX component", () => {
+    const parsed = parseMarkdownContent(
+      '<Callout type="tip" title="Try this">\n**Ship** the slice.\n</Callout>',
+    );
+
+    expect(parsed).toEqual([
+      {
+        type: "mdx-component",
+        component: "Callout",
+        props: {
+          type: "tip",
+          title: "Try this",
+        },
+        children: "**Ship** the slice.",
+        source:
+          '<Callout type="tip" title="Try this">\n**Ship** the slice.\n</Callout>',
+      },
+    ]);
+  });
 });

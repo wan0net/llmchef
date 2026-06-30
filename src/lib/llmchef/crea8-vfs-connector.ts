@@ -150,7 +150,7 @@ const listMarkdownFiles = async (
       continue;
     }
 
-    if (entry.name.toLowerCase().endsWith(".md")) {
+    if (/\.(md|mdx)$/i.test(entry.name)) {
       files.push(entryPath);
     }
   }
@@ -256,7 +256,7 @@ const slugMarkdownFilename = (title: string): string => {
     ?.join("-")
     .slice(0, MAX_FILENAME_BASE_LENGTH);
 
-  return `${slug || "note"}.md`;
+  return `${slug || "note"}.mdx`;
 };
 
 const decodeVfsData = (data: VfsData): string => {

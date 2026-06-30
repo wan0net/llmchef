@@ -187,10 +187,10 @@ describe("crea8-vfs-connector", () => {
       backend: "markdown-workspace",
       id: "generated-id",
       title: "Cloudflare Deploy!",
-      path: "/Memory/Projects/cloudflare-deploy.md",
+      path: "/Memory/Projects/cloudflare-deploy.mdx",
     });
     const [path, data, options] = vi.mocked(vfsOps.writeFileOp).mock.calls[0];
-    expect(path).toBe("/Memory/Projects/cloudflare-deploy.md");
+    expect(path).toBe("/Memory/Projects/cloudflare-deploy.mdx");
     expect(ArrayBuffer.isView(data)).toBe(true);
     expect(options).toEqual({ fsInstance: undefined });
 

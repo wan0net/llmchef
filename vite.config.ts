@@ -67,6 +67,21 @@ function buildTimeConfigPlugin() {
   };
 }
 
+function blocksuiteIconTypoCompatPlugin() {
+  return {
+    name: "blocksuite-icon-typo-compat",
+    transform(code: string, id: string) {
+      if (!id.includes("/node_modules/@blocksuite/") || !code.includes("CheckBoxCkeckSolidIcon")) {
+        return null;
+      }
+      return {
+        code: code.replaceAll("CheckBoxCkeckSolidIcon", "CheckBoxCheckSolidIcon"),
+        map: null,
+      };
+    },
+  };
+}
+
 // Get build configuration from environment
 const base = process.env.VITE_BASE || '/';
 const lang = process.env.VITE_APP_LANG || 'en';
@@ -137,6 +152,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     buildTimeConfigPlugin(),
+    blocksuiteIconTypoCompatPlugin(),
     VitePWA({
       registerType: 'prompt',
       devOptions: {
@@ -212,6 +228,31 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      plugins: [
+        {
+          name: "blocksuite-icon-typo-compat",
+          setup(build: any) {
+            build.onLoad(
+              { filter: /node_modules\/@blocksuite\/.*\.js$/ },
+              (args: { path: string }) => {
+                const code = readFileSync(args.path, "utf-8");
+                if (!code.includes("CheckBoxCkeckSolidIcon")) return undefined;
+                return {
+                  contents: code.replaceAll(
+                    "CheckBoxCkeckSolidIcon",
+                    "CheckBoxCheckSolidIcon",
+                  ),
+                  loader: "js",
+                };
+              },
+            );
+          },
+        },
+      ],
     },
   },
   build: {

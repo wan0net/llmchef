@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { FieldMetaMessages } from './FieldMetaMessages';
 import { cn } from '@/lib/utils';
 
+const EMPTY_SELECT_ITEM_VALUE = '__llmchef_empty_select_value__';
+
 export interface SelectFieldOption {
   value: string;
   label: React.ReactNode;
@@ -49,6 +51,10 @@ export function SelectField<TFormValues extends Record<string, any>>({
         const selectValue = field.state.value !== null && field.state.value !== undefined 
                             ? String(field.state.value)
                             : '';
+        const hasEmptyValueOption = options.some((option) => String(option.value) === '');
+        const radixSelectValue = selectValue === '' && hasEmptyValueOption
+          ? EMPTY_SELECT_ITEM_VALUE
+          : selectValue;
 
         return (
           <div className={cn("space-y-1.5", wrapperClassName)}>
@@ -56,8 +62,8 @@ export function SelectField<TFormValues extends Record<string, any>>({
               {label}
             </Label>
             <Select
-              value={selectValue}
-              onValueChange={(value) => field.handleChange(value)} 
+              value={radixSelectValue}
+              onValueChange={(value) => field.handleChange(value === EMPTY_SELECT_ITEM_VALUE ? '' : value)}
               disabled={disabled ?? field.form.state.isSubmitting}
               {...rest}
             >
@@ -68,7 +74,7 @@ export function SelectField<TFormValues extends Record<string, any>>({
                 {options.map((option) => (
                   <SelectItem
                     key={option.value}
-                    value={String(option.value)} 
+                    value={String(option.value) === '' ? EMPTY_SELECT_ITEM_VALUE : String(option.value)}
                     disabled={option.disabled}
                   >
                     {option.label}

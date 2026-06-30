@@ -402,15 +402,15 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
     !isSubmitting;
 
   return (
-    <div className={cn("p-2 md:p-4 space-y-2 md:space-y-3", className)}>
+    <div className={cn("llmchef-prompt-composer p-2 space-y-2", className)}>
       {panelControls.length > 0 && (
         <PromptControlWrapper
           controls={panelControls}
           area="panel"
-          className="flex flex-wrap gap-1 md:gap-2 items-start mb-1 md:mb-2"
+          className="flex flex-wrap gap-1 items-start"
         />
       )}
-      <div className="rounded-md border border-border/70 bg-card/80 px-2 py-1.5 shadow-xs">
+      <div className="llmchef-prompt-toolbar rounded-md border border-border bg-card px-2 py-1.5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <PromptControlWrapper
             controls={triggerControls}
@@ -439,7 +439,7 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
                 (!hasInputValue && attachedFilesMetadata.length === 0) ||
                 !currentModelIdFromPromptStore
               }
-              className="h-8 w-8 flex-shrink-0"
+              className="llmchef-prompt-send h-8 w-8 flex-shrink-0"
               aria-label={t('sendMessage')}
               title={t('sendMessage')}
             >
@@ -453,7 +453,7 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
         </div>
       </div>
       {queueItems.length > 0 && (
-        <div className="rounded-md border border-border bg-card/70 p-2 shadow-xs">
+        <div className="llmchef-prompt-queue rounded-md border border-border bg-card p-2 shadow-xs">
           <div className="mb-2 flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <ListPlusIcon className="h-4 w-4 text-muted-foreground" />
@@ -514,7 +514,7 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
                     setDraggingQueueItemId(null);
                   }}
                   className={cn(
-                    "flex items-center gap-1 rounded border border-border/70 bg-background/70 px-1.5 py-1",
+                    "flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-1",
                     draggingQueueItemId === item.id && "opacity-50"
                   )}
                 >
@@ -588,7 +588,7 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
           </div>
         </div>
       )}
-      <div className="flex">
+      <div className="llmchef-prompt-input flex">
         <InputAreaRenderer
           ref={inputAreaRef}
           onSubmit={handleSubmit}

@@ -10,6 +10,8 @@ import { nanoid } from 'nanoid';
 import type { BaseStepConfigProps } from './BaseStepConfig';
 import type { WorkflowStep } from '@/types/llmchef/workflow';
 
+const DEFAULT_MODEL_SELECT_VALUE = '__default_model__';
+
 export const ParallelStepConfig: React.FC<BaseStepConfigProps> = ({
   step,
   onChange,
@@ -122,14 +124,14 @@ export const ParallelStepConfig: React.FC<BaseStepConfigProps> = ({
             <div className="space-y-1">
               <Label htmlFor={`parallel-step-model-${step.id}`}>Model (Optional)</Label>
               <Select
-                value={parallelStep.modelId || ''}
-                onValueChange={(value) => updateParallelStep({ ...parallelStep, modelId: value || undefined })}
+                value={parallelStep.modelId || DEFAULT_MODEL_SELECT_VALUE}
+                onValueChange={(value) => updateParallelStep({ ...parallelStep, modelId: value === DEFAULT_MODEL_SELECT_VALUE ? undefined : value })}
               >
                 <SelectTrigger id={`parallel-step-model-${step.id}`}>
                   <SelectValue placeholder="Use default model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Use default model</SelectItem>
+                  <SelectItem value={DEFAULT_MODEL_SELECT_VALUE}>Use default model</SelectItem>
                   {models.map(model => (
                     <SelectItem key={model.id} value={model.id}>
                       <div className="flex items-center gap-2">

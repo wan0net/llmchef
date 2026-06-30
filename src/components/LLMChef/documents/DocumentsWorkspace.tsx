@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   BookOpenTextIcon,
   ChartNoAxesCombinedIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
   LinkIcon,
   CopyIcon,
   FileAudioIcon,
@@ -17,16 +18,26 @@ import {
   FolderPlusIcon,
   HashIcon,
   MessageSquarePlusIcon,
+  MoreHorizontalIcon,
   PaperclipIcon,
   PencilIcon,
+  PlusIcon,
   Loader2Icon,
   RefreshCwIcon,
   SaveIcon,
   SearchIcon,
+  XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,9 +63,11 @@ import {
   type FilePreviewDescriptor,
 } from "@/lib/llmchef/file-preview";
 import { useProjectStore } from "@/store/project.store";
+import { useConversationStore } from "@/store/conversation.store";
 import { useVfsStore } from "@/store/vfs.store";
 import { useInputStore } from "@/store/input.store";
 import { useUIStateStore } from "@/store/ui.store";
+import { useDocumentWorkspaceStore } from "@/store/document-workspace.store";
 import {
   describeRealFsSyncResult,
   getProjectDirectoryHandleInfo,
@@ -69,6 +82,7 @@ import type {
 type DocumentsWorkspaceProps = {
   currentProjectId: string | null;
   sidebarPortalTarget?: HTMLElement | null;
+  mobileMenuControl?: React.ReactNode;
 };
 
 type ActiveDocument =
@@ -97,7 +111,8 @@ type WorkspaceDocument = {
   memoryNote?: Crea8MemoryNote;
 };
 
-const PROJECT_HOME_FILENAME = "Home.md";
+const PROJECT_HOME_FILENAME = "Home.mdx";
+const LEGACY_PROJECT_HOME_FILENAME = "Home.md";
 const MAX_INDEX_BYTES = 200_000;
 const MAX_RETRIEVAL_BYTES = 700_000;
 const RETRIEVAL_CHUNK_SIZE = 1_800;
@@ -108,6 +123,9 @@ const SNIPPET_LENGTH = 220;
 const IGNORED_DOCUMENT_TREE_NAMES = new Set([".git", ".llmchef"]);
 const WikiMarkdownPreview = React.lazy(() => import("./WikiMarkdownPreview"));
 const MermaidDiagramStudio = React.lazy(() => import("./MermaidDiagramStudio"));
+const Cre8BlockSuiteEditor = React.lazy(
+  () => import("./cre8/Cre8BlockSuiteEditor"),
+);
 
 const workspacePathParts = (path: string, rootPath: string): string[] => {
   const normalizedPath = normalizePath(path);
@@ -175,7 +193,7 @@ const addTreePath = <T,>(
 const guessMimeType = (name: string, browserType?: string): string => {
   if (browserType) return browserType;
   const ext = name.toLowerCase().split(".").pop();
-  if (ext === "md" || ext === "markdown") return "text/markdown";
+  if (ext === "md" || ext === "markdown" || ext === "mdx") return "text/markdown";
   if (ext === "txt" || ext === "log") return "text/plain";
   if (ext === "json") return "application/json";
   if (ext === "csv") return "text/csv";
@@ -194,7 +212,7 @@ const isIndexableText = (name: string, mimeType: string): boolean => {
     "application/xml",
     "application/yaml",
     "application/x-yaml",
-  ].includes(mimeType) || /\.(md|markdown|mmd|txt|json|csv|html?|ya?ml|log|tsx?|jsx?|css)$/i.test(name);
+  ].includes(mimeType) || /\.(md|mdx|markdown|mmd|txt|json|csv|html?|ya?ml|log|tsx?|jsx?|css)$/i.test(name);
 };
 
 const decodeText = (data: Uint8Array): string => new TextDecoder().decode(data);
@@ -429,6 +447,12 @@ const tokenizeWikiText = (text: string): string[] =>
 const normalizeWikiLinkLabel = (label: string): string =>
   label.trim().toLowerCase().replace(/\.(md|markdown|mdx)$/i, "");
 
+const stripMdxComponentsForIndex = (text: string): string =>
+  text
+    .replace(/<([A-Z][\w]*)\b[^>]*>([\s\S]*?)<\/\1>/g, " $2 ")
+    .replace(/<[A-Z][\w]*\b[^>]*\/>/g, " ")
+    .replace(/[{}<>]/g, " ");
+
 const buildProjectHomeContent = (workspaceLabel: string): string =>
   [
     `# ${workspaceLabel}`,
@@ -443,7 +467,7 @@ const buildProjectHomeContent = (workspaceLabel: string): string =>
     "",
     "## Working Notes",
     "",
-    "- Capture durable decisions, findings, and questions as Markdown.",
+    "- Capture durable decisions, findings, and questions as MDX.",
     "- Keep source files alongside wiki pages so notebook queries can use both.",
     "- Let LLMChef add second-brain memories automatically, then edit them here.",
     "",
@@ -463,11 +487,14 @@ const ensureProjectHomePage = async ({
   connector: ReturnType<typeof createCrea8VfsConnector>;
 }): Promise<string> => {
   const homePath = joinPath(workspaceRoot, PROJECT_HOME_FILENAME);
-  try {
-    await readFileOp(homePath, { fsInstance, silent: true });
-    return homePath;
-  } catch (error) {
-    if (!isMissingPathError(error)) throw error;
+  const legacyHomePath = joinPath(workspaceRoot, LEGACY_PROJECT_HOME_FILENAME);
+  for (const candidatePath of [homePath, legacyHomePath]) {
+    try {
+      await fsInstance.promises.stat(candidatePath);
+      return candidatePath;
+    } catch (error) {
+      if (!isMissingPathError(error)) throw error;
+    }
   }
 
   await createDirectoryOp(joinPath(workspaceRoot, "Wiki"), { fsInstance });
@@ -512,12 +539,13 @@ const indexWorkspaceDocument = async (
     const data = await readFileOp(path, { fsInstance, silent: true });
     const preview = decodeText(data.slice(0, MAX_INDEX_BYTES)).trim();
     const memoryNote = readCrea8NoteIfPresent(path, name, mimeType, preview);
+    const searchableText = stripMdxComponentsForIndex(memoryNote?.content ?? preview);
     const indexText = `${name} ${path} ${memoryNote?.title ?? ""} ${
-      memoryNote?.content ?? preview
+      searchableText
     }`.toLowerCase();
     return {
       kind: memoryNote ? "crea8" : "file",
-      snippet: (memoryNote?.content ?? preview).slice(0, SNIPPET_LENGTH),
+      snippet: searchableText.slice(0, SNIPPET_LENGTH),
       indexText,
       wikiLinks: wikiLinkTargets(memoryNote?.content ?? preview).map(normalizeWikiLinkLabel),
       terms: tokenizeWikiText(indexText),
@@ -590,8 +618,16 @@ const TreeNode = <T,>({
   onSelect,
   onSelectFolder,
   onCreatePageInFolder,
+  onCreateDiagramInFolder,
   onCreateFolderInFolder,
+  onMoveSelectedToFolder,
+  onRenameItem,
+  onDeleteItem,
   onToggleSelect,
+  collapsedPaths,
+  onToggleFolder,
+  onExpandFolder,
+  selectedCount = 0,
 }: {
   node: TreeNodeModel<T>;
   selectedKey: string | null;
@@ -605,30 +641,79 @@ const TreeNode = <T,>({
   onSelect: (item: T) => void;
   onSelectFolder: (path: string) => void;
   onCreatePageInFolder?: (path: string) => void;
+  onCreateDiagramInFolder?: (path: string) => void;
   onCreateFolderInFolder?: (path: string) => void;
+  onMoveSelectedToFolder?: (path: string) => void;
+  onRenameItem?: (item: T) => void;
+  onDeleteItem?: (item: T) => void;
   onToggleSelect?: (item: T) => void;
+  collapsedPaths: Set<string>;
+  onToggleFolder: (path: string) => void;
+  onExpandFolder: (path: string) => void;
+  selectedCount?: number;
 }) => {
   const isFile = Boolean(node.item);
+  const isCollapsed = !isFile && collapsedPaths.has(node.path);
   const renderedLabel = node.item ? label(node.item) : node.name;
   const isSelected = node.item
     ? itemKey(node.item) === selectedKey
     : node.path === selectedFolderPath;
+  const activateNode = () => {
+    if (node.item) onSelect(node.item);
+    else onSelectFolder(node.path);
+  };
+  const createPageInFolder = () => {
+    onExpandFolder(node.path);
+    onCreatePageInFolder?.(node.path);
+  };
+  const createDiagramInFolder = () => {
+    onExpandFolder(node.path);
+    onCreateDiagramInFolder?.(node.path);
+  };
+  const createFolderInFolder = () => {
+    onExpandFolder(node.path);
+    onCreateFolderInFolder?.(node.path);
+  };
 
   return (
     <div>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         className={[
-          "group flex min-h-9 w-full min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
-          isFile ? "hover:bg-muted/60" : "hover:bg-muted/40",
-          isSelected ? "bg-primary/10 text-primary" : "",
+          "llmchef-doc-tree-row group flex min-h-8 w-full min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
+          isFile ? "hover:bg-muted/70" : "hover:bg-muted/50",
+          isSelected ? "is-selected bg-primary/10 text-primary" : "",
         ].join(" ")}
         style={{ paddingLeft: `${8 + depth * 16}px` }}
-        onClick={() => {
-          if (node.item) onSelect(node.item);
-          else onSelectFolder(node.path);
+        onClick={activateNode}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          activateNode();
         }}
       >
+        {!isFile ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="llmchef-doc-tree-control h-5 w-5 shrink-0"
+            aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${renderedLabel}`}
+            aria-expanded={!isCollapsed}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleFolder(node.path);
+            }}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            {isCollapsed ? (
+              <ChevronRightIcon className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDownIcon className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        ) : null}
         {isFile && node.item ? (
           icon?.(node.item) ?? (
             <FileTextIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -647,54 +732,93 @@ const TreeNode = <T,>({
             </span>
           ) : null}
         </span>
-        <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-          {node.item ? (
+        {!isFile ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="llmchef-doc-tree-control h-6 w-6 shrink-0"
+            aria-label={`Add page under ${renderedLabel}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              createPageInFolder();
+            }}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <PlusIcon className="h-3.5 w-3.5" />
+          </Button>
+        ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
               type="button"
               size="icon"
               variant="ghost"
-              className="h-6 w-6"
-              aria-label={`Toggle context for ${renderedLabel}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (node.item) onToggleSelect?.(node.item);
-              }}
+              className="llmchef-doc-row-menu llmchef-doc-tree-menu h-6 w-6 shrink-0"
+              aria-label={`Actions for ${renderedLabel}`}
+              onClick={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
             >
-              <PaperclipIcon className="h-3.5 w-3.5" />
+              <MoreHorizontalIcon className="h-3.5 w-3.5" />
             </Button>
-          ) : (
-            <>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6"
-                aria-label={`New page in ${renderedLabel}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onCreatePageInFolder?.(node.path);
-                }}
-              >
-                <BookOpenTextIcon className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6"
-                aria-label={`New folder in ${renderedLabel}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onCreateFolderInFolder?.(node.path);
-                }}
-              >
-                <FolderPlusIcon className="h-3.5 w-3.5" />
-              </Button>
-            </>
-          )}
-        </span>
-      </button>
-      {node.children.map((child) => (
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {node.item ? (
+              <>
+                <DropdownMenuItem onSelect={() => node.item && onSelect(node.item)}>
+                  Open
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => node.item && onToggleSelect?.(node.item)}>
+                  <PaperclipIcon className="h-3.5 w-3.5" />
+                  Toggle chat context
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={selectedCount === 0}
+                  onSelect={() => onMoveSelectedToFolder?.(dirname(node.path))}
+                >
+                  Move selected here
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => node.item && onRenameItem?.(node.item)}>
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={() => node.item && onDeleteItem?.(node.item)}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <>
+                <DropdownMenuItem onSelect={createPageInFolder}>
+                  <BookOpenTextIcon className="h-3.5 w-3.5" />
+                  New page
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={createDiagramInFolder}>
+                  <ChartNoAxesCombinedIcon className="h-3.5 w-3.5" />
+                  New diagram
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={createFolderInFolder}>
+                  <FolderPlusIcon className="h-3.5 w-3.5" />
+                  New folder
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={selectedCount === 0}
+                  onSelect={() => onMoveSelectedToFolder?.(node.path)}
+                >
+                  Move selected here
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onSelectFolder(node.path)}>
+                  Select folder
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      {!isCollapsed && node.children.map((child) => (
         <TreeNode
           key={child.path}
           node={child}
@@ -709,8 +833,16 @@ const TreeNode = <T,>({
           onSelect={onSelect}
           onSelectFolder={onSelectFolder}
           onCreatePageInFolder={onCreatePageInFolder}
+          onCreateDiagramInFolder={onCreateDiagramInFolder}
           onCreateFolderInFolder={onCreateFolderInFolder}
+          onMoveSelectedToFolder={onMoveSelectedToFolder}
+          onRenameItem={onRenameItem}
+          onDeleteItem={onDeleteItem}
           onToggleSelect={onToggleSelect}
+          collapsedPaths={collapsedPaths}
+          onToggleFolder={onToggleFolder}
+          onExpandFolder={onExpandFolder}
+          selectedCount={selectedCount}
         />
       ))}
     </div>
@@ -719,7 +851,7 @@ const TreeNode = <T,>({
 
 export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   currentProjectId,
-  sidebarPortalTarget,
+  mobileMenuControl,
 }) => {
   const fs = useVfsStore((state) => state.fs);
   const vfsLoading = useVfsStore((state) => state.loading);
@@ -727,12 +859,29 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const currentProject = useProjectStore((state) =>
     state.getProjectById(currentProjectId),
   );
+  const addProject = useProjectStore((state) => state.addProject);
+  const selectItem = useConversationStore((state) => state.selectItem);
+  const openDocumentRequest = useDocumentWorkspaceStore(
+    (state) => state.openRequest,
+  );
+  const setProjectNavigation = useDocumentWorkspaceStore(
+    (state) => state.setProjectNavigation,
+  );
+  const setProjectActivePath = useDocumentWorkspaceStore(
+    (state) => state.setProjectActivePath,
+  );
+  const setProjectSyncState = useDocumentWorkspaceStore(
+    (state) => state.setProjectSyncState,
+  );
+  const handledOpenRequestIdRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const [workspaceDocs, setWorkspaceDocs] = useState<WorkspaceDocument[]>([]);
   const [docSearch, setDocSearch] = useState("");
   const [selectedDocPaths, setSelectedDocPaths] = useState<Set<string>>(new Set());
+  const [openDocPaths, setOpenDocPaths] = useState<string[]>([]);
   const [activeFolderPath, setActiveFolderPath] = useState<string | null>(null);
+  const [collapsedTreePaths, setCollapsedTreePaths] = useState<Set<string>>(new Set());
   const [activeDocument, setActiveDocument] = useState<ActiveDocument | null>(null);
   const [draft, setDraft] = useState("");
   const [isEditingCrea8, setIsEditingCrea8] = useState(false);
@@ -748,14 +897,18 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const [localFolderName, setLocalFolderName] = useState<string | null>(null);
   const [localFolderStatus, setLocalFolderStatus] = useState<string | null>(null);
   const [syncingLocalFolder, setSyncingLocalFolder] = useState(false);
+  const [creatingWorkspace, setCreatingWorkspace] = useState(false);
 
   const workspaceRoot = useMemo(
     () => normalizePath(currentProject?.path ?? "/"),
     [currentProject?.path],
   );
   const workspaceLabel = currentProject?.name ?? "Select a project";
-  const homePath = useMemo(
-    () => joinPath(workspaceRoot, PROJECT_HOME_FILENAME),
+  const homePaths = useMemo(
+    () => [
+      joinPath(workspaceRoot, PROJECT_HOME_FILENAME),
+      joinPath(workspaceRoot, LEGACY_PROJECT_HOME_FILENAME),
+    ],
     [workspaceRoot],
   );
   const connector = useMemo(
@@ -789,6 +942,22 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     () => workspaceDocs.filter((doc) => selectedDocPaths.has(doc.path)),
     [workspaceDocs, selectedDocPaths],
   );
+  const railWikiDocs = useMemo(
+    () =>
+      workspaceDocs.filter(isWikiMarkdownDoc).map((doc) => ({
+        kind: doc.kind,
+        name: doc.name,
+        path: doc.path,
+        type: doc.type,
+        updatedAt: doc.updatedAt,
+        snippet: doc.snippet,
+        label: wikiLabelForDoc(doc),
+        relativePath: workspacePathParts(doc.path, workspaceRoot).join("/"),
+        previewKind: doc.previewDescriptor.kind,
+        isWiki: true,
+      })),
+    [workspaceDocs, workspaceRoot],
+  );
   const secondBrainCount = useMemo(
     () =>
       workspaceDocs.filter((doc) =>
@@ -805,6 +974,28 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     node.setAttribute("webkitdirectory", "");
     node.setAttribute("directory", "");
   }, []);
+
+  const startDocumentWorkspace = useCallback(async () => {
+    setCreatingWorkspace(true);
+    setError(null);
+    try {
+      const newProjectId = await addProject({
+        name: "Document Workspace",
+        parentId: null,
+      });
+      await Promise.resolve(selectItem(newProjectId, "project"));
+      toast.success("Document workspace created.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to create document workspace.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setCreatingWorkspace(false);
+    }
+  }, [addProject, selectItem]);
 
   const loadDocuments = useCallback(async () => {
     if (!fs || !currentProject) {
@@ -845,6 +1036,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
 
   useEffect(() => {
     setActiveFolderPath(workspaceRoot);
+    setOpenDocPaths([]);
   }, [workspaceRoot]);
 
   useEffect(() => {
@@ -880,12 +1072,21 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     }
   }, [activeDocument, saving, workspaceDocs]);
 
+  useEffect(() => {
+    setOpenDocPaths((current) =>
+      current.filter((path) => workspaceDocs.some((doc) => doc.path === path)),
+    );
+  }, [workspaceDocs]);
+
   const selectWorkspaceDoc = useCallback(
     async (doc: WorkspaceDocument) => {
       if (!fs) return;
       setError(null);
       try {
         const data = await readFileOp(doc.path, { fsInstance: fs, silent: true });
+        setOpenDocPaths((current) =>
+          current.includes(doc.path) ? current : [...current, doc.path],
+        );
         setActiveFolderPath(dirname(doc.path));
         setPreviewDescriptor(doc.previewDescriptor);
         setPreviewData(data);
@@ -917,6 +1118,21 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   );
 
   useEffect(() => {
+    if (!currentProjectId || !openDocumentRequest) return;
+    if (openDocumentRequest.projectId !== currentProjectId) return;
+    if (handledOpenRequestIdRef.current === openDocumentRequest.id) return;
+
+    const requestedPath = normalizePath(openDocumentRequest.path);
+    const targetDoc = workspaceDocs.find(
+      (doc) => normalizePath(doc.path) === requestedPath,
+    );
+    if (!targetDoc) return;
+
+    handledOpenRequestIdRef.current = openDocumentRequest.id;
+    void selectWorkspaceDoc(targetDoc);
+  }, [currentProjectId, openDocumentRequest, selectWorkspaceDoc, workspaceDocs]);
+
+  useEffect(() => {
     if (!fs || workspaceDocs.length === 0) return;
     if (
       activeDocument &&
@@ -926,13 +1142,13 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     }
 
     const homeDoc =
-      workspaceDocs.find((doc) => normalizePath(doc.path) === homePath) ??
+      workspaceDocs.find((doc) => homePaths.includes(normalizePath(doc.path))) ??
       workspaceDocs.find((doc) => isWikiMarkdownDoc(doc)) ??
       workspaceDocs[0];
     if (homeDoc) {
       void selectWorkspaceDoc(homeDoc);
     }
-  }, [activeDocument, fs, homePath, selectWorkspaceDoc, workspaceDocs]);
+  }, [activeDocument, fs, homePaths, selectWorkspaceDoc, workspaceDocs]);
 
   const saveActiveDocument = useCallback(async () => {
     if (!activeDocument || !fs) return;
@@ -1034,10 +1250,13 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         scope: currentProjectId ? "project" : "reference",
         tags: [],
         projectId: currentProjectId,
-        path: joinPath(folderPath, `page-${Date.now()}.md`),
+        path: joinPath(folderPath, `page-${Date.now()}.mdx`),
       });
       const note = await connector.read(ref);
       const path = note.path ?? ref.path ?? workspaceRoot;
+      setOpenDocPaths((current) =>
+        current.includes(path) ? current : [...current, path],
+      );
       const data = fs
         ? await readFileOp(path, { fsInstance: fs, silent: true })
         : new Uint8Array();
@@ -1119,6 +1338,9 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         size: data.byteLength,
       });
       setActiveFolderPath(dirname(targetPath));
+      setOpenDocPaths((current) =>
+        current.includes(targetPath) ? current : [...current, targetPath],
+      );
       setPreviewDescriptor(previewDescriptor);
       setPreviewData(data);
       setActiveDocument({
@@ -1238,7 +1460,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         scope: currentProjectId ? "project" : "reference",
         tags: ["extract"],
         projectId: currentProjectId,
-        path: joinPath(workspaceRoot, "Wiki", `extract-${Date.now()}.md`),
+        path: joinPath(workspaceRoot, "Wiki", `extract-${Date.now()}.mdx`),
       });
       const note = await connector.read(ref);
       await loadDocuments();
@@ -1262,18 +1484,22 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     });
   }, []);
 
-  const selectVisibleDocs = useCallback(() => {
-    setSelectedDocPaths((current) => {
+  const toggleTreeFolder = useCallback((path: string) => {
+    setCollapsedTreePaths((current) => {
       const next = new Set(current);
-      for (const doc of filteredWorkspaceDocs) {
-        next.add(doc.path);
-      }
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
       return next;
     });
-  }, [filteredWorkspaceDocs]);
+  }, []);
 
-  const clearSelectedDocs = useCallback(() => {
-    setSelectedDocPaths(new Set());
+  const expandTreeFolder = useCallback((path: string) => {
+    setCollapsedTreePaths((current) => {
+      if (!current.has(path)) return current;
+      const next = new Set(current);
+      next.delete(path);
+      return next;
+    });
   }, []);
 
   const createFolderAtPath = useCallback(async (parentPath: string) => {
@@ -1304,9 +1530,9 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     await createFolderAtPath(activeFolderPath ?? workspaceRoot);
   }, [activeFolderPath, createFolderAtPath, workspaceRoot]);
 
-  const moveSelectedDocsToActiveFolder = useCallback(async () => {
+  const moveSelectedDocsToFolder = useCallback(async (folderPath: string) => {
     if (!fs || selectedDocs.length === 0) return;
-    const targetFolder = normalizePath(activeFolderPath ?? workspaceRoot);
+    const targetFolder = normalizePath(folderPath);
 
     setSaving(true);
     setError(null);
@@ -1327,22 +1553,24 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     } finally {
       setSaving(false);
     }
-  }, [activeFolderPath, fs, loadDocuments, selectedDocs, workspaceRoot]);
+  }, [fs, loadDocuments, selectedDocs]);
 
-  const renameActiveDocument = useCallback(async () => {
-    if (!activeDocument || !fs) return;
-    const nextName = window.prompt("Rename document", activeDocument.doc.name);
+  const renameDocument = useCallback(async (doc: WorkspaceDocument) => {
+    if (!fs) return;
+    const nextName = window.prompt("Rename document", doc.name);
     const trimmed = nextName?.trim();
-    if (!trimmed || trimmed === activeDocument.doc.name) return;
+    if (!trimmed || trimmed === doc.name) return;
 
     setSaving(true);
     setError(null);
     try {
-      const targetPath = joinPath(dirname(activeDocument.doc.path), trimmed);
-      await renameOp(activeDocument.doc.path, targetPath, { fsInstance: fs });
-      setActiveDocument(null);
-      setDraft("");
-      setIsEditingCrea8(false);
+      const targetPath = joinPath(dirname(doc.path), trimmed);
+      await renameOp(doc.path, targetPath, { fsInstance: fs });
+      if (activeDocument?.doc.path === doc.path) {
+        setActiveDocument(null);
+        setDraft("");
+        setIsEditingCrea8(false);
+      }
       await loadDocuments();
       toast.success(`Renamed to ${trimmed}.`);
     } catch (error) {
@@ -1355,24 +1583,27 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     }
   }, [activeDocument, fs, loadDocuments]);
 
-  const deleteActiveDocument = useCallback(async () => {
-    if (!activeDocument || !fs) return;
-    const confirmed = window.confirm(`Delete ${activeDocument.doc.name}?`);
+  const deleteDocument = useCallback(async (doc: WorkspaceDocument) => {
+    if (!fs) return;
+    const confirmed = window.confirm(`Delete ${doc.name}?`);
     if (!confirmed) return;
 
     setSaving(true);
     setError(null);
     try {
-      await deleteItemOp(activeDocument.doc.path, false, { fsInstance: fs });
+      await deleteItemOp(doc.path, false, { fsInstance: fs });
       setSelectedDocPaths((current) => {
         const next = new Set(current);
-        next.delete(activeDocument.doc.path);
+        next.delete(doc.path);
         return next;
       });
-      setActiveDocument(null);
-      setDraft("");
-      setIsEditingCrea8(false);
+      if (activeDocument?.doc.path === doc.path) {
+        setActiveDocument(null);
+        setDraft("");
+        setIsEditingCrea8(false);
+      }
       await loadDocuments();
+      toast.success(`Deleted ${doc.name}.`);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to delete document.";
@@ -1382,35 +1613,6 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
       setSaving(false);
     }
   }, [activeDocument, fs, loadDocuments]);
-
-  const deleteSelectedDocuments = useCallback(async () => {
-    if (!fs || selectedDocs.length === 0) return;
-    const confirmed = window.confirm(
-      `Delete ${selectedDocs.length} selected document${selectedDocs.length === 1 ? "" : "s"}?`,
-    );
-    if (!confirmed) return;
-
-    setSaving(true);
-    setError(null);
-    try {
-      for (const doc of selectedDocs) {
-        await deleteItemOp(doc.path, false, { fsInstance: fs });
-      }
-      setSelectedDocPaths(new Set());
-      setActiveDocument(null);
-      setDraft("");
-      setIsEditingCrea8(false);
-      await loadDocuments();
-      toast.success(`Deleted ${selectedDocs.length} selected item${selectedDocs.length === 1 ? "" : "s"}.`);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to delete selected documents.";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setSaving(false);
-    }
-  }, [fs, loadDocuments, selectedDocs]);
 
   const attachSelectedDocumentsToChat = useCallback(async () => {
     if (!fs || selectedDocs.length === 0) return;
@@ -1506,6 +1708,58 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     }
   }, [currentProjectId, fs, loadDocuments, localFolderName, workspaceRoot]);
 
+  useEffect(() => {
+    if (!currentProjectId || !currentProject) return;
+    setProjectNavigation(currentProjectId, {
+      rootPath: workspaceRoot,
+      rootLabel: workspaceLabel,
+      docs: railWikiDocs,
+      loading: busy,
+      activePath: activeDocument?.doc.path ?? null,
+      sync: null,
+    });
+  }, [
+    activeDocument,
+    busy,
+    currentProject,
+    currentProjectId,
+    railWikiDocs,
+    setProjectNavigation,
+    workspaceLabel,
+    workspaceRoot,
+  ]);
+
+  useEffect(() => {
+    if (!currentProjectId) return;
+    setProjectActivePath(currentProjectId, activeDocument?.doc.path ?? null);
+  }, [activeDocument, currentProjectId, setProjectActivePath]);
+
+  useEffect(() => {
+    if (!currentProjectId) return;
+    const projectId = currentProjectId;
+    setProjectSyncState(projectId, {
+      localFolderName,
+      localFolderStatus,
+      syncingLocalFolder,
+      localSyncSupported,
+      connectLocalFolder: () => void connectLocalFolder(),
+      syncLocalFolderNow: () => void syncLocalFolderNow(),
+    });
+
+    return () => {
+      setProjectSyncState(projectId, null);
+    };
+  }, [
+    connectLocalFolder,
+    currentProjectId,
+    localFolderName,
+    localFolderStatus,
+    localSyncSupported,
+    setProjectSyncState,
+    syncingLocalFolder,
+    syncLocalFolderNow,
+  ]);
+
   const activeTitle =
     activeDocument?.kind === "crea8"
       ? activeDocument.note.title
@@ -1600,185 +1854,251 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     [selectWorkspaceDoc, workspaceDocs, workspaceRoot],
   );
 
+  const openTabDocs = useMemo(
+    () =>
+      openDocPaths
+        .map(
+          (path) =>
+            workspaceDocs.find((doc) => doc.path === path) ??
+            (activeDocument?.doc.path === path ? activeDocument.doc : null),
+        )
+        .filter((doc): doc is WorkspaceDocument => Boolean(doc)),
+    [activeDocument, openDocPaths, workspaceDocs],
+  );
+
+  const closeDocumentTab = useCallback(
+    (path: string) => {
+      const closingIndex = openDocPaths.indexOf(path);
+      const remainingPaths = openDocPaths.filter((tabPath) => tabPath !== path);
+      setOpenDocPaths(remainingPaths);
+
+      if (activeDocument?.doc.path !== path) return;
+
+      const nextPath =
+        remainingPaths[closingIndex] ?? remainingPaths[closingIndex - 1] ?? null;
+      const nextDoc = nextPath
+        ? workspaceDocs.find((doc) => doc.path === nextPath)
+        : null;
+
+      if (nextDoc) {
+        void selectWorkspaceDoc(nextDoc);
+        return;
+      }
+
+      setActiveDocument(null);
+      setDraft("");
+      setIsEditingCrea8(false);
+      setPreviewDescriptor(null);
+      setPreviewData(null);
+    },
+    [activeDocument, openDocPaths, selectWorkspaceDoc, workspaceDocs],
+  );
+
+  const documentWorkspaceActions = (
+    <div className="llmchef-doc-toolbar llmchef-doc-tab-actions flex shrink-0 items-center justify-end gap-1">
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(event) => void importFiles(event.currentTarget.files)}
+      />
+      <input
+        ref={configureFolderInput}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(event) => void importFiles(event.currentTarget.files)}
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="llmchef-doc-tool-button"
+            disabled={!currentProject || !fs || saving}
+            aria-label="Create document"
+          >
+            <PlusIcon className={saving ? "animate-pulse" : ""} />
+            <span className="hidden sm:inline">New</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onSelect={() => void createCrea8Page()}>
+            <BookOpenTextIcon className="h-3.5 w-3.5" />
+            New page
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => void createMermaidDiagram()}>
+            <ChartNoAxesCombinedIcon className="h-3.5 w-3.5" />
+            New diagram
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="llmchef-doc-tool-button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={!currentProject || !fs || importing}
+        aria-label="Import files"
+      >
+        <FilePlusIcon className={importing ? "animate-pulse" : ""} />
+        <span className="hidden sm:inline">Files</span>
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="llmchef-doc-tool-button"
+        onClick={() => folderInputRef.current?.click()}
+        disabled={!currentProject || !fs || importing}
+        aria-label="Import folder"
+      >
+        <FolderPlusIcon className={importing ? "animate-pulse" : ""} />
+        <span className="hidden sm:inline">Folder</span>
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="llmchef-doc-tool-button"
+        onClick={() => void loadDocuments()}
+        disabled={busy}
+        aria-label="Refresh documents"
+      >
+        <RefreshCwIcon className={busy ? "animate-spin" : ""} />
+        <span className="hidden sm:inline">Refresh</span>
+      </Button>
+    </div>
+  );
+
   const sidebarPane = (
-    <div className="h-full min-h-0 border-r border-border bg-sidebar/40">
-      <ScrollArea className="h-full">
-        {busy ? (
-          <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-            <Loader2Icon className="h-4 w-4 animate-spin" />
-            Loading documents...
-          </div>
-        ) : (
-          <div className="space-y-4 p-2">
-            <section>
-              <div className="mb-2 space-y-2 px-2">
-                <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                  <span className="truncate">Wiki</span>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Badge variant="outline">{filteredWorkspaceDocs.length}</Badge>
-                    {secondBrainCount > 0 ? (
-                      <Badge variant="secondary">{secondBrainCount} memories</Badge>
-                    ) : null}
-                    {filteredWorkspaceDocs.length !== workspaceDocs.length ? (
-                      <Badge variant="secondary">{workspaceDocs.length} total</Badge>
-                    ) : null}
-                  </div>
-                </div>
+    <div className="llmchef-doc-sidebar hidden h-full min-h-0 w-72 shrink-0 flex-col border-r border-border bg-sidebar md:flex">
+      {busy ? (
+        <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+          <Loader2Icon className="h-4 w-4 animate-spin" />
+          Loading documents...
+        </div>
+      ) : (
+        <>
+          <section className="llmchef-doc-sidebar-header shrink-0 space-y-2 p-2">
+            <div className="flex items-center justify-between gap-2 px-1">
+              <div className="min-w-0">
+                <h3 className="truncate text-sm font-semibold text-foreground">
+                  Document Workspace
+                </h3>
                 <p className="truncate text-[11px] text-muted-foreground">
                   {currentProject ? workspaceLabel : "Create or select a project to start."}
                 </p>
-                <div className="relative">
-                  <SearchIcon className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    value={docSearch}
-                    onChange={(event) => setDocSearch(event.target.value)}
-                    placeholder="Search files and wiki pages"
-                    className="h-8 pl-7 text-xs"
-                  />
-                </div>
-                <div className="flex gap-1">
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <Badge variant="outline" className="h-5 rounded-md px-1.5 text-[10px]">
+                  {filteredWorkspaceDocs.length}
+                </Badge>
+                {secondBrainCount > 0 ? (
+                  <Badge variant="secondary" className="h-5 rounded-md px-1.5 text-[10px]">
+                    {secondBrainCount} memories
+                  </Badge>
+                ) : null}
+                {filteredWorkspaceDocs.length !== workspaceDocs.length ? (
+                  <Badge variant="secondary" className="h-5 rounded-md px-1.5 text-[10px]">
+                    {workspaceDocs.length} total
+                  </Badge>
+                ) : null}
+              </div>
+            </div>
+            <div className="relative">
+              <SearchIcon className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={docSearch}
+                onChange={(event) => setDocSearch(event.target.value)}
+                placeholder="Search files and wiki pages"
+                className="h-8 rounded-md border-border bg-background pl-7 text-xs shadow-none"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
                     className="h-7 px-2 text-xs"
-                    onClick={() => void createCrea8Page(activeFolderPath ?? workspaceRoot)}
                     disabled={!currentProject || !fs || saving}
+                    aria-label="Create page or diagram"
                   >
+                    <PlusIcon className="h-3.5 w-3.5" />
+                    New
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-40">
+                  <DropdownMenuItem onSelect={() => void createCrea8Page(activeFolderPath ?? workspaceRoot)}>
                     <BookOpenTextIcon className="h-3.5 w-3.5" />
-                    Page
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => void createMermaidDiagram(activeFolderPath ?? workspaceRoot)}
-                    disabled={!currentProject || !fs || saving}
-                  >
+                    New page
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void createMermaidDiagram(activeFolderPath ?? workspaceRoot)}>
                     <ChartNoAxesCombinedIcon className="h-3.5 w-3.5" />
-                    Diagram
-                  </Button>
+                    New diagram
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
                     className="h-7 px-2 text-xs"
-                    onClick={() => void createFolderInActiveFolder()}
                     disabled={!currentProject || !fs || saving}
+                    aria-label="Create folder"
                   >
                     <FolderPlusIcon className="h-3.5 w-3.5" />
-                    Folder
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2 text-xs"
-                    onClick={selectVisibleDocs}
-                    disabled={!currentProject || filteredWorkspaceDocs.length === 0}
-                  >
-                    Select results
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => void moveSelectedDocsToActiveFolder()}
-                    disabled={!currentProject || !fs || saving || selectedDocs.length === 0}
-                  >
-                    Move here
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 text-xs"
-                    onClick={clearSelectedDocs}
-                    disabled={selectedDocPaths.size === 0}
-                  >
-                    Clear
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 text-xs text-destructive"
-                    onClick={() => void deleteSelectedDocuments()}
-                    disabled={!currentProject || !fs || saving || selectedDocs.length === 0}
-                  >
-                    Delete
-                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-40">
+                  <DropdownMenuItem onSelect={() => void createFolderInActiveFolder()}>
+                    <FolderPlusIcon className="h-3.5 w-3.5" />
+                    New folder
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            {selectedDocs.length > 0 ? (
+              <div className="rounded-md border border-border bg-background p-2 text-xs shadow-xs">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="font-medium text-muted-foreground">
+                    Tagged for chat
+                  </span>
+                  <Badge variant="secondary">{selectedDocs.length}</Badge>
                 </div>
-                {selectedDocs.length > 0 ? (
-                  <div className="rounded-md border border-border bg-background/60 p-2 text-xs">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <span className="font-medium text-muted-foreground">
-                        Tagged for chat
-                      </span>
-                      <Badge variant="secondary">{selectedDocs.length}</Badge>
-                    </div>
-                    <div className="mb-2 flex flex-wrap gap-1">
-                      {selectedDocs.slice(0, 5).map((doc) => (
-                        <Badge key={doc.path} variant="outline" className="max-w-40 truncate">
-                          {basename(doc.path)}
-                        </Badge>
-                      ))}
-                      {selectedDocs.length > 5 ? (
-                        <Badge variant="outline">+{selectedDocs.length - 5}</Badge>
-                      ) : null}
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="h-7 w-full px-2 text-xs"
-                      onClick={() => void attachSelectedDocumentsToChat()}
-                      disabled={asking || selectedDocs.length === 0}
-                    >
-                      <MessageSquarePlusIcon className={asking ? "h-3.5 w-3.5 animate-pulse" : "h-3.5 w-3.5"} />
-                      Attach to chat
-                    </Button>
-                  </div>
-                ) : null}
-                <div className="rounded-md border border-border bg-background/60 p-2 text-xs">
-                  <div className="mb-1 flex items-center justify-between gap-2">
-                    <span className="font-medium text-muted-foreground">Sync</span>
-                    <Badge variant="outline">
-                      {localFolderName ? "local linked" : "local only"}
+                <div className="mb-2 flex flex-wrap gap-1">
+                  {selectedDocs.slice(0, 5).map((doc) => (
+                    <Badge key={doc.path} variant="outline" className="max-w-40 truncate rounded-md">
+                      {basename(doc.path)}
                     </Badge>
-                  </div>
-                  <p className="mb-2 line-clamp-2 text-muted-foreground">
-                    {localFolderStatus ??
-                      "Use Git from the project row, or connect a local folder for browser filesystem sync."}
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs"
-                      onClick={() => void connectLocalFolder()}
-                      disabled={!currentProjectId || !fs || syncingLocalFolder || !localSyncSupported}
-                    >
-                      <FolderPlusIcon className={syncingLocalFolder ? "h-3.5 w-3.5 animate-pulse" : "h-3.5 w-3.5"} />
-                      Local
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs"
-                      onClick={() => void syncLocalFolderNow()}
-                      disabled={!currentProjectId || !fs || !localFolderName || syncingLocalFolder}
-                    >
-                      <RefreshCwIcon className={syncingLocalFolder ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
-                      Sync
-                    </Button>
-                  </div>
+                  ))}
+                  {selectedDocs.length > 5 ? (
+                    <Badge variant="outline">+{selectedDocs.length - 5}</Badge>
+                  ) : null}
                 </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 w-full px-2 text-xs"
+                  onClick={() => void attachSelectedDocumentsToChat()}
+                  disabled={asking || selectedDocs.length === 0}
+                >
+                  <MessageSquarePlusIcon className={asking ? "h-3.5 w-3.5 animate-pulse" : "h-3.5 w-3.5"} />
+                  Attach to chat
+                </Button>
               </div>
+            ) : null}
+          </section>
+          <ScrollArea className="llmchef-doc-tree-scroll min-h-0 flex-1 px-2 pb-2">
+            <section className="min-h-full">
               {workspaceDocs.length === 0 ? (
                 <p className="px-2 py-3 text-xs text-muted-foreground">
                   {currentProject
@@ -1817,56 +2137,167 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     setActiveFolderPath(path);
                   }}
                   onCreatePageInFolder={(path) => void createCrea8Page(path)}
+                  onCreateDiagramInFolder={(path) => void createMermaidDiagram(path)}
                   onCreateFolderInFolder={(path) => void createFolderAtPath(path)}
+                  onMoveSelectedToFolder={(path) => void moveSelectedDocsToFolder(path)}
+                  onRenameItem={(doc) => void renameDocument(doc)}
+                  onDeleteItem={(doc) => void deleteDocument(doc)}
                   onToggleSelect={toggleDocSelection}
+                  collapsedPaths={collapsedTreePaths}
+                  onToggleFolder={toggleTreeFolder}
+                  onExpandFolder={expandTreeFolder}
+                  selectedCount={selectedDocs.length}
                 />
               )}
             </section>
+          </ScrollArea>
+          <div className="llmchef-doc-sync-footer shrink-0 rounded-md border border-border bg-background p-2 text-xs shadow-xs">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="font-medium text-muted-foreground">Sync</span>
+              <Badge variant="outline">
+                {localFolderName ? "local linked" : "local only"}
+              </Badge>
+            </div>
+            <p className="mb-2 line-clamp-2 text-muted-foreground">
+              {localFolderStatus ??
+                "Use Git from the project row, or connect a local folder for browser filesystem sync."}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                onClick={() => void connectLocalFolder()}
+                disabled={!currentProjectId || !fs || syncingLocalFolder || !localSyncSupported}
+              >
+                <FolderPlusIcon className={syncingLocalFolder ? "h-3.5 w-3.5 animate-pulse" : "h-3.5 w-3.5"} />
+                Local
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                onClick={() => void syncLocalFolderNow()}
+                disabled={!currentProjectId || !fs || !localFolderName || syncingLocalFolder}
+              >
+                <RefreshCwIcon className={syncingLocalFolder ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
+                Sync
+              </Button>
+            </div>
           </div>
-        )}
-      </ScrollArea>
+        </>
+      )}
     </div>
   );
 
   const mainPane = (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-col">
+    <div className="llmchef-doc-main flex min-h-0 flex-1 flex-col">
+      <div className="llmchef-doc-tabs flex min-h-10 shrink-0 items-center gap-1 border-b border-border bg-card px-2 sm:px-3">
+        {mobileMenuControl}
+        <div className="flex min-w-0 flex-1 self-stretch overflow-x-auto pt-2">
+          <div className="flex min-w-max items-end gap-1">
+            {openTabDocs.map((doc) => {
+              const isActive = activeDocument?.doc.path === doc.path;
+              return (
+                <div
+                  key={doc.path}
+                  className={`llmchef-doc-tab flex h-8 max-w-56 min-w-28 items-center gap-1 rounded-t-md border border-b-0 px-2 text-xs ${
+                    isActive
+                      ? "bg-background text-foreground"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 truncate text-left"
+                    onClick={() => void selectWorkspaceDoc(doc)}
+                  >
+                    {wikiLabelForDoc(doc)}
+                  </button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="h-5 w-5 shrink-0"
+                    aria-label={`Close ${wikiLabelForDoc(doc)}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      closeDocumentTab(doc.path);
+                    }}
+                  >
+                    <XIcon className="h-3 w-3" />
+                  </Button>
+                </div>
+              );
+            })}
+            {openTabDocs.length === 0 ? (
+              <div className="llmchef-doc-tab llmchef-doc-tab-placeholder flex h-8 min-w-32 items-center rounded-t-md border border-b-0 bg-muted/40 px-3 text-xs text-muted-foreground">
+                Workspace
+              </div>
+            ) : null}
+          </div>
+        </div>
+        {documentWorkspaceActions}
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col">
         {activeDocument ? (
           <>
-            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3">
+            <div className="llmchef-doc-header flex flex-col gap-2 border-b border-border px-4 py-3">
               <div className="min-w-0 space-y-1">
                 <div className="flex min-w-0 items-center gap-2">
-                  <h3 className="truncate text-sm font-semibold">{activeTitle}</h3>
-                  <Badge variant="outline">
+                  <h3 className="truncate text-base font-semibold">{activeTitle}</h3>
+                  <Badge variant="outline" className="rounded-md">
                     {activeIsWikiMarkdown
                       ? "wiki"
                       : activeDocument.doc.previewDescriptor.kind}
                   </Badge>
                 </div>
+                <p className="truncate text-xs text-muted-foreground">
+                  {workspacePathParts(activeDocument.doc.path, workspaceRoot).join("/") ||
+                    activeDocument.doc.path}
+                </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="llmchef-doc-toolbar flex flex-wrap items-center justify-end gap-1">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="llmchef-doc-tool-button"
+                      disabled={saving}
+                      aria-label="Current file actions"
+                    >
+                      <MoreHorizontalIcon />
+                      File
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem onSelect={() => void renameDocument(activeDocument.doc)}>
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => toggleDocSelection(activeDocument.doc)}>
+                      <PaperclipIcon className="h-3.5 w-3.5" />
+                      {selectedDocPaths.has(activeDocument.doc.path)
+                        ? "Remove from context"
+                        : "Tag for context"}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onSelect={() => void deleteDocument(activeDocument.doc)}
+                    >
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => void renameActiveDocument()}
-                  disabled={saving}
-                >
-                  Rename
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => void deleteActiveDocument()}
-                  disabled={saving}
-                >
-                  Delete
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
+                  className="llmchef-doc-tool-button"
                   onClick={() => setIsPreviewOpen(true)}
                   disabled={!previewDescriptor || !previewData}
                 >
@@ -1876,6 +2307,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   type="button"
                   size="sm"
                   variant="outline"
+                  className="llmchef-doc-tool-button"
                   onClick={() => void copyActiveText()}
                   disabled={
                     activeDocument.kind === "file" &&
@@ -1889,26 +2321,29 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   type="button"
                   size="sm"
                   variant="outline"
+                  className="llmchef-doc-tool-button"
                   onClick={() => void copyActiveHash()}
                   disabled={!previewData}
                 >
                   <HashIcon />
-                  SHA-256
+                  SHA
                 </Button>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
+                  className="llmchef-doc-tool-button"
                   onClick={() => void copyActiveBase64()}
                   disabled={!previewData}
                 >
                   <CopyIcon />
-                  Base64
+                  B64
                 </Button>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
+                  className="llmchef-doc-tool-button"
                   onClick={() => void saveActiveTextExtract()}
                   disabled={
                     saving ||
@@ -1917,12 +2352,13 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                   }
                 >
                   <FileTextIcon />
-                  Save .txt
+                  .txt
                 </Button>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
+                  className="llmchef-doc-tool-button"
                   onClick={() => void createCrea8PageFromActive()}
                   disabled={
                     saving ||
@@ -1938,6 +2374,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                     type="button"
                     size="sm"
                     variant={isEditingCrea8 ? "secondary" : "outline"}
+                    className="llmchef-doc-tool-button llmchef-doc-tool-button-primary"
                     onClick={() => setIsEditingCrea8((current) => !current)}
                   >
                     <PencilIcon />
@@ -1947,20 +2384,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                 <Button
                   type="button"
                   size="sm"
-                  variant={
-                    selectedDocPaths.has(activeDocument.doc.path)
-                      ? "secondary"
-                      : "outline"
-                  }
-                  onClick={() => toggleDocSelection(activeDocument.doc)}
-                >
-                  {selectedDocPaths.has(activeDocument.doc.path)
-                    ? "Selected"
-                    : "Tag for chat"}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
+                  className="llmchef-doc-tool-button llmchef-doc-save-button"
                   onClick={() => void saveActiveDocument()}
                   disabled={saving || !isDirty}
                 >
@@ -1969,115 +2393,131 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
                 </Button>
               </div>
             </div>
-            <div className="grid gap-2 border-b border-border bg-muted/15 px-4 py-3 text-xs md:grid-cols-3">
-              <div className="min-w-0">
-                <div className="mb-1 flex items-center gap-1 font-medium text-muted-foreground">
-                  <LinkIcon className="h-3.5 w-3.5" />
-                  Links
-                </div>
-                {activeWikiLinks.length === 0 ? (
-                  <p className="text-muted-foreground">No wiki links yet.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-1">
-                    {activeWikiLinks.slice(0, 8).map((link) => (
-                      <Button
-                        key={link}
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-6 max-w-full px-2 text-[11px]"
-                        onClick={() => openDocumentByLabel(link)}
-                      >
-                        <span className="truncate">{link}</span>
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="mb-1 font-medium text-muted-foreground">
-                  Backlinks
-                </div>
-                {activeBacklinks.length === 0 ? (
-                  <p className="text-muted-foreground">No backlinks yet.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-1">
-                    {activeBacklinks.map((doc) => (
-                      <Button
-                        key={doc.path}
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 max-w-full px-2 text-[11px]"
-                        onClick={() => void selectWorkspaceDoc(doc)}
-                      >
-                        <span className="truncate">{wikiLabelForDoc(doc)}</span>
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="mb-1 font-medium text-muted-foreground">
-                  Related
-                </div>
-                {relatedWikiDocs.length === 0 ? (
-                  <p className="text-muted-foreground">Related pages will appear as the wiki grows.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-1">
-                    {relatedWikiDocs.map((doc) => (
-                      <Button
-                        key={doc.path}
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 max-w-full px-2 text-[11px]"
-                        onClick={() => void selectWorkspaceDoc(doc)}
-                      >
-                        <span className="truncate">{wikiLabelForDoc(doc)}</span>
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <div className="flex min-h-0 flex-1 overflow-hidden">
+              <div className="llmchef-doc-canvas min-h-0 flex-1 overflow-hidden">
             {activeDocument.kind === "file" &&
             !isIndexableText(activeDocument.doc.name, activeDocument.doc.type) ? (
               <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
                 Preview is available for {activeDocument.doc.previewDescriptor.kind} files.
               </div>
-            ) : activeIsWikiMarkdown && !isEditingCrea8 ? (
-              <ScrollArea className="min-h-0 flex-1">
-                <div className="mx-auto w-full max-w-4xl px-5 py-5">
-                  <div className="mb-5 rounded-md border border-border bg-card p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline">
+            ) : activeIsWikiMarkdown ? (
+              <ScrollArea className="h-full min-h-0 flex-1">
+                <div className="llmchef-document-page-wrap mx-auto w-full px-4 py-5 sm:px-5">
+                  <div className="llmchef-document-page rounded-md border border-border bg-card">
+                    <div className="llmchef-document-meta flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="rounded-md">
                         {activeDocument.kind === "crea8"
                           ? activeDocument.note.scope
                           : "wiki"}
                       </Badge>
                       {activeDocument.kind === "crea8"
                         ? activeDocument.note.tags.map((tag) => (
-                            <Badge key={tag} variant="secondary">
+                            <Badge key={tag} variant="secondary" className="rounded-md">
                               {tag}
                             </Badge>
                           ))
                         : null}
-                      {isDirty ? <Badge variant="destructive">unsaved</Badge> : null}
+                      {isDirty ? <Badge variant="destructive" className="rounded-md">unsaved</Badge> : null}
                     </div>
-                    <h1 className="mt-3 text-2xl font-semibold tracking-normal text-foreground">
-                      {activeDocument.note.title}
-                    </h1>
+                    <React.Suspense
+                      fallback={
+                        <div className="flex min-h-40 items-center justify-center text-sm text-muted-foreground">
+                          Rendering wiki page...
+                        </div>
+                      }
+                    >
+                      {isEditingCrea8 ? (
+                        <Cre8BlockSuiteEditor
+                          key={activeDocument.doc.path}
+                          markdown={draft}
+                          onChange={setDraft}
+                        />
+                      ) : (
+                        <div className="llmchef-document-markdown">
+                          <WikiMarkdownPreview
+                            markdown={draft}
+                            onWikiLinkClick={openDocumentByLabel}
+                          />
+                        </div>
+                      )}
+                      {!isEditingCrea8 ? (
+                        <div className="llmchef-document-details mt-6 grid gap-3 border-t border-border pt-4 text-xs md:grid-cols-3">
+                        <section className="min-w-0 space-y-2">
+                          <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                            <LinkIcon className="h-3.5 w-3.5" />
+                            Links
+                          </div>
+                          {activeWikiLinks.length === 0 ? (
+                            <p className="text-muted-foreground">No wiki links yet.</p>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {activeWikiLinks.slice(0, 5).map((link) => (
+                                <Button
+                                  key={link}
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="llmchef-doc-outline-row w-auto"
+                                  onClick={() => openDocumentByLabel(link)}
+                                >
+                                  <span className="truncate">{link}</span>
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                        </section>
+                        <section className="min-w-0 space-y-2">
+                          <div className="font-medium text-muted-foreground">
+                            Backlinks
+                          </div>
+                          {activeBacklinks.length === 0 ? (
+                            <p className="text-muted-foreground">No backlinks yet.</p>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {activeBacklinks.slice(0, 5).map((doc) => (
+                                <Button
+                                  key={doc.path}
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="llmchef-doc-outline-row w-auto"
+                                  onClick={() => void selectWorkspaceDoc(doc)}
+                                >
+                                  <span className="truncate">{wikiLabelForDoc(doc)}</span>
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                        </section>
+                        <section className="min-w-0 space-y-2">
+                          <div className="font-medium text-muted-foreground">
+                            Related
+                          </div>
+                          {relatedWikiDocs.length === 0 ? (
+                            <p className="text-muted-foreground">
+                              Related pages will appear as the wiki grows.
+                            </p>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {relatedWikiDocs.slice(0, 5).map((doc) => (
+                                <Button
+                                  key={doc.path}
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="llmchef-doc-outline-row w-auto"
+                                  onClick={() => void selectWorkspaceDoc(doc)}
+                                >
+                                  <span className="truncate">{wikiLabelForDoc(doc)}</span>
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                        </section>
+                        </div>
+                      ) : null}
+                    </React.Suspense>
                   </div>
-                  <React.Suspense
-                    fallback={
-                      <div className="flex min-h-40 items-center justify-center text-sm text-muted-foreground">
-                        Rendering wiki page...
-                      </div>
-                    }
-                  >
-                    <WikiMarkdownPreview markdown={draft} />
-                  </React.Suspense>
                 </div>
               </ScrollArea>
             ) : activeIsMermaidDiagram ? (
@@ -2098,149 +2538,222 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
               <Textarea
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                className="min-h-0 flex-1 resize-none rounded-none border-0 bg-background p-4 font-mono text-sm shadow-none focus-visible:ring-0"
+                className="llmchef-doc-textarea h-full min-h-0 resize-none rounded-none border-0 bg-background p-5 font-mono text-sm shadow-none focus-visible:ring-0"
               />
             )}
+              </div>
+            </div>
           </>
         ) : (
-          <div className="flex h-full flex-col p-6">
-            <div className="mb-4 min-w-0">
-              <h3 className="truncate text-sm font-semibold">
-                {basename(activeFolderPath ?? workspaceRoot) || workspaceLabel}
-              </h3>
-              <p className="truncate text-xs text-muted-foreground">
-                {normalizePath(activeFolderPath ?? workspaceRoot)}
-              </p>
-            </div>
-            {activeFolderDocs.length === 0 ? (
-              <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
-                This folder has no direct documents yet.
-              </div>
-            ) : (
-              <div className="grid auto-rows-min gap-2 overflow-y-auto">
-                {activeFolderDocs.map((doc) => (
-                  <button
-                    key={doc.path}
-                    type="button"
-                    className="flex min-w-0 items-start gap-3 rounded-md border border-border bg-card px-3 py-2 text-left hover:bg-muted/40"
-                    onClick={() => void selectWorkspaceDoc(doc)}
-                  >
-                    {iconForPreviewKind(doc)}
-                    <span className="min-w-0 flex-1">
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="truncate text-sm font-medium">
-                          {wikiLabelForDoc(doc)}
+          <div className="grid h-full min-h-0 grid-cols-1 bg-background lg:grid-cols-[minmax(0,1fr)_18rem]">
+            <div className="llmchef-doc-empty-canvas min-h-0 overflow-y-auto p-4 sm:p-6">
+              <div className="llmchef-doc-empty-page">
+                <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-normal text-muted-foreground">
+                      {currentProject ? "Folder" : "Workspace"}
+                    </p>
+                    <h3 className="mt-2 truncate text-2xl font-semibold tracking-normal text-foreground">
+                      {currentProject
+                        ? basename(activeFolderPath ?? workspaceRoot) || workspaceLabel
+                        : "Start a document workspace"}
+                    </h3>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                      {currentProject
+                        ? "Create a page or import files here, then ask AI with this folder in context."
+                        : "Create a workspace for pages, files, and chat grounded in the material you add."}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="llmchef-doc-empty-path">
+                    {currentProject
+                      ? normalizePath(activeFolderPath ?? workspaceRoot)
+                      : "Home.mdx will be prepared"}
+                  </Badge>
+                </div>
+                {!currentProject ? (
+                  <>
+                    <div className="mb-7 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => void startDocumentWorkspace()}
+                        disabled={creatingWorkspace}
+                      >
+                        <BookOpenTextIcon
+                          className={creatingWorkspace ? "animate-pulse" : ""}
+                        />
+                        Create workspace
+                      </Button>
+                    </div>
+                    <div className="llmchef-doc-workflow-list">
+                      <div className="llmchef-doc-workflow-row">
+                        <BookOpenTextIcon />
+                        <span>
+                          <strong>Draft pages</strong>
+                          <small>Home, notes, plans, and linked wiki pages.</small>
                         </span>
-                        <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
-                          {isWikiMarkdownDoc(doc) ? "wiki" : doc.previewDescriptor.kind}
-                        </Badge>
-                      </span>
-                      <span className="line-clamp-2 text-xs text-muted-foreground">
-                        {doc.snippet || doc.path}
-                      </span>
-                    </span>
-                  </button>
-                ))}
+                      </div>
+                      <div className="llmchef-doc-workflow-row">
+                        <FilePlusIcon />
+                        <span>
+                          <strong>Import files</strong>
+                          <small>Bring source docs into the workspace tree.</small>
+                        </span>
+                      </div>
+                      <div className="llmchef-doc-workflow-row">
+                        <MessageSquarePlusIcon />
+                        <span>
+                          <strong>Ask AI with context</strong>
+                          <small>Use selected pages and files in the composer.</small>
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                ) : activeFolderDocs.length === 0 ? (
+                  <>
+                    <div className="mb-7 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        onClick={() =>
+                          void createCrea8Page(activeFolderPath ?? workspaceRoot)
+                        }
+                        disabled={!fs || saving}
+                      >
+                        <BookOpenTextIcon className={saving ? "animate-pulse" : ""} />
+                        New page
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={!fs || importing}
+                      >
+                        <FilePlusIcon
+                          className={importing ? "animate-pulse" : ""}
+                        />
+                        Import files
+                      </Button>
+                    </div>
+                    <div className="llmchef-doc-workflow-list">
+                      <div className="llmchef-doc-workflow-row">
+                        <BookOpenTextIcon />
+                        <span>
+                          <strong>Start with a page</strong>
+                          <small>Capture notes directly in this folder.</small>
+                        </span>
+                      </div>
+                      <div className="llmchef-doc-workflow-row">
+                        <PaperclipIcon />
+                        <span>
+                          <strong>Add source material</strong>
+                          <small>Import files for preview, extraction, and chat.</small>
+                        </span>
+                      </div>
+                      <div className="llmchef-doc-workflow-row">
+                        <SearchIcon />
+                        <span>
+                          <strong>Build context</strong>
+                          <small>Documents become searchable as the workspace grows.</small>
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="llmchef-doc-folder-list">
+                    {activeFolderDocs.map((doc) => (
+                      <button
+                        key={doc.path}
+                        type="button"
+                        className="llmchef-doc-folder-row"
+                        onClick={() => void selectWorkspaceDoc(doc)}
+                      >
+                        {iconForPreviewKind(doc)}
+                        <span className="min-w-0 flex-1">
+                          <span className="flex min-w-0 flex-wrap items-center gap-2">
+                            <span className="truncate text-sm font-medium">
+                              {wikiLabelForDoc(doc)}
+                            </span>
+                            <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
+                              {isWikiMarkdownDoc(doc)
+                                ? "wiki"
+                                : doc.previewDescriptor.kind}
+                            </Badge>
+                          </span>
+                          <span className="line-clamp-2 text-xs text-muted-foreground">
+                            {doc.snippet || doc.path}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+            <aside className="llmchef-doc-inspector llmchef-doc-empty-inspector min-h-0 border-t border-border bg-card/70 lg:border-l lg:border-t-0">
+              <ScrollArea className="h-full">
+                <div className="space-y-4 p-3 text-xs">
+                  <section className="space-y-2">
+                    <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                      <FolderIcon className="h-3.5 w-3.5" />
+                      Workspace
+                    </div>
+                    <div className="llmchef-doc-status-row">
+                      <span>Project</span>
+                      <strong>{currentProject?.name ?? "Not created"}</strong>
+                    </div>
+                    <div className="llmchef-doc-status-row">
+                      <span>Location</span>
+                      <strong>
+                        {currentProject
+                          ? basename(activeFolderPath ?? workspaceRoot) ||
+                            workspaceLabel
+                          : "Home"}
+                      </strong>
+                    </div>
+                  </section>
+                  <section className="space-y-2">
+                    <div className="font-medium text-muted-foreground">
+                      Next actions
+                    </div>
+                    <div className="llmchef-doc-status-row">
+                      <span>{currentProject ? "Create" : "Begin"}</span>
+                      <strong>{currentProject ? "New page" : "Workspace"}</strong>
+                    </div>
+                    <div className="llmchef-doc-status-row">
+                      <span>Add</span>
+                      <strong>{currentProject ? "Files" : "Project context"}</strong>
+                    </div>
+                  </section>
+                  <section className="space-y-2">
+                    <div className="font-medium text-muted-foreground">Context</div>
+                    <p className="leading-5 text-muted-foreground">
+                      {currentProject
+                        ? `${workspaceDocs.length} document${
+                            workspaceDocs.length === 1 ? "" : "s"
+                          } indexed for this workspace.`
+                        : "Create a workspace to prepare Home.mdx and begin grounding chat."}
+                    </p>
+                  </section>
+                </div>
+              </ScrollArea>
+            </aside>
           </div>
         )}
       </div>
-    </div>
+      </div>
   );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-background">
-      {sidebarPortalTarget ? createPortal(sidebarPane, sidebarPortalTarget) : null}
-      <div className="link42-panel flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <div className="min-w-0">
-          <h2 className="truncate text-sm font-semibold">Documents</h2>
-          <p className="truncate text-xs text-muted-foreground">
-            {workspaceLabel} files and wiki pages, grounded through chat
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(event) => void importFiles(event.currentTarget.files)}
-          />
-          <input
-            ref={configureFolderInput}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(event) => void importFiles(event.currentTarget.files)}
-          />
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => void createCrea8Page()}
-            disabled={!currentProject || !fs || saving}
-          >
-            <BookOpenTextIcon className={saving ? "animate-pulse" : ""} />
-            Page
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => void createMermaidDiagram()}
-            disabled={!currentProject || !fs || saving}
-          >
-            <ChartNoAxesCombinedIcon className={saving ? "animate-pulse" : ""} />
-            Diagram
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={!currentProject || !fs || importing}
-          >
-            <FilePlusIcon className={importing ? "animate-pulse" : ""} />
-            Files
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => folderInputRef.current?.click()}
-            disabled={!currentProject || !fs || importing}
-          >
-            <FolderPlusIcon className={importing ? "animate-pulse" : ""} />
-            Folder
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => void loadDocuments()}
-            disabled={busy}
-          >
-            <RefreshCwIcon className={busy ? "animate-spin" : ""} />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
       {error ? (
         <div className="border-b border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           {error}
         </div>
       ) : null}
 
-      {sidebarPortalTarget ? (
-        mainPane
-      ) : (
-        <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[22rem_minmax(0,1fr)]">
-          {sidebarPane}
-          {mainPane}
-        </div>
-      )}
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        {sidebarPane}
+        {mainPane}
+      </div>
       <FilePreviewDialog
         open={isPreviewOpen}
         onOpenChange={setIsPreviewOpen}

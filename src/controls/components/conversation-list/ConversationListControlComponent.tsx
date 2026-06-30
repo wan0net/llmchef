@@ -15,15 +15,19 @@ import { useProjectStore } from "@/store/project.store";
 import { useVfsStore } from "@/store/vfs.store";
 import { useUIStateStore } from "@/store/ui.store";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   BookOpenTextIcon,
   DownloadIcon,
+  FileTextIcon,
   FilesIcon,
+  FolderIcon,
   FolderPlusIcon,
   GitBranchIcon,
-  MessagesSquareIcon,
+  Loader2Icon,
   PlusIcon,
+  RefreshCwIcon,
   SearchIcon,
 } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
@@ -47,12 +51,26 @@ import { GithubIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
-import { joinPath } from "@/lib/llmchef/file-manager-utils";
-import { createDirectoryOp } from "@/lib/llmchef/vfs-operations";
+import { parseCrea8MarkdownNote } from "@/lib/llmchef/crea8-memory";
+import {
+  basename,
+  joinPath,
+  normalizePath,
+} from "@/lib/llmchef/file-manager-utils";
+import {
+  createDirectoryOp,
+  listFilesOp,
+  readFileOp,
+} from "@/lib/llmchef/vfs-operations";
 import { cn } from "@/lib/utils";
 import { emitter } from "@/lib/llmchef/event-emitter";
 import { uiEvent } from "@/types/llmchef/events/ui.events";
 import { vfsEvent } from "@/types/llmchef/events/vfs.events";
+import {
+  useDocumentWorkspaceStore,
+  type DocumentNavDoc,
+  type DocumentSyncState,
+} from "@/store/document-workspace.store";
 
 type ProjectSectionKind = "chats" | "wiki" | "files" | "git";
 
@@ -63,12 +81,44 @@ interface ProjectSectionItem {
   count?: number;
 }
 
+interface WikiFolderItem {
+  itemType: "wiki-folder";
+  project: Project;
+  name: string;
+  path: string;
+}
+
+interface WikiDocumentItem {
+  itemType: "wiki-doc";
+  project: Project;
+  doc: DocumentNavDoc;
+}
+
+interface WikiSyncItem {
+  itemType: "wiki-sync";
+  project: Project;
+  sync: DocumentSyncState | null;
+}
+
+type WikiTreeNode = {
+  name: string;
+  path: string;
+  children: WikiTreeNode[];
+  item?: DocumentNavDoc;
+};
+
 export interface VirtualListItem {
   id: string; // Unique ID for the virtual list item (e.g., `project-${projectId}` or `conversation-${conversationId}`)
   originalId: string; // The actual ID of the project or conversation
-  type: SidebarItemType | "project-section";
+  type: SidebarItemType | "project-section" | "wiki-folder" | "wiki-doc" | "wiki-sync";
   level: number;
-  data: Project | Conversation | ProjectSectionItem; // The actual project, conversation, or project section data
+  data:
+    | Project
+    | Conversation
+    | ProjectSectionItem
+    | WikiFolderItem
+    | WikiDocumentItem
+    | WikiSyncItem; // The actual project, conversation, project section, or wiki row data
   updatedAt: Date; // For sorting
 }
 
@@ -156,11 +206,133 @@ const ensureAppVfs = async () => {
   return current.initializeVFS(APP_VFS_KEY);
 };
 
+const RAIL_WIKI_IGNORED_NAMES = new Set([".git", ".llmchef"]);
+
+const workspacePathParts = (path: string, rootPath: string): string[] => {
+  const normalizedPath = normalizePath(path);
+  const normalizedRoot = normalizePath(rootPath);
+  const relative =
+    normalizedPath === normalizedRoot
+      ? ""
+      : normalizedPath.startsWith(`${normalizedRoot}/`)
+        ? normalizedPath.slice(normalizedRoot.length + 1)
+        : normalizedPath.replace(/^\/+/, "");
+  return relative.split("/").filter(Boolean);
+};
+
+const wikiLabelFromName = (name: string): string =>
+  name.replace(/\.(md|markdown|mdx)$/i, "");
+
+const addWikiTreePath = (
+  root: WikiTreeNode,
+  parts: string[],
+  item: DocumentNavDoc,
+): void => {
+  let current = root;
+  let path = root.path;
+
+  parts.forEach((part, index) => {
+    path = joinPath(path, part);
+    const isFile = index === parts.length - 1;
+    let child = current.children.find((node) => node.name === part);
+
+    if (!child) {
+      child = { name: part, path, children: [] };
+      current.children.push(child);
+    }
+
+    if (isFile) child.item = item;
+    current = child;
+  });
+};
+
+const sortWikiTree = (node: WikiTreeNode): WikiTreeNode => ({
+  ...node,
+  children: node.children
+    .map(sortWikiTree)
+    .sort((first, second) => {
+      if (Boolean(first.item) !== Boolean(second.item)) {
+        return first.item ? 1 : -1;
+      }
+      return first.name.localeCompare(second.name);
+    }),
+});
+
+const buildWikiTree = (
+  docs: DocumentNavDoc[],
+  rootPath: string,
+  rootName: string,
+): WikiTreeNode => {
+  const root: WikiTreeNode = { name: rootName, path: rootPath, children: [] };
+  docs.forEach((doc) => {
+    const parts = doc.relativePath
+      ? doc.relativePath.split("/").filter(Boolean)
+      : workspacePathParts(doc.path, rootPath);
+    addWikiTreePath(root, parts, doc);
+  });
+  return sortWikiTree(root);
+};
+
+const listProjectWikiDocs = async (
+  rootPath: string,
+  fsInstance: typeof import("@zenfs/core").fs,
+): Promise<DocumentNavDoc[]> => {
+  const docs: DocumentNavDoc[] = [];
+
+  const visit = async (path: string) => {
+    const entries = await listFilesOp(path, { fsInstance });
+    for (const entry of entries) {
+      if (RAIL_WIKI_IGNORED_NAMES.has(entry.name)) continue;
+      if (entry.isDirectory) {
+        await visit(entry.path);
+        continue;
+      }
+      if (!/\.(md|markdown|mdx)$/i.test(entry.name)) continue;
+
+      let label = wikiLabelFromName(entry.name);
+      let snippet = "";
+      let kind: DocumentNavDoc["kind"] = "file";
+      try {
+        const data = await readFileOp(entry.path, {
+          fsInstance,
+          silent: true,
+        });
+        const text = new TextDecoder().decode(data.slice(0, 200_000)).trim();
+        snippet = text.slice(0, 220);
+        const note = parseCrea8MarkdownNote(text, entry.path);
+        label = note.title || label;
+        snippet = note.content.slice(0, 220);
+        kind = "crea8";
+      } catch {
+        // Best-effort labels are enough for rail navigation.
+      }
+
+      docs.push({
+        kind,
+        name: entry.name,
+        path: entry.path,
+        type: "text/markdown",
+        updatedAt: entry.lastModified,
+        snippet,
+        label,
+        relativePath: workspacePathParts(entry.path, rootPath).join("/"),
+        previewKind: "markdown",
+        isWiki: true,
+      });
+    }
+  };
+
+  await visit(rootPath);
+  return docs.sort((first, second) =>
+    first.relativePath.localeCompare(second.relativePath),
+  );
+};
+
 const projectSectionConfig = {
   chats: {
-    label: "Chats",
-    icon: MessagesSquareIcon,
-    description: "Project conversations",
+    label: "Conversations",
+    icon: FolderIcon,
+    description: "Conversation history",
   },
   wiki: {
     label: "Wiki",
@@ -235,6 +407,107 @@ const ProjectSectionRow: React.FC<ProjectSectionRowProps> = ({
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+  );
+};
+
+const WikiFolderRow: React.FC<{
+  item: WikiFolderItem;
+  level: number;
+}> = ({ item, level }) => {
+  const isLoading = item.name === "Loading wiki...";
+  return (
+    <div
+      className="flex h-7 w-full items-center gap-2 rounded-md px-2 text-xs text-muted-foreground"
+      style={{ paddingLeft: `${level * 12 + 10}px` }}
+    >
+      {isLoading ? (
+        <Loader2Icon className="h-3.5 w-3.5 shrink-0 animate-spin" />
+      ) : (
+        <FolderIcon className="h-3.5 w-3.5 shrink-0" />
+      )}
+      <span className="min-w-0 flex-1 truncate">{item.name}</span>
+    </div>
+  );
+};
+
+const WikiDocumentRow: React.FC<{
+  item: WikiDocumentItem;
+  level: number;
+  isActive: boolean;
+  onOpen: (project: Project, doc: DocumentNavDoc) => void;
+}> = ({ item, level, isActive, onOpen }) => (
+  <button
+    type="button"
+    className={cn(
+      "group flex h-7 w-full items-center gap-2 rounded-md px-2 text-left text-xs transition-colors",
+      isActive
+        ? "bg-primary/10 text-primary"
+        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+    )}
+    style={{ paddingLeft: `${level * 12 + 10}px` }}
+    onClick={(event) => {
+      event.stopPropagation();
+      onOpen(item.project, item.doc);
+    }}
+    aria-label={`Open ${item.doc.label}`}
+  >
+    <FileTextIcon className="h-3.5 w-3.5 shrink-0" />
+    <span className="min-w-0 flex-1 truncate">{item.doc.label}</span>
+  </button>
+);
+
+const WikiSyncRow: React.FC<{
+  item: WikiSyncItem;
+  level: number;
+}> = ({ item, level }) => {
+  const sync = item.sync;
+  const syncing = sync?.syncingLocalFolder ?? false;
+  return (
+    <div
+      className="llmchef-rail-sync mx-1 rounded-md border border-border bg-background p-2 text-xs shadow-xs"
+      style={{ marginLeft: `${level * 12 + 10}px` }}
+    >
+      <div className="mb-1 flex min-w-0 items-center justify-between gap-2">
+        <span className="font-medium text-muted-foreground">Sync</span>
+        <Badge variant="outline" className="h-5 shrink-0 rounded-md px-1.5 text-[10px]">
+          {sync?.localFolderName ? "local linked" : "local only"}
+        </Badge>
+      </div>
+      <p className="mb-2 line-clamp-2 text-muted-foreground">
+        {sync?.localFolderStatus ??
+          "Use Git from the project row, or connect a local folder for browser filesystem sync."}
+      </p>
+      <div className="flex flex-wrap gap-1">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-7 px-2 text-xs"
+          onClick={(event) => {
+            event.stopPropagation();
+            sync?.connectLocalFolder?.();
+          }}
+          disabled={!sync || syncing || !sync.localSyncSupported}
+        >
+          <FolderPlusIcon className={syncing ? "h-3.5 w-3.5 animate-pulse" : "h-3.5 w-3.5"} />
+          Local
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-7 px-2 text-xs"
+          onClick={(event) => {
+            event.stopPropagation();
+            sync?.syncLocalFolderNow?.();
+          }}
+          disabled={!sync || !sync.localFolderName || syncing}
+        >
+          <RefreshCwIcon className={syncing ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
+          Sync
+        </Button>
+      </div>
+    </div>
   );
 };
 
@@ -341,6 +614,15 @@ export const ConversationListControlComponent: React.FC<
       setWorkspaceMode: state.setWorkspaceMode,
     })),
   );
+  const documentProjects = useDocumentWorkspaceStore(
+    (state) => state.projects,
+  );
+  const setProjectNavigation = useDocumentWorkspaceStore(
+    (state) => state.setProjectNavigation,
+  );
+  const requestOpenDocument = useDocumentWorkspaceStore(
+    (state) => state.requestOpenDocument,
+  );
 
   const isLoading = module.isLoading;
 
@@ -395,8 +677,13 @@ export const ConversationListControlComponent: React.FC<
   const handleSelectItem = useCallback(
     (id: string | null, type: SidebarItemType | null) => {
       selectItem(id, type);
+      if (type === "project") {
+        setWorkspaceMode("documents");
+      } else if (type === "conversation") {
+        setWorkspaceMode("chat");
+      }
     },
-    [selectItem]
+    [selectItem, setWorkspaceMode]
   );
 
   const getParentProjectId = useCallback(() => {
@@ -431,11 +718,12 @@ export const ConversationListControlComponent: React.FC<
         projectId: parentProjectId,
       });
       selectItem(newId, "conversation");
+      setWorkspaceMode("chat");
     } catch (error) {
       console.error("Failed to create new chat:", error);
       toast.error(t('conversationList.newChatError'));
     }
-  }, [editingItemId, ensureProjectForNewChat, addConversation, selectItem, t]);
+  }, [editingItemId, ensureProjectForNewChat, addConversation, selectItem, setWorkspaceMode, t]);
 
   const handleNewProject = useCallback(async () => {
     if (editingItemId) return;
@@ -446,6 +734,7 @@ export const ConversationListControlComponent: React.FC<
         parentId: parentProjectId,
       });
       selectItem(newId, "project");
+      setWorkspaceMode("documents");
       if (parentProjectId) {
         setExpandedProjects((prev) => new Set(prev).add(parentProjectId));
       }
@@ -464,6 +753,7 @@ export const ConversationListControlComponent: React.FC<
     getParentProjectId,
     addProject,
     selectItem,
+    setWorkspaceMode,
     getProjectById,
     handleStartEditing,
     t,
@@ -646,6 +936,83 @@ export const ConversationListControlComponent: React.FC<
     [selectItem, setWorkspaceMode],
   );
 
+  const handleOpenWikiDocument = useCallback(
+    async (project: Project, doc: DocumentNavDoc) => {
+      await Promise.resolve(selectItem(project.id, "project"));
+      setExpandedProjects((prev) => new Set(prev).add(project.id));
+      setWorkspaceMode("documents");
+      requestOpenDocument(project.id, doc.path);
+    },
+    [requestOpenDocument, selectItem, setWorkspaceMode],
+  );
+
+  const selectedProjectIdForRail = useMemo(() => {
+    if (selectedItemType === "project") return selectedItemId;
+    if (selectedItemType === "conversation" && selectedItemId) {
+      return getConversationById(selectedItemId)?.projectId ?? null;
+    }
+    return null;
+  }, [getConversationById, selectedItemId, selectedItemType]);
+
+  useEffect(() => {
+    if (expandedProjects.size === 0) return;
+    let cancelled = false;
+
+    void (async () => {
+      const fsInstance = await ensureAppVfs();
+      await Promise.all(
+        projects
+          .filter((project) => expandedProjects.has(project.id))
+          .map(async (project) => {
+            const rootPath = normalizePath(project.path);
+            const current = useDocumentWorkspaceStore.getState().projects[project.id];
+            if (current?.rootPath === rootPath) return;
+
+            setProjectNavigation(project.id, {
+              rootPath,
+              rootLabel: project.name,
+              docs: current?.docs ?? [],
+              loading: true,
+              activePath: current?.activePath ?? null,
+              sync: current?.sync ?? null,
+            });
+
+            try {
+              const docs = await listProjectWikiDocs(rootPath, fsInstance);
+              if (cancelled) return;
+              const latest = useDocumentWorkspaceStore.getState().projects[project.id];
+              setProjectNavigation(project.id, {
+                rootPath,
+                rootLabel: project.name,
+                docs,
+                loading: false,
+                activePath: latest?.activePath ?? null,
+                sync: latest?.sync ?? null,
+              });
+            } catch (error) {
+              console.warn("Failed to load project wiki tree:", error);
+              if (cancelled) return;
+              const latest = useDocumentWorkspaceStore.getState().projects[project.id];
+              setProjectNavigation(project.id, {
+                rootPath,
+                rootLabel: project.name,
+                docs: latest?.docs ?? [],
+                loading: false,
+                activePath: latest?.activePath ?? null,
+                sync: latest?.sync ?? null,
+              });
+            }
+          }),
+      );
+    })().catch((error) => {
+      console.warn("Failed to prepare wiki tree navigation:", error);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [expandedProjects, projects, setProjectNavigation]);
+
   const repoNameMap = useMemo(() => {
     return new Map((syncRepos || []).map((r) => [r.id, r.name]));
   }, [syncRepos]);
@@ -704,6 +1071,58 @@ export const ConversationListControlComponent: React.FC<
       });
     }
 
+    function addWikiNode(project: Project, node: WikiTreeNode, level: number) {
+      if (node.item) {
+        flatList.push({
+          id: `wiki-doc-${project.id}-${node.item.path}`,
+          originalId: node.item.path,
+          type: "wiki-doc",
+          level,
+          data: {
+            itemType: "wiki-doc",
+            project,
+            doc: node.item,
+          },
+          updatedAt: node.item.updatedAt,
+        });
+        return;
+      }
+
+      if (node.path !== normalizePath(project.path)) {
+        flatList.push({
+          id: `wiki-folder-${project.id}-${node.path}`,
+          originalId: node.path,
+          type: "wiki-folder",
+          level,
+          data: {
+            itemType: "wiki-folder",
+            project,
+            name: node.name,
+            path: node.path,
+          },
+          updatedAt: project.updatedAt,
+        });
+      }
+
+      node.children.forEach((child) => addWikiNode(project, child, level + 1));
+    }
+
+    function addProjectSync(project: Project, level: number) {
+      const navigation = documentProjects[project.id];
+      flatList.push({
+        id: `wiki-sync-${project.id}`,
+        originalId: project.id,
+        type: "wiki-sync",
+        level,
+        data: {
+          itemType: "wiki-sync",
+          project,
+          sync: navigation?.sync ?? null,
+        },
+        updatedAt: project.updatedAt,
+      });
+    }
+
     function addProject(project: Project, level: number) {
       flatList.push({
         id: `project-${project.id}`,
@@ -751,9 +1170,46 @@ export const ConversationListControlComponent: React.FC<
           updatedAt: conversation.updatedAt,
         });
       });
-      addProjectSection(project, "wiki", level + 1);
+      const navigation = documentProjects[project.id];
+      const wikiDocs =
+        navigation?.docs.filter((doc) => {
+          if (!lowerCaseFilter) return true;
+          return (
+            doc.label.toLowerCase().includes(lowerCaseFilter) ||
+            doc.relativePath.toLowerCase().includes(lowerCaseFilter)
+          );
+        }) ?? [];
+
+      addProjectSection(project, "wiki", level + 1, navigation?.docs.length);
+      if (navigation?.loading) {
+        flatList.push({
+          id: `wiki-folder-${project.id}-loading`,
+          originalId: project.id,
+          type: "wiki-folder",
+          level: level + 2,
+          data: {
+            itemType: "wiki-folder",
+            project,
+            name: "Loading wiki...",
+            path: `${project.path}/loading`,
+          },
+          updatedAt: project.updatedAt,
+        });
+      } else if (wikiDocs.length > 0) {
+        const wikiTree = buildWikiTree(
+          wikiDocs,
+          navigation.rootPath,
+          navigation.rootLabel,
+        );
+        wikiTree.children.forEach((child) =>
+          addWikiNode(project, child, level + 2),
+        );
+      }
       addProjectSection(project, "files", level + 1);
       addProjectSection(project, "git", level + 1);
+      if (selectedProjectIdForRail === project.id) {
+        addProjectSync(project, level + 1);
+      }
 
       childProjects.forEach((childProject) => addProject(childProject, level + 1));
     }
@@ -774,34 +1230,12 @@ export const ConversationListControlComponent: React.FC<
           )
       );
 
-      const childConversations = (
-        conversationsByProjectId.get(null) || []
-      ).filter((c) => c.title.toLowerCase().includes(lowerCaseFilter));
-
-      const combinedChildren: (Project | Conversation)[] = [
-        ...childProjects,
-        ...childConversations,
-      ];
-
-      combinedChildren.sort(
+      childProjects.sort(
         (a, b) =>
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       );
 
-      combinedChildren.forEach((item) => {
-        if ("path" in item) {
-          addProject(item, 0);
-        } else {
-          flatList.push({
-            id: `conversation-${item.id}`,
-            originalId: item.id,
-            type: "conversation",
-            level: 0,
-            data: item,
-            updatedAt: item.updatedAt,
-          });
-        }
-      });
+      childProjects.forEach((project) => addProject(project, 0));
     }
 
     addRootChildren();
@@ -814,12 +1248,15 @@ export const ConversationListControlComponent: React.FC<
     projectsById,
     conversationsByProjectId,
     projectsByParentId,
+    documentProjects,
+    selectedProjectIdForRail,
   ]);
 
   const rowVirtualizer = useVirtualizer({
     count: flattenedVisibleItems.length,
     getScrollElement: () => viewportRef.current,
-    estimateSize: () => 32,
+    estimateSize: (index) =>
+      flattenedVisibleItems[index]?.type === "wiki-sync" ? 112 : 32,
     overscan: 10,
   });
 
@@ -920,9 +1357,9 @@ export const ConversationListControlComponent: React.FC<
                 <p>{t('conversationList.noItemsMatchFilter', 'No items match your filter.')}</p>
               ) : (
                 <>
-                  <p>{t('conversationList.noItemsYet', 'No conversations or projects yet.')}</p>
+                  <p>{t('conversationList.noItemsYet', 'No projects yet.')}</p>
                   <p className="text-xs mt-1">
-                    {t('conversationList.getStarted', 'Create a new chat or project to get started.')}
+                    {t('conversationList.getStarted', 'Create a project to get started.')}
                   </p>
                 </>
               )}
@@ -961,6 +1398,82 @@ export const ConversationListControlComponent: React.FC<
                       level={item.level}
                       isActive={isActive}
                       onOpen={handleOpenProjectSection}
+                    />
+                  </div>
+                );
+              }
+
+              if (item.type === "wiki-folder") {
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: `${virtualItem.size}px`,
+                      transform: `translateY(${virtualItem.start}px)`,
+                    }}
+                    className="px-1"
+                  >
+                    <WikiFolderRow
+                      item={item.data as WikiFolderItem}
+                      level={item.level}
+                    />
+                  </div>
+                );
+              }
+
+              if (item.type === "wiki-doc") {
+                const wikiItem = item.data as WikiDocumentItem;
+                const activePath =
+                  documentProjects[wikiItem.project.id]?.activePath ?? null;
+                const isActive =
+                  selectedProjectIdForRail === wikiItem.project.id &&
+                  workspaceMode === "documents" &&
+                  activePath === wikiItem.doc.path;
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: `${virtualItem.size}px`,
+                      transform: `translateY(${virtualItem.start}px)`,
+                    }}
+                    className="px-1"
+                  >
+                    <WikiDocumentRow
+                      item={wikiItem}
+                      level={item.level}
+                      isActive={isActive}
+                      onOpen={handleOpenWikiDocument}
+                    />
+                  </div>
+                );
+              }
+
+              if (item.type === "wiki-sync") {
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: `${virtualItem.size}px`,
+                      transform: `translateY(${virtualItem.start}px)`,
+                    }}
+                    className="px-1"
+                  >
+                    <WikiSyncRow
+                      item={item.data as WikiSyncItem}
+                      level={item.level}
                     />
                   </div>
                 );

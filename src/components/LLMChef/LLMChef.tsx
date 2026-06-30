@@ -22,7 +22,7 @@ import { InputArea } from "@/components/LLMChef/prompt/InputArea";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Loader2, Menu, ShieldCheck, X } from "lucide-react";
+import { Loader2, Menu, X } from "lucide-react";
 import {
   initializeControlModules,
   performFullInitialization,
@@ -584,37 +584,22 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
   return (
     <>
       <ModalManager />
-      <div className="llmchef-shell flex h-full w-full overflow-hidden border border-border bg-background text-foreground md:m-2 md:h-[calc(100%-1rem)] md:w-[calc(100%-1rem)] md:rounded-lg">
+      <div className="llmchef-shell llmchef-document-shell flex h-dvh w-full overflow-hidden bg-background text-foreground">
         <div
           className={cn(
             "hidden md:flex flex-col border-r border-border bg-sidebar",
             "transition-[width] duration-300 ease-in-out",
             "flex-shrink-0 overflow-hidden",
-            isSidebarCollapsed ? "w-16" : "w-64"
+            isSidebarCollapsed ? "w-16" : "w-[19rem]"
           )}
         >
-          <div
-            className={cn(
-              "flex h-12 flex-shrink-0 items-center border-b border-border px-3",
-              isSidebarCollapsed ? "justify-center" : "gap-2"
-            )}
-          >
-            <span className="llmchef-brand-mark flex h-7 w-7 items-center justify-center rounded-md text-white shadow-sm">
-              <ShieldCheck className="h-4 w-4" />
-            </span>
-            {!isSidebarCollapsed && (
-              <div className="min-w-0">
-                <div className="text-sm font-semibold tracking-[-0.02em] text-sidebar-foreground">
-                  LLMChef
-                </div>
-                <div className="truncate text-[11px] text-muted-foreground">
-                  Local-first AI workspace
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="flex-grow overflow-y-auto overflow-x-hidden">
-            <div className={cn(isSidebarCollapsed ? "hidden" : "block")}>
+          <div className="min-h-0 flex-grow overflow-hidden">
+            <div
+              className={cn(
+                "h-full overflow-y-auto overflow-x-hidden",
+                isSidebarCollapsed ? "hidden" : "block"
+              )}
+            >
               <ChatControlWrapper
                 controls={sidebarControls}
                 panelId="sidebar"
@@ -665,7 +650,14 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
                   <span className="llmchef-brand-mark flex h-7 w-7 items-center justify-center rounded-md text-white">
                     <ShieldCheck className="h-4 w-4" />
                   </span>
-                  <h2 className="font-semibold text-card-foreground">LLMChef</h2>
+                  <div className="min-w-0">
+                    <h2 className="truncate font-semibold text-card-foreground">
+                      LLMChef
+                    </h2>
+                    <p className="truncate text-xs text-muted-foreground">
+                      Projects
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={toggleMobileSidebar}
@@ -676,7 +668,7 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <div className="flex-grow overflow-y-auto overflow-x-hidden bg-card">
+              <div className="min-h-0 flex-grow overflow-y-auto overflow-x-hidden bg-card">
                 {sidebarControls.length > 0 ? (
                   <ChatControlWrapper
                     controls={sidebarControls}
@@ -711,63 +703,96 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
           </div>
         )}
 
-        <div className="flex flex-col flex-grow min-w-0">
-          <div className="link42-panel flex items-center justify-between border-b border-border px-2 py-1.5 flex-shrink-0">
-            <button
-              className={cn(
-                "md:hidden p-3 rounded-md hover:bg-muted active:bg-muted/80 transition-colors touch-manipulation",
-                isMobileSidebarOpen && "bg-muted"
-              )}
-              onClick={toggleMobileSidebar}
-              aria-label={t(isMobileSidebarOpen ? 'closeMenu' : 'openMenu')}
-              style={{ minHeight: '44px', minWidth: '44px' }}
-            >
-              {isMobileSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-            <ChatControlWrapper
-              controls={headerControls}
-              panelId="header"
-              className="flex items-center justify-end gap-1 flex-grow"
-            />
-          </div>
-
+        <div className="flex min-w-0 flex-grow flex-col">
           {workspaceMode === "chat" ? (
-            <ChatCanvas
-              conversationId={currentConversationIdForCanvas}
-              interactions={interactions}
-              status={interactionStatus}
-              className="flex-grow overflow-y-hidden"
-            />
-          ) : (
-            <React.Suspense
-              fallback={
-                <div className="flex flex-grow items-center justify-center text-sm text-muted-foreground">
-                  Loading wiki...
+            <div className="link42-panel flex h-14 flex-shrink-0 items-center justify-between gap-3 border-b border-border px-3 md:px-4">
+              <div className="flex min-w-0 items-center gap-2">
+                <button
+                  className={cn(
+                    "md:hidden rounded-md p-3 transition-colors hover:bg-muted active:bg-muted/80 touch-manipulation",
+                    isMobileSidebarOpen && "bg-muted"
+                  )}
+                  onClick={toggleMobileSidebar}
+                  aria-label={t(isMobileSidebarOpen ? 'closeMenu' : 'openMenu')}
+                  style={{ minHeight: '44px', minWidth: '44px' }}
+                >
+                  {isMobileSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-foreground">
+                    LLMChef
+                  </div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    Chat canvas
+                  </div>
                 </div>
-              }
-            >
-              <DocumentsWorkspace
-                currentProjectId={currentProjectId}
+              </div>
+              <ChatControlWrapper
+                controls={headerControls}
+                panelId="header"
+                className="flex min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto"
               />
-            </React.Suspense>
-          )}
-
-          {globalError && (
-            <div className="p-2 bg-destructive text-destructive-foreground text-sm text-center">
-              Error: {globalError}
             </div>
-          )}
+          ) : null}
 
-          {workspaceMode === "chat" ? (
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+            {workspaceMode === "chat" ? (
+              <ChatCanvas
+                conversationId={currentConversationIdForCanvas}
+                interactions={interactions}
+                status={interactionStatus}
+                className="flex-grow overflow-y-hidden"
+              />
+            ) : (
+              <React.Suspense
+                fallback={
+                  <div className="flex flex-grow items-center justify-center text-sm text-muted-foreground">
+                    Loading wiki...
+                  </div>
+                }
+              >
+                <DocumentsWorkspace
+                  currentProjectId={currentProjectId}
+                  mobileMenuControl={
+                    <button
+                      className={cn(
+                        "llmchef-doc-mobile-menu md:hidden rounded-md p-2 transition-colors hover:bg-muted active:bg-muted/80 touch-manipulation",
+                        isMobileSidebarOpen && "bg-muted"
+                      )}
+                      onClick={toggleMobileSidebar}
+                      aria-label={t(isMobileSidebarOpen ? 'closeMenu' : 'openMenu')}
+                      style={{ minHeight: '34px', minWidth: '34px' }}
+                    >
+                      {isMobileSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                    </button>
+                  }
+                />
+              </React.Suspense>
+            )}
+
+            {globalError && (
+              <div className="p-2 bg-destructive text-destructive-foreground text-sm text-center">
+                Error: {globalError}
+              </div>
+            )}
+
             <PromptWrapper
               InputAreaRenderer={InputArea}
               onSubmit={handlePromptSubmit}
-              className="border-t border-border bg-card flex-shrink-0"
+              className={cn(
+                "flex-shrink-0 border-t border-border bg-card",
+                workspaceMode === "documents" && "llmchef-document-prompt"
+              )}
+              placeholder={
+                workspaceMode === "documents"
+                  ? "Ask AI about this document"
+                  : undefined
+              }
               inputAreaRef={inputAreaRef}
               selectedItemId={selectedItemId}
               selectedItemType={selectedItemType}
             />
-          ) : null}
+          </div>
         </div>
       </div>
       <Toaster richColors position="bottom-right" closeButton />
