@@ -69,6 +69,10 @@ export const useInteractionStore = create(
       }
 
       const previousStatus = get().status;
+      // Snapshot in-memory interactions before clearing so the merge patch has data.
+      const inMemorySnapshot = get().interactions.filter(
+        (i) => i.conversationId === conversationId
+      );
       set({
         status: "loading",
         error: null,
@@ -91,9 +95,7 @@ export const useInteractionStore = create(
         dbInteractions.sort((a, b) => a.index - b.index);
 
         // --- PATCH: Merge in-memory interactions not present in dbInteractions ---
-        const inMemory = get().interactions.filter(
-          (i) => i.conversationId === conversationId
-        );
+        const inMemory = inMemorySnapshot;
         const dbIds = new Set(dbInteractions.map((i) => i.id));
         const merged = [
           ...dbInteractions,
@@ -256,7 +258,11 @@ export const useInteractionStore = create(
 
     appendStreamBuffer: (id, chunk) => {
       set((state) => {
-        if (state.streamingInteractionIds.includes(id)) {
+        if (
+          state.streamingInteractionIds.includes(id) &&
+          state.currentConversationId ===
+            state.interactions.find((i) => i.id === id)?.conversationId
+        ) {
           if (state.activeStreamBuffers[id] === undefined) {
             state.activeStreamBuffers[id] = chunk;
           } else {
@@ -290,12 +296,19 @@ export const useInteractionStore = create(
       if (get().currentConversationId !== interaction.conversationId) return;
       get()._updateInteractionInState(interactionId, { rating });
       try {
-        await PersistenceService.saveInteraction({ ...interaction, rating });
+        // Re-read the current interaction so streaming updates are not overwritten.
+        const currentInteraction = get().interactions.find(
+          (i) => i.id === interactionId
+        );
+        await PersistenceService.saveInteraction({
+          ...(currentInteraction ?? interaction),
+          rating,
+        });
         emitter.emit(interactionEvent.interactionRated, {
           interactionId,
           rating,
         });
-      } catch (error) {
+      } catch (_error) {
         get()._updateInteractionInState(interactionId, {
           rating: interaction.rating,
         });
@@ -499,7 +512,7 @@ export const useInteractionStore = create(
         }
       } catch (error: any) {
         console.error('Failed to promote child to parent:', error);
-        toast.error(`Failed to promote interaction: ${error?.message || typeof error === 'string' ? error : 'Unknown error'}`);
+        toast.error(`Failed to promote interaction: ${error?.message ?? (typeof error === 'string' ? error : 'Unknown error')}`);
         throw error;
       }
     },

@@ -25,6 +25,8 @@ import { AffineEditorContainer } from "@blocksuite/presets";
 import { effects as presetEffects } from "@blocksuite/presets/effects";
 import { DocCollection, Schema, Text, type Doc } from "@blocksuite/store";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import { usePromptDialog } from "@/hooks/usePromptDialog";
 import { exportMarkdown, importMarkdown } from "./serializer";
 
 type FormatCommand =
@@ -130,6 +132,8 @@ export const Cre8BlockSuiteEditor: React.FC<Cre8BlockSuiteEditorProps> = ({
   const lastEmittedMarkdownRef = useRef<string | null>(null);
   const debounceRef = useRef<number | null>(null);
   const [activeTab, setActiveTab] = useState<"write" | "insert">("write");
+  const { t } = useTranslation(["documents", "common"]);
+  const { prompt: promptDialog, PromptDialog } = usePromptDialog();
 
   useEffect(() => {
     markdownRef.current = markdown;
@@ -244,7 +248,7 @@ export const Cre8BlockSuiteEditor: React.FC<Cre8BlockSuiteEditorProps> = ({
   );
 
   const handleInsert = useCallback(
-    (type: InsertType) => {
+    async (type: InsertType) => {
       if (type === "divider") {
         addBlock("affine:divider");
         return;
@@ -258,7 +262,11 @@ export const Cre8BlockSuiteEditor: React.FC<Cre8BlockSuiteEditorProps> = ({
         return;
       }
       if (type === "link") {
-        const url = window.prompt("URL");
+        const url = await promptDialog({
+          title: t("documents:linkPrompt.title", "URL"),
+          confirmLabel: t("common:ok", "OK"),
+          cancelLabel: t("common:cancel", "Cancel"),
+        });
         if (url) addBlock("affine:bookmark", { url });
         return;
       }
@@ -291,11 +299,13 @@ export const Cre8BlockSuiteEditor: React.FC<Cre8BlockSuiteEditorProps> = ({
         input.click();
       }
     },
-    [addBlock],
+    [addBlock, promptDialog, t],
   );
 
   return (
-    <div className={cn("llmchef-cre8-editor-shell", className)}>
+    <>
+      <PromptDialog />
+      <div className={cn("llmchef-cre8-editor-shell", className)}>
       <div className="cre8-toolbar">
         <div className="cre8-toolbar-tabs">
           {toolbarTabs.map((tab) => (
@@ -393,6 +403,7 @@ export const Cre8BlockSuiteEditor: React.FC<Cre8BlockSuiteEditorProps> = ({
       </div>
       <div className="llmchef-cre8-editor-root" ref={editorRootRef} />
     </div>
+    </>
   );
 };
 

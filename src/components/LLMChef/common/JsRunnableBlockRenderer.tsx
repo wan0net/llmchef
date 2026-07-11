@@ -37,6 +37,7 @@ import {
   type CodeSecurityResult,
 } from "@/services/code-security.service";
 import { ActionTooltipButton } from "./ActionTooltipButton";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 // QuickJS types declaration
 declare global {
@@ -886,7 +887,14 @@ const JsRunnableBlockRendererComponent: React.FC<JsRunnableBlockRendererProps> =
       }
       
       if (securityResult.score > 90) {
-        if (!window.confirm(`This code has a very high security risk score (${securityResult.score}/100). Are you absolutely sure you want to run it?`)) {
+        const confirmed = await ConfirmDialogService.confirm({
+          title: "High security risk",
+          description: `This code has a very high security risk score (${securityResult.score}/100). Are you absolutely sure you want to run it?`,
+          confirmLabel: "Run",
+          cancelLabel: "Cancel",
+          destructive: true,
+        });
+        if (!confirmed) {
           setClickCount(0);
           return;
         }

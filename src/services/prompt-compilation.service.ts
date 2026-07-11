@@ -348,7 +348,7 @@ ${memoryContext.context}`
    */
   private static async _processFilesForPrompt(
     filesMeta: AttachedFileMetadata[],
-    conversationId: string
+    _conversationId: string
   ): Promise<(TextPart | ImagePart)[]> {
     const fileContentParts: (TextPart | ImagePart)[] = [];
     const vfsFiles = filesMeta.filter((f) => f.source === "vfs");

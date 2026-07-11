@@ -36,7 +36,7 @@ export const WorkflowControlFooter: React.FC<WorkflowControlFooterProps> = ({ mo
         if (pauseReason === 'data-correction') {
             try {
                 finalResumeData = JSON.parse(resumeData);
-            } catch (e) {
+            } catch (_e) {
                 toast.error(t('workflowFooter.invalidJson'));
                 return;
             }

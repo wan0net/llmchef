@@ -10,6 +10,10 @@ export interface WorkflowState {
   pausePayload: WorkflowEventPayloads[typeof workflowEvent.paused] | null;
 }
 
+// Module-level timeout handle so completed-run cleanup can be cancelled if a
+// new workflow starts before the delay elapses.
+let completedRunClearTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
 export interface WorkflowActions {
   // Internal actions triggered by events
   _handleWorkflowStarted: (run: WorkflowRun) => void;
@@ -31,6 +35,10 @@ export const useWorkflowStore = create(
     pausePayload: null,
 
     _handleWorkflowStarted: (run) => {
+      if (completedRunClearTimeoutId) {
+        clearTimeout(completedRunClearTimeoutId);
+        completedRunClearTimeoutId = null;
+      }
       set((state) => {
         state.activeRun = run;
         state.pausePayload = null;
@@ -70,8 +78,11 @@ export const useWorkflowStore = create(
       get()._updateRun(runId, "completed", (run: WorkflowRun) => {
         run.completedAt = new Date().toISOString();
       });
-      // Optionally clear after a delay
-      setTimeout(() => set({ activeRun: null, pausePayload: null }), 5000);
+      // Optionally clear after a delay; store the timeout so a new run can cancel it.
+      completedRunClearTimeoutId = setTimeout(() => {
+        completedRunClearTimeoutId = null;
+        set({ activeRun: null, pausePayload: null });
+      }, 5000);
     },
 
     _handleWorkflowError: (runId, error) => {
@@ -83,6 +94,10 @@ export const useWorkflowStore = create(
     },
 
     _handleWorkflowCancelled: (runId) => {
+      if (completedRunClearTimeoutId) {
+        clearTimeout(completedRunClearTimeoutId);
+        completedRunClearTimeoutId = null;
+      }
       if (get().activeRun?.runId === runId) {
         set({ activeRun: null, pausePayload: null });
       }

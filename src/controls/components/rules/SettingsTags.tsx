@@ -66,7 +66,7 @@ export const SettingsTags: React.FC<SettingsTagsProps> = ({ module }) => {
         if (!editingTag) {
           handleCancel();
         }
-      } catch (error) {
+      } catch (_error) {
         // Error handled by store/emitter
       } finally {
         setIsSaving(false);
@@ -84,7 +84,7 @@ export const SettingsTags: React.FC<SettingsTagsProps> = ({ module }) => {
         if (editingTag?.id === id) {
           handleCancel();
         }
-      } catch (error) {
+      } catch (_error) {
         // Error handled by store/emitter
       } finally {
         setIsDeleting((prev) => ({ ...prev, [id]: false }));
@@ -101,7 +101,7 @@ export const SettingsTags: React.FC<SettingsTagsProps> = ({ module }) => {
         } else {
           module.unlinkTagFromRule(tagId, ruleId);
         }
-      } catch (error) {
+      } catch (_error) {
         // Error handled by store/emitter
       }
     },

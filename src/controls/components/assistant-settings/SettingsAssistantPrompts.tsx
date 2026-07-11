@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { usePromptTemplateStore } from "@/store/prompt-template.store";
 import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 import type {
   PromptTemplate,
 } from "@/types/llmchef/prompt-template";
@@ -64,7 +65,14 @@ export const SettingsAssistantPrompts: React.FC = () => {
   };
 
   const handleDeleteTemplate = async (id: string) => {
-    if (confirm(t('assistantPrompts.deleteConfirmation'))) {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: t('assistantPrompts.deleteConfirmationTitle', 'Delete prompt template'),
+      description: t('assistantPrompts.deleteConfirmation'),
+      confirmLabel: t('assistantPrompts.deleteConfirmButton', 'Delete'),
+      cancelLabel: t('assistantPrompts.deleteCancelButton', 'Cancel'),
+      destructive: true,
+    });
+    if (confirmed) {
       await deletePromptTemplate(id);
     }
   };

@@ -6,6 +6,25 @@ import JSZip from "jszip";
 import type { Interaction } from "@/types/llmchef/interaction";
 import { assertAllowedOutboundUrl } from "@/lib/llmchef/outbound-policy";
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeJsString(unsafe: string): string {
+  return unsafe
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t");
+}
+
 interface RaceResultData {
   modelName: string;
   runnableCode: string | null;
@@ -326,21 +345,25 @@ export class RaceResultExportService {
     data: RaceResultData
   ): string {
     const sanitizedResponse = data.fullResponse
-      ? data.fullResponse.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      ? escapeHtml(data.fullResponse)
       : "No response content.";
 
     // Determine the display name and title based on race type
-    const displayName = data.isPromptRace 
-      ? (data.promptVariantLabel || "Unknown Variant")
-      : data.modelName;
-    
-    const pageTitle = data.isPromptRace 
-      ? `${data.promptVariantLabel} - LLMChef Prompt Race Result`
-      : `${data.modelName} - LLMChef Race Result`;
+    const displayName = escapeHtml(
+      data.isPromptRace
+        ? (data.promptVariantLabel || "Unknown Variant")
+        : data.modelName
+    );
+
+    const pageTitle = escapeHtml(
+      data.isPromptRace
+        ? `${data.promptVariantLabel} - LLMChef Prompt Race Result`
+        : `${data.modelName} - LLMChef Race Result`
+    );
 
     // Sanitize prompt content for display
     const sanitizedPromptContent = data.promptContent
-      ? data.promptContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      ? escapeHtml(data.promptContent)
       : "";
 
     // LLMChef API implementation for the exported files (EXACT COPY FROM WORKING get-results.js)
@@ -466,15 +489,13 @@ export class RaceResultExportService {
         try {
             ${
               data.blockType === "runjs"
-                ? data.runnableCode
+                ? data.runnableCode?.replace(/<\/script>/gi, "<\\/script>")
                 : `
                 // Python code execution placeholder - would need pyodide or similar
                 const codeDiv = document.createElement('div');
                 codeDiv.className = 'p-4 bg-blue-100 border border-blue-200 rounded-md';
                 codeDiv.innerHTML = '<h3 class="font-bold text-blue-800 mb-2">Python Code:</h3>' +
-                                   '<pre class="bg-blue-50 p-2 rounded text-sm overflow-x-auto"><code>${data.runnableCode
-                                     ?.replace(/'/g, "\\'")
-                                     .replace(/\n/g, "\\n")}</code></pre>' +
+                                   '<pre class="bg-blue-50 p-2 rounded text-sm overflow-x-auto"><code>${escapeJsString(escapeHtml(data.runnableCode ?? ""))}</code></pre>' +
                                    '<p class="text-blue-600 text-sm mt-2">Python execution not available in exported HTML. Code is displayed above.</p>';
                 document.getElementById('llmchef-target').appendChild(codeDiv);
             `
@@ -501,13 +522,15 @@ export class RaceResultExportService {
     return results
       .map(
         (data) => {
-          const displayName = data.isPromptRace 
-            ? (data.promptVariantLabel || "Unknown Variant")
-            : data.modelName;
-          const fileName = data.isPromptRace 
+          const displayName = escapeHtml(
+            data.isPromptRace
+              ? (data.promptVariantLabel || "Unknown Variant")
+              : data.modelName
+          );
+          const fileName = data.isPromptRace
             ? (data.promptVariantLabel || "unknown").replace(/[^a-zA-Z0-9\-_]/g, '_')
             : data.modelName;
-          
+
           return `
         <li class="bg-card rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border border-border">
             <div class="flex items-center justify-between mb-4">
@@ -574,18 +597,20 @@ export class RaceResultExportService {
     return results
       .map(
         (data) => {
-          const displayName = data.isPromptRace 
-            ? (data.promptVariantLabel || "Unknown Variant")
-            : data.modelName;
-          const fileName = data.isPromptRace 
+          const displayName = escapeHtml(
+            data.isPromptRace
+              ? (data.promptVariantLabel || "Unknown Variant")
+              : data.modelName
+          );
+          const fileName = data.isPromptRace
             ? (data.promptVariantLabel || "unknown").replace(/[^a-zA-Z0-9\-_]/g, '_')
             : data.modelName;
-          
+
           return `
         <tr class="hover:bg-muted/50">
             <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
-                    <a href="./${fileName}.html" target="_blank" rel="noopener noreferrer" 
+                    <a href="./${fileName}.html" target="_blank" rel="noopener noreferrer"
                        class="text-primary hover:underline font-medium">${displayName}</a>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded ${
                       data.blockType === "runjs"
@@ -632,6 +657,7 @@ export class RaceResultExportService {
   ): string {
     const resultsListHtml = this.generateResultsList(results);
     const resultsTableHtml = this.generateResultsTable(results);
+    const safePromptText = escapeHtml(promptText);
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -699,7 +725,7 @@ export class RaceResultExportService {
             <div class="prompt-container mb-8">
                 <h2 class="text-2xl font-bold mb-4 text-card-foreground">Prompt</h2>
                 <div class="markdown-content bg-muted/50 p-4 rounded-lg border border-border">
-                    <div class="text-card-foreground prose prose-sm max-w-none" id="prompt-content">${promptText}</div>
+                    <div class="text-card-foreground prose prose-sm max-w-none" id="prompt-content">${safePromptText}</div>
                 </div>
             </div>
             <div class="flex justify-between items-center mb-4">

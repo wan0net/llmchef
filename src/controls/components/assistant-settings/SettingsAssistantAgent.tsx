@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { usePromptTemplateStore } from "@/store/prompt-template.store";
 import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 import { Button } from "@/components/ui/button";
 import { Edit, Plus } from "lucide-react";
 import type { PromptTemplate } from "@/types/llmchef/prompt-template";
@@ -63,7 +64,14 @@ export const SettingsAssistantAgent: React.FC = () => {
   };
 
   const handleDeleteAgent = async (id: string) => {
-    if (confirm(t('agent.deleteConfirm'))) {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: t('agent.deleteConfirmationTitle', 'Delete agent'),
+      description: t('agent.deleteConfirm'),
+      confirmLabel: t('agent.deleteConfirmButton', 'Delete'),
+      cancelLabel: t('agent.deleteCancelButton', 'Cancel'),
+      destructive: true,
+    });
+    if (confirmed) {
       // First delete all tasks for this agent
       const tasks = getTasksForAgent(id);
       for (const task of tasks) {
@@ -95,7 +103,14 @@ export const SettingsAssistantAgent: React.FC = () => {
   };
 
   const handleDeleteTask = async (id: string) => {
-    if (confirm(t('task.deleteConfirm'))) {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: t('task.deleteConfirmationTitle', 'Delete task'),
+      description: t('task.deleteConfirm'),
+      confirmLabel: t('task.deleteConfirmButton', 'Delete'),
+      cancelLabel: t('task.deleteCancelButton', 'Cancel'),
+      destructive: true,
+    });
+    if (confirmed) {
       await deletePromptTemplate(id);
     }
   };

@@ -65,7 +65,6 @@ export const PhoneField: React.FC<PhoneFieldSpecificProps> = ({
   fieldApi,
   label,
   description,
-  placeholder: fieldPlaceholder,
   inputClassName,
   labelClassName,
   wrapperClassName,
@@ -78,7 +77,6 @@ export const PhoneField: React.FC<PhoneFieldSpecificProps> = ({
     placeholder,
   } = phoneConfig;
 
-  const name = fieldApi.name;
   const value = (fieldApi.state?.value as string) || '';
   const isDisabled = fieldApi.form?.state?.isSubmitting ?? false;
   const hasErrors = fieldApi.state?.meta?.isTouched && fieldApi.state?.meta?.errors?.length > 0;
@@ -100,7 +98,7 @@ export const PhoneField: React.FC<PhoneFieldSpecificProps> = ({
       const digits = extractDigits(value);
       
       // Find matching country code
-      const matchingCountry = Object.entries(COUNTRY_CODES).find(([_, country]) => {
+      const matchingCountry = Object.entries(COUNTRY_CODES).find(([_code, country]) => {
         const countryDigits = extractDigits(country.code);
         return digits.startsWith(countryDigits);
       });

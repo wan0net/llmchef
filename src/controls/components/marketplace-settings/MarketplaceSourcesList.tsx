@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 export const MarketplaceSourcesList: React.FC = () => {
   const { t } = useTranslation('settings');
@@ -43,7 +44,14 @@ export const MarketplaceSourcesList: React.FC = () => {
   };
 
   const handleDelete = async (sourceId: string) => {
-    if (confirm(t('marketplace.sources.confirmDelete', 'Are you sure you want to delete this marketplace source?'))) {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: t('marketplace.sources.deleteTitle', 'Delete marketplace source'),
+      description: t('marketplace.sources.confirmDelete', 'Are you sure you want to delete this marketplace source?'),
+      confirmLabel: t('marketplace.sources.deleteConfirm', 'Delete'),
+      cancelLabel: t('marketplace.sources.deleteCancel', 'Cancel'),
+      destructive: true,
+    });
+    if (confirmed) {
       await deleteMarketplaceSource(sourceId);
     }
   };

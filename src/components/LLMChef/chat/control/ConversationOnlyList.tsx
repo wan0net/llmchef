@@ -33,6 +33,7 @@ import type { ConversationListControlModule } from "@/controls/modules/Conversat
 import { emitter } from "@/lib/llmchef/event-emitter";
 import { conversationEvent } from "@/types/llmchef/events/conversation.events";
 import { uiEvent } from "@/types/llmchef/events/ui.events";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 // Helper to get sync icon and tooltip (remains the same)
 const getSyncIndicatorInternal = (
@@ -121,9 +122,16 @@ export const ConversationListControlComponent: React.FC<
     emitter.emit(uiEvent.setFocusInputFlagRequest, { focus: true });
   };
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm("Delete this conversation? This cannot be undone.")) {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: "Delete conversation",
+      description: "Delete this conversation? This cannot be undone.",
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      destructive: true,
+    });
+    if (confirmed) {
       emitter.emit(conversationEvent.deleteConversationRequest, { id });
     }
   };

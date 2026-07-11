@@ -40,3 +40,12 @@ public/release/*.zip
 build
 __pycache__/
 *.py[cod]
+
+# Local configuration and planning artifacts
+user-config.json
+system-prompt.txt
+refactor_composite_interaction.md
+workflow_plan.md
+
+# Vendored runtime binaries
+public/pyodide/

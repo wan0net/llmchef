@@ -32,6 +32,7 @@ import {
 } from "@/lib/llmchef/workflow-query-utils";
 import type { StepStatus } from "@/types/llmchef/flow";
 import { CodeExecutionService } from "./code-execution.service";
+import { ConfirmDialogService } from "./confirm-dialog.service";
 import type { PromptTemplateType } from "@/types/llmchef/prompt-template";
 
 // Flow content manipulation types for better type safety
@@ -45,15 +46,6 @@ interface FlowContentMatch {
   fullMatch: string;
   flowContent: string;
   hasFlow: boolean;
-}
-
-const UNSAFE_PATH_KEYS = new Set(["__proto__", "prototype", "constructor"]);
-
-function getSafePathValue(source: any, key: string): any {
-  if (!key || UNSAFE_PATH_KEYS.has(key)) return undefined;
-  if (source === null || source === undefined) return undefined;
-  if (!Object.prototype.hasOwnProperty.call(Object(source), key)) return undefined;
-  return source[key];
 }
 
 // Note: Refactored to a static class to align with other services like InteractionService.
@@ -198,30 +190,30 @@ export const WorkflowService = {
   ): Record<string, unknown> =>
     buildWorkflowTransformContext(run, stepIndex),
 
-  _confirmJsFunctionStepExecution: (run: WorkflowRun, step: WorkflowStep): boolean => {
-    if (typeof window === "undefined" || typeof window.confirm !== "function") {
-      return false;
-    }
-
+  _confirmJsFunctionStepExecution: async (run: WorkflowRun, step: WorkflowStep): Promise<boolean> => {
     const stepName = step.name || step.id;
     const workflowName = run.template.name || run.template.id;
-    return window.confirm(
-      `Run JavaScript workflow step "${stepName}" in "${workflowName}"?\n\n` +
-      "It will run in an isolated worker. Browser storage, network, provider, and page-context access are blocked by default.",
-    );
+    return ConfirmDialogService.confirm({
+      title: `Run JavaScript workflow step "${stepName}"?`,
+      description:
+        `This step is part of "${workflowName}". It will run in an isolated worker. ` +
+        "Browser storage, network, provider, and page-context access are blocked by default.",
+      confirmLabel: "Run",
+      cancelLabel: "Cancel",
+    });
   },
 
-  _confirmPyFunctionStepExecution: (run: WorkflowRun, step: WorkflowStep): boolean => {
-    if (typeof window === "undefined" || typeof window.confirm !== "function") {
-      return false;
-    }
-
+  _confirmPyFunctionStepExecution: async (run: WorkflowRun, step: WorkflowStep): Promise<boolean> => {
     const stepName = step.name || step.id;
     const workflowName = run.template.name || run.template.id;
-    return window.confirm(
-      `Run Python workflow step "${stepName}" in "${workflowName}"?\n\n` +
-      "It will run in an isolated Pyodide worker. Browser storage, network, provider, and child-worker access are blocked by default.",
-    );
+    return ConfirmDialogService.confirm({
+      title: `Run Python workflow step "${stepName}"?`,
+      description:
+        `This step is part of "${workflowName}". It will run in an isolated Pyodide worker. ` +
+        "Browser storage, network, provider, and child-worker access are blocked by default.",
+      confirmLabel: "Run",
+      cancelLabel: "Cancel",
+    });
   },
 
   /**
@@ -626,6 +618,12 @@ export const WorkflowService = {
    * Wait for a parallel branch to complete
    */
   _waitForBranchCompletion: async (interactionId: string, timeoutSec: number = 120): Promise<any> => {
+    const interactionStore = useInteractionStore.getState();
+    const interaction = interactionStore.getInteractionById(interactionId);
+    if (!interaction) {
+      throw new Error(`Cannot wait for branch completion: interaction ${interactionId} not found`);
+    }
+
     return new Promise((resolve, reject) => {
       let timeoutId: NodeJS.Timeout | null = null;
 
@@ -901,7 +899,13 @@ export const WorkflowService = {
         };
 
         // Listen for sub-workflow completion
+        let timeoutId: NodeJS.Timeout | null = null;
+
         const cleanup = () => {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
           emitter.off(workflowEvent.completed, handleSubWorkflowCompleted);
         };
 
@@ -925,7 +929,7 @@ export const WorkflowService = {
         emitter.on(workflowEvent.completed, handleSubWorkflowCompleted);
 
         // Set timeout for sub-workflow
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
           cleanup();
           reject(new Error(`Sub-workflow timed out after 300 seconds`));
         }, 300000); // 5 minute timeout
@@ -1156,6 +1160,9 @@ export const WorkflowService = {
       conversationId: string;
     }
   ): Promise<void> => {
+    let mainInteractionId: string | null = null;
+    let runId: string | null = null;
+
     try {
       const { template } = workflowConfig;
 
@@ -1193,8 +1200,8 @@ export const WorkflowService = {
       };
 
       // --- Manually create the main workflow host interaction (like race main interaction) ---
-      const mainInteractionId = nanoid();
-      const runId = nanoid();
+      mainInteractionId = nanoid();
+      runId = nanoid();
 
       const conversationInteractions = interactionStore.interactions.filter(
         (i: Interaction) => i.conversationId === conversationId
@@ -1310,6 +1317,42 @@ export const WorkflowService = {
       console.error("[WorkflowService] Error during workflow conversion:",
         error
       );
+
+      // Finalize the main interaction as failed if it was created
+      if (mainInteractionId) {
+        const interactionStore = useInteractionStore.getState();
+        const existing = interactionStore.getInteractionById(mainInteractionId);
+        if (existing) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const failedInteraction: Interaction = {
+            ...existing,
+            status: "ERROR",
+            response: `Workflow failed: ${errorMessage}`,
+            endedAt: new Date(),
+          };
+          interactionStore._updateInteractionInState(mainInteractionId, {
+            status: "ERROR",
+            response: failedInteraction.response,
+            endedAt: failedInteraction.endedAt,
+          });
+          await PersistenceService.saveInteraction(failedInteraction);
+          emitter.emit(interactionEvent.completed, {
+            interactionId: mainInteractionId,
+            status: "ERROR",
+            interaction: failedInteraction,
+          });
+        }
+      }
+
+      // Mark the run as failed if it was created
+      if (runId) {
+        emitter.emit(workflowEvent.completed, {
+          runId,
+          status: "failed",
+          finalOutput: {},
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
   },
 
@@ -1734,18 +1777,17 @@ ${JSON.stringify(triggerParameters.structured_output, null, 2)}`;
         try {
           let result;
           if (step.functionLanguage === "js") {
-            const hasConsent = WorkflowService._confirmJsFunctionStepExecution(run, step);
+            const hasConsent = await WorkflowService._confirmJsFunctionStepExecution(run, step);
             result = await CodeExecutionService.executeJs(step.functionCode, context, {
               consent: { execute: hasConsent },
               permissions: {
                 network: false,
                 storage: false,
                 provider: false,
-                pageContext: false,
               },
             });
           } else if (step.functionLanguage === "py") {
-            const hasConsent = WorkflowService._confirmPyFunctionStepExecution(run, step);
+            const hasConsent = await WorkflowService._confirmPyFunctionStepExecution(run, step);
             result = await CodeExecutionService.executePy(step.functionCode, context, {
               consent: { execute: hasConsent },
               permissions: {

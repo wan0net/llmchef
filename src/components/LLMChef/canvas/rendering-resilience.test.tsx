@@ -160,7 +160,7 @@ describe("rendering resilience", () => {
     const rendered = renderComponent(
       <AssistantResponse
         interactionId="target-blank-link"
-        response={'<a href="https://example.com" target="_blank">Example</a>'}
+        response={'[Example](https://example.com)'}
         toolCalls={undefined}
         toolResults={undefined}
         reasoning={undefined}

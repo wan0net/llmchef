@@ -39,7 +39,7 @@ export const FileControlTrigger: React.FC<FileControlTriggerProps> = ({
 
       for (const file of Array.from(files)) {
         try {
-          let fileData: {
+          const fileData: {
             contentText?: string;
             contentBase64?: string;
           } = {};

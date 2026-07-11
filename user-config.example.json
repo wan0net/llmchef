@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "exportedAt": "2024-01-01T00:00:00.000Z",
+  "settings": {
+    "theme": "dark",
+    "temperature": 0.8,
+    "enableStreamingMarkdown": true,
+    "autoTitleEnabled": true,
+    "customFontFamily": "Inter, sans-serif",
+    "chatMaxWidth": "max-w-6xl"
+  },
+  "providerConfigs": [],
+  "rules": [],
+  "tags": [],
+  "tagRuleLinks": [],
+  "projects": []
+}

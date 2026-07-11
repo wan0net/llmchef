@@ -74,6 +74,9 @@
       "savingButton": "Saving..."
     },
     "deleteConfirmation": "Are you sure you want to delete the sync repository \"{{name}}\"? This will unlink it from any conversations and remove the local copy.",
+    "deleteConfirmationTitle": "Delete sync repository",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Cancel",
     "errors": {
       "nameRequired": "Repository Name is required.",
       "urlRequired": "Remote URL is required.",
@@ -177,5 +180,11 @@
     "commitButton": "Commit",
     "messageLabel": "Message",
     "messagePlaceholder": "e.g., Add feature X"
+  },
+  "credentialDialog": {
+    "title": "Git Authentication",
+    "description": "Enter credentials for {{url}}",
+    "username": "Username",
+    "password": "Password / Token"
   }
 }

@@ -10,6 +10,8 @@ import React, {
 import { PromptWrapper } from "@/components/LLMChef/prompt/PromptWrapper";
 import { ChatCanvas } from "@/components/LLMChef/canvas/ChatCanvas";
 import { ChatControlWrapper } from "@/components/LLMChef/chat/ChatControlWrapper";
+import { ConfirmDialogHost } from "@/components/LLMChef/common/ConfirmDialogHost";
+import { GitCredentialDialogHost } from "@/components/LLMChef/common/GitCredentialDialogHost";
 import { useConversationStore } from "@/store/conversation.store";
 import { useProjectStore } from "@/store/project.store";
 import { useInteractionStore } from "@/store/interaction.store";
@@ -115,7 +117,6 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
     isSidebarCollapsed,
     isChatControlPanelOpen,
     workspaceMode,
-    setWorkspaceMode,
   } =
     useUIStateStore(
       useShallow((state) => ({
@@ -123,7 +124,6 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
         isSidebarCollapsed: state.isSidebarCollapsed,
         isChatControlPanelOpen: state.isChatControlPanelOpen,
         workspaceMode: state.workspaceMode,
-        setWorkspaceMode: state.setWorkspaceMode,
       }))
     );
 
@@ -209,6 +209,10 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
         () => initializedControlModules
       );
     }
+
+    return () => {
+      EventActionCoordinatorService.destroy();
+    };
   }, [controls]);
 
   useEffect(() => {
@@ -584,6 +588,8 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
   return (
     <>
       <ModalManager />
+      <ConfirmDialogHost />
+      <GitCredentialDialogHost />
       <div className="llmchef-shell llmchef-document-shell flex h-dvh w-full overflow-hidden bg-background text-foreground">
         <div
           className={cn(
@@ -652,10 +658,10 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
                   </span>
                   <div className="min-w-0">
                     <h2 className="truncate font-semibold text-card-foreground">
-                      LLMChef
+                      {t('appName', 'LLMChef')}
                     </h2>
                     <p className="truncate text-xs text-muted-foreground">
-                      Projects
+                      {t('projectsLabel', 'Projects')}
                     </p>
                   </div>
                 </div>
@@ -720,10 +726,10 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
                 </button>
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold text-foreground">
-                    LLMChef
+                    {t('appName', 'LLMChef')}
                   </div>
                   <div className="truncate text-xs text-muted-foreground">
-                    Chat canvas
+                    {t('chatCanvasLabel', 'Chat canvas')}
                   </div>
                 </div>
               </div>
@@ -747,7 +753,7 @@ export const LLMChef: React.FC<LLMChefProps> = ({ controls = [] }) => {
               <React.Suspense
                 fallback={
                   <div className="flex flex-grow items-center justify-center text-sm text-muted-foreground">
-                    Loading wiki...
+                    {t('loadingWiki', 'Loading wiki…')}
                   </div>
                 }
               >

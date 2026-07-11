@@ -297,9 +297,7 @@ const ChatCanvasComponent: React.FC<ChatCanvasProps> = ({
     handleScroll(); // Initial check
     
     return () => {
-      if (viewportRef.current) {
-        viewportRef.current.removeEventListener("scroll", handleScroll);
-      }
+      viewport.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
@@ -520,8 +518,8 @@ const ChatCanvasComponent: React.FC<ChatCanvasProps> = ({
                 </TooltipTrigger>
                 <TooltipContent side="left">
                   {enableAutoScrollOnStream 
-                    ? t('pauseAutoScroll', 'Stop Following Stream') 
-                    : t('resumeAutoScroll', 'Follow Stream')}
+                    ? t('pauseAutoscroll', 'Stop Following Stream') 
+                    : t('resumeAutoscroll', 'Follow Stream')}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

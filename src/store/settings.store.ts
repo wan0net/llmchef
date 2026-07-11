@@ -6,33 +6,7 @@ import {
   createDefaultConfigSyncSettings,
   createDefaultThemeSettings,
   createDefaultToolSelectionSettings,
-  DEFAULT_AUTO_TITLE_ALWAYS_ON,
-  DEFAULT_AUTO_TITLE_ENABLED,
-  DEFAULT_AUTO_TITLE_INCLUDE_FILES,
-  DEFAULT_AUTO_TITLE_INCLUDE_RULES,
-  DEFAULT_AUTO_TITLE_MODEL_ID,
-  DEFAULT_AUTO_TITLE_PROMPT_MAX_LENGTH,
-  DEFAULT_AUTO_TOOL_SELECTION_ENABLED,
-  DEFAULT_AUTO_TOOL_SELECTION_MODEL_ID,
-  DEFAULT_AUTO_TOOL_SELECTION_PROMPT,
-  DEFAULT_CHAT_MAX_WIDTH,
-  DEFAULT_CONFIG_SYNC_AUTO_SYNC,
-  DEFAULT_CONFIG_SYNC_ENABLED,
-  DEFAULT_CONFIG_SYNC_INCLUDE_AGENTS,
-  DEFAULT_CONFIG_SYNC_INCLUDE_MCP_SERVERS,
-  DEFAULT_CONFIG_SYNC_INCLUDE_PROMPT_TEMPLATES,
-  DEFAULT_CONFIG_SYNC_INCLUDE_RULES,
-  DEFAULT_CONFIG_SYNC_INCLUDE_SETTINGS,
-  DEFAULT_CONFIG_SYNC_INCLUDE_WORKFLOWS,
-  DEFAULT_CONFIG_SYNC_INTERVAL,
-  DEFAULT_CONFIG_SYNC_LAST_SYNCED_AT,
-  DEFAULT_CONFIG_SYNC_REPO_ID,
-  DEFAULT_CUSTOM_FONT_FAMILY,
-  DEFAULT_CUSTOM_FONT_SIZE,
-  DEFAULT_CUSTOM_THEME_COLORS,
-  DEFAULT_PRISM_THEME_URL,
   DEFAULT_THEME,
-  DEFAULT_TOOL_MAX_STEPS,
   SettingsPersistenceService,
 } from "@/services/settings-persistence.service";
 import { toast } from "sonner";
@@ -222,16 +196,26 @@ const persistSetting = async <K extends keyof SettingsState>(
   key: K,
   value: SettingsState[K]
 ) => {
-  await PersistenceService.saveSetting(key, value);
-  emitter.emit(settingsEvent.settingsChanged, { [key]: value });
+  try {
+    await PersistenceService.saveSetting(key, value);
+    emitter.emit(settingsEvent.settingsChanged, { [key]: value });
+  } catch (error) {
+    console.error(`SettingsStore: Failed to persist setting ${String(key)}:`, error);
+    toast.error(`Failed to save setting ${String(key)}`);
+  }
 };
 
 const persistSettingsSlice = async (
   partial: Partial<SettingsState>,
   persist: () => Promise<void>,
 ) => {
-  await persist();
-  emitter.emit(settingsEvent.settingsChanged, partial);
+  try {
+    await persist();
+    emitter.emit(settingsEvent.settingsChanged, partial);
+  } catch (error) {
+    console.error("SettingsStore: Failed to persist settings slice:", error);
+    toast.error("Failed to save settings");
+  }
 };
 
 const emitSettingsChangedEntries = (partial: Partial<SettingsState>) => {
@@ -247,28 +231,28 @@ export const useSettingsStore = create(
     const createThemeSettingAction = createSettingsSliceActionFactory<ThemeSettings>({
       setState,
       persist: SettingsPersistenceService.saveThemeSettings,
-      persistStateSlice: (partial, persist) => void persistSettingsSlice(partial, persist),
+      persistStateSlice: (partial, persist) => void void persistSettingsSlice(partial, persist),
     });
 
     const createAutoTitleSettingAction =
       createSettingsSliceActionFactory<AutoTitleSettings>({
         setState,
         persist: SettingsPersistenceService.saveAutoTitleSettings,
-        persistStateSlice: (partial, persist) => void persistSettingsSlice(partial, persist),
+        persistStateSlice: (partial, persist) => void void persistSettingsSlice(partial, persist),
       });
 
     const createToolSelectionSettingAction =
       createSettingsSliceActionFactory<ToolSelectionSettings>({
         setState,
         persist: SettingsPersistenceService.saveToolSelectionSettings,
-        persistStateSlice: (partial, persist) => void persistSettingsSlice(partial, persist),
+        persistStateSlice: (partial, persist) => void void persistSettingsSlice(partial, persist),
       });
 
     const createConfigSyncSettingAction =
       createSettingsSliceActionFactory<ConfigSyncSettings>({
         setState,
         persist: SettingsPersistenceService.saveConfigSyncSettings,
-        persistStateSlice: (partial, persist) => void persistSettingsSlice(partial, persist),
+        persistStateSlice: (partial, persist) => void void persistSettingsSlice(partial, persist),
       });
 
     return ({
@@ -322,95 +306,95 @@ export const useSettingsStore = create(
 
     setTheme: (theme) => {
       set({ theme });
-      void persistSettingsSlice({ theme }, () =>
+      void void persistSettingsSlice({ theme }, () =>
         SettingsPersistenceService.saveThemeSettings({ theme }),
       );
       emitter.emit(settingsEvent.themeChanged, { theme });
     },
     setGlobalSystemPrompt: (prompt) => {
       set({ globalSystemPrompt: prompt });
-      persistSetting("globalSystemPrompt", prompt);
+      void persistSetting("globalSystemPrompt", prompt);
       emitter.emit(settingsEvent.globalSystemPromptChanged, { prompt });
     },
     setTemperature: (temp) => {
       set({ temperature: temp });
-      persistSetting("temperature", temp);
+      void persistSetting("temperature", temp);
       emitter.emit(settingsEvent.temperatureChanged, { value: temp });
     },
     setMaxTokens: (tokens) => {
       set({ maxTokens: tokens });
-      persistSetting("maxTokens", tokens);
+      void persistSetting("maxTokens", tokens);
       emitter.emit(settingsEvent.maxTokensChanged, { value: tokens });
     },
     setTopP: (topP) => {
       set({ topP: topP });
-      persistSetting("topP", topP);
+      void persistSetting("topP", topP);
       emitter.emit(settingsEvent.topPChanged, { value: topP });
     },
     setTopK: (topK) => {
       set({ topK: topK });
-      persistSetting("topK", topK);
+      void persistSetting("topK", topK);
       emitter.emit(settingsEvent.topKChanged, { value: topK });
     },
     setPresencePenalty: (penalty) => {
       set({ presencePenalty: penalty });
-      persistSetting("presencePenalty", penalty);
+      void persistSetting("presencePenalty", penalty);
       emitter.emit(settingsEvent.presencePenaltyChanged, { value: penalty });
     },
     setFrequencyPenalty: (penalty) => {
       set({ frequencyPenalty: penalty });
-      persistSetting("frequencyPenalty", penalty);
+      void persistSetting("frequencyPenalty", penalty);
       emitter.emit(settingsEvent.frequencyPenaltyChanged, { value: penalty });
     },
     setEnableAdvancedSettings: (enabled) => {
       set({ enableAdvancedSettings: enabled });
-      persistSetting("enableAdvancedSettings", enabled);
+      void persistSetting("enableAdvancedSettings", enabled);
       emitter.emit(settingsEvent.enableAdvancedSettingsChanged, { enabled });
     },
     setEnableStreamingMarkdown: (enabled) => {
       set({ enableStreamingMarkdown: enabled });
-      persistSetting("enableStreamingMarkdown", enabled);
+      void persistSetting("enableStreamingMarkdown", enabled);
       emitter.emit(settingsEvent.enableStreamingMarkdownChanged, { enabled });
     },
     setEnableStreamingCodeBlockParsing: (enabled) => {
       set({ enableStreamingCodeBlockParsing: enabled });
-      persistSetting("enableStreamingCodeBlockParsing", enabled);
+      void persistSetting("enableStreamingCodeBlockParsing", enabled);
       emitter.emit(settingsEvent.enableStreamingCodeBlockParsingChanged, { enabled });
     },
     setFoldStreamingCodeBlocks: (fold) => {
       set({ foldStreamingCodeBlocks: fold });
-      persistSetting("foldStreamingCodeBlocks", fold);
+      void persistSetting("foldStreamingCodeBlocks", fold);
       emitter.emit(settingsEvent.foldStreamingCodeBlocksChanged, { fold });
     },
     setFoldUserMessagesOnCompletion: (fold) => {
       set({ foldUserMessagesOnCompletion: fold });
-      persistSetting("foldUserMessagesOnCompletion", fold);
+      void persistSetting("foldUserMessagesOnCompletion", fold);
       emitter.emit(settingsEvent.foldUserMessagesOnCompletionChanged, { fold });
     },
     setStreamingRenderFPS: (fps) => {
       // Clamp FPS to 3-60
       const clamped = Math.max(3, Math.min(60, fps));
       set({ streamingRenderFPS: clamped });
-      persistSetting("streamingRenderFPS", clamped);
+      void persistSetting("streamingRenderFPS", clamped);
       emitter.emit(settingsEvent.streamingRenderFpsChanged, { fps: clamped });
     },
     setGitUserName: (name) => {
       // Trim whitespace
       const trimmed = name ? name.trim() : name;
       set({ gitUserName: trimmed });
-      persistSetting("gitUserName", trimmed);
+      void persistSetting("gitUserName", trimmed);
       emitter.emit(settingsEvent.gitUserNameChanged, { name: trimmed });
     },
     setGitUserEmail: (email) => {
       // Trim whitespace
       const trimmed = email ? email.trim() : email;
       set({ gitUserEmail: trimmed });
-      persistSetting("gitUserEmail", trimmed);
+      void persistSetting("gitUserEmail", trimmed);
       emitter.emit(settingsEvent.gitUserEmailChanged, { email: trimmed });
     },
     setGitGlobalPat: (pat) => {
       set({ gitGlobalPat: pat });
-      persistSetting("gitGlobalPat", pat);
+      void persistSetting("gitGlobalPat", pat);
       emitter.emit(settingsEvent.gitGlobalPatChanged, { pat });
     },
     setToolMaxSteps: createToolSelectionSettingAction(
@@ -449,12 +433,12 @@ export const useSettingsStore = create(
     ),
     setForkCompactPrompt: (prompt) => {
       set({ forkCompactPrompt: prompt });
-      persistSetting("forkCompactPrompt", prompt);
+      void persistSetting("forkCompactPrompt", prompt);
       emitter.emit(settingsEvent.forkCompactPromptChanged, { prompt });
     },
     setForkCompactModelId: (modelId) => {
       set({ forkCompactModelId: modelId });
-      persistSetting("forkCompactModelId", modelId);
+      void persistSetting("forkCompactModelId", modelId);
       emitter.emit(settingsEvent.forkCompactModelIdChanged, { modelId });
     },
     setCustomFontFamily: createThemeSettingAction(
@@ -489,36 +473,36 @@ export const useSettingsStore = create(
         }
       });
       const colors = get().customThemeColors;
-      void persistSettingsSlice({ customThemeColors: colors }, () =>
+      void void persistSettingsSlice({ customThemeColors: colors }, () =>
         SettingsPersistenceService.saveThemeSettings({ customThemeColors: colors }),
       );
       emitter.emit(settingsEvent.customThemeColorsChanged, { colors });
     },
     setAutoScrollInterval: (interval) => {
       set({ autoScrollInterval: interval });
-      persistSetting("autoScrollInterval", interval);
+      void persistSetting("autoScrollInterval", interval);
       emitter.emit(settingsEvent.autoScrollIntervalChanged, { interval });
     },
     setEnableAutoScrollOnStream: (enabled) => {
       set({ enableAutoScrollOnStream: enabled });
-      persistSetting("enableAutoScrollOnStream", enabled);
+      void persistSetting("enableAutoScrollOnStream", enabled);
       emitter.emit(settingsEvent.enableAutoScrollOnStreamChanged, { enabled });
     },
     setAutoSyncOnStreamComplete: (enabled) => {
       set({ autoSyncOnStreamComplete: enabled });
-      persistSetting("autoSyncOnStreamComplete", enabled);
+      void persistSetting("autoSyncOnStreamComplete", enabled);
       emitter.emit(settingsEvent.autoSyncOnStreamCompleteChanged, { enabled });
     },
     setAutoInitializeReposOnStartup: (enabled) => {
       set({ autoInitializeReposOnStartup: enabled });
-      persistSetting("autoInitializeReposOnStartup", enabled);
+      void persistSetting("autoInitializeReposOnStartup", enabled);
       emitter.emit(settingsEvent.autoInitializeReposOnStartupChanged, { enabled });
     },
     setControlRuleAlwaysOn: (ruleId, alwaysOn) => {
       set((state) => {
         state.controlRuleAlwaysOn[ruleId] = alwaysOn;
       });
-      persistSetting("controlRuleAlwaysOn", get().controlRuleAlwaysOn);
+      void persistSetting("controlRuleAlwaysOn", get().controlRuleAlwaysOn);
       emitter.emit(settingsEvent.controlRuleAlwaysOnChanged, { ruleId, alwaysOn });
       emitter.emit(controlRegistryEvent.controlRulesChanged, {
         controlRules: useControlRegistryStore.getState().getControlRules(),
@@ -526,37 +510,37 @@ export const useSettingsStore = create(
     },
     setAutoRuleSelectionEnabled: (enabled) => {
       set({ autoRuleSelectionEnabled: enabled });
-      persistSetting("autoRuleSelectionEnabled", enabled);
+      void persistSetting("autoRuleSelectionEnabled", enabled);
       emitter.emit(settingsEvent.autoRuleSelectionEnabledChanged, { enabled });
     },
     setAutoRuleSelectionModelId: (modelId) => {
       set({ autoRuleSelectionModelId: modelId });
-      persistSetting("autoRuleSelectionModelId", modelId);
+      void persistSetting("autoRuleSelectionModelId", modelId);
       emitter.emit(settingsEvent.autoRuleSelectionModelIdChanged, { modelId });
     },
     setAutoRuleSelectionPrompt: (prompt) => {
       set({ autoRuleSelectionPrompt: prompt });
-      persistSetting("autoRuleSelectionPrompt", prompt);
+      void persistSetting("autoRuleSelectionPrompt", prompt);
       emitter.emit(settingsEvent.autoRuleSelectionPromptChanged, { prompt });
     },
     setRunnableBlocksEnabled: (enabled) => {
       set({ runnableBlocksEnabled: enabled });
-      persistSetting("runnableBlocksEnabled", enabled);
+      void persistSetting("runnableBlocksEnabled", enabled);
       emitter.emit(settingsEvent.runnableBlocksEnabledChanged, { enabled });
     },
     setRunnableBlocksSecurityCheckEnabled: (enabled) => {
       set({ runnableBlocksSecurityCheckEnabled: enabled });
-      persistSetting("runnableBlocksSecurityCheckEnabled", enabled);
+      void persistSetting("runnableBlocksSecurityCheckEnabled", enabled);
       emitter.emit(settingsEvent.runnableBlocksSecurityCheckEnabledChanged, { enabled });
     },
     setRunnableBlocksSecurityModelId: (modelId) => {
       set({ runnableBlocksSecurityModelId: modelId });
-      persistSetting("runnableBlocksSecurityModelId", modelId);
+      void persistSetting("runnableBlocksSecurityModelId", modelId);
       emitter.emit(settingsEvent.runnableBlocksSecurityModelIdChanged, { modelId });
     },
     setRunnableBlocksSecurityPrompt: (prompt) => {
       set({ runnableBlocksSecurityPrompt: prompt });
-      persistSetting("runnableBlocksSecurityPrompt", prompt);
+      void persistSetting("runnableBlocksSecurityPrompt", prompt);
       emitter.emit(settingsEvent.runnableBlocksSecurityPromptChanged, { prompt });
     },
     
@@ -577,7 +561,7 @@ export const useSettingsStore = create(
     // Text Trigger Actions
     setTextTriggersEnabled: (enabled) => {
       set({ textTriggersEnabled: enabled });
-      persistSetting("textTriggersEnabled", enabled);
+      void persistSetting("textTriggersEnabled", enabled);
       emitter.emit(settingsEvent.textTriggersEnabledChanged, { enabled });
     },
     setTextTriggerDelimiters: (start, end) => {
@@ -585,8 +569,8 @@ export const useSettingsStore = create(
         state.textTriggerStartDelimiter = start;
         state.textTriggerEndDelimiter = end;
       });
-      persistSetting("textTriggerStartDelimiter", start);
-      persistSetting("textTriggerEndDelimiter", end);
+      void persistSetting("textTriggerStartDelimiter", start);
+      void persistSetting("textTriggerEndDelimiter", end);
       emitter.emit(settingsEvent.textTriggerDelimitersChanged, { start, end });
     },
     
@@ -640,13 +624,13 @@ export const useSettingsStore = create(
     setCorsProxyUrl: (url: string) => {
       const trimmed = url.trim();
       set({ corsProxyUrl: trimmed });
-      persistSetting("corsProxyUrl", trimmed);
+      void persistSetting("corsProxyUrl", trimmed);
       emitter.emit(settingsEvent.corsProxyUrlChanged, { url: trimmed });
     },
     setMarkdownServiceUrl: (url: string) => {
       const trimmed = url.trim();
       set({ markdownServiceUrl: trimmed });
-      persistSetting("markdownServiceUrl", trimmed);
+      void persistSetting("markdownServiceUrl", trimmed);
       emitter.emit(settingsEvent.markdownServiceUrlChanged, { url: trimmed });
     },
 
@@ -703,7 +687,7 @@ export const useSettingsStore = create(
       };
       set(newSettings);
       for (const key of Object.keys(newSettings) as (keyof typeof newSettings)[]) {
-        await persistSetting(key, newSettings[key] as any);
+        await void persistSetting(key, newSettings[key] as any);
       }
       toast.success("General settings have been reset to their defaults.");
     },
@@ -748,7 +732,7 @@ export const useSettingsStore = create(
         "runnableBlocksSecurityModelId",
         "runnableBlocksSecurityPrompt",
       ] as const) {
-        await persistSetting(key, newSettings[key]);
+        await void persistSetting(key, newSettings[key]);
       }
       emitSettingsChangedEntries(autoTitleSettings);
       emitSettingsChangedEntries(toolSelectionSettings);

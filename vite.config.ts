@@ -159,7 +159,7 @@ export default defineConfig({
         enabled: false // Disable in development to avoid React 19.1 conflicts
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json,txt}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
         navigateFallback: `${base}index.html`,
         navigateFallbackDenylist: [/^\/__.*$/],
@@ -168,28 +168,17 @@ export default defineConfig({
           '': base  // Transform relative URLs to use the correct base path
         },
         runtimeCaching: [
-          // {
-          //   urlPattern: /^https:\/\/api\.openai\.com\/.*/i,
-          //   handler: 'NetworkFirst',
-          //   options: {
-          //     cacheName: 'openai-api-cache',
-          //     expiration: {
-          //       maxEntries: 100,
-          //       maxAgeSeconds: 60 * 60 * 24 // 24 hours
-          //     }
-          //   }
-          // },
-          // {
-          //   urlPattern: /^https:\/\/api\.anthropic\.com\/.*/i,
-          //   handler: 'NetworkFirst',
-          //   options: {
-          //     cacheName: 'anthropic-api-cache',
-          //     expiration: {
-          //       maxEntries: 100,
-          //       maxAgeSeconds: 60 * 60 * 24 // 24 hours
-          //     }
-          //   }
-          // }
+          {
+            urlPattern: /\.(?:json|txt)$/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'static-content-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              }
+            }
+          }
         ]
       },
       includeAssets: ['favicon.ico', 'icons/*.png'],
@@ -208,17 +197,25 @@ export default defineConfig({
             src: `${base}icons/192.png`,
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: `${base}icons/192-maskable.png`,
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
           },
           {
             src: `${base}icons/384.png`,
             sizes: '384x384',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: `${base}icons/512.png`,
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           }
         ]
       }
@@ -269,12 +266,12 @@ export default defineConfig({
     setupFiles: "./src/test/setup.ts",
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     css: true,
-    // Optional: Configure coverage
-    // coverage: {
-    //   provider: 'v8',
-    //   reporter: ['text', 'json', 'html'],
-    //   include: ['src/**/*.{ts,tsx}'],
-    //   exclude: ['src/main.tsx', 'src/vite-env.d.ts', 'src/test/setup.ts', 'src/lib/db.ts', 'src/**/*.d.ts', 'src/components/ui/**'],
-    // },
+    // Configure coverage provider
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/main.tsx', 'src/vite-env.d.ts', 'src/test/setup.ts', 'src/lib/db.ts', 'src/**/*.d.ts', 'src/components/ui/**'],
+    },
   },
 });

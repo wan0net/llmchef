@@ -94,7 +94,7 @@ class FormedibleParser {
     try {
       // First try direct JSON parsing
       return JSON.parse(code);
-    } catch (jsonError) {
+    } catch (_jsonError) {
       // If that fails, try to convert JS object literal to JSON
       try {
         let processedCode = code.trim();
@@ -152,7 +152,7 @@ class FormedibleParser {
             if (chainMatch) {
               // Find the closing parenthesis for this chained method
               let chainDepth = 1;
-              let chainParenIndex = chainEnd + chainMatch[0].length - 1;
+              const chainParenIndex = chainEnd + chainMatch[0].length - 1;
               let chainEndIndex = chainParenIndex + 1;
               
               while (chainEndIndex < result.length && chainDepth > 0) {
@@ -448,9 +448,7 @@ const FormedibleBlockRendererComponent: React.FC<FormedibleBlockRendererProps> =
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCode, setShowCode] = useState(false);
-  // @ts-expect-error unused, do not feel like fixing type for now
-  const [sendOnSubmit, setSendOnSubmit] = useState(false);
-  
+
   // Generate a unique field name for the send on submit switch to prevent ID collisions
   const sendOnSubmitFieldName = useMemo(() => `_sendOnSubmit_${nanoid()}`, []);
 

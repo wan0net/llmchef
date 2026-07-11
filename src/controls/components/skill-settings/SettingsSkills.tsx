@@ -23,6 +23,7 @@ import {
   HardDriveIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 interface DraftSkill {
   slug: string;
@@ -194,7 +195,14 @@ export const SettingsSkills: React.FC = () => {
 
   const handleDelete = useCallback(
     async (skill: Skill) => {
-      if (!window.confirm(`Delete skill "${skill.name}"?`)) return;
+      const confirmed = await ConfirmDialogService.confirm({
+        title: "Delete skill",
+        description: `Delete skill "${skill.name}"?`,
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+        destructive: true,
+      });
+      if (!confirmed) return;
       await deleteSkill(skill.id);
     },
     [deleteSkill]
@@ -212,9 +220,13 @@ export const SettingsSkills: React.FC = () => {
         const summary = review.findings
           .map((finding) => `- ${finding.title}: ${finding.detail}`)
           .join("\n");
-        const confirmed = window.confirm(
-          `Install "${skill.name}"?\n\nSecurity review:\n${summary}\n\nOnly install skills from sources you trust.`
-        );
+        const confirmed = await ConfirmDialogService.confirm({
+          title: `Install "${skill.name}"?`,
+          description: `Security review:\n${summary}\n\nOnly install skills from sources you trust.`,
+          confirmLabel: "Install",
+          cancelLabel: "Cancel",
+          destructive: true,
+        });
         if (!confirmed) return;
       }
 

@@ -197,7 +197,10 @@ export const ConversationService = {
     }
   },
 
-  async regenerateInteraction(interactionId: string): Promise<void> {
+  async regenerateInteraction(
+    interactionId: string,
+    options?: { modelId?: string | null }
+  ): Promise<void> {
     // console.log(
     //   `[ConversationService] regenerateInteraction called for ID: ${interactionId}`
     // );
@@ -205,6 +208,7 @@ export const ConversationService = {
     const projectStoreState = useProjectStore.getState();
     const promptState = usePromptStateStore.getState();
     const conversationStoreState = useConversationStore.getState();
+    const effectiveModelId = options?.modelId ?? promptState.modelId;
 
     const targetInteraction = interactionStore.interactions.find(
       (i) => i.id === interactionId
@@ -349,7 +353,7 @@ ${skillPromptContext}`
             effectivelyAppliedRuleIds: activeRuleIds,
           };
         })(originalTurnData.metadata ?? {}),
-        modelId: promptState.modelId ?? undefined,
+        modelId: effectiveModelId ?? undefined,
         regeneratedFromId: interactionId,
         attachedFiles: originalAttachedFiles.map((fileMeta) => {
           const rest = { ...fileMeta };
@@ -931,7 +935,7 @@ Keep the summary detailed enough that we can seamlessly continue our discussion,
 
   async _processFilesForPrompt(
     filesMeta: AttachedFileMetadata[],
-    conversationId: string
+    _conversationId: string
   ): Promise<(TextPart | ImagePart)[]> {
     const fileContentParts: (TextPart | ImagePart)[] = [];
     const vfsFiles = filesMeta.filter((f) => f.source === "vfs");

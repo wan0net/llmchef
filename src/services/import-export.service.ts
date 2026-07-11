@@ -183,21 +183,28 @@ export class ImportExportService {
       const data = conversationImportSchema.parse(JSON.parse(text));
       const importedConversation: Conversation = data.conversation;
       const importedInteractions: Interaction[] = data.interactions;
-      const newId = await addConversationAction({
-        title: importedConversation.title || "Imported Chat",
-        metadata: importedConversation.metadata,
+      const newId = nanoid();
+      const conversationToSave: Conversation = {
+        ...importedConversation,
+        id: newId,
         projectId: null,
         syncRepoId: null,
         lastSyncedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await db.transaction("rw", [db.conversations, db.interactions], async () => {
+        await PersistenceService.saveConversation(conversationToSave);
+        for (const i of importedInteractions) {
+          await PersistenceService.saveInteraction({
+            ...i,
+            conversationId: newId,
+            id: nanoid(),
+          });
+        }
       });
-      const interactionPromises = importedInteractions.map((i) =>
-        PersistenceService.saveInteraction({
-          ...i,
-          conversationId: newId,
-          id: nanoid(),
-        }),
-      );
-      await Promise.all(interactionPromises);
+
       await selectItemAction(newId, "conversation");
       toast.success("Conversation imported successfully.");
     } catch (error) {

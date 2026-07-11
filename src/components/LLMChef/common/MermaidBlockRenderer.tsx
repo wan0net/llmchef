@@ -115,7 +115,8 @@ const MermaidBlockRendererComponent: React.FC<MermaidBlockRendererProps> = ({
 
       setSvgContent(
         DOMPurify.sanitize(result.svg, {
-          USE_PROFILES: { svg: true, svgFilters: true },
+          USE_PROFILES: { svg: true },
+          FORBID_TAGS: ['filter', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap', 'feDistantLight', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'fePointLight', 'feSpecularLighting', 'feSpotLight', 'feTile', 'feTurbulence'],
         })
       );
     } catch (err) {

@@ -13,6 +13,7 @@ import { Edit2Icon, Trash2Icon, Loader2 } from "lucide-react";
 import type { DbTag, DbRule } from "@/types/llmchef/rules";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 interface TagsListProps {
   tags: DbTag[];
@@ -31,12 +32,15 @@ export const TagsList: React.FC<TagsListProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const handleDeleteClick = (tag: DbTag) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete the tag "${tag.name}"? This will remove it from all rules.`
-      )
-    ) {
+  const handleDeleteClick = async (tag: DbTag) => {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: "Delete tag",
+      description: `Are you sure you want to delete the tag "${tag.name}"? This will remove it from all rules.`,
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      destructive: true,
+    });
+    if (confirmed) {
       onDelete(tag.id, tag.name);
     }
   };

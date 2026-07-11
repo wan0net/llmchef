@@ -37,6 +37,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FileManagerList } from "./FileManagerList";
 import { FilePreviewDialog } from "./FilePreviewDialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { usePromptDialog } from "@/hooks/usePromptDialog";
 import { emitter } from "@/lib/llmchef/event-emitter";
 import { vfsEvent } from "@/types/llmchef/events/vfs.events";
 import type { ModEventPayloadMap } from "@/types/llmchef/modding";
@@ -54,6 +56,8 @@ interface ActiveFilePreview {
 
 export const FileManager = memo(() => {
   const { t } = useTranslation("vfs");
+  const { prompt: promptDialog, PromptDialog } = usePromptDialog();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
   const {
     nodes,
     childrenMap,
@@ -548,12 +552,14 @@ export const FileManager = memo(() => {
     void runProjectFolderSync(true);
   }, [runProjectFolderSync]);
 
-  const handleCreateFile = useCallback(() => {
+  const handleCreateFile = useCallback(async () => {
     if (isAnyOperationLoading || isVfsLoading || editingPath) return;
-    const name = window.prompt(
-      t("fileManager.createFilePrompt", "New file name"),
-      "notes.md"
-    );
+    const name = await promptDialog({
+      title: t("fileManager.createFilePrompt", "New file name"),
+      defaultValue: "notes.md",
+      confirmLabel: t("common:create", "Create"),
+      cancelLabel: t("common:cancel", "Cancel"),
+    });
     if (!name?.trim()) return;
     void runOperation(vfsEvent.createFileRequest, {
       parentId: currentParentId,
@@ -564,17 +570,20 @@ export const FileManager = memo(() => {
     editingPath,
     isAnyOperationLoading,
     isVfsLoading,
+    promptDialog,
     runOperation,
     t,
   ]);
 
-  const handleMoveSelected = useCallback(() => {
+  const handleMoveSelected = useCallback(async () => {
     const ids = Array.from(selectedFileIds);
     if (ids.length === 0 || isAnyOperationLoading || isVfsLoading) return;
-    const targetPath = window.prompt(
-      t("fileManager.moveSelectedPrompt", "Move selected files to folder path"),
-      currentPath
-    );
+    const targetPath = await promptDialog({
+      title: t("fileManager.moveSelectedPrompt", "Move selected files to folder path"),
+      defaultValue: currentPath,
+      confirmLabel: t("common:ok", "OK"),
+      cancelLabel: t("common:cancel", "Cancel"),
+    });
     if (targetPath === null) return;
     void runOperation(vfsEvent.moveNodesRequest, {
       ids,
@@ -584,23 +593,27 @@ export const FileManager = memo(() => {
     currentPath,
     isAnyOperationLoading,
     isVfsLoading,
+    promptDialog,
     runOperation,
     selectedFileIds,
     t,
   ]);
 
-  const handleDeleteSelected = useCallback(() => {
+  const handleDeleteSelected = useCallback(async () => {
     const ids = Array.from(selectedFileIds);
     if (ids.length === 0 || isAnyOperationLoading || isVfsLoading) return;
-    const confirmation = window.confirm(
-      t("fileManager.deleteSelectedConfirmation", {
+    const confirmation = await confirmDialog({
+      title: t("fileManager.deleteSelectedConfirmation", {
         count: ids.length,
         defaultValue: `Delete ${ids.length} selected file(s)?`,
-      })
-    );
+      }),
+      confirmLabel: t("common:delete", "Delete"),
+      cancelLabel: t("common:cancel", "Cancel"),
+      destructive: true,
+    });
     if (!confirmation) return;
     void runOperation(vfsEvent.deleteNodesRequest, { ids });
-  }, [isAnyOperationLoading, isVfsLoading, runOperation, selectedFileIds, t]);
+  }, [confirmDialog, isAnyOperationLoading, isVfsLoading, runOperation, selectedFileIds, t]);
 
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -647,17 +660,23 @@ export const FileManager = memo(() => {
 
   const handleDelete = useCallback(
     async (entry: VfsNode) => {
-      const confirmation = window.confirm(
-        t("fileManager.deleteConfirmation", { type: entry.type, name: entry.name }) + 
-          (entry.type === "folder"
-            ? `\n\n` + t("fileManager.warningDeleteFolder")
-            : "")
-      );
+      const description =
+        t("fileManager.deleteConfirmation", { type: entry.type, name: entry.name }) +
+        (entry.type === "folder"
+          ? `\n\n` + t("fileManager.warningDeleteFolder")
+          : "");
+      const confirmation = await confirmDialog({
+        title: t("fileManager.deleteConfirmationTitle", "Delete item"),
+        description,
+        confirmLabel: t("common:delete", "Delete"),
+        cancelLabel: t("common:cancel", "Cancel"),
+        destructive: true,
+      });
       if (confirmation) {
         await runOperation(vfsEvent.deleteNodesRequest, { ids: [entry.id] });
       }
     },
-    [runOperation, t]
+    [confirmDialog, runOperation, t]
   );
 
   const handleDownload = useCallback(
@@ -913,7 +932,10 @@ export const FileManager = memo(() => {
   }
 
   return (
-    <div className={cn("flex h-full flex-col bg-card text-card-foreground")}>
+    <>
+      <PromptDialog />
+      <ConfirmDialog />
+      <div className={cn("flex h-full flex-col bg-card text-card-foreground")}>
       <FileManagerToolbar
         currentPath={currentPath}
         isAnyLoading={isAnyOperationLoading || isVfsLoading}
@@ -1044,6 +1066,7 @@ export const FileManager = memo(() => {
         }
       />
     </div>
+    </>
   );
 });
 FileManager.displayName = "FileManager";

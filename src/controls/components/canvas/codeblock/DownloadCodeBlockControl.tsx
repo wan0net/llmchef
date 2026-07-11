@@ -14,8 +14,6 @@ interface DownloadCodeBlockControlProps {
 }
 
 export const DownloadCodeBlockControl: React.FC<DownloadCodeBlockControlProps> = ({
-  interactionId,
-  codeBlockId,
   language,
   codeToDownload,
   filepath,

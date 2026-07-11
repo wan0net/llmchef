@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DEFAULT_RELEASE_URL="https://wan0.net/llmchef/release/latest.zip"
+DEFAULT_DIGEST_URL="${DEFAULT_RELEASE_URL}.sha256"
 
 resolve_release_url() {
   local candidate="${LLMCHEF_RELEASE_URL:-$DEFAULT_RELEASE_URL}"
@@ -56,8 +57,29 @@ fi
 # Create temp directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 RELEASE_URL="$(resolve_release_url)" || exit 1
+
+if release_url_uses_override "$RELEASE_URL"; then
+  if [[ -z "${LLMCHEF_RELEASE_DIGEST_URL:-}" ]]; then
+    echo "Error: LLMCHEF_RELEASE_DIGEST_URL is required when overriding LLMCHEF_RELEASE_URL." >&2
+    exit 1
+  fi
+  DIGEST_URL="$LLMCHEF_RELEASE_DIGEST_URL"
+else
+  DIGEST_URL="${LLMCHEF_RELEASE_DIGEST_URL:-$DEFAULT_DIGEST_URL}"
+fi
+
 TEMP_DIR="${LLMCHEF_RUNNER_APP_DIR:-$SCRIPT_DIR/llmchef-app}"
 mkdir -p "$TEMP_DIR"
+
+# Locate Python early for digest verification and extraction
+if command -v python3 &> /dev/null; then
+  PYTHON_BIN=python3
+elif command -v python &> /dev/null; then
+  PYTHON_BIN=python
+else
+  echo "Error: Python is not installed. Please install Python to run LLMChef safely."
+  exit 1
+fi
 
 # Download the zip file
 ZIP_PATH="$TEMP_DIR/llmchef.zip"
@@ -90,7 +112,51 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "Download complete. Extracting..."
+echo "Download complete. Verifying digest..."
+DIGEST_PATH="$TEMP_DIR/llmchef.zip.sha256"
+rm -f "$DIGEST_PATH"
+
+if command -v curl &> /dev/null; then
+  curl -L -o "$DIGEST_PATH" "$DIGEST_URL"
+else
+  wget -O "$DIGEST_PATH" "$DIGEST_URL"
+fi
+
+if [ $? -ne 0 ] || [ ! -s "$DIGEST_PATH" ]; then
+  echo "Error: Failed to download release digest from $DIGEST_URL."
+  rm -f "$ZIP_PATH" "$DIGEST_PATH"
+  exit 1
+fi
+
+DIGEST_OK=false
+if command -v sha256sum &> /dev/null; then
+  (cd "$TEMP_DIR" && sha256sum -c "$(basename "$DIGEST_PATH")") && DIGEST_OK=true
+elif command -v shasum &> /dev/null; then
+  EXPECTED="$(awk '{print $1}' "$DIGEST_PATH")"
+  ACTUAL="$(shasum -a 256 "$ZIP_PATH" | awk '{print $1}')"
+  if [[ "$EXPECTED" == "$ACTUAL" ]]; then
+    DIGEST_OK=true
+  else
+    echo "Error: digest mismatch (expected $EXPECTED, got $ACTUAL)." >&2
+  fi
+else
+  EXPECTED="$(awk '{print $1}' "$DIGEST_PATH")"
+  ACTUAL="$($PYTHON_BIN -c "import hashlib, sys; print(hashlib.sha256(open(sys.argv[1], 'rb').read()).hexdigest())" "$ZIP_PATH")"
+  if [[ "$EXPECTED" == "$ACTUAL" ]]; then
+    DIGEST_OK=true
+  else
+    echo "Error: digest mismatch (expected $EXPECTED, got $ACTUAL)." >&2
+  fi
+fi
+
+if [[ "$DIGEST_OK" != true ]]; then
+  echo "Error: Release digest verification failed. The downloaded archive may have been tampered with."
+  rm -f "$ZIP_PATH" "$DIGEST_PATH"
+  exit 1
+fi
+
+rm -f "$DIGEST_PATH"
+echo "Digest verified. Extracting..."
 
 # Remove previous bundle contents while keeping the newly downloaded archive.
 find "$TEMP_DIR" -mindepth 1 ! -name "$(basename "$ZIP_PATH")" -exec rm -rf {} +
@@ -101,16 +167,6 @@ if [ $? -ne 0 ]; then
 fi
 
 # Validate and extract the zip file without allowing paths outside TEMP_DIR.
-if command -v python3 &> /dev/null; then
-  PYTHON_BIN=python3
-elif command -v python &> /dev/null; then
-  PYTHON_BIN=python
-else
-  echo "Error: Python is not installed. Please install Python to extract LLMChef safely."
-  rm -f "$ZIP_PATH"
-  exit 1
-fi
-
 "$PYTHON_BIN" - "$ZIP_PATH" "$TEMP_DIR" << 'PYTHON_EXTRACT'
 from __future__ import print_function
 

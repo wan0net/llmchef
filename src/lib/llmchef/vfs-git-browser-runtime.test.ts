@@ -10,7 +10,7 @@ describe("vfs git browser runtime", () => {
         gitUserName: "Juni",
         gitUserEmail: "juni@example.com",
       }),
-      prompt: vi.fn(),
+      promptForCredentials: vi.fn(),
       notifyError: vi.fn(),
     });
 
@@ -31,8 +31,8 @@ describe("vfs git browser runtime", () => {
     });
   });
 
-  it("notifies and aborts when the browser prompt does not provide a username", async () => {
-    const prompt = vi.fn().mockReturnValueOnce(null);
+  it("notifies and aborts when the credential prompt does not provide credentials", async () => {
+    const promptForCredentials = vi.fn().mockResolvedValueOnce(null);
     const notifyError = vi.fn();
 
     const runtime = createBrowserGitOperationRuntime({
@@ -41,47 +41,18 @@ describe("vfs git browser runtime", () => {
         gitUserName: null,
         gitUserEmail: null,
       }),
-      prompt,
+      promptForCredentials,
       notifyError,
     });
 
     const auth = await runtime.onAuth("https://github.com/demo/repo.git");
 
     expect(auth).toBeNull();
-    expect(prompt).toHaveBeenCalledWith(
-      "Enter username for https://github.com/demo/repo.git",
+    expect(promptForCredentials).toHaveBeenCalledWith(
+      "https://github.com/demo/repo.git",
     );
     expect(notifyError).toHaveBeenCalledWith(
-      "Authentication cancelled: Username not provided.",
-    );
-  });
-
-  it("notifies and aborts when the browser prompt does not provide a password", async () => {
-    const prompt = vi
-      .fn()
-      .mockReturnValueOnce("demo-user")
-      .mockReturnValueOnce("");
-    const notifyError = vi.fn();
-
-    const runtime = createBrowserGitOperationRuntime({
-      getSettingsState: () => ({
-        corsProxyUrl: "",
-        gitUserName: null,
-        gitUserEmail: null,
-      }),
-      prompt,
-      notifyError,
-    });
-
-    const auth = await runtime.onAuth("https://github.com/demo/repo.git");
-
-    expect(auth).toBeNull();
-    expect(prompt).toHaveBeenNthCalledWith(
-      2,
-      "Enter password or token for demo-user@https://github.com/demo/repo.git",
-    );
-    expect(notifyError).toHaveBeenCalledWith(
-      "Authentication cancelled: Password/token not provided.",
+      "Authentication cancelled: Credentials not provided.",
     );
   });
 });

@@ -49,6 +49,7 @@ export interface DbMod {
   enabled: boolean;
   loadOrder: number;
   createdAt: Date;
+  integrity?: string | null;
 }
 
 export interface ModInstance {

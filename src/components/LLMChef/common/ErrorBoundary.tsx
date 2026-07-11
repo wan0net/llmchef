@@ -140,7 +140,7 @@ class ErrorBoundaryComponent extends Component<Props & { t: any }, State> {
   private generateAIPrompt(): string {
     const { error, errorInfo } = this.state;
     const { t } = this.props;
-    let prompt = `I encountered an error in a React application (LLMChef v${LLMCHEF_VERSION}). Please help me debug it.
+    const prompt = `I encountered an error in a React application (LLMChef v${LLMCHEF_VERSION}). Please help me debug it.
 
 Error Message:
 \`\`\`

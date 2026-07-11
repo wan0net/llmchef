@@ -174,8 +174,29 @@ export const useVfsStore = create(
       });
     },
     _removeNodes: (ids) => {
+      // Collect all descendant IDs in a single pre-pass so the actual deletion
+      // happens in one Immer draft (no nested set/get inside the producer).
+      const collectDescendantIds = (parentIds: string[], nodes: Record<string, VfsNode>): string[] => {
+        const result: string[] = [];
+        const queue = [...parentIds];
+        while (queue.length > 0) {
+          const id = queue.shift()!;
+          result.push(id);
+          const node = nodes[id];
+          if (node?.type === "folder") {
+            for (const child of Object.values(nodes)) {
+              if (child.parentId === id) {
+                queue.push(child.id);
+              }
+            }
+          }
+        }
+        return result;
+      };
+
       set((state) => {
-        ids.forEach((id) => {
+        const allIds = collectDescendantIds(ids, state.nodes);
+        allIds.forEach((id) => {
           const node = state.nodes[id];
           if (node) {
             const parentIdKey = node.parentId ?? state.rootId ?? "";
@@ -186,14 +207,7 @@ export const useVfsStore = create(
             }
             delete state.nodes[id];
             state.selectedFileIds.delete(id);
-
             if (node.type === "folder") {
-              const childIdsToRemove = Object.values(state.nodes)
-                .filter((n: VfsNode) => n.parentId === id)
-                .map((n) => n.id);
-              if (childIdsToRemove.length > 0) {
-                get()._removeNodes(childIdsToRemove); // Recursive call, careful with event emission
-              }
               delete state.childrenMap[id];
             }
           }
@@ -293,19 +307,32 @@ export const useVfsStore = create(
           configuredVfsKey: null,
         });
 
-        if (key !== null) {
-          get()
-            .initializeVFS(key)
-            .catch((err) => {
-              console.error("[VfsStore] Error during initialization trigger for ", key, ":",
-                err
-              );
-            });
-        // } else {
-        //   console.log(
-        //     "[VfsStore] setVfsKey: Desired key is null. State cleared."
-        //   );
-        }
+        get()
+          .initializeVFS(key)
+          .catch((err) => {
+            console.error("[VfsStore] Error during initialization trigger for ", key, ":",
+              err
+            );
+          });
+      } else {
+        set({
+          vfsKey: null,
+          fs: null,
+          configuredVfsKey: null,
+          rootId: null,
+          currentParentId: null,
+          nodes: {},
+          childrenMap: { "": [] },
+          error: null,
+          loading: false,
+          operationLoading: false,
+          selectedFileIds: new Set(),
+          initializingKey: null,
+        });
+        emitter.emit(vfsEvent.vfsKeyChanged, {
+          vfsKey: null,
+          configuredVfsKey: null,
+        });
       }
     },
 

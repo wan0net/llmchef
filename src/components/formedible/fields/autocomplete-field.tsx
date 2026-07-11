@@ -44,8 +44,6 @@ export const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
     loadingText = "Loading..."
   } = autocompleteConfig;
 
-  const name = fieldApi.name;
-
   const [inputValue, setInputValue] = useState(fieldApi.state?.value || "");
   const [filteredOptions, setFilteredOptions] = useState<AutocompleteOption[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -218,7 +216,7 @@ export const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
-          onBlur={(e) => {
+          onBlur={(_e) => {
             handleInputBlur();
             fieldApi.handleBlur();
           }}

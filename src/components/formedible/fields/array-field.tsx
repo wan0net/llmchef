@@ -96,7 +96,6 @@ export const ArrayField: React.FC<ArrayFieldSpecificProps> = ({
   fieldApi,
   label,
   description,
-  placeholder,
   inputClassName,
   labelClassName,
   wrapperClassName,

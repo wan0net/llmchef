@@ -394,7 +394,7 @@ export function importMarkdown(collection: DocCollection, markdown: string): Doc
 // Export: BlockSuite Doc -> Markdown string
 // ---------------------------------------------------------------------------
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 /**
  * Serialize a BlockSuite Text (delta array) to inline Markdown.

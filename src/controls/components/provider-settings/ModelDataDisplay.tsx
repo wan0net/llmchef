@@ -134,7 +134,7 @@ export const ModelDataDisplay: React.FC<ModelDataDisplayProps> = ({
       toast.success(
         `Model "${model.name}" ${!isCurrentlyEnabled ? "enabled" : "disabled"}.`,
       );
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to update model status.");
     }
   }, [model, combinedModelId, dbProviderConfigs, updateProviderConfig]);

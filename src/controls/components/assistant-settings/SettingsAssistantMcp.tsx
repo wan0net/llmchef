@@ -29,6 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 // Schemas for form validation - single source of truth
 const mcpServerFormSchema = z.object({
@@ -643,8 +644,15 @@ function ConnectionSettingsTab() {
     });
   }, [retryAttempts, retryDelay, connectionTimeout, maxResponseSize, form]);
 
-  const handleReset = () => {
-    if (window.confirm(t('mcp.connection.resetConfirm'))) {
+  const handleReset = async () => {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: t('mcp.connection.resetConfirmTitle', 'Reset connection settings'),
+      description: t('mcp.connection.resetConfirm'),
+      confirmLabel: t('mcp.connection.resetConfirmButton', 'Reset'),
+      cancelLabel: t('mcp.connection.resetCancelButton', 'Cancel'),
+      destructive: true,
+    });
+    if (confirmed) {
       setRetryAttempts(3);
       setRetryDelay(2000);
       setConnectionTimeout(10000);
@@ -1012,8 +1020,15 @@ function ServersTab({
     }))
   );
 
-  const handleDelete = (serverId: string) => {
-    if (window.confirm(t('mcp.server.deleteConfirm'))) {
+  const handleDelete = async (serverId: string) => {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: t('mcp.server.deleteConfirmTitle', 'Delete MCP server'),
+      description: t('mcp.server.deleteConfirm'),
+      confirmLabel: t('mcp.server.deleteConfirmButton', 'Delete'),
+      cancelLabel: t('mcp.server.deleteCancelButton', 'Cancel'),
+      destructive: true,
+    });
+    if (confirmed) {
       deleteServer(serverId);
     }
   };

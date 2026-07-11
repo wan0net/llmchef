@@ -144,7 +144,7 @@ export const useConversationStore = create(
         let timeoutId: NodeJS.Timeout | null = null;
         
         const cleanupSubscriptions = () => {
-          emitter.off(vfsEvent.fsInstanceChanged, handleFsInstanceChanged);
+          emitter.off(vfsEvent.vfsKeyChanged, handleVfsKeyChanged);
           emitter.off(vfsEvent.loadingStateChanged, handleLoadingStateChanged);
           if (timeoutId) {
             clearTimeout(timeoutId);
@@ -152,19 +152,19 @@ export const useConversationStore = create(
           }
         };
 
-        const handleFsInstanceChanged = (
-          payload: VfsEventPayloads[typeof vfsEvent.fsInstanceChanged]
+        const handleVfsKeyChanged = (
+          payload: VfsEventPayloads[typeof vfsEvent.vfsKeyChanged]
         ) => {
           const vfsState = useVfsStore.getState();
           if (
-            vfsState.configuredVfsKey === SYNC_VFS_KEY &&
-            payload.fsInstance
+            payload.configuredVfsKey === SYNC_VFS_KEY &&
+            vfsState.fs
           ) {
             console.log(
-              `[ConversationStore] Sync VFS ready via fsInstanceChanged for key ${SYNC_VFS_KEY}.`
+              `[ConversationStore] Sync VFS ready via vfsKeyChanged for key ${SYNC_VFS_KEY}.`
             );
             cleanupSubscriptions();
-            resolve(payload.fsInstance as typeof fs);
+            resolve(vfsState.fs);
           }
         };
 
@@ -193,7 +193,7 @@ export const useConversationStore = create(
           }
         };
 
-        emitter.on(vfsEvent.fsInstanceChanged, handleFsInstanceChanged);
+        emitter.on(vfsEvent.vfsKeyChanged, handleVfsKeyChanged);
         emitter.on(vfsEvent.loadingStateChanged, handleLoadingStateChanged);
 
         // Check current state first
@@ -412,6 +412,7 @@ export const useConversationStore = create(
     deleteConversation: async (id) => {
       const currentSelectedId = get().selectedItemId;
       const currentSelectedType = get().selectedItemType;
+      const originalIndex = get().conversations.findIndex((c) => c.id === id);
       const conversationToDelete = get().conversations.find((c) => c.id === id);
       if (!conversationToDelete) return;
 
@@ -433,8 +434,7 @@ export const useConversationStore = create(
       }));
 
       try {
-        await PersistenceService.deleteConversation(id);
-        await PersistenceService.deleteInteractionsForConversation(id);
+        await PersistenceService.deleteConversationAndInteractions(id);
         emitter.emit(conversationEvent.conversationDeleted, {
           conversationId: id,
         });
@@ -455,7 +455,11 @@ export const useConversationStore = create(
         console.error("ConversationStore: Error deleting conversation", e);
         set((state) => {
           if (conversationToDelete) {
-            state.conversations.push(conversationToDelete);
+            const insertIndex = Math.max(
+              0,
+              Math.min(originalIndex, state.conversations.length)
+            );
+            state.conversations.splice(insertIndex, 0, conversationToDelete);
             state.conversationSyncStatus[id] = getConversationSyncStatus(
               conversationToDelete
             );
@@ -488,9 +492,6 @@ export const useConversationStore = create(
         `[ConversationStore] Selecting item. ID: ${id}, Type: ${type}. Previous: ${oldItemId} (${oldItemType})`
       );
 
-      emitter.emit(interactionEvent.currentConversationIdChanged, {
-        conversationId: type === "conversation" ? id : null,
-      });
       emitter.emit(uiEvent.contextChanged, {
         selectedItemId: id,
         selectedItemType: type,
@@ -510,12 +511,6 @@ export const useConversationStore = create(
         emitter.emit(interactionEvent.setCurrentConversationIdRequest, {
           id: id,
         });
-        if (id) {
-          // Ensure interactions are loaded for the selected conversation
-          emitter.emit(interactionEvent.loadInteractionsRequest, {
-            conversationId: id,
-          });
-        }
       }
 
       // Auto-load project settings
@@ -567,7 +562,7 @@ export const useConversationStore = create(
                     await VfsOps.stat(conversationDir, { fsInstance: syncVfs });
                     await VfsOps.rmdirRecursive(conversationDir, { fsInstance: syncVfs });
                     console.log(`[ConversationStore] Deleted VFS directory: ${conversationDir}`);
-                  } catch (statError) {
+                  } catch (_statError) {
                     // Directory doesn't exist, which is fine.
                   }
                 } catch (e) {
@@ -827,7 +822,7 @@ export const useConversationStore = create(
       let fsInstance: typeof fs;
       try {
         fsInstance = await get()._ensureSyncVfsReady();
-      } catch (fsError) {
+      } catch (_fsError) {
         get()._setRepoInitializationStatus(repoId, "error");
         return;
       }
@@ -865,7 +860,7 @@ export const useConversationStore = create(
       let fsInstance: typeof fs | undefined;
       try {
         fsInstance = await get()._ensureSyncVfsReady();
-      } catch (fsError) {
+      } catch (_fsError) {
         get()._setConversationSyncStatus(
           conversationId,
           "error",

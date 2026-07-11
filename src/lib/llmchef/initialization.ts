@@ -26,7 +26,7 @@ import { InteractionService } from "@/services/interaction.service";
 import { BundledConfigService } from "@/services/bundled-config.service";
 import { StartupSyncService } from "@/services/startup-sync.service";
 import { getCurrentProjectId } from "@/services/conversation-query.service";
-import type { Conversation, SidebarItemType } from "@/types/llmchef/chat";
+import type { SidebarItemType } from "@/types/llmchef/chat";
 import i18next from "i18next";
 
 interface CoreStores {
@@ -113,7 +113,7 @@ export async function loadCoreData(
   modApi.emit(conversationEvent.loadConversationsRequest, undefined);
   modApi.emit(projectEvent.loadProjectsRequest, undefined);
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     let settingsLoaded = false;
     let providersLoaded = false;
     let rulesLoaded = false;
@@ -128,9 +128,24 @@ export async function loadCoreData(
         conversationsLoaded &&
         projectsLoaded
       ) {
+        clearTimeout(timeoutId);
         resolve();
       }
     };
+
+    const timeoutId = setTimeout(() => {
+      const missing = [
+        !settingsLoaded && "settings",
+        !providersLoaded && "providers",
+        !rulesLoaded && "rules",
+        !conversationsLoaded && "conversations",
+        !projectsLoaded && "projects",
+      ].filter(Boolean);
+      useUIStateStore.setGlobalError(
+        `Initialization timed out waiting for: ${missing.join(", ")}. Please reload the app.`
+      );
+      reject(new Error(`Initialization timed out waiting for: ${missing.join(", ")}`));
+    }, 30000);
 
     const unsubSettings = modApi.on(settingsEvent.loaded, () => {
       settingsLoaded = true;

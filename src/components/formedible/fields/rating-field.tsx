@@ -31,7 +31,6 @@ export const RatingField: React.FC<RatingFieldSpecificProps> = ({
   fieldApi,
   label,
   description,
-  placeholder,
   inputClassName,
   labelClassName,
   wrapperClassName,
@@ -45,7 +44,6 @@ export const RatingField: React.FC<RatingFieldSpecificProps> = ({
     showValue = false,
   } = ratingConfig;
 
-  const name = fieldApi.name;
   const value = (fieldApi.state?.value as number) || 0;
   const isDisabled = fieldApi.form?.state?.isSubmitting ?? false;
   

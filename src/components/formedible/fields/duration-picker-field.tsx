@@ -1,18 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import type { BaseFieldProps } from "@/lib/formedible/types";
-import { FieldWrapper } from "./base-field-wrapper";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-interface DurationValue {
-  hours?: number;
-  minutes?: number;
-  seconds?: number;
-  totalSeconds?: number;
-}
 
 interface DurationConfig {
   format?: 'hms' | 'hm' | 'ms' | 'hours' | 'minutes' | 'seconds';
@@ -27,7 +19,7 @@ interface DurationPickerFieldProps extends BaseFieldProps {
   durationConfig?: DurationConfig;
 }
 
-const parseDuration = (value: any, format: string) => {
+const parseDuration = (value: any, _format: string) => {
   if (!value) return { hours: 0, minutes: 0, seconds: 0 };
   
   if (typeof value === 'number') {

@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import type { DbRule } from "@/types/llmchef/rules";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 interface RulesListProps {
   rules: DbRule[];
@@ -33,12 +34,15 @@ export const RulesList: React.FC<RulesListProps> = ({
   onDelete,
   onToggleAlwaysOn,
 }) => {
-  const handleDeleteClick = (rule: DbRule) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete the rule "${rule.name}"? This will also remove it from any tags.`
-      )
-    ) {
+  const handleDeleteClick = async (rule: DbRule) => {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: "Delete rule",
+      description: `Are you sure you want to delete the rule "${rule.name}"? This will also remove it from any tags.`,
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      destructive: true,
+    });
+    if (confirmed) {
       onDelete(rule.id, rule.name);
     }
   };

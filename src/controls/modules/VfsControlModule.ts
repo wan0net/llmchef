@@ -64,8 +64,7 @@ export class VfsControlModule implements ControlModule {
   }
 
   private updateVfsKeyBasedOnContext() {
-    const { selectedItemId, selectedItemType } =
-      useConversationStore.getState();
+    const { selectedItemType } = useConversationStore.getState();
     const currentVfsStoreKey = useVfsStore.getState().vfsKey;
 
     const targetVfsKey = APP_VFS_KEY;

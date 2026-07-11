@@ -42,7 +42,6 @@ export const ObjectField: React.FC<ObjectFieldProps> = ({
   disabled,
   ...wrapperProps
 }) => {
-  const name = fieldApi.name;
   const [isExpanded, setIsExpanded] = React.useState(
     objectConfig?.defaultExpanded !== false
   );

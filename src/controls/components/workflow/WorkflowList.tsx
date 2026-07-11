@@ -10,6 +10,7 @@ import { PersistenceService } from '@/services/persistence.service';
 import { toast } from 'sonner';
 import { nanoid } from 'nanoid';
 import { WorkflowShortcutToggle } from './WorkflowShortcutToggle';
+import { ConfirmDialogService } from '@/services/confirm-dialog.service';
 
 interface WorkflowListProps {
     module: WorkflowControlModule;
@@ -47,7 +48,14 @@ export const WorkflowList: React.FC<WorkflowListProps> = ({
     };
 
     const handleDeleteWorkflow = async (workflowId: string, workflowName: string) => {
-        if (!confirm(`Are you sure you want to delete the workflow "${workflowName}"?`)) {
+        const confirmed = await ConfirmDialogService.confirm({
+            title: "Delete workflow",
+            description: `Are you sure you want to delete the workflow "${workflowName}"?`,
+            confirmLabel: "Delete",
+            cancelLabel: "Cancel",
+            destructive: true,
+        });
+        if (!confirmed) {
             return;
         }
 

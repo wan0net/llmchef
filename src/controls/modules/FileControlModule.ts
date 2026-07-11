@@ -172,7 +172,7 @@ export class FileControlModule implements ControlModule {
         const fileSize = parseInt(response.headers.get('content-length') || '0');
         const mimeType = response.headers.get('content-type') || 'application/octet-stream';
         
-        let fileData: {
+        const fileData: {
           contentText?: string;
           contentBase64?: string;
         } = {};

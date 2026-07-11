@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   BookOpenTextIcon,
   ChartNoAxesCombinedIcon,
@@ -42,6 +43,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { FilePreviewDialog } from "@/components/LLMChef/file-manager/FilePreviewDialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { usePromptDialog } from "@/hooks/usePromptDialog";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
 import { parseCrea8MarkdownNote } from "@/lib/llmchef/crea8-memory";
 import {
@@ -899,6 +902,10 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   const [syncingLocalFolder, setSyncingLocalFolder] = useState(false);
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
 
+  const { t } = useTranslation(["documents", "common"]);
+  const { prompt: promptDialog, PromptDialog } = usePromptDialog();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
+
   const workspaceRoot = useMemo(
     () => normalizePath(currentProject?.path ?? "/"),
     [currentProject?.path],
@@ -1305,7 +1312,12 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
 
   const createMermaidDiagram = useCallback(async (targetFolder?: string) => {
     if (!fs || !currentProject) return;
-    const title = window.prompt("Diagram name", `${currentProject.name} diagram`);
+    const title = await promptDialog({
+      title: t("documents:diagramPrompt.title", "Diagram name"),
+      defaultValue: `${currentProject.name} diagram`,
+      confirmLabel: t("common:create", "Create"),
+      cancelLabel: t("common:cancel", "Cancel"),
+    });
     const trimmedTitle = title?.trim();
     if (!trimmedTitle) return;
 
@@ -1371,7 +1383,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     } finally {
       setSaving(false);
     }
-  }, [activeFolderPath, currentProject, fs, loadDocuments, workspaceRoot]);
+  }, [activeFolderPath, currentProject, fs, loadDocuments, promptDialog, t, workspaceRoot]);
 
   const copyActiveText = useCallback(async () => {
     if (!activeDocument) return;
@@ -1504,7 +1516,11 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
 
   const createFolderAtPath = useCallback(async (parentPath: string) => {
     if (!fs) return;
-    const folderName = window.prompt("Folder name");
+    const folderName = await promptDialog({
+      title: t("documents:folderPrompt.title", "Folder name"),
+      confirmLabel: t("common:create", "Create"),
+      cancelLabel: t("common:cancel", "Cancel"),
+    });
     const trimmed = folderName?.trim();
     if (!trimmed) return;
 
@@ -1524,7 +1540,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     } finally {
       setSaving(false);
     }
-  }, [fs, loadDocuments]);
+  }, [fs, loadDocuments, promptDialog, t]);
 
   const createFolderInActiveFolder = useCallback(async () => {
     await createFolderAtPath(activeFolderPath ?? workspaceRoot);
@@ -1557,7 +1573,12 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
 
   const renameDocument = useCallback(async (doc: WorkspaceDocument) => {
     if (!fs) return;
-    const nextName = window.prompt("Rename document", doc.name);
+    const nextName = await promptDialog({
+      title: t("documents:renamePrompt.title", "Rename document"),
+      defaultValue: doc.name,
+      confirmLabel: t("common:rename", "Rename"),
+      cancelLabel: t("common:cancel", "Cancel"),
+    });
     const trimmed = nextName?.trim();
     if (!trimmed || trimmed === doc.name) return;
 
@@ -1581,11 +1602,17 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     } finally {
       setSaving(false);
     }
-  }, [activeDocument, fs, loadDocuments]);
+  }, [activeDocument, fs, loadDocuments, promptDialog, t]);
 
   const deleteDocument = useCallback(async (doc: WorkspaceDocument) => {
     if (!fs) return;
-    const confirmed = window.confirm(`Delete ${doc.name}?`);
+    const confirmed = await confirmDialog({
+      title: t("documents:deleteConfirmation.title", "Delete document"),
+      description: t("documents:deleteConfirmation.description", "Are you sure you want to delete {{name}}?", { name: doc.name }),
+      confirmLabel: t("common:delete", "Delete"),
+      cancelLabel: t("common:cancel", "Cancel"),
+      destructive: true,
+    });
     if (!confirmed) return;
 
     setSaving(true);
@@ -1612,7 +1639,7 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
     } finally {
       setSaving(false);
     }
-  }, [activeDocument, fs, loadDocuments]);
+  }, [activeDocument, confirmDialog, fs, loadDocuments, t]);
 
   const attachSelectedDocumentsToChat = useCallback(async () => {
     if (!fs || selectedDocs.length === 0) return;
@@ -2743,7 +2770,10 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-background">
+    <>
+      <PromptDialog />
+      <ConfirmDialog />
+      <div className="flex min-h-0 flex-1 flex-col bg-background">
       {error ? (
         <div className="border-b border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           {error}
@@ -2761,5 +2791,6 @@ export const DocumentsWorkspace: React.FC<DocumentsWorkspaceProps> = ({
         data={previewData}
       />
     </div>
+    </>
   );
 };

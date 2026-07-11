@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { PYODIDE_VERSION_URL } from "@/lib/llmchef/constants";
 import { CodeSecurityService, type CodeSecurityResult } from "@/services/code-security.service";
 import { ActionTooltipButton } from "./ActionTooltipButton";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 // Pyodide types declaration
 declare global {
@@ -317,7 +318,6 @@ const PythonRunnableBlockRendererComponent: React.FC<PythonRunnableBlockRenderer
   const [showOutput, setShowOutput] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [hasRun, setHasRun] = useState(false);
-  const [previewContentUpdated, setPreviewContentUpdated] = useState(0);
   const executeCodeRef = useRef<(() => Promise<void>) | null>(null);
 
   // Security validation state
@@ -345,20 +345,6 @@ const PythonRunnableBlockRendererComponent: React.FC<PythonRunnableBlockRenderer
   const codeRef = useRef<HTMLElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Listen for matplotlib content updates
-  useEffect(() => {
-    const previewElement = previewRef.current;
-    if (!previewElement) return;
-
-    const handleContentAdded = () => {
-      setPreviewContentUpdated(prev => prev + 1);
-    };
-
-    previewElement.addEventListener('previewContentAdded', handleContentAdded);
-    return () => {
-      previewElement.removeEventListener('previewContentAdded', handleContentAdded);
-    };
-  }, []);
 
   const canvasControls = useControlRegistryStore(
     useShallow((state) => Object.values(state.canvasControls))
@@ -427,7 +413,14 @@ const PythonRunnableBlockRendererComponent: React.FC<PythonRunnableBlockRenderer
       }
 
       if (securityResult.score > 90) {
-        if (!confirm(`This code has a very high security risk score (${securityResult.score}/100). Are you absolutely sure you want to run it?`)) {
+        const confirmed = await ConfirmDialogService.confirm({
+          title: "High security risk",
+          description: `This code has a very high security risk score (${securityResult.score}/100). Are you absolutely sure you want to run it?`,
+          confirmLabel: "Run",
+          cancelLabel: "Cancel",
+          destructive: true,
+        });
+        if (!confirmed) {
           setClickCount(0);
           setIsRunning(false); // Reset running state if user cancels
           return;

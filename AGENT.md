@@ -6,6 +6,7 @@ This file provides guidance to opencode when working with code in this repositor
 
 ### Development
 ```bash
+npm run vendor:pyodide     # Download vendored Pyodide runtime binaries (required before first build if public/pyodide/ is absent)
 npm run build              # Build for production with TypeScript compilation
 npm run build:en           # Build English version specifically
 npm run build:fr           # Build French version specifically
@@ -16,7 +17,6 @@ npm run build:all          # Build all language versions
 ```bash
 npm run deploy             # Deploy to GitHub Pages (gh-pages -d dist)
 npm run to2web             # Build, release, and deploy to web
-npm run mcp-proxy          # Start MCP bridge service (node bin/mcp-bridge.js)
 npm run serve              # Build and serve with http-server on LLMCHEF_PORT (default: 5173)
 npm run update             # Git pull, npm install, and serve (respects LLMCHEF_ORIGIN and LLMCHEF_BRANCH)
 ```

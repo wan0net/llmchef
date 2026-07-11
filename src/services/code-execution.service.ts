@@ -8,17 +8,14 @@ export interface JsExecutionPermissions {
   network?: boolean;
   storage?: boolean;
   provider?: boolean;
-  pageContext?: boolean;
 }
 
 export interface JsExecutionOptions {
   consent?: {
     execute: boolean;
-    pageContext?: boolean;
   };
   permissions?: JsExecutionPermissions;
   timeoutMs?: number;
-  mode?: "isolated" | "page";
 }
 
 export interface PyExecutionOptions {
@@ -324,37 +321,9 @@ export const CodeExecutionService = {
       throw new Error('JavaScript workflow execution requires explicit user consent for this run.');
     }
 
-    const mode = options.mode || "isolated";
     const permissions = options.permissions || {};
 
-    if (mode === "page") {
-      if (!options.consent.pageContext || !permissions.pageContext) {
-        throw new Error('Page-context JavaScript requires explicit page-context consent and permission.');
-      }
-      return this.executeJsInPageContext(code, context);
-    }
-
     return this.executeJsInIsolatedWorker(code, context, permissions, options.timeoutMs || 5000);
-  },
-
-  async executeJsInPageContext(code: string, context: Record<string, any>): Promise<any> {
-    try {
-      const contextKeys = Object.keys(context);
-      const contextValues = Object.values(context);
-      contextKeys.forEach((key) => {
-        if (!JS_IDENTIFIER.test(key)) {
-          throw new Error(`Invalid JavaScript context variable name: ${key}`);
-        }
-      });
-
-      const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-      const func = new AsyncFunction(...contextKeys, code);
-      const result = func(...contextValues);
-      return result && typeof result.then === 'function' ? await result : result;
-    } catch (error) {
-      console.error('[CodeExecutionService] JavaScript execution error:', error);
-      throw new Error(`JavaScript execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
   },
 
   async executeJsInIsolatedWorker(

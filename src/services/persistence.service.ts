@@ -1,6 +1,11 @@
 // src/services/persistence.service.ts
 // FULL FILE
 import { db } from "@/lib/llmchef/db";
+import {
+  decryptString,
+  encryptString,
+  type EncryptedString,
+} from "@/lib/llmchef/crypto-utils";
 import type { Conversation } from "@/types/llmchef/chat";
 import type { Interaction } from "@/types/llmchef/interaction";
 import type { DbMod } from "@/types/llmchef/modding";
@@ -171,6 +176,21 @@ export class PersistenceService {
     }
   }
 
+  static async deleteConversationAndInteractions(id: string): Promise<void> {
+    try {
+      await db.transaction("rw", [db.conversations, db.interactions], async () => {
+        await db.interactions.where({ conversationId: id }).delete();
+        await db.conversations.delete(id);
+      });
+    } catch (error) {
+      console.error(
+        "PersistenceService: Error deleting conversation and interactions:",
+        error
+      );
+      throw error;
+    }
+  }
+
   // Add method for usage dashboard date range queries
   static async getInteractionsByDateRange(
     startDate: Date,
@@ -321,8 +341,21 @@ export class PersistenceService {
   static async loadSyncRepos(): Promise<SyncRepo[]> {
     try {
       const repos = await db.syncRepos.toArray();
-      return repos.map((r) =>
-        ensureDateFields(r, ["lastPulledAt", "lastPushedAt"])
+      return await Promise.all(
+        repos.map(async (r) => {
+          const repo = ensureDateFields(r, ["lastPulledAt", "lastPushedAt"]);
+          if (repo.password) {
+            try {
+              const parsed = JSON.parse(repo.password) as EncryptedString;
+              if (parsed.iv && parsed.salt && parsed.ciphertext) {
+                repo.password = await decryptString(parsed);
+              }
+            } catch {
+              // Not encrypted or corrupted; leave as-is for backward compatibility.
+            }
+          }
+          return repo;
+        })
       );
     } catch (error) {
       console.error("PersistenceService: Error loading sync repos:", error);
@@ -332,7 +365,12 @@ export class PersistenceService {
 
   static async saveSyncRepo(repo: SyncRepo): Promise<string> {
     try {
-      return await db.syncRepos.put(repo);
+      const repoToSave: SyncRepo = { ...repo };
+      if (repoToSave.password) {
+        const encrypted = await encryptString(repoToSave.password);
+        repoToSave.password = JSON.stringify(encrypted);
+      }
+      return await db.syncRepos.put(repoToSave);
     } catch (error) {
       console.error("PersistenceService: Error saving sync repo:", error);
       throw error;
@@ -877,14 +915,26 @@ export class PersistenceService {
   static async loadWorkflows(): Promise<WorkflowTemplate[]> {
     try {
       const workflows = await db.workflows.orderBy("name").toArray();
-      return workflows.map((w) => ({
-        ...JSON.parse(w.definition),
-        id: w.id,
-        name: w.name,
-        description: w.description,
-        createdAt: w.createdAt.toISOString(),
-        updatedAt: w.updatedAt.toISOString(),
-      }));
+      const loaded: WorkflowTemplate[] = [];
+      for (const w of workflows) {
+        try {
+          const definition = JSON.parse(w.definition);
+          loaded.push({
+            ...definition,
+            id: w.id,
+            name: w.name,
+            description: w.description,
+            createdAt: w.createdAt.toISOString(),
+            updatedAt: w.updatedAt.toISOString(),
+          });
+        } catch (parseError) {
+          console.error(
+            `PersistenceService: Skipping corrupted workflow ${w.id} (${w.name}):`,
+            parseError
+          );
+        }
+      }
+      return loaded;
     } catch (error) {
       console.error("PersistenceService: Error loading workflows:", error);
       throw error;
@@ -897,14 +947,23 @@ export class PersistenceService {
       if (!workflow) {
         return null;
       }
-      return {
-        ...JSON.parse(workflow.definition),
-        id: workflow.id,
-        name: workflow.name,
-        description: workflow.description,
-        createdAt: workflow.createdAt.toISOString(),
-        updatedAt: workflow.updatedAt.toISOString(),
-      };
+      try {
+        const definition = JSON.parse(workflow.definition);
+        return {
+          ...definition,
+          id: workflow.id,
+          name: workflow.name,
+          description: workflow.description,
+          createdAt: workflow.createdAt.toISOString(),
+          updatedAt: workflow.updatedAt.toISOString(),
+        };
+      } catch (parseError) {
+        console.error(
+          `PersistenceService: Workflow ${id} definition is corrupted:`,
+          parseError
+        );
+        return null;
+      }
     } catch (error) {
       console.error("PersistenceService: Error loading workflow:", error);
       throw error;

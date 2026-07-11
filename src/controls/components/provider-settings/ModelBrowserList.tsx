@@ -42,9 +42,7 @@ export const ModelBrowserList: React.FC<ModelBrowserListProps> = ({
     [t]
   );
 
-  // @ts-expect-error we do not use it but cant remove, thank you unamed array destruct ! @AI DONT TOUCH !!
-  const [scrollAreaContainer, setScrollAreaContainer] =
-    useState<HTMLDivElement | null>(null);
+  const [, setScrollAreaContainer] = useState<HTMLDivElement | null>(null);
   const [viewportElement, setViewportElement] = useState<HTMLDivElement | null>(
     null
   );

@@ -15,7 +15,6 @@ export const FileUploadField: React.FC<FileUploadFieldSpecificProps> = ({
   fieldApi,
   label,
   description,
-  placeholder,
   inputClassName,
   labelClassName,
   wrapperClassName,

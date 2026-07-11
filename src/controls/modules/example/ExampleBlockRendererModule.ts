@@ -66,7 +66,7 @@ const CustomJsonRenderer: React.FC<CustomJsonRendererProps> = ({
       const parsed = JSON.parse(code);
       setParsedJson(parsed);
       setIsValidJson(true);
-    } catch (error) {
+    } catch (_error) {
       setIsValidJson(false);
       setParsedJson(null);
     }

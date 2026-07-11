@@ -31,7 +31,7 @@ export const HumanInTheLoopControl: React.FC<HumanInTheLoopControlProps> = ({ ru
         try {
             // Try to parse if it's JSON, otherwise use as string
             parsedData = JSON.parse(resumeData);
-        } catch (e) {
+        } catch (_e) {
             // Not JSON, treat as raw string
         }
         emitter.emit(workflowEvent.resumeRequest, { runId: run.runId, resumeData: parsedData });

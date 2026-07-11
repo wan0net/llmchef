@@ -160,8 +160,8 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
       createdAt: Date.now(),
     };
     setQueueItems((items) => [...items, queueItem]);
-    toast.success("Added to prompt queue");
-  }, []);
+    toast.success(t('promptWrapper.addedToQueue'));
+  }, [t]);
 
   const clearComposer = useCallback(() => {
     clearAttachedFiles();
@@ -184,7 +184,7 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
     }
 
     if (!currentModelIdFromPromptStore) {
-      toast.error("Please select a model before sending a message");
+      toast.error(t('promptWrapper.selectModelBeforeSend'));
       return;
     }
 
@@ -195,9 +195,9 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
     } catch (error) {
       console.error("Error queueing prompt:", error);
       toast.error(
-        `Failed to queue message: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        t('promptWrapper.failedToQueue', {
+          error: error instanceof Error ? error.message : String(error),
+        })
       );
     }
   }, [
@@ -206,6 +206,7 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
     createTurnData,
     currentModelIdFromPromptStore,
     inputAreaRef,
+    t,
   ]);
 
   const handleSubmit = useCallback(async (overrideContent?: string) => {
@@ -218,7 +219,7 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
     }
 
     if (!currentModelIdFromPromptStore) {
-      toast.error("Please select a model before sending a message");
+      toast.error(t('promptWrapper.selectModelBeforeSend'));
       return;
     }
 
@@ -232,9 +233,9 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
       } catch (error) {
         console.error("Error queueing prompt:", error);
         toast.error(
-          `Failed to queue message: ${
-            error instanceof Error ? error.message : String(error)
-          }`
+          t('promptWrapper.failedToQueue', {
+            error: error instanceof Error ? error.message : String(error),
+          })
         );
       }
       return;
@@ -250,9 +251,9 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
     } catch (error) {
       console.error("Error during prompt submission:", error);
       toast.error(
-        `Failed to send message: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        t('promptWrapper.failedToSend', {
+          error: error instanceof Error ? error.message : String(error),
+        })
       );
     } finally {
       setIsSubmitting(false);
@@ -266,6 +267,7 @@ export const PromptWrapper: React.FC<PromptWrapperProps> = ({
     isSubmitting,
     submitTurnData,
     currentModelIdFromPromptStore,
+    t,
   ]);
 
   const moveQueueItem = useCallback((id: string, direction: -1 | 1) => {

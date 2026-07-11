@@ -194,7 +194,12 @@ export class AIService {
 
       // Extract final reasoning from the result object if available
       if (streamResult?.reasoningText) {
-        finalReasoning = await streamResult.reasoningText;
+        try {
+          finalReasoning = await streamResult.reasoningText;
+        } catch (reasoningError) {
+          console.warn("[AIService] Failed to extract reasoning text:", reasoningError);
+          finalReasoning = undefined;
+        }
       }
 
       // Call onFinish callback *after* the stream is done

@@ -56,7 +56,7 @@ export const StructuredOutputControl: React.FC<
       module.setStructuredOutputJson(entryJson.trim() || null);
       setPopoverOpen(false);
       toast.success("Structured output applied for next turn.");
-    } catch (e) {
+    } catch (_e) {
       toast.error("Invalid JSON format.");
     }
   }, [entryJson, module]);
@@ -83,7 +83,7 @@ export const StructuredOutputControl: React.FC<
       setLibraryItems((prev) => [...prev, newItem]);
       setEntryName("");
       toast.success(`"${newItem.name}" saved to library.`);
-    } catch (e) {
+    } catch (_e) {
       toast.error("Cannot save invalid JSON to library.");
     }
   }, [entryJson, entryName]);

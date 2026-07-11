@@ -6,6 +6,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -168,12 +169,15 @@ const SettingsGeneralComponent: React.FC = () => {
     form,
   ]);
 
-  const handleResetClick = () => {
-    if (
-      window.confirm(
-        t('generalSettings.resetConfirmation', "Are you sure you want to reset Streaming & Display settings to their defaults?")
-      )
-    ) {
+  const handleResetClick = async () => {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: t('generalSettings.resetConfirmationTitle', 'Reset settings'),
+      description: t('generalSettings.resetConfirmation', "Are you sure you want to reset Streaming & Display settings to their defaults?"),
+      confirmLabel: t('generalSettings.resetConfirm', 'Reset'),
+      cancelLabel: t('generalSettings.resetCancel', 'Cancel'),
+      destructive: true,
+    });
+    if (confirmed) {
       storeSetters.resetGeneralSettings();
     }
   };
@@ -381,10 +385,13 @@ const SettingsGeneralComponent: React.FC = () => {
             <TextField
               form={form}
               name="corsProxyUrl"
-              label="CORS Proxy URL"
+              label={t('generalSettings.corsProxyUrlLabel', 'CORS Proxy URL')}
               type="url"
               placeholder="https://your-cors-proxy.example/"
             />
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              {t('generalSettings.corsProxyWarning', 'Warning: When a CORS proxy is configured, all traffic routed through it — including git operations with personal access tokens — is visible to the proxy operator. Use a proxy you trust.')}
+            </p>
             
             <TextField
               form={form}

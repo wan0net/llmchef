@@ -201,7 +201,12 @@ export const gitCloneOp = async (
           try {
             await fsToUse.promises.rm(dir, { recursive: true, force: true });
           } catch (cleanupErr) {
-            console.warn("[VFS Git Op] Failed cleanup after branch attempt:", cleanupErr);
+            console.error("[VFS Git Op] Failed cleanup after branch attempt; aborting clone:", cleanupErr);
+            throw new Error(
+              `Failed to clean up partial clone for branch ${defaultBranch}: ${
+                cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr)
+              }`
+            );
           }
         }
       }
@@ -242,6 +247,11 @@ export const gitCloneOp = async (
     const currentLocalBranch = await git
       .currentBranch({ fs: fsToUse, dir, fullname: false })
       .catch(() => null);
+    if (currentLocalBranch === null) {
+      throw new Error(
+        `Cloned repository is in detached HEAD state; expected branch ${branchToCheckout}`
+      );
+    }
     if (currentLocalBranch !== branchToCheckout) {
       console.warn("[VFS Git Op] Cloned repo HEAD is at ", currentLocalBranch, ", expected ", branchToCheckout, ". Checking out...",
       );
@@ -342,8 +352,16 @@ export const gitEnsureBranchOp = async (
 
     try {
       await git.checkout({ fs: fsToUse, dir, ref: branch });
-    } catch {
-      await git.branch({ fs: fsToUse, dir, ref: branch, checkout: true });
+    } catch (checkoutError: any) {
+      if (
+        checkoutError?.name === "NotFoundError" ||
+        checkoutError?.code === "NotFoundError" ||
+        checkoutError?.code === "BranchNotFoundError"
+      ) {
+        await git.branch({ fs: fsToUse, dir, ref: branch, checkout: true });
+      } else {
+        throw checkoutError;
+      }
     }
   } catch (err: unknown) {
     console.error("[VFS Git Op] Git branch setup failed for %s:", dir, err);

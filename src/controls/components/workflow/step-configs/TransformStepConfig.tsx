@@ -21,7 +21,7 @@ export const TransformStepConfig: React.FC<BaseStepConfigProps> = ({
         return { isValid: true, result: 'JSONPath query' };
       }
       return { isValid: false, error: 'Query must start with $.' };
-    } catch (error) {
+    } catch (_error) {
       return { isValid: false, error: 'Invalid query format' };
     }
   };

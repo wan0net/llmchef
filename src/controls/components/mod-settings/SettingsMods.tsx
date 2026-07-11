@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useShallow } from "zustand/react/shallow";
 import { useModStore } from "@/store/mod.store";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 const SettingsModsComponent: React.FC = () => {
   const { loadedMods, addDbMod, updateDbMod, deleteDbMod, dbMods, isLoading } =
@@ -44,6 +45,7 @@ const SettingsModsComponent: React.FC = () => {
   const [modName, setModName] = useState("");
   const [modUrl, setModUrl] = useState("");
   const [modScript, setModScript] = useState("");
+  const [modIntegrity, setModIntegrity] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [isUpdating, setIsUpdating] = useState<Record<string, boolean>>({});
   const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
@@ -70,18 +72,20 @@ const SettingsModsComponent: React.FC = () => {
         scriptContent: modScript.trim() || null,
         enabled: true,
         loadOrder: (dbMods?.length ?? 0 + 1) * 10,
+        integrity: modIntegrity.trim() || null,
       };
       await addDbMod(modData);
       setModName("");
       setModUrl("");
       setModScript("");
+      setModIntegrity("");
       toast.info("Mod added. Reload required for changes to take effect.");
     } catch (error) {
       console.error("Failed to add mod (from component):", error);
     } finally {
       setIsAdding(false);
     }
-  }, [modName, modUrl, modScript, addDbMod, dbMods?.length]);
+  }, [modName, modUrl, modScript, modIntegrity, addDbMod, dbMods?.length]);
 
   const handleToggleEnable = useCallback(
     async (mod: DbMod) => {
@@ -103,11 +107,14 @@ const SettingsModsComponent: React.FC = () => {
 
   const handleDeleteMod = useCallback(
     async (mod: DbMod) => {
-      if (
-        !window.confirm(
-          `Are you sure you want to delete the mod "${mod.name}"? This cannot be undone.`,
-        )
-      ) {
+      const confirmed = await ConfirmDialogService.confirm({
+        title: "Delete mod",
+        description: `Are you sure you want to delete the mod "${mod.name}"? This cannot be undone.`,
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+        destructive: true,
+      });
+      if (!confirmed) {
         return;
       }
       setIsDeleting((prev) => ({ ...prev, [mod.id]: true }));
@@ -191,6 +198,19 @@ const SettingsModsComponent: React.FC = () => {
             value={modUrl}
             onChange={(e) => setModUrl(e.target.value)}
             placeholder="https://example.com/my-mod.js"
+            disabled={isAdding || !!modScript.trim()}
+          />
+          <p className="text-xs text-muted-foreground">
+            Only scripts from allowed CDNs are loaded. Provide an integrity hash (sha384-…) for SRI verification.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="mod-integrity">Integrity Hash (Optional)</Label>
+          <Input
+            id="mod-integrity"
+            value={modIntegrity}
+            onChange={(e) => setModIntegrity(e.target.value)}
+            placeholder="sha384-..."
             disabled={isAdding || !!modScript.trim()}
           />
         </div>

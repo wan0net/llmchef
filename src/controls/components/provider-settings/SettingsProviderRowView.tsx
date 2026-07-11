@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { ModelEnablementList } from "./ModelEnablementList";
 import { toast } from "sonner";
 import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
+import { useTranslation } from "react-i18next";
 
 type FetchStatus = "idle" | "fetching" | "error" | "success";
 
@@ -61,6 +62,7 @@ const ProviderRowViewModeComponent: React.FC<ProviderRowViewModeProps> = ({
   // onSelectModelForDetails,
   allAvailableModelsForView,
 }) => {
+  const { t } = useTranslation('settings');
   const [isModelListFolded, setIsModelListFolded] = useState(true);
 
   const needsKey = requiresApiKey(provider.type);
@@ -130,10 +132,10 @@ const ProviderRowViewModeComponent: React.FC<ProviderRowViewModeProps> = ({
               </TooltipTrigger>
               <TooltipContent side="top">
                 {fetchStatus === "error"
-                  ? "Error fetching models"
+                  ? t('provider.status.errorFetching')
                   : provider.isEnabled
-                  ? "Enabled"
-                  : "Disabled"}
+                  ? t('provider.status.enabled')
+                  : t('provider.status.disabled')}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -150,7 +152,7 @@ const ProviderRowViewModeComponent: React.FC<ProviderRowViewModeProps> = ({
                   <AlertCircleIcon className="h-4 w-4 text-amber-500 flex-shrink-0" />
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  <p>API Key required but none linked/found.</p>
+                  <p>{t('provider.apiKeyRequiredTooltip')}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -158,19 +160,19 @@ const ProviderRowViewModeComponent: React.FC<ProviderRowViewModeProps> = ({
         </div>
         <div className="flex items-center space-x-1 flex-shrink-0">
           <ActionTooltipButton
-            tooltipText="Edit"
+            tooltipText={t('provider.edit')}
             onClick={onEdit}
             disabled={isEditButtonDisabled}
-            aria-label="Edit provider"
+            aria-label={t('provider.editAriaLabel')}
             icon={<Edit2Icon />}
             className="h-8 w-8"
           />
           <ActionTooltipButton
-            tooltipText="Delete"
+            tooltipText={t('provider.delete')}
             onClick={onDelete}
             disabled={isDeleteButtonDisabled}
             className="text-destructive hover:text-destructive/80 h-8 w-8"
-            aria-label="Delete provider"
+            aria-label={t('provider.deleteAriaLabel')}
             icon={
               isDeleting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -185,35 +187,35 @@ const ProviderRowViewModeComponent: React.FC<ProviderRowViewModeProps> = ({
       <div className="text-sm text-muted-foreground mt-1 space-y-1 pl-5">
         {needsKey && (
           <div>
-            API Key:{" "}
+            {t('provider.apiKeyLabel')}{" "}
             {provider.apiKeyId ? (
               apiKeyLinked ? (
                 <span className="text-green-400">
                   {apiKeys.find((k) => k.id === provider.apiKeyId)?.name ||
-                    "Linked (Unnamed Key)"}
+                    t('provider.linkedUnnamedKey')}
                 </span>
               ) : (
-                <span className="text-destructive">Linked Key Missing!</span>
+                <span className="text-destructive">{t('provider.linkedKeyMissing')}</span>
               )
             ) : (
-              <span className="text-amber-400">Not Linked</span>
+              <span className="text-amber-400">{t('provider.notLinked')}</span>
             )}
           </div>
         )}
-        {needsURL && <div>Base URL: {provider.baseURL || "Not Set"}</div>}
+        {needsURL && <div>{t('provider.baseUrlLabel')} {provider.baseURL || t('provider.notSet')}</div>}
         <div>
-          Auto-fetch Models:{" "}
+          {t('provider.autoFetchModelsLabel')}{" "}
           {provider.autoFetchModels ? (
-            <span className="text-green-400">Enabled</span>
+            <span className="text-green-400">{t('provider.enabled')}</span>
           ) : (
-            <span className="text-muted-foreground/80">Disabled</span>
+            <span className="text-muted-foreground/80">{t('provider.disabled')}</span>
           )}
           {provider.fetchedModels && (
             <span className="text-xs text-muted-foreground/80 ml-2">
-              (Last fetched:{" "}
+              ({t('provider.lastFetched')}{" "}
               {provider.modelsLastFetchedAt
                 ? new Date(provider.modelsLastFetchedAt).toLocaleString()
-                : "Never"}
+                : t('provider.never')}
               )
             </span>
           )}
@@ -240,10 +242,10 @@ const ProviderRowViewModeComponent: React.FC<ProviderRowViewModeProps> = ({
                 <RefreshCwIcon className="h-3 w-3 mr-1" />
               )}
               {fetchStatus === "fetching"
-                ? "Fetching..."
+                ? t('provider.fetching')
                 : fetchStatus === "error"
-                ? "Fetch Failed"
-                : "Fetch Models Now"}
+                ? t('provider.fetchFailed')
+                : t('provider.fetchModelsNow')}
             </Button>
           </div>
         )}
@@ -252,13 +254,13 @@ const ProviderRowViewModeComponent: React.FC<ProviderRowViewModeProps> = ({
       <div className="space-y-1 pt-2">
         <div className="flex items-center justify-between">
           <span className="font-medium text-card-foreground text-sm">
-            Model Enablement ({enabledCount} / {availableCount} enabled)
+            {t('provider.modelEnablement', { enabledCount, availableCount })}
           </span>
           <ActionTooltipButton
-            tooltipText={isModelListFolded ? "Show Models" : "Hide Models"}
+            tooltipText={isModelListFolded ? t('provider.showModels') : t('provider.hideModels')}
             onClick={toggleFold}
             aria-label={
-              isModelListFolded ? "Show model list" : "Hide model list"
+              isModelListFolded ? t('provider.showModelsAria') : t('provider.hideModelsAria')
             }
             icon={isModelListFolded ? <ChevronDownIcon /> : <ChevronUpIcon />}
             className="h-6 w-6"

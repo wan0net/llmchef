@@ -164,6 +164,13 @@ export const ConversationItemRenderer = memo<ConversationItemProps>(
       onSelectItem(item.id, item.itemType);
     };
 
+    const handleItemKeyDown = (e: React.KeyboardEvent<HTMLLIElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleItemClick();
+      }
+    };
+
     const handleDeleteClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       onDeleteItem(item, e);
@@ -248,23 +255,33 @@ export const ConversationItemRenderer = memo<ConversationItemProps>(
         )}
         style={{ paddingLeft: `${0.375 + level * 0.75}rem` }}
         onClick={handleItemClick}
+        onKeyDown={!isGloballyEditingThis ? handleItemKeyDown : undefined}
+        role={!isGloballyEditingThis ? "button" : undefined}
+        tabIndex={!isGloballyEditingThis ? 0 : undefined}
+        aria-selected={isSelected}
         title={!isGloballyEditingThis ? displayName : ""}
       >
         <div className="flex items-center min-w-0 gap-1 flex-grow mr-1">
           {canExpand && (
-            <span
-              className="flex-shrink-0 w-3 cursor-pointer p-0.5 -ml-0.5"
+            <button
+              type="button"
+              className="flex-shrink-0 w-3 cursor-pointer p-0.5 -ml-0.5 bg-transparent border-0"
               onClick={(e) => {
                 e.stopPropagation();
                 toggleProjectExpansion(item.id);
               }}
+              aria-expanded={isExpanded}
+              aria-label={t('itemRenderer.toggleProject', {
+                name: displayName,
+                defaultValue: `Toggle project ${displayName}`,
+              })}
             >
               {isExpanded ? (
                 <ChevronDownIcon className="h-3 w-3 text-muted-foreground" />
               ) : (
                 <ChevronRightIcon className="h-3 w-3 text-muted-foreground" />
               )}
-            </span>
+            </button>
           )}
           {!canExpand && <span className="w-3 flex-shrink-0" />}
           {isProject ? (
@@ -423,9 +440,9 @@ export const ConversationItemRenderer = memo<ConversationItemProps>(
                 </>
               )}
               <ActionTooltipButton
-                tooltipText={t('itemRenderer.delete', 'Delete')}
+                tooltipText={t('itemRenderer.deleteItem', { name: displayName })}
                 onClick={handleDeleteClick}
-                aria-label={t('itemRenderer.delete', 'Delete')}
+                aria-label={t('itemRenderer.deleteItem', { name: displayName })}
                 icon={<Trash2Icon />}
                 className="hover:bg-destructive/20 hover:text-destructive"
               />

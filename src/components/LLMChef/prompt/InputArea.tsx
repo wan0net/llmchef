@@ -61,24 +61,30 @@ export const InputArea = memo(
   const [cursorCoords, setCursorCoords] = useState({ x: 0, y: 0 });
   const [textareaStyles, setTextareaStyles] = useState<CSSStyleDeclaration | null>(null);
   const setPromptInputValue = usePromptInputValueStore((state) => state.setValue);
-  const settings = useSettingsStore();
+  const { textTriggerStartDelimiter, textTriggerEndDelimiter } = useSettingsStore(
+    (state) => ({
+      textTriggerStartDelimiter: state.textTriggerStartDelimiter,
+      textTriggerEndDelimiter: state.textTriggerEndDelimiter,
+    })
+  );
+  const textTriggersEnabled = useSettingsStore((state) => state.textTriggersEnabled);
   const currentModelIdFromPromptStore = usePromptStateStore((state) => state.modelId);
   const { t } = useTranslation('prompt');      if (!placeholder || placeholder === "") {
-        placeholder = t('inputAreaPlaceholder');
-      }
+    placeholder = t('inputAreaPlaceholder');
+  }
 
-      // Initialize parser service and register namespaces
-      const parserService = useMemo(
-        () =>
-          new TextTriggerParserService(
-            settings.textTriggerStartDelimiter,
-            settings.textTriggerEndDelimiter
-          ),
-        [settings.textTriggerStartDelimiter, settings.textTriggerEndDelimiter]
-      );
+  // Initialize parser service and register namespaces
+  const parserService = useMemo(
+    () =>
+      new TextTriggerParserService(
+        textTriggerStartDelimiter,
+        textTriggerEndDelimiter
+      ),
+    [textTriggerStartDelimiter, textTriggerEndDelimiter]
+  );
       
-      // Parser service now gets namespaces directly from the control registry
-      const controlRegistry = useControlRegistryStore();
+  // Parser service now gets namespaces directly from the control registry
+  const getTextTriggerNamespaces = useControlRegistryStore((state) => state.getTextTriggerNamespaces);
 
       useImperativeHandle(ref, () => ({
         
@@ -161,8 +167,8 @@ export const InputArea = memo(
 
       const getAutocompleteSuggestions = (): AutocompleteSuggestion[] => {
         const textBeforeCursor = internalValue.slice(0, cursorPosition);
-        const startDelim = settings.textTriggerStartDelimiter;
-        const endDelim = settings.textTriggerEndDelimiter;
+        const startDelim = textTriggerStartDelimiter;
+        const endDelim = textTriggerEndDelimiter;
         
         // Escape special regex characters in delimiters
         const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -176,7 +182,7 @@ export const InputArea = memo(
           const namespaceId = argMatch[1];
           const methodId = argMatch[2];
           const argsStr = argMatch[3] || '';
-          const registeredNamespaces = controlRegistry.getTextTriggerNamespaces();
+          const registeredNamespaces = getTextTriggerNamespaces();
           const namespace = Object.values(registeredNamespaces).find(ns => ns.id === namespaceId);
           if (!namespace) return [];
           const method = namespace.methods[methodId];
@@ -210,7 +216,7 @@ export const InputArea = memo(
         const triggerMatch = textBeforeCursor.match(triggerPattern);
         if (!triggerMatch) return [];
         const partial = triggerMatch[1].toLowerCase();
-        const registeredNamespaces = controlRegistry.getTextTriggerNamespaces();
+        const registeredNamespaces = getTextTriggerNamespaces();
         const namespaces = Object.values(registeredNamespaces);
         const suggestions: Array<MethodSuggestion> = [];
         namespaces.forEach(namespace => {
@@ -262,8 +268,8 @@ export const InputArea = memo(
               } else if (suggestion.type === 'arg') {
                 // Insert argument suggestion at cursor (same as keyboard handler)
                 const textBeforeCursor = internalValue.slice(0, cursorPosition);
-                const startDelim = settings.textTriggerStartDelimiter;
-                const endDelim = settings.textTriggerEndDelimiter;
+                const startDelim = textTriggerStartDelimiter;
+                const endDelim = textTriggerEndDelimiter;
                 const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const escapedStart = escapeRegex(startDelim);
                 const escapedEnd = escapeRegex(endDelim);
@@ -327,7 +333,7 @@ export const InputArea = memo(
       };
 
       const parseTriggers = useCallback((text: string) => {
-        if (!settings.textTriggersEnabled) {
+        if (!textTriggersEnabled) {
           setTriggers([]);
           return;
         }
@@ -339,7 +345,7 @@ export const InputArea = memo(
           console.warn('Error parsing triggers:', error);
           setTriggers([]);
         }
-      }, [parserService, settings.textTriggersEnabled]);
+      }, [parserService, textTriggersEnabled]);
 
       const handleTextareaChange = (
         e: React.ChangeEvent<HTMLTextAreaElement>
@@ -363,8 +369,8 @@ export const InputArea = memo(
 
         // Check for autocomplete - show when typing after start delimiter OR when typing arguments
         const textBeforeCursor = newValue.slice(0, cursorPos);
-        const startDelim = settings.textTriggerStartDelimiter;
-        const endDelim = settings.textTriggerEndDelimiter;
+        const startDelim = textTriggerStartDelimiter;
+        const endDelim = textTriggerEndDelimiter;
         const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const escapedStart = escapeRegex(startDelim);
         const escapedEnd = escapeRegex(endDelim);
@@ -411,7 +417,7 @@ export const InputArea = memo(
       // Parse triggers when value changes
       useEffect(() => {
         parseTriggers(internalValue);
-      }, [internalValue, settings.textTriggersEnabled, parseTriggers]);
+      }, [internalValue, textTriggersEnabled, parseTriggers]);
 
 
 
@@ -445,7 +451,7 @@ export const InputArea = memo(
       }, [onValueChange, setPromptInputValue]);
 
       const renderHighlightedText = () => {
-        if (!settings.textTriggersEnabled || triggers.length === 0) {
+        if (!textTriggersEnabled || triggers.length === 0) {
           return null;
         }
 
@@ -496,7 +502,7 @@ export const InputArea = memo(
 
       const handleAutocompleteSelect = (suggestion: { namespace: string; method: string }) => {
         const textBeforeCursor = internalValue.slice(0, cursorPosition);
-        const startDelim = settings.textTriggerStartDelimiter;
+        const startDelim = textTriggerStartDelimiter;
         const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const escapedStart = escapeRegex(startDelim);
         const triggerPattern = new RegExp(`${escapedStart}([a-zA-Z]*)$`);
@@ -530,7 +536,7 @@ export const InputArea = memo(
       return (
         <div className="relative w-full flex-grow">
           {/* Highlighting overlay */}
-          {settings.textTriggersEnabled && triggers.length > 0 && (
+          {textTriggersEnabled && triggers.length > 0 && (
             <div
               ref={highlightRef}
               style={{
@@ -595,7 +601,7 @@ export const InputArea = memo(
           />
 
           {/* Autocomplete dropdown */}
-          {showAutocomplete && settings.textTriggersEnabled && (
+          {showAutocomplete && textTriggersEnabled && (
             <div
               style={{
                 position: 'absolute',
@@ -628,8 +634,8 @@ export const InputArea = memo(
                     } else if (suggestion.type === 'arg') {
                       // Insert argument suggestion at cursor (same as keyboard handler)
                       const textBeforeCursor = internalValue.slice(0, cursorPosition);
-                      const startDelim = settings.textTriggerStartDelimiter;
-                      const endDelim = settings.textTriggerEndDelimiter;
+                      const startDelim = textTriggerStartDelimiter;
+                      const endDelim = textTriggerEndDelimiter;
                       const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                       const escapedStart = escapeRegex(startDelim);
                       const escapedEnd = escapeRegex(endDelim);

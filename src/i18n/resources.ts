@@ -10,6 +10,7 @@ import tools_en from '../locales/en/tools.json';
 import renderers_en from '../locales/en/renderers.json';
 import welcome_en from '../locales/en/welcome.json';
 import assistantSettings_en from '../locales/en/assistantSettings.json';
+import documents_en from '../locales/en/documents.json';
 
 // Add other languages as needed
 import common_fr from '../locales/fr/common.json';
@@ -81,6 +82,7 @@ export const resources = {
     renderers: renderers_en,
     welcome: welcome_en,
     assistantSettings: assistantSettings_en,
+    documents: documents_en,
   },
   fr: {
     common: common_fr,

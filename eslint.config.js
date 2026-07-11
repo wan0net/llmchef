@@ -34,11 +34,18 @@ export default tseslint.config(
       "@typescript-eslint/ban-ts-comment": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-namespace": "off",
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
       "no-case-declarations": "off",
-      "no-useless-catch": "off",
+      "no-useless-catch": "error",
       "no-useless-escape": "off",
-      "prefer-const": "off",
+      "prefer-const": "error",
     },
   },
 );

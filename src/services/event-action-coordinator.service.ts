@@ -43,6 +43,7 @@ const storesWithActionHandlers = [
 
 export class EventActionCoordinatorService {
   private static isInitialized = false;
+  private static registeredHandlers: RegisteredActionHandler<any>[] = [];
 
   public static initialize(): void {
     if (this.isInitialized) {
@@ -104,9 +105,28 @@ export class EventActionCoordinatorService {
       });
     }
 
+    this.registeredHandlers = allActionHandlers;
     this.isInitialized = true;
     console.log(
       `[Coordinator] Dynamic event listeners initialized. Total handlers: ${allActionHandlers.length}.`
     );
+  }
+
+  public static destroy(): void {
+    if (!this.isInitialized) {
+      return;
+    }
+    this.registeredHandlers.forEach((registeredHandler) => {
+      if (
+        registeredHandler &&
+        registeredHandler.eventName &&
+        typeof registeredHandler.handler === "function"
+      ) {
+        emitter.off(registeredHandler.eventName, registeredHandler.handler);
+      }
+    });
+    this.registeredHandlers = [];
+    this.isInitialized = false;
+    console.log("[Coordinator] Dynamic event listeners destroyed.");
   }
 }

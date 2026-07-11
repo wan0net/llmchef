@@ -203,7 +203,12 @@ export const useProviderStore = create(
 
     setEnableApiKeyManagement: (enabled) => {
       set({ enableApiKeyManagement: enabled });
-      PersistenceService.saveSetting("enableApiKeyManagement", enabled);
+      PersistenceService.saveSetting("enableApiKeyManagement", enabled).catch(
+        (error) => {
+          console.error("ProviderStore: Failed to save enableApiKeyManagement:", error);
+          toast.error("Failed to save API key management setting");
+        }
+      );
       emitter.emit(providerEvent.enableApiKeyManagementChanged, {
         enabled,
       });
@@ -288,7 +293,12 @@ export const useProviderStore = create(
       const currentId = get().selectedModelId;
       if (currentId !== combinedId) {
         set({ selectedModelId: combinedId });
-        PersistenceService.saveSetting(LAST_SELECTION_KEY, combinedId);
+        PersistenceService.saveSetting(LAST_SELECTION_KEY, combinedId).catch(
+          (error) => {
+            console.error("ProviderStore: Failed to save selected model:", error);
+            toast.error("Failed to save selected model");
+          }
+        );
         emitter.emit(providerEvent.selectedModelChanged, {
           modelId: combinedId,
         });

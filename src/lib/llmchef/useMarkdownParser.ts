@@ -22,11 +22,22 @@ export type ParsedContent = (string | UniversalBlockData | MdxComponentData)[];
 
 // Create a MarkdownIt parser instance with desired options
 const md = new MarkdownIt({
-  html: true,
+  html: false,
   linkify: true,
   breaks: true,
   typographer: false,
 });
+
+// Open external links in a new tab and mark them for rel normalization.
+const defaultLinkOpen = md.renderer.rules.link_open ?? ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options));
+md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+  const token = tokens[idx];
+  const href = token.attrGet("href");
+  if (href && /^https?:\/\//.test(href)) {
+    token.attrSet("target", "_blank");
+  }
+  return defaultLinkOpen(tokens, idx, options, env, self);
+};
 
 const parseMdxProps = (rawProps: string): Record<string, string> => {
   const props: Record<string, string> = {};

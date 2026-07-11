@@ -21,7 +21,6 @@ export const DateField: React.FC<BaseFieldProps> = ({
   labelClassName,
   wrapperClassName,
 }) => {
-  const name = fieldApi.name;
   const isDisabled = fieldApi.form?.state?.isSubmitting ?? false;
   const hasErrors = fieldApi.state?.meta?.isTouched && fieldApi.state?.meta?.errors?.length > 0;
 

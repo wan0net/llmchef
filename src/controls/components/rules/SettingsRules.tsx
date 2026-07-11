@@ -81,7 +81,7 @@ export const SettingsRules: React.FC<SettingsRulesProps> = ({ module }) => {
           module.addRule(data);
         }
         handleCancel();
-      } catch (error) {
+      } catch (_error) {
         // Error handled by store/emitter
       } finally {
         setIsSaving(false);
@@ -99,7 +99,7 @@ export const SettingsRules: React.FC<SettingsRulesProps> = ({ module }) => {
         if (editingRule?.id === id) {
           handleCancel();
         }
-      } catch (error) {
+      } catch (_error) {
         // Error handled by store/emitter
       } finally {
         setIsDeleting((prev) => ({ ...prev, [id]: false }));

@@ -39,6 +39,7 @@ import type { ProjectSettingsControlModule } from "@/controls/modules/ProjectSet
 
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 
 interface ProjectSettingsModalProps {
   isOpen: boolean;
@@ -64,6 +65,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   module,
   initialTab,
 }) => {
+  const { t } = useTranslation('settings');
   const { getProjectById, updateProject } = useProjectStore(
     useShallow((state) => ({
       getProjectById: state.getProjectById,
@@ -120,7 +122,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       maxTokens: project?.maxTokens ?? null,
       topK: project?.topK ?? null,
       presencePenalty: project?.presencePenalty ?? 0.0,
-      frequencyPenalty: project?.presencePenalty ?? 0.0,
+      frequencyPenalty: project?.frequencyPenalty ?? 0.0,
       // todo: topK: project.topK,
     },
     validators: {
@@ -479,7 +481,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
     () => [
       {
         value: "prompt",
-        label: "Prompt & Model",
+        label: t('projectSettings.tabs.prompt', 'Prompt & Model'),
         content: (
           <ProjectSettingsPrompt
             initialSystemPrompt={systemPrompt}
@@ -499,7 +501,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       },
       {
         value: "params",
-        label: "Parameters",
+        label: t('projectSettings.tabs.params', 'Parameters'),
         content: (
           <ProjectSettingsParams
             form={paramsForm}
@@ -529,7 +531,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       },
       {
         value: "rules-tags",
-        label: "Rules & Tags",
+        label: t('projectSettings.tabs.rulesTags', 'Rules & Tags'),
         content: (
           <div className="space-y-6">
             <ProjectSettingsRules
@@ -550,7 +552,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       },
       {
         value: "sync",
-        label: "Sync",
+        label: t('projectSettings.tabs.sync', 'Sync'),
         content: (
           <ProjectSettingsSync
             initialSyncRepoId={syncRepoId}
@@ -570,7 +572,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       },
       {
         value: "vfs",
-        label: "Filesystem",
+        label: t('projectSettings.tabs.vfs', 'Filesystem'),
         content: (
           <ProjectSettingsVfs
             projectId={projectId}
@@ -601,6 +603,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
       projectId,
       project?.name,
       module,
+      t,
     ]
   );
 
@@ -615,10 +618,9 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
         )}
       >
         <DialogHeader className="p-2 md:p-3 pb-1 md:pb-2 flex-shrink-0">
-          <DialogTitle className="p-2">Project Settings: {project?.name}</DialogTitle>
+          <DialogTitle className="p-2">{t('projectSettings.title', { name: project?.name ?? '' })}</DialogTitle>
           <DialogDescription>
-            Configure default settings for this project. Settings inherit from
-            parent projects or global defaults if not set here.
+            {t('projectSettings.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -634,11 +636,11 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
 
         <DialogFooter className="flex-shrink-0 border-t p-2 md:p-3 pt-1 md:pt-2 mt-auto">
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
-            Cancel
+            {t('projectSettings.cancel', 'Cancel')}
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Project Settings
+            {t('projectSettings.save', 'Save Project Settings')}
           </Button>
         </DialogFooter>
       </DialogContent>

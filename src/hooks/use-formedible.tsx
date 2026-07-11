@@ -220,14 +220,10 @@ export function useFormedible<TFormValues extends Record<string, any>>(
     }),
     ...(resetOnSubmitSuccess && formOptions?.onSubmit && {
       onSubmit: async (props: any) => {
-        try {
-          const result = await formOptions.onSubmit!(props);
-          // Reset form on successful submit if option is enabled
-          form.reset();
-          return result;
-        } catch (error) {
-          throw error;
-        }
+        const result = await formOptions.onSubmit!(props);
+        // Reset form on successful submit if option is enabled
+        form.reset();
+        return result;
       }
     })
   };

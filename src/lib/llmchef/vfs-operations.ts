@@ -538,13 +538,9 @@ export const stat = async (
 ): Promise<Stats> => {
   const fsToUse = options?.fsInstance ?? fs;
   const normalized = normalizePath(path);
-  try {
-    return await fsToUse.promises.stat(normalized);
-  } catch (err: unknown) {
-    // This is often used for existence checks, so don't toast on error.
-    // Let the calling function decide how to handle a "not found" error.
-    throw err;
-  }
+  // This is often used for existence checks, so don't toast on error.
+  // Let the calling function decide how to handle a "not found" error.
+  return await fsToUse.promises.stat(normalized);
 };
 
 export const rmdirRecursive = async (

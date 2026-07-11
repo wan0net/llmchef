@@ -13,7 +13,6 @@ import { useProviderStore } from "@/store/provider.store";
 import { useConversationStore } from "@/store/conversation.store";
 import { useVfsStore } from "@/store/vfs.store";
 import { useSettingsStore } from "@/store/settings.store";
-import { usePromptStateStore } from "@/store/prompt.store";
 import { PersistenceService } from "./persistence.service";
 import { runMiddleware, getContextSnapshot } from "@/lib/llmchef/ai-helpers";
 import {
@@ -44,7 +43,6 @@ import {
 import type { fs } from "@zenfs/core";
 import { conversationEvent } from "@/types/llmchef/events/conversation.events";
 import { APP_VFS_KEY } from "@/lib/llmchef/constants";
-import { vfsEvent } from "@/types/llmchef/events/vfs.events";
 import { canvasEvent,} from "@/types/llmchef/events/canvas.events";
 import { providerEvent } from "@/types/llmchef/events/provider.events";
 import { ConversationService } from "@/services/conversation.service";
@@ -237,23 +235,14 @@ export const InteractionService = {
         try {
           this._pendingRegenerations.add(interactionId);
           
-          // Store the current model ID to restore later
-          const promptState = usePromptStateStore.getState();
-          const originalModelId = promptState.modelId;
-          
-          console.log(`[InteractionService] Temporarily setting model to ${modelId} for regeneration`);
-          
-          // Temporarily set the selected model for regeneration
-          promptState.setModelId(modelId);
+          console.log(`[InteractionService] Regenerating with model ${modelId}`);
           
           try {
             // console.log(`[InteractionService] Starting ConversationService.regenerateInteraction for ${interactionId} with model ${modelId}`);
-            await ConversationService.regenerateInteraction(interactionId);
+            await ConversationService.regenerateInteraction(interactionId, { modelId });
             // console.log(`[InteractionService] Finished ConversationService.regenerateInteraction for ${interactionId}`);
           } finally {
-            // Always restore the original model ID, whether success or failure
-            console.log(`[InteractionService] Restoring original model ${originalModelId}`);
-            promptState.setModelId(originalModelId);
+            this._pendingRegenerations.delete(interactionId);
           }
           
         } catch (error) {
@@ -317,10 +306,6 @@ export const InteractionService = {
         }
 
         try {
-          // Store the current model ID to restore later
-          const promptState = usePromptStateStore.getState();
-          const originalModelId = promptState.modelId;
-          
           console.log(`[InteractionService] Starting race with ${modelIds.length} models`);
           toast.info(`Starting race with ${modelIds.length} models...`);
 
@@ -329,11 +314,8 @@ export const InteractionService = {
             return new Promise((resolve) => {
               setTimeout(async () => {
                 try {
-                  // Set the model for this specific race
-                  promptState.setModelId(modelId);
-                  
                   // console.log(`[InteractionService] Starting race participant ${index + 1}/${modelIds.length} with model ${modelId}`);
-                  await ConversationService.regenerateInteraction(interactionId);
+                  await ConversationService.regenerateInteraction(interactionId, { modelId });
                   // console.log(`[InteractionService] Race participant ${index + 1} finished`);
                   resolve({ success: true, modelId, index });
                 } catch (error) {
@@ -346,9 +328,6 @@ export const InteractionService = {
 
           // Wait for all race participants to complete
           const results = await Promise.all(racePromises);
-          
-          // Restore original model
-          promptState.setModelId(originalModelId);
           
           const successCount = results.filter(r => (r as any).success).length;
           const failCount = results.length - successCount;
@@ -656,11 +635,15 @@ export const InteractionService = {
         `[InteractionService] Added ${interactionType} interaction ${interactionId} to state.`
       );
     }
-    PersistenceService.saveInteraction({ ...interaction }).catch((e) => {
+    try {
+      await PersistenceService.saveInteraction({ ...interaction });
+    } catch (e) {
       console.error("[InteractionService] Failed initial persistence for ", interactionId,
         e
       );
-    });
+      toast.error(`Failed to save interaction: ${e instanceof Error ? e.message : String(e)}`);
+      throw e;
+    }
 
     emitter.emit(interactionEvent.started, {
       interactionId,
@@ -788,18 +771,13 @@ export const InteractionService = {
                 description: toolInfo.definition.description,
                 inputSchema: (toolInfo.definition as any).parameters || toolInfo.definition.inputSchema,
                 execute: async (args: any) => {
-                const currentConvId =
-                  useInteractionStore.getState().currentConversationId;
                 const targetVfsKey = APP_VFS_KEY;
                 
                 let fsInstance: typeof fs | undefined | null;
                 try {
-                  emitter.emit(vfsEvent.initializeVFSRequest, {
-                    vfsKey: targetVfsKey,
-                    options: { force: true },
-                  });
-                  await new Promise((resolve) => setTimeout(resolve, 100)); 
-                  fsInstance = useVfsStore.getState().fs;
+                  fsInstance = await useVfsStore
+                    .getState()
+                    .initializeVFS(targetVfsKey, { force: true });
                   if (
                     useVfsStore.getState().configuredVfsKey !== targetVfsKey ||
                     !fsInstance
@@ -1438,13 +1416,15 @@ export const InteractionService = {
       //     finalInteractionState.response?.length ?? 0
       //   }`
       // );
-      PersistenceService.saveInteraction({ ...finalInteractionState }).catch(
-        (e) => {
-          console.error("[InteractionService] Failed final persistence for ", interactionId,
-            e
-          );
-        }
-      );
+      try {
+        await PersistenceService.saveInteraction({ ...finalInteractionState });
+      } catch (e) {
+        console.error("[InteractionService] Failed final persistence for ", interactionId,
+          e
+        );
+        toast.error(`Failed to save final interaction state: ${e instanceof Error ? e.message : String(e)}`);
+        throw e;
+      }
     } else {
       console.error(
         `[InteractionService] CRITICAL - Could not find final state for interaction ${interactionId} to persist.`

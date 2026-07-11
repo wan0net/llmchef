@@ -36,7 +36,6 @@ export const MultiSelectField: React.FC<MultiSelectFieldSpecificProps> = ({
     noOptionsText = 'No options found',
   } = multiSelectConfig;
 
-  const name = fieldApi.name;
   const selectedValues = Array.isArray(fieldApi.state?.value) ? fieldApi.state?.value : [];
   
   const [isOpen, setIsOpen] = useState(false);

@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { useSettingsStore } from "@/store/settings.store";
+import { GitCredentialDialogService } from "@/services/git-credential-dialog.service";
 
 import {
   createGitAuthRuntime,
@@ -12,30 +13,27 @@ import { createGitOperationOptionsBuilder } from "./vfs-git-operation-options";
 
 export interface BrowserGitOperationRuntimeDependencies {
   getSettingsState: () => GitSettingsSnapshot;
-  prompt: (message: string) => string | null;
+  promptForCredentials?: (url: string) => Promise<{ username: string; password: string } | null>;
   notifyError: (message: string) => void;
 }
 
 export const createBrowserGitOperationRuntime = ({
   getSettingsState,
-  prompt,
+  promptForCredentials,
   notifyError,
 }: BrowserGitOperationRuntimeDependencies) => {
   const gitAuthRuntime = createGitAuthRuntime({
     promptForCredentials: async (url) => {
-      const username = prompt(`Enter username for ${url}`);
-      if (!username) {
-        notifyError("Authentication cancelled: Username not provided.");
+      const credentials = promptForCredentials
+        ? await promptForCredentials(url)
+        : await GitCredentialDialogService.requestCredentials(url);
+
+      if (!credentials) {
+        notifyError("Authentication cancelled: Credentials not provided.");
         return null;
       }
 
-      const password = prompt(`Enter password or token for ${username}@${url}`);
-      if (!password) {
-        notifyError("Authentication cancelled: Password/token not provided.");
-        return null;
-      }
-
-      return { username, password };
+      return credentials;
     },
   });
 
@@ -59,6 +57,5 @@ export const createBrowserGitOperationRuntime = ({
 
 export const browserGitOperationRuntime = createBrowserGitOperationRuntime({
   getSettingsState: () => useSettingsStore.getState(),
-  prompt: (message) => window.prompt(message),
   notifyError: (message) => toast.error(message),
 });

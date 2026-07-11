@@ -10,8 +10,9 @@ describe("parseMarkdownContent", () => {
     expect(typeof html).toBe("string");
     expect(html).toContain("hello");
     expect(html).not.toContain("<img");
-    expect(html).not.toContain("onerror");
     expect(html).not.toContain("<script");
+    expect(html).toContain("&lt;img");
+    expect(html).toContain("&lt;script");
   });
 
   it("preserves fenced code as block data", () => {

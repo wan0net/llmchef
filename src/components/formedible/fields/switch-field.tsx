@@ -9,7 +9,6 @@ export const SwitchField: React.FC<BaseFieldProps> = ({
   fieldApi,
   label,
   description,
-  placeholder,
   inputClassName,
   labelClassName,
   wrapperClassName,

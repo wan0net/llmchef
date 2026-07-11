@@ -163,19 +163,19 @@ export class WorkflowFlowGenerator implements FlowContentGenerator {
       const models = providerState.getGloballyEnabledModelDefinitions();
       const model = models.find((m) => m.id === modelId);
       return model?.name || modelId;
-    } catch (error) {
+    } catch (_error) {
       return modelId;
     }
   }
 
   private getTemplateName(templateId?: string): string {
     if (!templateId) return 'No Template';
-    
+
     try {
       const { promptTemplates } = usePromptTemplateStore.getState();
       const template = promptTemplates.find(t => t.id === templateId);
       return template?.name || 'Unknown Template';
-    } catch (error) {
+    } catch (_error) {
       return 'Unknown Template';
     }
   }

@@ -103,8 +103,6 @@ export const ColorPickerField: React.FC<ColorPickerFieldSpecificProps> = ({
     allowCustom = true,
   } = colorConfig;
 
-  const name = fieldApi.name;
-  
   const value = (fieldApi.state?.value as string) || '#000000';
   
   const [isOpen, setIsOpen] = useState(false);

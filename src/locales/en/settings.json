@@ -37,6 +37,37 @@
       "browse": "Browse Models"
     }
   },
+  "provider": {
+    "status": {
+      "errorFetching": "Error fetching models",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "apiKeyRequiredTooltip": "API Key required but none linked/found.",
+    "edit": "Edit",
+    "editAriaLabel": "Edit provider",
+    "delete": "Delete",
+    "deleteAriaLabel": "Delete provider",
+    "apiKeyLabel": "API Key:",
+    "linkedUnnamedKey": "Linked (Unnamed Key)",
+    "linkedKeyMissing": "Linked Key Missing!",
+    "notLinked": "Not Linked",
+    "baseUrlLabel": "Base URL:",
+    "notSet": "Not Set",
+    "autoFetchModelsLabel": "Auto-fetch Models:",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "lastFetched": "Last fetched:",
+    "never": "Never",
+    "fetching": "Fetching...",
+    "fetchFailed": "Fetch Failed",
+    "fetchModelsNow": "Fetch Models Now",
+    "modelEnablement": "Model Enablement ({{enabledCount}} / {{availableCount}} enabled)",
+    "showModels": "Show Models",
+    "hideModels": "Hide Models",
+    "showModelsAria": "Show model list",
+    "hideModelsAria": "Hide model list"
+  },
   "modelEnablement": {
     "searchPlaceholder": "Filter models by name...",
     "noModelsAvailable": "No models available for this provider. Try fetching models.",
@@ -87,6 +118,9 @@
     "msInputLabel": "ms Input",
     "resetButton": "Reset Streaming & Display Settings",
     "resetConfirmation": "Are you sure you want to reset Streaming & Display settings to their defaults?",
+    "resetConfirmationTitle": "Reset settings",
+    "resetConfirm": "Reset",
+    "resetCancel": "Cancel",
     "validation": {
       "minFps": "Min 3 FPS",
       "maxFps": "Max 60 FPS",
@@ -99,7 +133,9 @@
     "autoScrollIntervalAriaLabel": "Auto Scroll Interval Value",
     "saving": "Saving...",
     "validating": "Validating...",
-    "saveChanges": "Save Changes"
+    "saveChanges": "Save Changes",
+    "corsProxyUrlLabel": "CORS Proxy URL",
+    "corsProxyWarning": "Warning: When a CORS proxy is configured, all traffic routed through it — including git operations with personal access tokens — is visible to the proxy operator. Use a proxy you trust."
   },
   "modelSelector": {
     "title": "Model Selection",
@@ -155,9 +191,19 @@
     "dangerZoneDescription": "These actions are destructive and cannot be undone. Proceed with caution.",
     "clearAllDataButton": "Clear All Local Data",
     "importConfirmation": "Importing this file will OVERWRITE existing data for the selected categories. Are you sure you want to proceed?",
+    "importConfirmationTitle": "Import data",
+    "importConfirm": "Import",
+    "importCancel": "Cancel",
+    "clearConversationsConfirmation": "Are you sure you want to delete ALL conversations? This action cannot be undone.",
+    "clearConversationsConfirmationTitle": "Delete all conversations",
+    "clearConfirm": "Delete",
+    "clearCancel": "Cancel",
     "clearDataConfirmationTitle": "🚨 ARE YOU ABSOLUTELY SURE? 🚨",
     "clearDataConfirmationMessage": "This will permanently delete ALL conversations, messages, mods, settings, providers, and stored API keys from your browser. This action cannot be undone.",
-    "clearDataSecondConfirmation": "SECOND CONFIRMATION:\n\nReally delete everything? Consider exporting first.",
+    "clearDataFirstConfirm": "I understand",
+    "clearDataSecondConfirmationTitle": "Second confirmation",
+    "clearDataSecondConfirmation": "Really delete everything? Consider exporting first.",
+    "clearDataSecondConfirm": "Delete everything",
     "dataClearedSuccess": "All local data cleared. Reloading the application...",
     "dataClearedError": "Failed to clear all data",
     "options": {
@@ -238,6 +284,31 @@
       "syncFailed": "Sync failed: {{error}}",
       "exportFailed": "Export failed: {{error}}",
       "importFailed": "Import failed: {{error}}"
+    }
+  },
+  "projectSettings": {
+    "title": "Project Settings: {{name}}",
+    "description": "Configure default settings for this project. Settings inherit from parent projects or global defaults if not set here.",
+    "tabs": {
+      "prompt": "Prompt & Model",
+      "params": "Parameters",
+      "rulesTags": "Rules & Tags",
+      "sync": "Sync",
+      "vfs": "Filesystem"
+    },
+    "cancel": "Cancel",
+    "save": "Save Project Settings"
+  },
+  "marketplace": {
+    "sources": {
+      "deleteTitle": "Delete marketplace source",
+      "deleteConfirm": "Delete",
+      "deleteCancel": "Cancel"
+    },
+    "installed": {
+      "uninstallTitle": "Uninstall item",
+      "uninstallConfirm": "Uninstall",
+      "uninstallCancel": "Cancel"
     }
   }
 }

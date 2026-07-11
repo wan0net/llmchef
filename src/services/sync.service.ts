@@ -133,6 +133,7 @@ export async function syncConversationLogic(
       interactions: Interaction[];
     } | null = null;
     let remoteTimestamp: number | null = null;
+    let remoteParseFailed = false;
     try {
       // Pass the fsInstance
       const fileContent = await VfsOps.readFileOp(convoFilePath, {
@@ -148,6 +149,13 @@ export async function syncConversationLogic(
       if (e.code === "ENOENT") {
         console.log("Conversation file ", convoFilePath, " not found in repo. Will push local version.",
         );
+      } else if (e instanceof SyntaxError || e.message?.includes("JSON")) {
+        remoteParseFailed = true;
+        console.error("Failed to parse remote conversation file: ", e.message,
+        );
+        toast.error(
+          `Remote conversation file is corrupted. Skipping push to avoid overwriting. Please resolve manually.`,
+        );
       } else {
         console.error("Failed to read or parse remote conversation file: ", e.message,
         );
@@ -155,6 +163,10 @@ export async function syncConversationLogic(
           `Could not read remote version of conversation: ${e.message}`,
         );
       }
+    }
+
+    if (remoteParseFailed) {
+      return;
     }
 
     const localTimestamp = conversation.updatedAt.getTime();
@@ -171,7 +183,7 @@ export async function syncConversationLogic(
         await PersistenceService.loadInteractionsForConversation(
           conversation.id,
         );
-      const { lastSyncedAt, ...conversationToSave } = conversation;
+      const { lastSyncedAt: _lastSyncedAt, ...conversationToSave } = conversation;
       const localData = JSON.stringify(
         { conversation: conversationToSave, interactions },
         null,

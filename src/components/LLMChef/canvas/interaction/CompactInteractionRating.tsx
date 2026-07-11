@@ -33,7 +33,7 @@ export const CompactInteractionRating: React.FC<CompactInteractionRatingProps> =
   // Determine the display state of the main star
   let starColorClass = "text-muted-foreground";
   let starFillClass = "";
-  let hoverColorClass = "hover:text-foreground";
+  const hoverColorClass = "hover:text-foreground";
 
   if (currentRating !== null && currentRating !== undefined) {
     if (currentRating < 0) {

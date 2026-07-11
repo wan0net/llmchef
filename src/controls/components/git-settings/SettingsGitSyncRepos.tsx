@@ -43,6 +43,7 @@ import { FieldMetaMessages } from "@/components/LLMChef/common/form-fields/Field
 import { BulkSyncControl } from "@/controls/components/git-sync/BulkSyncControl";
 import { BulkSyncService } from "@/services/bulk-sync.service";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 const syncRepoFormSchema = (t: (key: string) => string) => z.object({
   name: z.string().min(1, t('sync.errors.nameRequired')),
@@ -134,6 +135,9 @@ const SettingsGitSyncReposComponent: React.FC = () => {
         resetFormAndState();
       } catch (_error) {
         console.error("Failed to save sync repo:", _error);
+      } finally {
+        // Clear password from form memory after persistence attempt.
+        form.setFieldValue("password", null);
       }
     },
   });
@@ -170,12 +174,15 @@ const SettingsGitSyncReposComponent: React.FC = () => {
   };
 
   const handleDelete = useCallback(
-    (id: string, name: string) => {
-      if (
-        window.confirm(
-          t('sync.deleteConfirmation', { name })
-        )
-      ) {
+    async (id: string, name: string) => {
+      const confirmed = await ConfirmDialogService.confirm({
+        title: t('sync.deleteConfirmationTitle', 'Delete sync repository'),
+        description: t('sync.deleteConfirmation', { name }),
+        confirmLabel: t('sync.deleteConfirm', 'Delete'),
+        cancelLabel: t('sync.deleteCancel', 'Cancel'),
+        destructive: true,
+      });
+      if (confirmed) {
         setIsDeleting((prev) => ({ ...prev, [id]: true }));
         try {
           emitter.emit(conversationEvent.deleteSyncRepoRequest, { id });

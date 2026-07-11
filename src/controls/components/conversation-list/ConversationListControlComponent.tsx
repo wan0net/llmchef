@@ -43,6 +43,8 @@ import type { Project } from "@/types/llmchef/project";
 import type { Conversation } from "@/types/llmchef/chat";
 import { ConversationItemRenderer } from "./ItemRenderer";
 import { useItemEditing } from "@/hooks/llmchef/useItemEditing";
+import { usePromptDialog } from "@/hooks/usePromptDialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import type { ConversationListControlModule } from "@/controls/modules/ConversationListControlModule";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -53,7 +55,6 @@ import { APP_VFS_KEY } from "@/lib/llmchef/constants";
 import { createCrea8VfsConnector } from "@/lib/llmchef/crea8-vfs-connector";
 import { parseCrea8MarkdownNote } from "@/lib/llmchef/crea8-memory";
 import {
-  basename,
   joinPath,
   normalizePath,
 } from "@/lib/llmchef/file-manager-utils";
@@ -519,6 +520,8 @@ export const ConversationListControlComponent: React.FC<
   ConversationListControlComponentProps
 > = ({ module }) => {
   const { t } = useTranslation('controls');
+  const { prompt, PromptDialog } = usePromptDialog();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const listRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [viewportReady, setViewportReady] = useState(false);
@@ -659,20 +662,27 @@ export const ConversationListControlComponent: React.FC<
     });
   }, []);
 
-  const handleDeleteItem = useCallback((item: SidebarItem, e: React.MouseEvent) => {
+  const handleDeleteItem = useCallback(async (item: SidebarItem, e: React.MouseEvent) => {
     e.stopPropagation();
     const itemName = item.itemType === 'project' ? (item as Project).name : (item as Conversation).title;
-    if (window.confirm(t('confirmDelete', {
-      defaultValue: `Are you sure you want to delete "${itemName}"?`,
-      itemName,
-    }))) {
+    const confirmed = await confirm({
+      title: t('conversationList.confirmDeleteTitle', 'Confirm deletion'),
+      description: t('conversationList.confirmDeleteConversation', {
+        defaultValue: `Are you sure you want to delete "{{itemName}}"?`,
+        itemName,
+      }),
+      confirmLabel: t('conversationList.deleteConfirm', 'Delete'),
+      cancelLabel: t('conversationList.deleteCancel', 'Cancel'),
+      destructive: true,
+    });
+    if (confirmed) {
       if (item.itemType === "project") {
         deleteProject(item.id);
       } else {
         deleteConversation(item.id);
       }
     }
-  }, [deleteProject, deleteConversation, t]);
+  }, [deleteProject, deleteConversation, t, confirm]);
 
   const handleSelectItem = useCallback(
     (id: string | null, type: SidebarItemType | null) => {
@@ -786,18 +796,24 @@ export const ConversationListControlComponent: React.FC<
   const handleMoveConversation = useCallback(
     async (conversation: Conversation, e: React.MouseEvent) => {
       e.stopPropagation();
-      const targetName = window.prompt(
-        t(
-          "conversationList.moveConversationPrompt",
-          "Move to project name."
+      const targetName = await prompt({
+        title: t("conversationList.moveConversationPrompt", "Move to project"),
+        description: t(
+          "conversationList.moveConversationDescription",
+          "Enter the exact name of the project to move this conversation to."
         ),
-        ""
-      );
+        inputPlaceholder: t(
+          "conversationList.moveConversationPlaceholder",
+          "Project name"
+        ),
+        confirmLabel: t("conversationList.move", "Move"),
+        cancelLabel: t("conversationList.cancel", "Cancel"),
+      });
       if (targetName === null) return;
 
       const trimmedTargetName = targetName.trim();
       if (!trimmedTargetName) {
-        toast.error("Choose a project. Chats cannot live outside a project.");
+        toast.error(t("conversationList.moveConversationEmpty", "Choose a project. Chats cannot live outside a project."));
         return;
       }
 
@@ -827,7 +843,7 @@ export const ConversationListControlComponent: React.FC<
         })
       );
     },
-    [projects, t, updateConversation]
+    [projects, t, updateConversation, prompt]
   );
 
   const handleCreateProjectPage = useCallback(
@@ -835,7 +851,13 @@ export const ConversationListControlComponent: React.FC<
       e.stopPropagation();
       if (editingItemId) return;
 
-      const title = window.prompt("Wiki page title", `${project.name} page`);
+      const title = await prompt({
+        title: t("conversationList.newWikiPageTitle", "Wiki page title"),
+        defaultValue: `${project.name} page`,
+        inputPlaceholder: t("conversationList.newWikiPagePlaceholder", "Page title"),
+        confirmLabel: t("conversationList.create", "Create"),
+        cancelLabel: t("conversationList.cancel", "Cancel"),
+      });
       const trimmedTitle = title?.trim();
       if (!trimmedTitle) return;
 
@@ -859,13 +881,18 @@ export const ConversationListControlComponent: React.FC<
         });
         selectItem(project.id, "project");
         setExpandedProjects((prev) => new Set(prev).add(project.id));
-        toast.success(`Created wiki page in ${project.name}.`);
+        toast.success(
+          t("conversationList.newWikiPageSuccess", {
+            defaultValue: `Created wiki page in {{projectName}}.`,
+            projectName: project.name,
+          })
+        );
       } catch (error) {
         console.error("Failed to create wiki page:", error);
-        toast.error("Failed to create wiki page.");
+        toast.error(t("conversationList.newWikiPageError", "Failed to create wiki page."));
       }
     },
-    [editingItemId, selectItem],
+    [editingItemId, selectItem, prompt, t],
   );
 
   const handleCreateProjectFolder = useCallback(
@@ -873,7 +900,13 @@ export const ConversationListControlComponent: React.FC<
       e.stopPropagation();
       if (editingItemId) return;
 
-      const folderName = window.prompt("Folder name", "New folder");
+      const folderName = await prompt({
+        title: t("conversationList.newFolderTitle", "Folder name"),
+        defaultValue: t("conversationList.newFolderDefault", "New folder"),
+        inputPlaceholder: t("conversationList.newFolderPlaceholder", "Folder name"),
+        confirmLabel: t("conversationList.create", "Create"),
+        cancelLabel: t("conversationList.cancel", "Cancel"),
+      });
       const trimmedName = folderName?.trim();
       if (!trimmedName) return;
 
@@ -883,13 +916,18 @@ export const ConversationListControlComponent: React.FC<
         await createDirectoryOp(targetPath, { fsInstance });
         selectItem(project.id, "project");
         setExpandedProjects((prev) => new Set(prev).add(project.id));
-        toast.success(`Created folder in ${project.name}.`);
+        toast.success(
+          t("conversationList.newFolderSuccess", {
+            defaultValue: `Created folder in {{projectName}}.`,
+            projectName: project.name,
+          })
+        );
       } catch (error) {
         console.error("Failed to create project folder:", error);
-        toast.error("Failed to create folder.");
+        toast.error(t("conversationList.newFolderError", "Failed to create folder."));
       }
     },
-    [editingItemId, selectItem],
+    [editingItemId, selectItem, prompt, t],
   );
 
   const handleOpenProjectSection = useCallback(
@@ -1261,6 +1299,9 @@ export const ConversationListControlComponent: React.FC<
   });
 
   return (
+    <>
+      <PromptDialog />
+      <ConfirmDialog />
     <div className="p-2 border-r border-[--border] bg-card text-card-foreground h-full flex flex-col">
       <div className="flex justify-between items-center mb-2 flex-shrink-0 px-1">
         <div className="flex items-center space-x-2">
@@ -1528,5 +1569,6 @@ export const ConversationListControlComponent: React.FC<
         </div>
       </ScrollArea>
     </div>
+    </>
   );
 };

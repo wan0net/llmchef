@@ -353,7 +353,7 @@ export class UsageDisplayControlModule implements ControlModule {
         }
       }
       return { tokens, cost };
-    } catch (error) {
+    } catch (_error) {
       return { tokens: 0, cost: 0 };
     }
   }

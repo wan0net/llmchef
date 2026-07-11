@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { ActionTooltipButton } from "@/components/LLMChef/common/ActionTooltipButton";
 // Import the new form component
 import { ApiKeyForm } from "@/components/LLMChef/common/ApiKeysForm";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 const SettingsApiKeysComponent: React.FC = () => {
   const { apiKeys, addApiKey, updateApiKey, deleteApiKey, isLoading } = useProviderStore(
@@ -92,11 +93,14 @@ const SettingsApiKeysComponent: React.FC = () => {
 
   const handleDelete = useCallback(
     async (id: string, name: string) => {
-      if (
-        window.confirm(
-          `Are you sure you want to delete the API key "${name}"? This will unlink it from any providers using it.`,
-        )
-      ) {
+      const confirmed = await ConfirmDialogService.confirm({
+        title: "Delete API key",
+        description: `Are you sure you want to delete the API key "${name}"? This will unlink it from any providers using it.`,
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+        destructive: true,
+      });
+      if (confirmed) {
         setIsDeleting((prev) => ({ ...prev, [id]: true }));
         try {
           await deleteApiKey(id);

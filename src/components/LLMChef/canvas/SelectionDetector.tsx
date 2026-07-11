@@ -64,7 +64,7 @@ export const SelectionDetector: React.FC<SelectionDetectorProps> = ({
     // const viewportHeight = window.innerHeight;
     
     let x = selectionBounds.right - containerBounds.left + 8;
-    let y = selectionBounds.bottom - containerBounds.top + 8;
+    const y = selectionBounds.bottom - containerBounds.top + 8;
     
     // Adjust if controls would appear outside viewport
     const controlWidth = 200; // Approximate control panel width

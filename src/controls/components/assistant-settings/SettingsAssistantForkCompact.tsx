@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 import { useSettingsStore } from "@/store/settings.store";
 import { useProviderStore } from "@/store/provider.store";
 import { useShallow } from "zustand/react/shallow";
@@ -67,8 +68,15 @@ export const SettingsAssistantForkCompact: React.FC = () => {
     }
   };
 
-  const handleReset = () => {
-    if (confirm(t('forkCompact.resetConfirm'))) {
+  const handleReset = async () => {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: t('forkCompact.resetConfirmTitle', 'Reset settings'),
+      description: t('forkCompact.resetConfirm'),
+      confirmLabel: t('forkCompact.resetConfirmButton', 'Reset'),
+      cancelLabel: t('forkCompact.resetCancelButton', 'Cancel'),
+      destructive: true,
+    });
+    if (confirmed) {
       setLocalPrompt(DEFAULT_FORK_COMPACT_PROMPT);
       setLocalModelId(null);
       setForkCompactPrompt(DEFAULT_FORK_COMPACT_PROMPT);

@@ -34,6 +34,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 // Define Zod schemas for import and export options
 const fullImportOptionsSchema = z.object({
@@ -161,11 +162,14 @@ const SettingsDataManagementComponent: React.FC = () => {
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (file) {
-        if (
-          !window.confirm(
-            t('dataManagement.importConfirmation', `Importing this file will OVERWRITE existing data for the selected categories. Are you sure you want to proceed?`)
-          )
-        ) {
+        const confirmed = await ConfirmDialogService.confirm({
+          title: t('dataManagement.importConfirmationTitle', 'Import data'),
+          description: t('dataManagement.importConfirmation', `Importing this file will OVERWRITE existing data for the selected categories. Are you sure you want to proceed?`),
+          confirmLabel: t('dataManagement.importConfirm', 'Import'),
+          cancelLabel: t('dataManagement.importCancel', 'Cancel'),
+          destructive: true,
+        });
+        if (!confirmed) {
           if (fullImportInputRef.current) {
             fullImportInputRef.current.value = "";
           }
@@ -203,11 +207,14 @@ const SettingsDataManagementComponent: React.FC = () => {
   }, [exportAllConversations]);
 
   const handleClearConversationsClick = useCallback(async () => {
-    if (
-      !window.confirm(
-        t('dataManagement.clearConversationsConfirmation', 'Are you sure you want to delete ALL conversations? This action cannot be undone.')
-      )
-    ) {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: t('dataManagement.clearConversationsConfirmationTitle', 'Delete all conversations'),
+      description: t('dataManagement.clearConversationsConfirmation', 'Are you sure you want to delete ALL conversations? This action cannot be undone.'),
+      confirmLabel: t('dataManagement.clearConfirm', 'Delete'),
+      cancelLabel: t('dataManagement.clearCancel', 'Cancel'),
+      destructive: true,
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -240,32 +247,42 @@ const SettingsDataManagementComponent: React.FC = () => {
   }, [exportOptionsForm]); // Depend on form instance
 
   const handleClearAllDataClick = useCallback(async () => {
-    if (
-      window.confirm(
-        t('dataManagement.clearDataConfirmationTitle', `🚨 ARE YOU ABSOLUTELY SURE? 🚨`) + '\n\n' + t('dataManagement.clearDataConfirmationMessage', `This will permanently delete ALL conversations, messages, mods, settings, providers, and stored API keys from your browser. This action cannot be undone.`)
-      )
-    ) {
-      if (
-        window.confirm(
-          t('dataManagement.clearDataSecondConfirmation', `SECOND CONFIRMATION:\n\nReally delete everything? Consider exporting first.`)
-        )
-      ) {
-        setIsClearing(true);
-        try {
-          await PersistenceService.clearAllData();
-          toast.success(t('dataManagement.dataClearedSuccess', "All local data cleared. Reloading the application..."));
-          setTimeout(() => window.location.reload(), 1500);
-        } catch (error: unknown) {
-          const errorMsg = t('dataManagement.dataClearedError', "Failed to clear all data");
+    const firstConfirmed = await ConfirmDialogService.confirm({
+      title: t('dataManagement.clearDataConfirmationTitle', `🚨 ARE YOU ABSOLUTELY SURE? 🚨`),
+      description: t('dataManagement.clearDataConfirmationMessage', `This will permanently delete ALL conversations, messages, mods, settings, providers, and stored API keys from your browser. This action cannot be undone.`),
+      confirmLabel: t('dataManagement.clearDataFirstConfirm', 'I understand'),
+      cancelLabel: t('dataManagement.clearCancel', 'Cancel'),
+      destructive: true,
+    });
+    if (!firstConfirmed) {
+      return;
+    }
+
+    const secondConfirmed = await ConfirmDialogService.confirm({
+      title: t('dataManagement.clearDataSecondConfirmationTitle', 'Second confirmation'),
+      description: t('dataManagement.clearDataSecondConfirmation', `Really delete everything? Consider exporting first.`),
+      confirmLabel: t('dataManagement.clearDataSecondConfirm', 'Delete everything'),
+      cancelLabel: t('dataManagement.clearCancel', 'Cancel'),
+      destructive: true,
+    });
+    if (!secondConfirmed) {
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      await PersistenceService.clearAllData();
+      toast.success(t('dataManagement.dataClearedSuccess', "All local data cleared. Reloading the application..."));
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (error: unknown) {
+      const errorMsg = t('dataManagement.dataClearedError', "Failed to clear all data");
           console.error(errorMsg, error);
           toast.error(
             `${errorMsg}: ${error instanceof Error ? error.message : String(error)}`,
           );
           setIsClearing(false);
         }
-      }
-    }
-  }, [t]);
+      }, [t]);
 
   // Updated to use TanStack Form Field
   const renderOptionCheckbox = (

@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { SettingsSection } from "@/components/LLMChef/common/SettingsSection";
 import type { CustomThemeColors } from "@/types/llmchef/settings";
 import { THEME_OPTIONS, type Theme } from "@/types/llmchef/common";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 const ColorInput: React.FC<{
   label: string;
@@ -156,12 +157,15 @@ const SettingsThemeComponent: React.FC = () => {
     storeValues._rawCustomThemeColors,
   ]);
 
-  const handleResetClick = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to reset all Theme settings to their defaults?"
-      )
-    ) {
+  const handleResetClick = async () => {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: "Reset theme settings",
+      description: "Are you sure you want to reset all Theme settings to their defaults?",
+      confirmLabel: "Reset",
+      cancelLabel: "Cancel",
+      destructive: true,
+    });
+    if (confirmed) {
       storeSetters.resetThemeSettings();
     }
   };

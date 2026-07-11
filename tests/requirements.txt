@@ -1,0 +1,2 @@
+# Python test dependencies for LLMChef
+hermes-cli

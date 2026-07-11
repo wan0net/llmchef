@@ -15,7 +15,6 @@ export const RadioField: React.FC<RadioFieldSpecificProps> = ({
   fieldApi,
   label,
   description,
-  placeholder,
   inputClassName,
   labelClassName,
   wrapperClassName,

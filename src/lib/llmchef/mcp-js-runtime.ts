@@ -229,18 +229,49 @@ export const smokeTestMcpJsRuntimePackage = async (
   }
 };
 
+/**
+ * Start a sandboxed MCP JS runtime session.
+ *
+ * IMPORTANT: Callers MUST wrap usage in `try { ... } finally { session.dispose() }`
+ * to avoid leaking the Worker and blob URLs. An optional AbortSignal and/or
+ * auto-dispose timeout can be provided as a safety net.
+ */
 export const startMcpJsRuntimeSession = async (
   install: McpPackageRuntimeInstall,
+  options?: { signal?: AbortSignal; autoDisposeMs?: number },
 ): Promise<McpJsRuntimeSession> => {
   const { fsInstance, readFileOp } = await loadVfsRuntime();
   const manifestBytes = await readFileOp(`${install.vfsRoot}/manifest.json`, { fsInstance, silent: true });
   const manifest = JSON.parse(new TextDecoder().decode(manifestBytes)) as McpPackageRuntimeInstall;
   const moduleGraph = await readInstalledModuleGraph(manifest);
   const runtime = await createMcpJsRuntimeWorker(manifest, moduleGraph);
+
+  let autoDisposeTimeout: ReturnType<typeof setTimeout> | null = null;
+  const dispose = () => {
+    if (autoDisposeTimeout) {
+      clearTimeout(autoDisposeTimeout);
+      autoDisposeTimeout = null;
+    }
+    options?.signal?.removeEventListener("abort", dispose);
+    runtime.dispose();
+  };
+
+  if (options?.signal) {
+    if (options.signal.aborted) {
+      dispose();
+      throw new Error("MCP JS runtime session aborted before start");
+    }
+    options.signal.addEventListener("abort", dispose);
+  }
+
+  if (options?.autoDisposeMs && options.autoDisposeMs > 0) {
+    autoDisposeTimeout = setTimeout(dispose, options.autoDisposeMs);
+  }
+
   return {
     worker: runtime.worker,
     sendLine: (line: string) => runtime.worker.postMessage({ type: "stdin", chunk: `${line.replace(/\n$/, "")}\n` }),
-    dispose: runtime.dispose,
+    dispose,
   };
 };
 

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ProviderRowViewMode } from "./SettingsProviderRowView";
 import { ProviderRowEditMode } from "./SettingsProviderRowEdit";
 import { useProviderStore } from "@/store/provider.store";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 export type FetchStatus = "idle" | "fetching" | "error" | "success";
 export interface ProviderRowProps {
@@ -151,7 +152,14 @@ const ProviderRowComponent: React.FC<ProviderRowProps> = ({
   );
 
   const handleDelete = useCallback(async () => {
-    if (window.confirm(`Delete provider "${provider.name}"?`)) {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: "Delete provider",
+      description: `Delete provider "${provider.name}"?`,
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      destructive: true,
+    });
+    if (confirmed) {
       setIsDeleting(true);
       try {
         await onDelete(provider.id);

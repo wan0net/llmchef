@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Trash2, Package } from "lucide-react";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialogService } from "@/services/confirm-dialog.service";
 
 export const InstalledItemsList: React.FC = () => {
   const { t } = useTranslation('settings');
@@ -33,7 +34,14 @@ export const InstalledItemsList: React.FC = () => {
   };
 
   const handleUninstall = async (packageId: string) => {
-    if (confirm(t('marketplace.installed.confirmUninstall', 'Are you sure you want to uninstall this item?'))) {
+    const confirmed = await ConfirmDialogService.confirm({
+      title: t('marketplace.installed.uninstallTitle', 'Uninstall item'),
+      description: t('marketplace.installed.confirmUninstall', 'Are you sure you want to uninstall this item?'),
+      confirmLabel: t('marketplace.installed.uninstallConfirm', 'Uninstall'),
+      cancelLabel: t('marketplace.installed.uninstallCancel', 'Cancel'),
+      destructive: true,
+    });
+    if (confirmed) {
       await uninstallMarketplaceItem(packageId);
     }
   };

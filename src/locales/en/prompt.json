@@ -3,6 +3,12 @@
   "promptSubmissionCancelled": "Prompt submission cancelled by middleware.",
   "failedToSendMessage": "Failed to send message: {{errorMessage}}",
   "sendMessage": "Send message",
+  "promptWrapper": {
+    "addedToQueue": "Added to prompt queue",
+    "selectModelBeforeSend": "Please select a model before sending a message",
+    "failedToQueue": "Failed to queue message: {{error}}",
+    "failedToSend": "Failed to send message: {{error}}"
+  },
   "inputAreaPlaceholder": "Type message... (Shift+Enter for new line)",
   "chatInputAriaLabel": "Chat input",
   "parameterControl": {

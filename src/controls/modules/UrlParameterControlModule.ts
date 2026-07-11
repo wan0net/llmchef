@@ -126,7 +126,7 @@ export class UrlParameterControlModule implements ControlModule {
           id: conversationId,
           type: "conversation",
         });
-      } catch (err) {
+      } catch (_err) {
         toast.error("Failed to create conversation from URL parameters.");
         return;
       }

@@ -353,7 +353,7 @@ export async function buildCurrentPromptTurnData(overrideContent?: string): Prom
     metadata.modelId = currentModelIdFromPromptStore;
   }
 
-  let turnData: PromptTurnObject = {
+  const turnData: PromptTurnObject = {
     id: nanoid(),
     content: trimmedValue,
     parameters,

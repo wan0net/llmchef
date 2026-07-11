@@ -31,6 +31,19 @@ import { WEBSEARCH_TEMPLATE_IDS } from "@/lib/llmchef/websearch-prompt-templates
 describe("workflow websearch persistence service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    if (typeof window.localStorage === "undefined") {
+      const store: Record<string, string> = {};
+      Object.defineProperty(window, "localStorage", {
+        value: {
+          getItem: (key: string) => store[key] ?? null,
+          setItem: (key: string, value: string) => { store[key] = value; },
+          removeItem: (key: string) => { delete store[key]; },
+          clear: () => { Object.keys(store).forEach((key) => delete store[key]); },
+        },
+        writable: true,
+        configurable: true,
+      });
+    }
     window.localStorage.clear();
   });
 
