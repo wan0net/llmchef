@@ -25,7 +25,13 @@
       "zip": "ZIP",
       "cloneRepository": "Clona Repository",
       "gitOperations": "Operazioni Git",
-      "downloadAll": "Scarica Tutto"
+      "downloadAll": "Scarica Tutto",
+      "importRealFolder": "Import a real folder into the current VFS folder",
+      "importFolder": "Import",
+      "exportRealFolder": "Export the current VFS folder into a real folder",
+      "exportFolder": "Export",
+      "syncRealFolder": "Two-way sync with a real folder",
+      "syncFolder": "Sync"
     },
     "table": {
       "loading": "Caricamento...",
@@ -71,7 +77,12 @@
         "downloadFile": "Scarica File",
         "deleteFile": "Elimina File"
       }
-    }
+    },
+    "deleteConfirmationTitle": "Delete item",
+    "createFilePrompt": "New file name",
+    "moveSelectedPrompt": "Move selected files to folder path",
+    "deleteSelectedConfirmation": "Delete {{count}} selected file(s)?",
+    "filesystemNotReady": "Filesystem is not ready."
   },
   "fileManagerBanner": {
     "sharedVfs": "<b>VFS Condiviso:</b> Tutti i chat <i>non</i> in un progetto condividono questo filesystem.",

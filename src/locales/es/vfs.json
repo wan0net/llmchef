@@ -25,7 +25,13 @@
       "zip": "ZIP",
       "cloneRepository": "Clonar Repositorio",
       "gitOperations": "Operaciones Git",
-      "downloadAll": "Descargar Todo"
+      "downloadAll": "Descargar Todo",
+      "importRealFolder": "Import a real folder into the current VFS folder",
+      "importFolder": "Import",
+      "exportRealFolder": "Export the current VFS folder into a real folder",
+      "exportFolder": "Export",
+      "syncRealFolder": "Two-way sync with a real folder",
+      "syncFolder": "Sync"
     },
     "table": {
       "loading": "Cargando...",
@@ -71,7 +77,12 @@
         "downloadFile": "Descargar Archivo",
         "deleteFile": "Eliminar Archivo"
       }
-    }
+    },
+    "deleteConfirmationTitle": "Delete item",
+    "createFilePrompt": "New file name",
+    "moveSelectedPrompt": "Move selected files to folder path",
+    "deleteSelectedConfirmation": "Delete {{count}} selected file(s)?",
+    "filesystemNotReady": "Filesystem is not ready."
   },
   "fileManagerBanner": {
     "sharedVfs": "<b>VFS Compartido:</b> Todos los chats <i>no</i> en un proyecto comparten este sistema de archivos.",

@@ -126,5 +126,13 @@
     "urlPlaceholder": "https://github.com/utilisateur/depot.git",
     "branchPlaceholder": "main (par défaut)",
     "httpsRecommendation": "Recommandation : Utilisez des URL HTTPS pour une meilleure compatibilité du navigateur et authentification (ex : https://github.com/utilisateur/depot.git)"
-  }
+  },
+  "appName": "LLMChef",
+  "projectsLabel": "Projects",
+  "chatCanvasLabel": "Chat canvas",
+  "loadingWiki": "Loading wiki…",
+  "ok": "OK",
+  "create": "Create",
+  "rename": "Rename",
+  "delete": "Delete"
 }

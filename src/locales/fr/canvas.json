@@ -82,7 +82,14 @@
     "noCodeBlocksToDownload": "Aucun bloc de code avec chemin de fichier trouvé à télécharger",
     "downloadZip": "Télécharger {{count}} fichiers de code en ZIP",
     "downloadZipAriaLabel": "Télécharger les blocs de code en tant que fichier ZIP",
-    "zipDownloadFailed": "Échec de la création du fichier ZIP"
+    "zipDownloadFailed": "Échec de la création du fichier ZIP",
+    "aiActions": "AI Actions",
+    "repairCode": "Repair Code",
+    "enhanceCode": "Enhance Code",
+    "enhanceWithContext": "Enhance with Context",
+    "thisMessageBlocks": "This Message's Blocks",
+    "thisConversationBlocks": "This Conversation's Blocks",
+    "completeFromContext": "Complete from Context"
   },
   "emptyStateSetup": {
     "welcomeTitle": "Bienvenue dans LLMChef",
@@ -114,5 +121,29 @@
       "functionsAndClasses": "Fonctions et classes",
       "selection": "Sélection"
     }
-  }
+  },
+  "jumpToBottom": "Scroll to Bottom",
+  "pauseAutoscroll": "Pause Autoscroll",
+  "resumeAutoscroll": "Resume Autoscroll",
+  "loadingConversation": "Loading conversation...",
+  "processing": "Processing...",
+  "unknownModel": "Unknown Model",
+  "reasoningPrefix": "[Reasoning] ",
+  "toolCallsPrefix": "[ Tool Call(s)] ",
+  "noTextResponse": "[No text response]",
+  "errorLabel": "Error:",
+  "reasoningSectionTitle": "Reasoning",
+  "copyReasoning": "Copy Reasoning",
+  "reasoningCopiedSuccess": "Reasoning copied!",
+  "failedToCopyReasoning": "Failed to copy reasoning.",
+  "unfoldPreview": "Unfold preview",
+  "foldPreview": "Fold preview",
+  "close": "Close",
+  "sending": "Sending...",
+  "userPromptCopiedSuccess": "User prompt copied!",
+  "failedToCopyPrompt": "Failed to copy prompt.",
+  "noContent": "No content",
+  "promptLabel": "Prompt",
+  "filesLabel": "Files",
+  "noFiles": "No files"
 }

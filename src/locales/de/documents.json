@@ -1,0 +1,18 @@
+{
+  "diagramPrompt": {
+    "title": "Diagram name"
+  },
+  "folderPrompt": {
+    "title": "Folder name"
+  },
+  "renamePrompt": {
+    "title": "Rename document"
+  },
+  "deleteConfirmation": {
+    "title": "Delete document",
+    "description": "Are you sure you want to delete {{name}}?"
+  },
+  "linkPrompt": {
+    "title": "URL"
+  }
+}

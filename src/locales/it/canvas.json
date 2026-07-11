@@ -58,7 +58,7 @@
     "responseContent": "Contenuto Risposta",
     "editResponsePlaceholder": "Modifica la risposta dell'assistente...",
     "cancel": "Annulla",
-    "save": "Salva Modifiche",
+    "save": "Salva",
     "forkDisabled": "Il fork è attualmente disabilitato.",
     "fork": "Fork",
     "forkAriaLabel": "Forka Conversazione",
@@ -87,8 +87,6 @@
     "missingIdError": "ID interazione o blocco codice mancante",
     "codeCannotBeEmpty": "Il codice non può essere vuoto",
     "codeEditedSuccessfully": "Blocco codice modificato con successo",
-    "save": "Salva",
-    "cancel": "Annulla",
     "editCode": "Modifica Codice",
     "editCodeAriaLabel": "Modifica blocco codice",
     "copyCode": "Copia Codice",
@@ -108,7 +106,14 @@
     "noCodeBlocksToDownload": "Nessun blocco codice con percorsi file trovato da scaricare",
     "downloadZip": "Scarica {{count}} file codice come ZIP",
     "downloadZipAriaLabel": "Scarica blocchi codice come file ZIP",
-    "zipDownloadFailed": "Impossibile creare file ZIP"
+    "zipDownloadFailed": "Impossibile creare file ZIP",
+    "aiActions": "AI Actions",
+    "repairCode": "Repair Code",
+    "enhanceCode": "Enhance Code",
+    "enhanceWithContext": "Enhance with Context",
+    "thisMessageBlocks": "This Message's Blocks",
+    "thisConversationBlocks": "This Conversation's Blocks",
+    "completeFromContext": "Complete from Context"
   },
   "emptyStateSetup": {
     "welcomeTitle": "Benvenuto in LLMChef",

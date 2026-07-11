@@ -73,11 +73,24 @@
     "toolDescription": "Description : {{description}}",
     "noDescription": "Aucune description disponible",
     "enabled": "Activé",
-    "disabled": "Désactivé"
+    "disabled": "Désactivé",
+    "toolsShown": "{{count}} tools shown",
+    "enableAll": "Enable All",
+    "disableAll": "Disable All",
+    "noToolsRegistered": "No tools registered."
   },
   "fileControl": {
     "attachFiles": "Joindre des fichiers",
     "attachFilesTooltip": "Joindre des fichiers au prompt",
-    "filesAttached": "{{count}} fichier(s) joint(s)"
+    "filesAttached": "{{count}} fichier(s) joint(s)",
+    "attachFilesWithImages": "Attach Files (Text, Images, etc.)",
+    "attachTextFiles": "Attach Text Files",
+    "processingError": "Failed to process file \"{{fileName}}\": {{error}}"
+  },
+  "promptWrapper": {
+    "addedToQueue": "Added to prompt queue",
+    "selectModelBeforeSend": "Please select a model before sending a message",
+    "failedToQueue": "Failed to queue message: {{error}}",
+    "failedToSend": "Failed to send message: {{error}}"
   }
 }

@@ -81,7 +81,10 @@
       "branchRequired": "Il nome del branch è obbligatorio (es. main).",
       "saveFailed": "Il nome del repository e l'URL remota sono obbligatori."
     },
-    "noRepos": "Nessun repository di sincronizzazione ancora configurato."
+    "noRepos": "Nessun repository di sincronizzazione ancora configurato.",
+    "deleteConfirmationTitle": "Delete sync repository",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Cancel"
   },
   "bulkSync": {
     "title": "Sincronizzazione Git di Massa",
@@ -177,5 +180,11 @@
     "commitButton": "Conferma",
     "messageLabel": "Messaggio",
     "messagePlaceholder": "es: Aggiungi funzionalità X"
+  },
+  "credentialDialog": {
+    "title": "Git Authentication",
+    "description": "Enter credentials for {{url}}",
+    "username": "Username",
+    "password": "Password / Token"
   }
 }

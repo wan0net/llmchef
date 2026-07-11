@@ -58,7 +58,7 @@
     "responseContent": "Contenido de la Respuesta",
     "editResponsePlaceholder": "Editar la respuesta del asistente...",
     "cancel": "Cancelar",
-    "save": "Guardar Cambios",
+    "save": "Guardar",
     "forkDisabled": "Fork está actualmente deshabilitado.",
     "fork": "Fork",
     "forkAriaLabel": "Bifurcar Conversación",
@@ -87,8 +87,6 @@
     "missingIdError": "Falta la ID de interacción o bloque de código",
     "codeCannotBeEmpty": "El código no puede estar vacío",
     "codeEditedSuccessfully": "Bloque de código editado exitosamente",
-    "save": "Guardar",
-    "cancel": "Cancelar",
     "editCode": "Editar Código",
     "editCodeAriaLabel": "Editar bloque de código",
     "copyCode": "Copiar Código",
@@ -108,7 +106,14 @@
     "noCodeBlocksToDownload": "No se encontraron bloques de código con rutas de archivo para descargar",
     "downloadZip": "Descargar {{count}} archivos de código como ZIP",
     "downloadZipAriaLabel": "Descargar bloques de código como archivo ZIP",
-    "zipDownloadFailed": "No se pudo crear el archivo ZIP"
+    "zipDownloadFailed": "No se pudo crear el archivo ZIP",
+    "aiActions": "AI Actions",
+    "repairCode": "Repair Code",
+    "enhanceCode": "Enhance Code",
+    "enhanceWithContext": "Enhance with Context",
+    "thisMessageBlocks": "This Message's Blocks",
+    "thisConversationBlocks": "This Conversation's Blocks",
+    "completeFromContext": "Complete from Context"
   },
   "emptyStateSetup": {
     "welcomeTitle": "Bienvenido a LLMChef",

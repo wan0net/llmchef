@@ -25,7 +25,13 @@
       "zip": "ZIP",
       "cloneRepository": "Cloner le dépôt",
       "gitOperations": "Opérations Git",
-      "downloadAll": "Tout télécharger"
+      "downloadAll": "Tout télécharger",
+      "importRealFolder": "Import a real folder into the current VFS folder",
+      "importFolder": "Import",
+      "exportRealFolder": "Export the current VFS folder into a real folder",
+      "exportFolder": "Export",
+      "syncRealFolder": "Two-way sync with a real folder",
+      "syncFolder": "Sync"
     },
     "table": {
       "loading": "Chargement...",
@@ -71,7 +77,12 @@
         "downloadFile": "Télécharger le Fichier",
         "deleteFile": "Supprimer le Fichier"
       }
-    }
+    },
+    "deleteConfirmationTitle": "Delete item",
+    "createFilePrompt": "New file name",
+    "moveSelectedPrompt": "Move selected files to folder path",
+    "deleteSelectedConfirmation": "Delete {{count}} selected file(s)?",
+    "filesystemNotReady": "Filesystem is not ready."
   },
   "fileManagerBanner": {
     "sharedVfs": "<b>VFS de l'app:</b> Les fichiers racine et les dossiers de projet vivent dans le même système local.",

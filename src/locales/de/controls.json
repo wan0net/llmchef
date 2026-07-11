@@ -127,7 +127,27 @@
     "export": "Exportieren",
     "deleteProject": "Projekt löschen",
     "deleteConversation": "Konversation löschen",
-    "untitled": "Unbenannt"
+    "untitled": "Unbenannt",
+    "confirmDeleteTitle": "Confirm deletion",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Cancel",
+    "moveConversationPrompt": "Move to project",
+    "moveConversationDescription": "Enter the exact name of the project to move this conversation to.",
+    "moveConversationPlaceholder": "Project name",
+    "move": "Move",
+    "moveConversationEmpty": "Choose a project. Chats cannot live outside a project.",
+    "moveConversationProjectNotFound": "Project \"{{projectName}}\" was not found.",
+    "moveConversationSuccess": "Moved to {{projectName}}.",
+    "newWikiPageTitle": "Wiki page title",
+    "newWikiPagePlaceholder": "Page title",
+    "create": "Create",
+    "newWikiPageSuccess": "Created wiki page in {{projectName}}.",
+    "newWikiPageError": "Failed to create wiki page.",
+    "newFolderTitle": "Folder name",
+    "newFolderDefault": "New folder",
+    "newFolderPlaceholder": "Folder name",
+    "newFolderSuccess": "Created folder in {{projectName}}.",
+    "newFolderError": "Failed to create folder."
   },
   "itemRenderer": {
     "deleteProjectConfirm": "Projekt \"{{name}}\" und ALLE seine Inhalte (Unterprojekte und Konversationen) löschen? Dies kann nicht rückgängig gemacht werden.",
@@ -145,7 +165,13 @@
     "exportConversation": "Konversation exportieren",
     "exportItem": "{{name}} exportieren",
     "delete": "Löschen",
-    "deleteItem": "{{name}} löschen"
+    "deleteItem": "{{name}} löschen",
+    "toggleProject": "Toggle project {{name}}",
+    "newWikiPage": "New wiki page",
+    "newWikiPageFor": "New wiki page in {{name}}",
+    "newProjectFolder": "New folder",
+    "newProjectFolderFor": "New folder in {{name}}",
+    "moveConversation": "Move conversation"
   },
   "modelSelector": {
     "selectModel": "Modell auswählen...",

@@ -5,7 +5,10 @@
     "edit": "Bearbeiten: {{name}}",
     "tasks": "Aufgaben",
     "manageTasks": "Aufgaben verwalten",
-    "deleteConfirm": "Sind Sie sicher, dass Sie diesen Agenten und alle seine Aufgaben löschen möchten?"
+    "deleteConfirm": "Sind Sie sicher, dass Sie diesen Agenten und alle seine Aufgaben löschen möchten?",
+    "deleteConfirmationTitle": "Delete agent",
+    "deleteConfirmButton": "Delete",
+    "deleteCancelButton": "Cancel"
   },
   "task": {
     "title": "Aufgaben",
@@ -14,7 +17,10 @@
     "manage": "Aufgaben: {{agentName}}",
     "forAgent": "Aufgaben für {{agentName}}",
     "description": "Aufgaben für diesen Agenten verwalten",
-    "deleteConfirm": "Sind Sie sicher, dass Sie diese Aufgabe löschen möchten?"
+    "deleteConfirm": "Sind Sie sicher, dass Sie diese Aufgabe löschen möchten?",
+    "deleteConfirmationTitle": "Delete task",
+    "deleteConfirmButton": "Delete",
+    "deleteCancelButton": "Cancel"
   },
   "common": {
     "backToAgents": "Zurück zu Agenten",
@@ -40,7 +46,10 @@
     "resetConfirm": "Fork Compact-Einstellungen auf Standard zurücksetzen?",
     "resetSuccess": "Fork Compact-Einstellungen auf Standard zurückgesetzt",
     "saveSuccess": "Fork Compact-Einstellungen gespeichert!",
-    "saveError": "Fehler beim Speichern der Einstellungen"
+    "saveError": "Fehler beim Speichern der Einstellungen",
+    "resetConfirmTitle": "Reset settings",
+    "resetConfirmButton": "Reset",
+    "resetCancelButton": "Cancel"
   },
   "parameters": {
     "description": "Legen Sie die globalen Standardwerte für AI-Parameter fest. Diese können pro Projekt oder pro Prompt-Turn überschrieben werden.",
@@ -110,7 +119,10 @@
       "maxResponseSize": "Max. Antwortgröße (Bytes)",
       "maxResponseSizeHelp": "Max. Tool-Antwortgröße (1KB-10MB)",
       "saveSettings": "Verbindungseinstellungen speichern",
-      "resetConfirm": "Verbindungseinstellungen auf Standard zurücksetzen?"
+      "resetConfirm": "Verbindungseinstellungen auf Standard zurücksetzen?",
+      "resetConfirmTitle": "Reset connection settings",
+      "resetConfirmButton": "Reset",
+      "resetCancelButton": "Cancel"
     },
     "server": {
       "editTitle": "MCP-Server bearbeiten",
@@ -134,7 +146,10 @@
       "updating": "Wird aktualisiert...",
       "adding": "Wird hinzugefügt...",
       "deleteConfirm": "Sind Sie sicher, dass Sie diesen MCP-Server löschen möchten?",
-      "invalidHeaders": "Ungültiges JSON im Header-Feld"
+      "invalidHeaders": "Ungültiges JSON im Header-Feld",
+      "deleteConfirmTitle": "Delete MCP server",
+      "deleteConfirmButton": "Delete",
+      "deleteCancelButton": "Cancel"
     },
     "servers": {
       "title": "MCP-Server",
@@ -298,6 +313,9 @@
     "templates": "Vorlagen",
     "newTemplate": "Neue Vorlage",
     "editTemplate": "Bearbeiten: {{name}}",
-    "deleteConfirmation": "Sind Sie sicher, dass Sie diese Vorlage löschen möchten?"
+    "deleteConfirmation": "Sind Sie sicher, dass Sie diese Vorlage löschen möchten?",
+    "deleteConfirmationTitle": "Delete prompt template",
+    "deleteConfirmButton": "Delete",
+    "deleteCancelButton": "Cancel"
   }
 }

@@ -99,7 +99,12 @@
     "autoScrollIntervalAriaLabel": "Valore Intervallo Scorrimento Automatico",
     "saving": "Salvataggio...",
     "validating": "Validazione...",
-    "saveChanges": "Salva Modifiche"
+    "saveChanges": "Salva Modifiche",
+    "resetConfirmationTitle": "Reset settings",
+    "resetConfirm": "Reset",
+    "resetCancel": "Cancel",
+    "corsProxyUrlLabel": "CORS Proxy URL",
+    "corsProxyWarning": "Warning: When a CORS proxy is configured, all traffic routed through it — including git operations with personal access tokens — is visible to the proxy operator. Use a proxy you trust."
   },
   "modelSelector": {
     "title": "Selezione Modello",
@@ -169,6 +174,141 @@
       "promptTemplates": "Modelli di Prompt",
       "agents": "Agenti",
       "workflows": "Workflow"
+    },
+    "tabs": {
+      "importExport": "Import/Export",
+      "configSync": "Config Sync"
+    },
+    "importConfirmationTitle": "Import data",
+    "importConfirm": "Import",
+    "importCancel": "Cancel",
+    "clearConversationsConfirmation": "Are you sure you want to delete ALL conversations? This action cannot be undone.",
+    "clearConversationsConfirmationTitle": "Delete all conversations",
+    "clearConfirm": "Delete",
+    "clearCancel": "Cancel",
+    "clearDataFirstConfirm": "I understand",
+    "clearDataSecondConfirmationTitle": "Second confirmation",
+    "clearDataSecondConfirm": "Delete everything"
+  },
+  "provider": {
+    "status": {
+      "errorFetching": "Error fetching models",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "apiKeyRequiredTooltip": "API Key required but none linked/found.",
+    "edit": "Edit",
+    "editAriaLabel": "Edit provider",
+    "delete": "Delete",
+    "deleteAriaLabel": "Delete provider",
+    "apiKeyLabel": "API Key:",
+    "linkedUnnamedKey": "Linked (Unnamed Key)",
+    "linkedKeyMissing": "Linked Key Missing!",
+    "notLinked": "Not Linked",
+    "baseUrlLabel": "Base URL:",
+    "notSet": "Not Set",
+    "autoFetchModelsLabel": "Auto-fetch Models:",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "lastFetched": "Last fetched:",
+    "never": "Never",
+    "fetching": "Fetching...",
+    "fetchFailed": "Fetch Failed",
+    "fetchModelsNow": "Fetch Models Now",
+    "modelEnablement": "Model Enablement ({{enabledCount}} / {{availableCount}} enabled)",
+    "showModels": "Show Models",
+    "hideModels": "Hide Models",
+    "showModelsAria": "Show model list",
+    "hideModelsAria": "Hide model list"
+  },
+  "configSync": {
+    "tabs": {
+      "settings": "Settings",
+      "sync": "Sync"
+    },
+    "title": "Configuration Sync",
+    "description": "Automatically sync your LLMChef configuration with Git repositories",
+    "enabled": {
+      "label": "Enable Configuration Sync",
+      "description": "Enable automatic synchronization of your settings and data with Git repositories"
+    },
+    "repository": {
+      "label": "Sync Repository",
+      "description": "Select the Git repository to sync your configuration with",
+      "placeholder": "Select a repository..."
+    },
+    "autoSync": {
+      "label": "Auto Sync",
+      "description": "Automatically sync configuration changes to the repository"
+    },
+    "interval": {
+      "label": "Sync Interval",
+      "description": "How often to check for configuration changes"
+    },
+    "intervals": {
+      "1min": "1 minute",
+      "5min": "5 minutes",
+      "10min": "10 minutes",
+      "30min": "30 minutes",
+      "1hour": "1 hour"
+    },
+    "settingsSaved": "Configuration sync settings saved successfully",
+    "saveSettings": "Save Settings",
+    "selectedRepo": "Selected Repository",
+    "manualSync": {
+      "title": "Manual Sync",
+      "description": "Manually sync your configuration with the selected repository",
+      "button": "Sync Now"
+    },
+    "status": {
+      "syncing": "Syncing...",
+      "syncingDescription": "Synchronizing configuration with repository",
+      "error": "Sync Error",
+      "ready": "Ready to Sync",
+      "readyDescription": "Configuration is ready to be synchronized"
+    },
+    "importExport": {
+      "title": "Import/Export",
+      "description": "Manually import or export your configuration"
+    },
+    "export": {
+      "button": "Export Config"
+    },
+    "import": {
+      "button": "Import Config"
+    },
+    "exportSuccess": "Configuration exported successfully",
+    "importSuccess": "Configuration imported successfully",
+    "errors": {
+      "noRepoSelected": "Please select a repository first",
+      "syncFailed": "Sync failed: {{error}}",
+      "exportFailed": "Export failed: {{error}}",
+      "importFailed": "Import failed: {{error}}"
+    }
+  },
+  "projectSettings": {
+    "title": "Project Settings: {{name}}",
+    "description": "Configure default settings for this project. Settings inherit from parent projects or global defaults if not set here.",
+    "tabs": {
+      "prompt": "Prompt & Model",
+      "params": "Parameters",
+      "rulesTags": "Rules & Tags",
+      "sync": "Sync",
+      "vfs": "Filesystem"
+    },
+    "cancel": "Cancel",
+    "save": "Save Project Settings"
+  },
+  "marketplace": {
+    "sources": {
+      "deleteTitle": "Delete marketplace source",
+      "deleteConfirm": "Delete",
+      "deleteCancel": "Cancel"
+    },
+    "installed": {
+      "uninstallTitle": "Uninstall item",
+      "uninstallConfirm": "Uninstall",
+      "uninstallCancel": "Cancel"
     }
   }
 }

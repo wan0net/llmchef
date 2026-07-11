@@ -81,7 +81,10 @@
       "branchRequired": "Le nom de la branche est requis (ex: main).",
       "saveFailed": "Le nom du dépôt et l'URL distante sont requis."
     },
-    "noRepos": "Aucun dépôt de synchronisation n'est encore configuré."
+    "noRepos": "Aucun dépôt de synchronisation n'est encore configuré.",
+    "deleteConfirmationTitle": "Delete sync repository",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Cancel"
   },
   "bulkSync": {
     "title": "Synchro Git en masse",
@@ -177,5 +180,11 @@
     "commitButton": "Valider",
     "messageLabel": "Message",
     "messagePlaceholder": "ex: Ajouter la fonctionnalité X"
+  },
+  "credentialDialog": {
+    "title": "Git Authentication",
+    "description": "Enter credentials for {{url}}",
+    "username": "Username",
+    "password": "Password / Token"
   }
 }

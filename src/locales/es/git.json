@@ -81,7 +81,10 @@
       "branchRequired": "El nombre de la rama es obligatorio (ej., main).",
       "saveFailed": "El nombre del repositorio y la URL remota son obligatorios."
     },
-    "noRepos": "Aún no hay repositorios de sincronización configurados."
+    "noRepos": "Aún no hay repositorios de sincronización configurados.",
+    "deleteConfirmationTitle": "Delete sync repository",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Cancel"
   },
   "bulkSync": {
     "title": "Sincronización Git Masiva",
@@ -177,5 +180,11 @@
     "commitButton": "Confirmar",
     "messageLabel": "Mensaje",
     "messagePlaceholder": "ej: Agregar característica X"
+  },
+  "credentialDialog": {
+    "title": "Git Authentication",
+    "description": "Enter credentials for {{url}}",
+    "username": "Username",
+    "password": "Password / Token"
   }
 }

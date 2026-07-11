@@ -3,7 +3,8 @@
     "tabs": {
       "assistant": "Assistant",
       "general": "Général",
-      "providers": "Fournisseurs et Modèles"
+      "providers": "Fournisseurs et Modèles",
+      "theme": "Theme"
     }
   },
   "rulesAndTags": "Règles et Tags",
@@ -126,7 +127,27 @@
     "export": "Exporter",
     "deleteProject": "Supprimer le Projet",
     "deleteConversation": "Supprimer le Chat",
-    "untitled": "Sans titre"
+    "untitled": "Sans titre",
+    "confirmDeleteTitle": "Confirm deletion",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Cancel",
+    "moveConversationPrompt": "Move to project",
+    "moveConversationDescription": "Enter the exact name of the project to move this conversation to.",
+    "moveConversationPlaceholder": "Project name",
+    "move": "Move",
+    "moveConversationEmpty": "Choose a project. Chats cannot live outside a project.",
+    "moveConversationProjectNotFound": "Project \"{{projectName}}\" was not found.",
+    "moveConversationSuccess": "Moved to {{projectName}}.",
+    "newWikiPageTitle": "Wiki page title",
+    "newWikiPagePlaceholder": "Page title",
+    "create": "Create",
+    "newWikiPageSuccess": "Created wiki page in {{projectName}}.",
+    "newWikiPageError": "Failed to create wiki page.",
+    "newFolderTitle": "Folder name",
+    "newFolderDefault": "New folder",
+    "newFolderPlaceholder": "Folder name",
+    "newFolderSuccess": "Created folder in {{projectName}}.",
+    "newFolderError": "Failed to create folder."
   },
   "itemRenderer": {
     "deleteProjectConfirm": "Supprimer le projet \"{{name}}\" et TOUT son contenu (sous-projets et conversations) ? Cette action est irréversible.",
@@ -144,7 +165,13 @@
     "exportConversation": "Exporter la conversation",
     "exportItem": "Exporter {{name}}",
     "delete": "Supprimer",
-    "deleteItem": "Supprimer {{name}}"
+    "deleteItem": "Supprimer {{name}}",
+    "toggleProject": "Toggle project {{name}}",
+    "newWikiPage": "New wiki page",
+    "newWikiPageFor": "New wiki page in {{name}}",
+    "newProjectFolder": "New folder",
+    "newProjectFolderFor": "New folder in {{name}}",
+    "moveConversation": "Move conversation"
   },
   "modelSelector": {
     "selectModel": "Sélectionner un modèle...",

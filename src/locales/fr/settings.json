@@ -64,40 +64,54 @@
     "no": "Non"
   },
   "dataManagement": {
-    "title": "Gestion des Données",
-    "description": "Importez, exportez ou effacez les données de votre application. Utilisez l'import/export complet pour les sauvegardes ou les migrations.",
-    "importConversationsTitle": "Importer des Conversations (Ancien)",
-    "importConversationsDescription": "Importez des conversations à partir d'un fichier JSON précédemment exporté. Ceci n'importe que l'historique des chats.",
-    "importConversationsButton": "Importer depuis un Fichier",
-    "exportConversationsTitle": "Exporter Toutes les Conversations (Ancien)",
-    "exportConversationsDescription": "Exportez toutes vos conversations dans un seul fichier JSON. Ceci n'inclut que l'historique des chats.",
-    "exportConversationsButton": "Tout Exporter en JSON",
-    "fullExportTitle": "Exportation Complète",
-    "fullExportDescription": "Sélectionnez les données à inclure dans votre fichier de sauvegarde complet.",
-    "exportButton": "Exporter la Sauvegarde Complète",
-    "fullImportTitle": "Importation Complète",
-    "fullImportDescription": "Importez un fichier de sauvegarde complet. Cela écrasera les données existantes pour les catégories sélectionnées.",
-    "importButton": "Importer depuis une Sauvegarde",
-    "dangerZoneTitle": "Zone de Danger",
-    "dangerZoneDescription": "Ces actions sont destructrices et ne peuvent pas être annulées. Procédez avec prudence.",
-    "clearAllDataButton": "Effacer Toutes les Données Locales",
-    "importConfirmation": "L'importation de ce fichier ÉCRASERA les données existantes pour les catégories sélectionnées. Êtes-vous sûr de vouloir continuer ?",
-    "clearDataConfirmationTitle": "🚨 ÊTES-VOUS ABSOLUMENT SÛR ? 🚨",
-    "clearDataConfirmationMessage": "Cela supprimera de manière permanente TOUTES les conversations, messages, mods, paramètres, fournisseurs et clés API stockées de votre navigateur. Cette action est irréversible.",
-    "clearDataSecondConfirmation": "DEUXIÈME CONFIRMATION :\n\nVraiment tout supprimer ? Envisagez d'exporter d'abord.",
-    "dataClearedSuccess": "Toutes les données locales ont été effacées. Rechargement de l'application...",
-    "dataClearedError": "Échec de la suppression de toutes les données",
+    "tabs": {
+      "importExport": "Importer/Exporter",
+      "configSync": "Sync Config"
+    },
+    "title": "Data Management",
+    "description": "Import, export, or clear your application data. Use full import/export for backups or migrations.",
+    "importConversationsTitle": "Import Conversations (Legacy)",
+    "importConversationsDescription": "Import conversations from a previously exported JSON file. This only imports chat history.",
+    "importConversationsButton": "Import from File",
+    "exportConversationsTitle": "Export All Conversations (Legacy)",
+    "exportConversationsDescription": "Export all your conversations into a single JSON file. This only includes chat history.",
+    "exportConversationsButton": "Export All to JSON",
+    "fullExportTitle": "Full Export",
+    "fullExportDescription": "Select the data to include in your full backup file.",
+    "exportButton": "Export Full Backup",
+    "fullImportTitle": "Full Import",
+    "fullImportDescription": "Import a full backup file. This will overwrite existing data for selected categories.",
+    "importButton": "Import from Backup",
+    "dangerZoneTitle": "Danger Zone",
+    "dangerZoneDescription": "These actions are destructive and cannot be undone. Proceed with caution.",
+    "clearAllDataButton": "Clear All Local Data",
+    "importConfirmation": "Importing this file will OVERWRITE existing data for the selected categories. Are you sure you want to proceed?",
+    "importConfirmationTitle": "Import data",
+    "importConfirm": "Import",
+    "importCancel": "Cancel",
+    "clearConversationsConfirmation": "Are you sure you want to delete ALL conversations? This action cannot be undone.",
+    "clearConversationsConfirmationTitle": "Delete all conversations",
+    "clearConfirm": "Delete",
+    "clearCancel": "Cancel",
+    "clearDataConfirmationTitle": "🚨 ARE YOU ABSOLUTELY SURE? 🚨",
+    "clearDataConfirmationMessage": "This will permanently delete ALL conversations, messages, mods, settings, providers, and stored API keys from your browser. This action cannot be undone.",
+    "clearDataFirstConfirm": "I understand",
+    "clearDataSecondConfirmationTitle": "Second confirmation",
+    "clearDataSecondConfirmation": "Really delete everything? Consider exporting first.",
+    "clearDataSecondConfirm": "Delete everything",
+    "dataClearedSuccess": "All local data cleared. Reloading the application...",
+    "dataClearedError": "Failed to clear all data",
     "options": {
-      "settings": "Paramètres",
-      "apiKeys": "Clés API",
-      "providerConfigs": "Configurations Fournisseur",
-      "projects": "Projets",
+      "settings": "Settings",
+      "apiKeys": "API Keys",
+      "providerConfigs": "Provider Configs",
+      "projects": "Projects",
       "conversations": "Conversations",
-      "rulesAndTags": "Règles & Tags",
+      "rulesAndTags": "Rules & Tags",
       "mods": "Mods",
-      "syncRepos": "Dépôts Git Sync",
-      "mcpServers": "Serveurs MCP",
-      "promptTemplates": "Modèles de Prompt",
+      "syncRepos": "Git Sync Repos",
+      "mcpServers": "MCP Servers",
+      "promptTemplates": "Prompt Templates",
       "agents": "Agents",
       "workflows": "Workflows"
     }
@@ -138,7 +152,12 @@
     "autoScrollIntervalAriaLabel": "Valeur de l'intervalle de défilement automatique",
     "saving": "Enregistrement...",
     "validating": "Validation...",
-    "saveChanges": "Enregistrer les modifications"
+    "saveChanges": "Enregistrer les modifications",
+    "resetConfirmationTitle": "Reset settings",
+    "resetConfirm": "Reset",
+    "resetCancel": "Cancel",
+    "corsProxyUrlLabel": "CORS Proxy URL",
+    "corsProxyWarning": "Warning: When a CORS proxy is configured, all traffic routed through it — including git operations with personal access tokens — is visible to the proxy operator. Use a proxy you trust."
   },
   "modelSelector": {
     "title": "Sélection du modèle",
@@ -170,12 +189,6 @@
     "newTemplate": "Nouveau modèle",
     "editTemplate": "Modifier : {{name}}",
     "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer ce modèle ?"
-  },
-  "dataManagement": {
-    "tabs": {
-      "importExport": "Importer/Exporter",
-      "configSync": "Sync Config"
-    }
   },
   "configSync": {
     "tabs": {
@@ -240,6 +253,62 @@
       "syncFailed": "Échec de la synchronisation : {{error}}",
       "exportFailed": "Échec de l'exportation : {{error}}",
       "importFailed": "Échec de l'importation : {{error}}"
+    }
+  },
+  "provider": {
+    "status": {
+      "errorFetching": "Error fetching models",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "apiKeyRequiredTooltip": "API Key required but none linked/found.",
+    "edit": "Edit",
+    "editAriaLabel": "Edit provider",
+    "delete": "Delete",
+    "deleteAriaLabel": "Delete provider",
+    "apiKeyLabel": "API Key:",
+    "linkedUnnamedKey": "Linked (Unnamed Key)",
+    "linkedKeyMissing": "Linked Key Missing!",
+    "notLinked": "Not Linked",
+    "baseUrlLabel": "Base URL:",
+    "notSet": "Not Set",
+    "autoFetchModelsLabel": "Auto-fetch Models:",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "lastFetched": "Last fetched:",
+    "never": "Never",
+    "fetching": "Fetching...",
+    "fetchFailed": "Fetch Failed",
+    "fetchModelsNow": "Fetch Models Now",
+    "modelEnablement": "Model Enablement ({{enabledCount}} / {{availableCount}} enabled)",
+    "showModels": "Show Models",
+    "hideModels": "Hide Models",
+    "showModelsAria": "Show model list",
+    "hideModelsAria": "Hide model list"
+  },
+  "projectSettings": {
+    "title": "Project Settings: {{name}}",
+    "description": "Configure default settings for this project. Settings inherit from parent projects or global defaults if not set here.",
+    "tabs": {
+      "prompt": "Prompt & Model",
+      "params": "Parameters",
+      "rulesTags": "Rules & Tags",
+      "sync": "Sync",
+      "vfs": "Filesystem"
+    },
+    "cancel": "Cancel",
+    "save": "Save Project Settings"
+  },
+  "marketplace": {
+    "sources": {
+      "deleteTitle": "Delete marketplace source",
+      "deleteConfirm": "Delete",
+      "deleteCancel": "Cancel"
+    },
+    "installed": {
+      "uninstallTitle": "Uninstall item",
+      "uninstallConfirm": "Uninstall",
+      "uninstallCancel": "Cancel"
     }
   }
 }

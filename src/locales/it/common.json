@@ -126,5 +126,13 @@
     "urlPlaceholder": "https://github.com/user/repo.git",
     "branchPlaceholder": "main (predefinito)",
     "httpsRecommendation": "Raccomandazione: Usa URL HTTPS per una migliore compatibilità del browser e autenticazione (es. https://github.com/user/repo.git)"
-  }
+  },
+  "appName": "LLMChef",
+  "projectsLabel": "Projects",
+  "chatCanvasLabel": "Chat canvas",
+  "loadingWiki": "Loading wiki…",
+  "ok": "OK",
+  "create": "Create",
+  "rename": "Rename",
+  "delete": "Delete"
 }
