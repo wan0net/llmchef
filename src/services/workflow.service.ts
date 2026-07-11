@@ -1321,6 +1321,7 @@ export const WorkflowService = {
       // Finalize the main interaction as failed if it was created
       if (mainInteractionId) {
         const interactionStore = useInteractionStore.getState();
+        interactionStore._removeStreamingId(mainInteractionId);
         const existing = interactionStore.getInteractionById(mainInteractionId);
         if (existing) {
           const errorMessage = error instanceof Error ? error.message : String(error);

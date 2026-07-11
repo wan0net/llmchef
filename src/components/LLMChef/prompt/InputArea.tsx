@@ -20,6 +20,7 @@ import { usePromptInputValueStore } from "@/store/prompt-input-value.store";
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "@/store/settings.store";
 import { usePromptStateStore } from "@/store/prompt.store";
+import { useShallow } from "zustand/react/shallow";
 import { toast } from "sonner";
 import { TextTriggerParserService } from "@/services/text-trigger-parser.service";
 
@@ -62,10 +63,10 @@ export const InputArea = memo(
   const [textareaStyles, setTextareaStyles] = useState<CSSStyleDeclaration | null>(null);
   const setPromptInputValue = usePromptInputValueStore((state) => state.setValue);
   const { textTriggerStartDelimiter, textTriggerEndDelimiter } = useSettingsStore(
-    (state) => ({
+    useShallow((state) => ({
       textTriggerStartDelimiter: state.textTriggerStartDelimiter,
       textTriggerEndDelimiter: state.textTriggerEndDelimiter,
-    })
+    }))
   );
   const textTriggersEnabled = useSettingsStore((state) => state.textTriggersEnabled);
   const currentModelIdFromPromptStore = usePromptStateStore((state) => state.modelId);

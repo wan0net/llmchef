@@ -141,9 +141,11 @@ export async function loadCoreData(
         !conversationsLoaded && "conversations",
         !projectsLoaded && "projects",
       ].filter(Boolean);
-      useUIStateStore.setGlobalError(
-        `Initialization timed out waiting for: ${missing.join(", ")}. Please reload the app.`
-      );
+      useUIStateStore
+        .getState()
+        .setGlobalError(
+          `Initialization timed out waiting for: ${missing.join(", ")}. Please reload the app.`
+        );
       reject(new Error(`Initialization timed out waiting for: ${missing.join(", ")}`));
     }, 30000);
 

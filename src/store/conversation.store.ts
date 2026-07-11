@@ -14,6 +14,11 @@ import {
   syncConversationLogic,
 } from "@/services/sync.service";
 import { ImportExportService } from "@/services/import-export.service";
+import {
+  encryptString,
+  decryptString,
+  type EncryptedString,
+} from "@/lib/llmchef/crypto-utils";
 import { APP_VFS_KEY, SYNC_VFS_KEY } from "@/lib/llmchef/constants";
 import type { fs } from "@zenfs/core";
 import * as VfsOps from "@/lib/llmchef/vfs-operations";
@@ -115,6 +120,62 @@ interface ConversationActions {
   _ensureSyncVfsReady: () => Promise<typeof fs>;
   _unlinkConversationsFromProjects: (projectIds: string[]) => void;
   getRegisteredActionHandlers: () => RegisteredActionHandler[];
+}
+
+function normalizeSyncRepoPassword(value: unknown): string | null {
+  if (typeof value === "string" && value.length > 0) {
+    return value;
+  }
+  return null;
+}
+
+function isEncryptedPassword(value: unknown): value is EncryptedString {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "iv" in value &&
+    "salt" in value &&
+    "ciphertext" in value &&
+    Array.isArray((value as EncryptedString).iv) &&
+    Array.isArray((value as EncryptedString).salt) &&
+    Array.isArray((value as EncryptedString).ciphertext)
+  );
+}
+
+async function encryptSyncRepoPassword(repo: SyncRepo): Promise<SyncRepo> {
+  const clone: SyncRepo = JSON.parse(JSON.stringify(repo));
+  const password = normalizeSyncRepoPassword(clone.password);
+  if (password) {
+    clone.password = (await encryptString(password)) as unknown as string;
+  } else {
+    clone.password = null;
+  }
+  return clone;
+}
+
+async function decryptSyncRepoPassword(repo: SyncRepo): Promise<SyncRepo> {
+  const clone: SyncRepo = JSON.parse(JSON.stringify(repo));
+  if (isEncryptedPassword(clone.password)) {
+    try {
+      clone.password = await decryptString(clone.password);
+    } catch (error) {
+      console.error("[ConversationStore] Failed to decrypt sync repo password:", error);
+      clone.password = null;
+    }
+  } else if (typeof clone.password === "string") {
+    // Backward compatibility: previously encrypted as a JSON string, or old plaintext.
+    try {
+      const parsed = JSON.parse(clone.password) as EncryptedString;
+      if (isEncryptedPassword(parsed)) {
+        clone.password = await decryptString(parsed);
+      }
+    } catch {
+      // Leave plaintext string as-is.
+    }
+  } else {
+    clone.password = null;
+  }
+  return clone;
 }
 
 const SYNC_REPO_BASE_DIR = "/synced_repos";
@@ -600,7 +661,10 @@ export const useConversationStore = create(
       set({ isLoading: true, error: null });
       try {
         const repos = await PersistenceService.loadSyncRepos();
-        set({ syncRepos: repos, isLoading: false });
+        const decryptedRepos = await Promise.all(
+          repos.map((r) => decryptSyncRepoPassword(r))
+        );
+        set({ syncRepos: decryptedRepos, isLoading: false });
         emitter.emit(conversationEvent.syncReposLoaded, { repos });
       } catch (e) {
         console.error("ConversationStore: Error loading sync repos", e);
@@ -623,7 +687,7 @@ export const useConversationStore = create(
         remoteUrl: repoData.remoteUrl,
         branch: repoData.branch || "main",
         username: repoData.username ?? null,
-        password: repoData.password ?? null,
+        password: normalizeSyncRepoPassword(repoData.password),
       };
       set((state) => {
         state.syncRepos.push(newRepo);
@@ -631,8 +695,8 @@ export const useConversationStore = create(
       try {
         const repoToSave = get().syncRepos.find((r) => r.id === newId);
         if (repoToSave) {
-          const plainData = JSON.parse(JSON.stringify(repoToSave));
-          await PersistenceService.saveSyncRepo(plainData);
+          const encryptedRepo = await encryptSyncRepoPassword(repoToSave);
+          await PersistenceService.saveSyncRepo(encryptedRepo);
           emitter.emit(syncEvent.repoChanged, {
             repoId: newId,
             action: "added",
@@ -674,6 +738,10 @@ export const useConversationStore = create(
         if (index !== -1) {
           Object.assign(state.syncRepos[index], {
             ...updates,
+            password:
+              updates.password !== undefined
+                ? normalizeSyncRepoPassword(updates.password)
+                : state.syncRepos[index].password,
             branch: updates.branch || state.syncRepos[index].branch || "main",
             updatedAt: new Date(),
           });
@@ -684,8 +752,8 @@ export const useConversationStore = create(
 
       if (repoToSave) {
         try {
-          const plainData = JSON.parse(JSON.stringify(repoToSave));
-          await PersistenceService.saveSyncRepo(plainData);
+          const encryptedRepo = await encryptSyncRepoPassword(repoToSave);
+          await PersistenceService.saveSyncRepo(encryptedRepo);
           emitter.emit(syncEvent.repoChanged, {
             repoId: id,
             action: "updated",

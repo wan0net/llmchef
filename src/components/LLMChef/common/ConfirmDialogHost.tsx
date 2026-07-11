@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +16,7 @@ import {
 } from "@/services/confirm-dialog.service";
 
 export const ConfirmDialogHost: React.FC = () => {
+  const { t } = useTranslation('common');
   const [requests, setRequests] = useState<ConfirmRequest[]>([]);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export const ConfirmDialogHost: React.FC = () => {
           <AlertDialogCancel
             onClick={() => current && ConfirmDialogService.resolve(current.id, false)}
           >
-            {current?.cancelLabel ?? "Cancel"}
+            {current?.cancelLabel ?? t('cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => current && ConfirmDialogService.resolve(current.id, true)}
@@ -54,7 +56,7 @@ export const ConfirmDialogHost: React.FC = () => {
                 : undefined
             }
           >
-            {current?.confirmLabel ?? "Confirm"}
+            {current?.confirmLabel ?? t('confirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -34,6 +34,7 @@ import { emitter } from "@/lib/llmchef/event-emitter";
 import { conversationEvent } from "@/types/llmchef/events/conversation.events";
 import { uiEvent } from "@/types/llmchef/events/ui.events";
 import { ConfirmDialogService } from "@/services/confirm-dialog.service";
+import { useTranslation } from "react-i18next";
 
 // Helper to get sync icon and tooltip (remains the same)
 const getSyncIndicatorInternal = (
@@ -90,6 +91,7 @@ interface ConversationListControlComponentProps {
 export const ConversationListControlComponent: React.FC<
   ConversationListControlComponentProps
 > = ({ module }) => {
+  const { t } = useTranslation('controls');
   const { conversations, selectedItemId, syncRepos, conversationSyncStatus } =
     useConversationStore(
       useShallow((state) => ({
@@ -124,11 +126,13 @@ export const ConversationListControlComponent: React.FC<
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const conversation = conversations.find((c) => c.id === id);
+    const displayName = conversation?.title || t('conversationList.untitled');
     const confirmed = await ConfirmDialogService.confirm({
-      title: "Delete conversation",
-      description: "Delete this conversation? This cannot be undone.",
-      confirmLabel: "Delete",
-      cancelLabel: "Cancel",
+      title: t('conversationList.confirmDeleteTitle'),
+      description: t('conversationList.confirmDeleteConversation', { itemName: displayName }),
+      confirmLabel: t('conversationList.deleteConfirm'),
+      cancelLabel: t('conversationList.deleteCancel'),
       destructive: true,
     });
     if (confirmed) {
@@ -257,12 +261,12 @@ export const ConversationListControlComponent: React.FC<
                             size="icon"
                             className="h-5 w-5 text-destructive hover:text-destructive/80"
                             onClick={(e) => handleDelete(c.id, e)}
-                            aria-label={`Delete ${c.title || "Untitled"}`}
+                            aria-label={t('itemRenderer.deleteItem', { name: c.title || t('conversationList.untitled') })}
                           >
                             <Trash2Icon className="h-3 w-3" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="top">Delete</TooltipContent>
+                        <TooltipContent side="top">{t('itemRenderer.delete')}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>

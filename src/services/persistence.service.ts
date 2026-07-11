@@ -1,11 +1,6 @@
 // src/services/persistence.service.ts
 // FULL FILE
 import { db } from "@/lib/llmchef/db";
-import {
-  decryptString,
-  encryptString,
-  type EncryptedString,
-} from "@/lib/llmchef/crypto-utils";
 import type { Conversation } from "@/types/llmchef/chat";
 import type { Interaction } from "@/types/llmchef/interaction";
 import type { DbMod } from "@/types/llmchef/modding";
@@ -341,22 +336,7 @@ export class PersistenceService {
   static async loadSyncRepos(): Promise<SyncRepo[]> {
     try {
       const repos = await db.syncRepos.toArray();
-      return await Promise.all(
-        repos.map(async (r) => {
-          const repo = ensureDateFields(r, ["lastPulledAt", "lastPushedAt"]);
-          if (repo.password) {
-            try {
-              const parsed = JSON.parse(repo.password) as EncryptedString;
-              if (parsed.iv && parsed.salt && parsed.ciphertext) {
-                repo.password = await decryptString(parsed);
-              }
-            } catch {
-              // Not encrypted or corrupted; leave as-is for backward compatibility.
-            }
-          }
-          return repo;
-        })
-      );
+      return repos.map((r) => ensureDateFields(r, ["lastPulledAt", "lastPushedAt"]));
     } catch (error) {
       console.error("PersistenceService: Error loading sync repos:", error);
       throw error;
@@ -365,12 +345,7 @@ export class PersistenceService {
 
   static async saveSyncRepo(repo: SyncRepo): Promise<string> {
     try {
-      const repoToSave: SyncRepo = { ...repo };
-      if (repoToSave.password) {
-        const encrypted = await encryptString(repoToSave.password);
-        repoToSave.password = JSON.stringify(encrypted);
-      }
-      return await db.syncRepos.put(repoToSave);
+      return await db.syncRepos.put(repo);
     } catch (error) {
       console.error("PersistenceService: Error saving sync repo:", error);
       throw error;

@@ -231,28 +231,28 @@ export const useSettingsStore = create(
     const createThemeSettingAction = createSettingsSliceActionFactory<ThemeSettings>({
       setState,
       persist: SettingsPersistenceService.saveThemeSettings,
-      persistStateSlice: (partial, persist) => void void persistSettingsSlice(partial, persist),
+      persistStateSlice: (partial, persist) => void persistSettingsSlice(partial, persist),
     });
 
     const createAutoTitleSettingAction =
       createSettingsSliceActionFactory<AutoTitleSettings>({
         setState,
         persist: SettingsPersistenceService.saveAutoTitleSettings,
-        persistStateSlice: (partial, persist) => void void persistSettingsSlice(partial, persist),
+        persistStateSlice: (partial, persist) => void persistSettingsSlice(partial, persist),
       });
 
     const createToolSelectionSettingAction =
       createSettingsSliceActionFactory<ToolSelectionSettings>({
         setState,
         persist: SettingsPersistenceService.saveToolSelectionSettings,
-        persistStateSlice: (partial, persist) => void void persistSettingsSlice(partial, persist),
+        persistStateSlice: (partial, persist) => void persistSettingsSlice(partial, persist),
       });
 
     const createConfigSyncSettingAction =
       createSettingsSliceActionFactory<ConfigSyncSettings>({
         setState,
         persist: SettingsPersistenceService.saveConfigSyncSettings,
-        persistStateSlice: (partial, persist) => void void persistSettingsSlice(partial, persist),
+        persistStateSlice: (partial, persist) => void persistSettingsSlice(partial, persist),
       });
 
     return ({
@@ -306,7 +306,7 @@ export const useSettingsStore = create(
 
     setTheme: (theme) => {
       set({ theme });
-      void void persistSettingsSlice({ theme }, () =>
+      void persistSettingsSlice({ theme }, () =>
         SettingsPersistenceService.saveThemeSettings({ theme }),
       );
       emitter.emit(settingsEvent.themeChanged, { theme });
@@ -687,7 +687,7 @@ export const useSettingsStore = create(
       };
       set(newSettings);
       for (const key of Object.keys(newSettings) as (keyof typeof newSettings)[]) {
-        await void persistSetting(key, newSettings[key] as any);
+        await persistSetting(key, newSettings[key] as any);
       }
       toast.success("General settings have been reset to their defaults.");
     },
@@ -732,7 +732,7 @@ export const useSettingsStore = create(
         "runnableBlocksSecurityModelId",
         "runnableBlocksSecurityPrompt",
       ] as const) {
-        await void persistSetting(key, newSettings[key]);
+        await persistSetting(key, newSettings[key]);
       }
       emitSettingsChangedEntries(autoTitleSettings);
       emitSettingsChangedEntries(toolSelectionSettings);

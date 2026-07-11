@@ -284,7 +284,11 @@
     "showModels": "Show Models",
     "hideModels": "Hide Models",
     "showModelsAria": "Show model list",
-    "hideModelsAria": "Hide model list"
+    "hideModelsAria": "Hide model list",
+    "deleteTitle": "Delete provider",
+    "deleteDescription": "Delete provider \"{{name}}\"?",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Cancel"
   },
   "projectSettings": {
     "title": "Project Settings: {{name}}",
@@ -310,5 +314,13 @@
       "uninstallConfirm": "Uninstall",
       "uninstallCancel": "Cancel"
     }
+  },
+  "mod": {
+    "deleteTitle": "Delete mod",
+    "deleteDescription": "Are you sure you want to delete the mod \"{{name}}\"? This cannot be undone.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Cancel",
+    "deleteAriaLabel": "Delete {{name}}",
+    "enableAriaLabel": "Enable {{name}}"
   }
 }

@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,7 @@ export function useConfirmDialog(): {
   confirm: (options: ConfirmOptions) => Promise<boolean>;
   ConfirmDialog: React.FC;
 } {
+  const { t } = useTranslation('common');
   const [state, setState] = useState<ConfirmState | null>(null);
   const resolveRef = useRef<((value: boolean) => void) | null>(null);
 
@@ -73,7 +75,7 @@ export function useConfirmDialog(): {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleCancel}>
-              {state.cancelLabel ?? "Cancel"}
+              {state.cancelLabel ?? t('cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirm}
@@ -83,13 +85,13 @@ export function useConfirmDialog(): {
                   : undefined
               }
             >
-              {state.confirmLabel ?? "Confirm"}
+              {state.confirmLabel ?? t('confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     );
-  }, [state, handleOpenChange, handleConfirm, handleCancel]);
+  }, [state, handleOpenChange, handleConfirm, handleCancel, t]);
 
   return { confirm, ConfirmDialog };
 }

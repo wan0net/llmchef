@@ -28,8 +28,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useShallow } from "zustand/react/shallow";
 import { useModStore } from "@/store/mod.store";
 import { ConfirmDialogService } from "@/services/confirm-dialog.service";
+import { useTranslation } from "react-i18next";
 
 const SettingsModsComponent: React.FC = () => {
+  const { t } = useTranslation('settings');
   const { loadedMods, addDbMod, updateDbMod, deleteDbMod, dbMods, isLoading } =
     useModStore(
       useShallow((state) => ({
@@ -108,10 +110,10 @@ const SettingsModsComponent: React.FC = () => {
   const handleDeleteMod = useCallback(
     async (mod: DbMod) => {
       const confirmed = await ConfirmDialogService.confirm({
-        title: "Delete mod",
-        description: `Are you sure you want to delete the mod "${mod.name}"? This cannot be undone.`,
-        confirmLabel: "Delete",
-        cancelLabel: "Cancel",
+        title: t('mod.deleteTitle'),
+        description: t('mod.deleteDescription', { name: mod.name }),
+        confirmLabel: t('mod.deleteConfirm'),
+        cancelLabel: t('mod.deleteCancel'),
         destructive: true,
       });
       if (!confirmed) {
@@ -130,7 +132,7 @@ const SettingsModsComponent: React.FC = () => {
         setIsDeleting((prev) => ({ ...prev, [mod.id]: false }));
       }
     },
-    [deleteDbMod],
+    [deleteDbMod, t],
   );
 
   const getModStatus = useCallback(
@@ -322,7 +324,7 @@ const SettingsModsComponent: React.FC = () => {
                             checked={mod.enabled ?? false}
                             onCheckedChange={() => handleToggleEnable(mod)}
                             disabled={isDisabled}
-                            aria-label={`Enable ${mod.name}`}
+                            aria-label={t('mod.enableAriaLabel', { name: mod.name })}
                           />
                           {isModUpdating && (
                             <Loader2 className="h-4 w-4 animate-spin inline-block ml-2" />
@@ -334,7 +336,7 @@ const SettingsModsComponent: React.FC = () => {
                             size="icon"
                             onClick={() => handleDeleteMod(mod)}
                             disabled={isDisabled}
-                            aria-label={`Delete ${mod.name}`}
+                            aria-label={t('mod.deleteAriaLabel', { name: mod.name })}
                             className="text-destructive hover:text-destructive/80"
                           >
                             {isModDeleting ? (

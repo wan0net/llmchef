@@ -134,5 +134,6 @@
   "ok": "OK",
   "create": "Create",
   "rename": "Rename",
-  "delete": "Delete"
+  "delete": "Delete",
+  "confirm": "Confirm"
 }

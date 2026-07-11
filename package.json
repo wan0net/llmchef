@@ -11,10 +11,10 @@
   "scripts": {
     "dev": "vite --host",
     "build": "cross-env VITE_SYSTEM_PROMPT_FILE=system-prompt.txt tsc --noEmit --skipLibCheck && vite build",
-    "build:en": "VITE_APP_LANG=en npm run build",
-    "build:fr": "VITE_APP_LANG=fr npm run build",
+    "build:en": "cross-env VITE_APP_LANG=en npm run build",
+    "build:fr": "cross-env VITE_APP_LANG=fr npm run build",
     "build:all": "npm run build:en && npm run build:fr",
-    "build:pages": "VITE_BASE=/llmchef/ npm run build",
+    "build:pages": "cross-env VITE_BASE=/llmchef/ npm run build",
     "lint": "node scripts/lint-touched.mjs",
     "lint:all": "eslint . --max-warnings=0",
     "fitness:architecture": "node scripts/check-architecture-fitness.mjs",

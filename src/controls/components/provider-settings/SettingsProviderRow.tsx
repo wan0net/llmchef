@@ -12,6 +12,7 @@ import { ProviderRowViewMode } from "./SettingsProviderRowView";
 import { ProviderRowEditMode } from "./SettingsProviderRowEdit";
 import { useProviderStore } from "@/store/provider.store";
 import { ConfirmDialogService } from "@/services/confirm-dialog.service";
+import { useTranslation } from "react-i18next";
 
 export type FetchStatus = "idle" | "fetching" | "error" | "success";
 export interface ProviderRowProps {
@@ -33,6 +34,7 @@ const ProviderRowComponent: React.FC<ProviderRowProps> = ({
   fetchStatus,
   onSelectModelForDetails,
 }) => {
+  const { t } = useTranslation('settings');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -153,10 +155,10 @@ const ProviderRowComponent: React.FC<ProviderRowProps> = ({
 
   const handleDelete = useCallback(async () => {
     const confirmed = await ConfirmDialogService.confirm({
-      title: "Delete provider",
-      description: `Delete provider "${provider.name}"?`,
-      confirmLabel: "Delete",
-      cancelLabel: "Cancel",
+      title: t('provider.deleteTitle'),
+      description: t('provider.deleteDescription', { name: provider.name }),
+      confirmLabel: t('provider.deleteConfirm'),
+      cancelLabel: t('provider.deleteCancel'),
       destructive: true,
     });
     if (confirmed) {
@@ -168,7 +170,7 @@ const ProviderRowComponent: React.FC<ProviderRowProps> = ({
         setIsDeleting(false);
       }
     }
-  }, [onDelete, provider.id, provider.name]);
+  }, [onDelete, provider.id, provider.name, t]);
 
   const handleFetchModels = useCallback(async () => {
     await onFetchModels(provider.id);

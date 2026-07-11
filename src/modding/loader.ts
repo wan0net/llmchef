@@ -58,6 +58,27 @@ const MOD_SOURCE_URL_ALLOWLIST: string[] = [
   "https://gist.githubusercontent.com",
 ];
 
+// Explicit allowlist of callable methods on the mod API surface. Never invoke
+// an arbitrary method name received from a worker message.
+const MOD_API_METHOD_ALLOWLIST = new Set<string>([
+  "registerPromptControl",
+  "registerChatControl",
+  "registerCanvasControl",
+  "registerSelectionControl",
+  "registerBlockRenderer",
+  "registerRule",
+  "registerTool",
+  "on",
+  "emit",
+  "addMiddleware",
+  "registerSettingsTab",
+  "getContextSnapshot",
+  "showToast",
+  "log",
+  "registerModalProvider",
+  "getVfsInstance",
+]);
+
 function isAllowedModSourceUrl(urlString: string): boolean {
   try {
     const url = new URL(urlString);
@@ -143,6 +164,9 @@ async function executeModInWorker(
               const result = await modApi.registerTool(toolName, definition, wrapperImplementation as any);
               worker.postMessage({ type: "apiCallResult", callId, result });
             } else {
+              if (!MOD_API_METHOD_ALLOWLIST.has(method)) {
+                throw new Error(`Disallowed mod API method: ${method}`);
+              }
               const methodFn = (modApi as any)[method];
               if (typeof methodFn !== "function") {
                 throw new Error(`Unknown mod API method: ${method}`);
@@ -223,6 +247,11 @@ export async function loadMods(dbMods: DbMod[]): Promise<ModInstance[]> {
                 `Mod source URL is not on the allowlist: ${mod.sourceUrl}`
               );
             }
+            if (!mod.integrity) {
+              throw new Error(
+                `Remote mod "${mod.name}" is missing a Subresource Integrity (integrity) hash. Execution rejected.`
+              );
+            }
             const sourceUrl = assertAllowedOutboundUrl(
               mod.sourceUrl,
               `mod:script:${mod.name}`,
@@ -234,15 +263,13 @@ export async function loadMods(dbMods: DbMod[]): Promise<ModInstance[]> {
               );
             }
             scriptContent = await response.text();
-            if (mod.integrity) {
-              const valid = await verifySubresourceIntegrity(scriptContent, mod.integrity);
-              if (!valid) {
-                throw new Error(
-                  `Mod script integrity check failed for ${mod.name}. The fetched script does not match the configured SRI hash.`
-                );
-              }
-              console.log(`[ModLoader] SRI verified for ${mod.name}`);
+            const valid = await verifySubresourceIntegrity(scriptContent, mod.integrity);
+            if (!valid) {
+              throw new Error(
+                `Mod script integrity check failed for ${mod.name}. The fetched script does not match the configured SRI hash.`
+              );
             }
+            console.log(`[ModLoader] SRI verified for ${mod.name}`);
             console.log(
               `[ModLoader] Successfully fetched script for ${mod.name}`
             );

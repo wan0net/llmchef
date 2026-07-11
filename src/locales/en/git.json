@@ -64,7 +64,7 @@
       "branchPlaceholder": "main",
       "authTitle": "Authentication (Optional - Basic Auth/Token)",
       "securityWarningTitle": "Security Warning",
-      "securityWarningDescription": "Storing credentials directly is insecure. Use a Personal Access Token (PAT) as the password if possible. Credentials are required only for private repositories.",
+      "securityWarningDescription": "Storing credentials directly is insecure. Use a Personal Access Token (PAT) as the password if possible. Credentials are required only for private repositories. All git credentials are forwarded through your configured CORS proxy; only use a proxy you trust and control.",
       "usernameLabel": "Username",
       "usernamePlaceholder": "Git Username (Optional)",
       "passwordLabel": "Password / Token",

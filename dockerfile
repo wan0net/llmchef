@@ -1,4 +1,4 @@
-FROM lipanski/docker-static-website@sha256:2b9b48d80d4c5c1b5c9c4a8e7d6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f
+FROM lipanski/docker-static-website@sha256:66a530684a934a9b94f65a90f286cba291a7daf4dd7d55dcc17f217915056cd5
 
 # Copy the built application files
 COPY dist/ .
