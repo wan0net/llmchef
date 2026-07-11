@@ -4,6 +4,8 @@ Full-repository review covering security, bugs, implementation issues, usability
 
 **Update (2026-07-11):** All 80 round-1 findings were re-verified against commit `38d3f462` ("Implement all FABLE improvements"). Each finding now carries a **Status** line. The verification also surfaced 13 new issues introduced or left by the fix commit — see [Round 2 Findings](#round-2-findings-post-fix-verification).
 
+**Update 2 (2026-07-11, commit `da0d005f`):** All round-2 findings and previously partial/unfixed round-1 items were re-verified. Everything is now resolved except two residuals tracked in [Round 3 Findings](#round-3-findings): SEC-18 (encryption key baked into client bundle) and STORE-17 (one leftover `void void`).
+
 ## Summary
 
 | Category | Prefix | Findings | Critical | High | Medium | Low |
@@ -15,16 +17,14 @@ Full-repository review covering security, bugs, implementation issues, usability
 | Infra / Config | INFRA | 20 | 0 | 8 | 9 | 3 |
 | **Total** | | **80** | **4** | **30** | **36** | **10** |
 
-## Verification Summary (commit `38d3f462`)
+## Verification Summary
 
-| Category | ✅ Fixed | 🟡 Partial | ❌ Not fixed | New round-2 issues |
+| Round | Commit | ✅ Fixed | 🟡 Partial | ❌ Not fixed |
 |---|---|---|---|---|
-| Security | 10 | 2 (SEC-2, SEC-7) | 1 (SEC-9) | 4 (SEC-14…17) |
-| Stores & Events | 15 | 0 | 0 | 2 (STORE-16…17) |
-| Services & Lib | 15 | 2 (SVC-4, SVC-8) | 0 | 2 (SVC-18…19) |
-| UI / UX | 14 | 1 (UI-3) | 0 | 5 (UI-16…20) |
-| Infra / Config | 19 | 1 (INFRA-13) | 0 | 2 (INFRA-21…22) |
-| **Total** | **73** | **6** | **1** | **15** |
+| 1 → 2 (80 findings) | `38d3f462` | 73 | 6 (SEC-2, SEC-7, SVC-4, SVC-8, UI-3, INFRA-13) | 1 (SEC-9) |
+| 2 → 3 (15 + 7 reopened) | `da0d005f` | 20 | 2 (SEC-9→SEC-18, STORE-17) | 0 |
+
+**Open items:** SEC-18 (bundled encryption passphrase), STORE-17 residual (`settings.store.ts:476`).
 
 ---
 
@@ -40,7 +40,7 @@ Full-repository review covering security, bugs, implementation issues, usability
 - **File:** `src/modding/loader.ts:29-33`
 - **Issue:** `assertAllowedOutboundUrl` is called without an `allowedHosts` argument, so a mod's `sourceUrl` may point to any HTTP/S origin, and the fetched script executes in the main page context. A compromised CDN or DNS hijack yields immediate code execution in the app.
 - **Fix:** Require mods to declare a pinned CDN host checked against an explicit allowlist, and enforce Subresource Integrity (SRI) verification on the fetched script before execution.
-- **Status (verified against `38d3f462`):** 🟡 Partial — Origin allowlist (jsdelivr/unpkg/raw.githubusercontent/gist) enforced in `loader.ts:54-73`, but SRI verification only runs `if (mod.integrity)` — mods without an integrity field execute unverified. Tracked as SEC-15.
+- **Status (verified against `da0d005f`):** ✅ Fixed — Origin allowlist enforced and SRI is now mandatory: `loader.ts:250-253` rejects execution of any remote mod missing an `integrity` hash; `loader.ts:266-270` verifies the fetched script against it.
 
 ### SEC-3 — security (high)
 - **File:** `src-tauri/tauri.conf.json:25`
@@ -70,7 +70,7 @@ Full-repository review covering security, bugs, implementation issues, usability
 - **File:** `src/lib/llmchef/vfs-git-operation-options.ts:30`
 - **Issue:** When `corsProxyUrl` is configured, all git traffic — including `Authorization` headers carrying personal access tokens — routes through the third-party proxy. A malicious proxy silently harvests every git credential.
 - **Fix:** Warn prominently in the CORS proxy settings UI that the proxy receives git tokens; consider excluding authenticated git operations from proxy routing.
-- **Status (verified against `38d3f462`):** 🟡 Partial — A destructive `<Alert>` warning was added to `SettingsGitSyncRepos.tsx:284-290`, but it only warns about storing credentials — it never mentions CORS-proxy forwarding. Tracked as SEC-17.
+- **Status (verified against `da0d005f`):** ✅ Fixed — `git.json` `securityWarningDescription` now explicitly states: "All git credentials are forwarded through your configured CORS proxy; only use a proxy you trust and control."
 
 ### SEC-8 — security (medium)
 - **File:** `src/lib/llmchef/vfs-git-browser-runtime.ts:32`
@@ -82,7 +82,7 @@ Full-repository review covering security, bugs, implementation issues, usability
 - **File:** `src/store/conversation.store.ts:631`, `src/controls/components/git-settings/SettingsGitSyncRepos.tsx:55`
 - **Issue:** Git repository passwords/tokens are persisted as plain text in the `syncRepos` table in IndexedDB. Any same-origin script — including loaded mods — can read every stored token.
 - **Fix:** Encrypt the `password` field at rest via Web Crypto (AES-GCM with a passphrase-derived key) and zero it in memory after use.
-- **Status (verified against `38d3f462`):** ❌ Not fixed — `conversation.store.ts:626,635` still stores `password` as plaintext and persists the plain object to the IndexedDB `syncRepos` table; no encryption layer was added.
+- **Status (verified against `da0d005f`):** 🟡 Partial — Passwords are now AES-GCM encrypted before persistence (`conversation.store.ts:145-176`, `crypto-utils.ts` with PBKDF2/100k iterations, per-record salt+IV, and legacy-format migration). However the key derives from a passphrase baked into the client bundle (`VITE_SYNC_REPO_PASSPHRASE` defaulting to a hardcoded constant), so any same-origin script can decrypt — this is obfuscation, not true encryption at rest. Tracked as SEC-18.
 
 ### SEC-10 — security (medium)
 - **File:** `docker/nginx.conf:1-33`
@@ -228,7 +228,7 @@ Full-repository review covering security, bugs, implementation issues, usability
 - **File:** `src/services/workflow.service.ts:1309-1313`
 - **Issue:** `handleWorkflowConversion`'s catch only logs. The `mainInteraction` was already added with status `"STREAMING"` and saved; the error path never finalizes it, so it remains stuck streaming forever with no way to dismiss or abort.
 - **Fix:** On error, set the interaction to `"ERROR"`, remove it from `streamingInteractionIds`, persist, and emit `workflowEvent.error`.
-- **Status (verified against `38d3f462`):** 🟡 Partial — The catch now sets ERROR, persists, and emits `interactionEvent.completed` (`workflow.service.ts:1316-1356`) — but `_removeStreamingId(mainInteractionId)` is never called and the global completed-listener early-returns for non-step interactions, so the UI can still show it as streaming. Tracked as SVC-19.
+- **Status (verified against `da0d005f`):** ✅ Fixed — the conversion error path now calls `interactionStore._removeStreamingId(mainInteractionId)` before finalizing as ERROR (`workflow.service.ts:1324`).
 
 ### SVC-5 — bug (high)
 - **File:** `src/store/conversation.store.ts:436-437`
@@ -252,7 +252,7 @@ Full-repository review covering security, bugs, implementation issues, usability
 - **File:** `src/lib/llmchef/initialization.ts:116-163`
 - **Issue:** `loadCoreData` awaits a Promise resolved only when 5 specific events fire. If any event never fires (error in a store action, swallowed async exception), the Promise hangs forever and app initialization blocks with no timeout or fallback.
 - **Fix:** Add a master timeout (e.g., 30 s) that rejects and surfaces "Initialization timed out" via `useUIStateStore.setGlobalError(...)`.
-- **Status (verified against `38d3f462`):** 🟡 Partial — A 30 s timeout was added (`initialization.ts:136-148`) but its handler calls `useUIStateStore.setGlobalError(...)` instead of `useUIStateStore.getState().setGlobalError(...)` — a TypeError that prevents both the banner and the `reject`. Tracked as SVC-18.
+- **Status (verified against `da0d005f`):** ✅ Fixed — the timeout handler now uses `useUIStateStore.getState().setGlobalError(...)` and reports which items were missing (`initialization.ts:144-149`).
 
 ### SVC-9 — bug (high)
 - **File:** `src/lib/llmchef/vfs-git-operations.ts:344-346`
@@ -328,7 +328,7 @@ Full-repository review covering security, bugs, implementation issues, usability
 - **File:** `src/components/LLMChef/prompt/InputArea.tsx:64, 81`
 - **Issue:** `useSettingsStore()` and `useControlRegistryStore()` subscribe to entire stores without selectors; since InputArea re-renders every keystroke, any setting or control-registration change re-renders the compose area — including during streaming.
 - **Fix:** Use selector-scoped subscriptions (`useShallow`) extracting only the fields InputArea actually uses.
-- **Status (verified against `38d3f462`):** 🟡 Partial — The settings subscription was narrowed to two fields but uses an inline object selector **without `useShallow`** (`InputArea.tsx:64-69`), so it still returns a new object every render and re-renders on any settings change. Tracked as UI-20.
+- **Status (verified against `da0d005f`):** ✅ Fixed — the settings selector is now wrapped in `useShallow` (`InputArea.tsx:23,66`).
 
 ### UI-4 — accessibility (high)
 - **File:** `src/controls/components/conversation-list/ItemRenderer.tsx:238-251`
@@ -482,7 +482,7 @@ Full-repository review covering security, bugs, implementation issues, usability
 - **File:** `dockerfile:1`
 - **Issue:** Image pinned to `lipinski/docker-static-website:latest` — an unversioned third-party base that can silently change; no HEALTHCHECK defined.
 - **Fix:** Pin to a specific digest and add `HEALTHCHECK CMD wget -qO- http://localhost:3000/ || exit 1`.
-- **Status (verified against `38d3f462`):** 🟡 Partial — HEALTHCHECK added and image digest-pinned, but the digest (`...7d6f5e4d3c2b1a0f...`) is a synthetic sequential pattern, not a real published digest — pulls will fail and the pin gives false security. Tracked as INFRA-22.
+- **Status (verified against `da0d005f`):** ✅ Fixed — dockerfile now pins `lipanski/docker-static-website@sha256:66a53068...` (digest confirmed live against Docker Hub registry, HTTP 200) with a HEALTHCHECK.
 
 ### INFRA-14 — implementation (medium)
 - **File:** `tsconfig.app.json:31-37`
@@ -536,82 +536,111 @@ New issues introduced by, or remaining after, fix commit `38d3f462`.
 - **File:** `src/modding/loader.ts:146-150`
 - **Issue:** The new mod Worker→main-thread API dispatch uses `(modApi as any)[method]` where `method` is an arbitrary string from the worker message, with no allowlist of callable method names. A compromised mod can invoke any method — including prototype-inherited ones — on `modApi`, which reaches all major Zustand stores (conversations, settings, providers, VFS).
 - **Fix:** Maintain an explicit `Set<string>` of allowed method names and throw for any call outside it; never use dynamic property access on `modApi` from untrusted postMessage data.
+- **Status (verified against `da0d005f`):** ✅ Fixed — `MOD_API_METHOD_ALLOWLIST` (`loader.ts:63-80`) enumerates the 15 callable mod API methods; dynamic worker-supplied method names outside the set are rejected.
 
 ### SEC-15 — security (medium)
 - **File:** `src/modding/loader.ts:237`
 - **Issue:** SRI verification only runs `if (mod.integrity)`. A mod record without an `integrity` field silently skips hash verification and executes whatever the allowlisted CDN returns — a compromised package on jsDelivr/unpkg still yields code execution. (Follow-up to SEC-2.)
 - **Fix:** Require `integrity` for all remote-sourced mods; reject execution (not just warn) when `sourceUrl` is set but `integrity` is absent.
+- **Status (verified against `da0d005f`):** ✅ Fixed — remote mods without an `integrity` field are rejected outright (`loader.ts:250-253`).
 
 ### SEC-16 — security (medium)
 - **File:** `src-tauri/tauri.conf.json:25`, `docker/nginx.conf:11`
 - **Issue:** Both new CSPs include `'unsafe-eval'` in `script-src`, allowing `eval()`/`new Function()` in page context and largely defeating the XSS protection the CSP is meant to provide. (Follow-up to SEC-3/SEC-10.)
 - **Fix:** Test whether Pyodide is satisfied by the already-present `'wasm-unsafe-eval'` and drop `'unsafe-eval'`; the docker-served SPA almost certainly doesn't need it.
+- **Status (verified against `da0d005f`):** ✅ Fixed — `'unsafe-eval'` removed from both CSPs; only `'wasm-unsafe-eval'` (needed for Pyodide) remains in `script-src`.
 
 ### SEC-17 — security (low)
 - **File:** `src/controls/components/git-settings/SettingsGitSyncRepos.tsx:284-290`, `src/locales/en/git.json:67`
 - **Issue:** The new credentials warning only says storing credentials is insecure; it never discloses that the configured CORS proxy receives git credentials on every proxied request. (Follow-up to SEC-7.)
 - **Fix:** Extend the warning: "All git credentials are forwarded through your configured CORS proxy; only use a proxy you trust and control."
+- **Status (verified against `da0d005f`):** ✅ Fixed — warning text extended with the CORS-proxy credential-forwarding disclosure (`git.json:67`, synced to de/es/fr/it).
 
 ### STORE-16 — bug (medium)
 - **File:** `src/store/settings.store.ts:690, 735`
 - **Issue:** `await void persistSetting(...)` — `void` discards the promise, so `await undefined` resolves immediately. The reset loops in `resetGeneralSettings`/`resetAssistantSettings` intend sequential persistence but fire everything untracked and return before any write completes.
 - **Fix:** Change both to `await persistSetting(...)`.
+- **Status (verified against `da0d005f`):** ✅ Fixed — both reset loops now use plain `await persistSetting(...)`.
 
 ### STORE-17 — implementation (low)
 - **File:** `src/store/settings.store.ts:234, 241, 248, 255, 309`
 - **Issue:** `void void persistSettingsSlice(...)` — double `void` is harmless but meaningless and inconsistent with every other call-site.
 - **Fix:** Remove the redundant second `void` at all five occurrences.
+- **Status (verified against `da0d005f`):** 🟡 Partial — the five original occurrences were cleaned up, but one `void void persistSettingsSlice(...)` remains at `settings.store.ts:476` (`setCustomThemeColor`).
 
 ### SVC-18 — bug (high)
 - **File:** `src/lib/llmchef/initialization.ts:144`
 - **Issue:** The new 30 s init-timeout handler calls `useUIStateStore.setGlobalError(...)` directly on the hook function, which is `undefined` — a `TypeError` when the timeout fires, so neither the error banner nor the `reject(...)` on the next line ever executes. (Follow-up to SVC-8.)
 - **Fix:** Use `useUIStateStore.getState().setGlobalError(...)`, matching `initialization.ts:377-379`.
+- **Status (verified against `da0d005f`):** ✅ Fixed — handler now calls `useUIStateStore.getState().setGlobalError(...)` (`initialization.ts:144-149`).
 
 ### SVC-19 — bug (medium)
 - **File:** `src/services/workflow.service.ts:1316-1356, 2158-2163`
 - **Issue:** The new workflow-conversion error path sets ERROR and emits `interactionEvent.completed`, but never calls `interactionStore._removeStreamingId(mainInteractionId)`, and the global completed-listener early-returns for non-step interactions — so `streamingInteractionIds` retains the ID and the UI stays in streaming state. (Follow-up to SVC-4.)
 - **Fix:** Call `_removeStreamingId(mainInteractionId)` in the catch block before persisting/emitting.
+- **Status (verified against `da0d005f`):** ✅ Fixed — `_removeStreamingId(mainInteractionId)` called in the conversion error path (`workflow.service.ts:1324`).
 
 ### UI-16 — ui (medium)
 - **File:** `src/components/LLMChef/chat/control/ConversationOnlyList.tsx:128-131, 260, 265`
 - **Issue:** The `window.confirm` replacement calls `ConfirmDialogService.confirm()` with hardcoded English (`"Delete conversation"`, `"Delete this conversation? This cannot be undone."`, `"Delete"`, `"Cancel"`); the delete button aria-label and tooltip are hardcoded too.
 - **Fix:** Use `useTranslation('controls')` with the existing `conversationList.*`/`itemRenderer.deleteItem` keys.
+- **Status (verified against `da0d005f`):** ✅ Fixed — `ConversationOnlyList.tsx` now uses `useTranslation('controls')` with `conversationList.*` keys for the confirm dialog, aria-label, and tooltip.
 
 ### UI-17 — ui (medium)
 - **File:** `src/controls/components/mod-settings/SettingsMods.tsx:110-114, 337`
 - **Issue:** `ConfirmDialogService.confirm()` called with hardcoded `"Delete mod"`/`"Delete"`/`"Cancel"`; `aria-label={`Delete ${mod.name}`}` hardcoded.
 - **Fix:** Translate via `t()` with new keys in the appropriate namespace.
+- **Status (verified against `da0d005f`):** ✅ Fixed — SettingsMods confirm dialog and aria-labels translated; no hardcoded delete strings remain.
 
 ### UI-18 — ui (medium)
 - **File:** `src/controls/components/provider-settings/SettingsProviderRow.tsx:156-159`
 - **Issue:** `ConfirmDialogService.confirm()` called with hardcoded `"Delete provider"`, `` `Delete provider "${provider.name}"?` ``, `"Delete"`, `"Cancel"`.
 - **Fix:** Use the existing `useTranslation('settings')` with new `provider.deleteTitle`/`provider.deleteDescription` keys.
+- **Status (verified against `da0d005f`):** ✅ Fixed — SettingsProviderRow confirm dialog translated; no hardcoded delete strings remain.
 
 ### UI-19 — ui (low)
 - **File:** `src/hooks/useConfirmDialog.tsx:~70,78`, `src/components/LLMChef/common/ConfirmDialogHost.tsx:47,57`
 - **Issue:** When callers omit labels, the confirm-dialog infrastructure falls back to hardcoded English `"Cancel"`/`"Confirm"`.
 - **Fix:** Derive fallbacks from `useTranslation` inside the hook/host.
+- **Status (verified against `da0d005f`):** ✅ Fixed — both `useConfirmDialog.tsx` and `ConfirmDialogHost.tsx` derive fallbacks from `useTranslation('common')` (`t('cancel')`/`t('confirm')`).
 
 ### UI-20 — bug (medium)
 - **File:** `src/components/LLMChef/prompt/InputArea.tsx:64-69`
 - **Issue:** The narrowed settings subscription returns an inline object `{ textTriggerStartDelimiter, textTriggerEndDelimiter }` without `useShallow`, so `Object.is` fails every render and InputArea still re-renders on any settings-store change. (Follow-up to UI-3.)
 - **Fix:** Wrap the selector in `useShallow(...)` from `zustand/react/shallow`.
+- **Status (verified against `da0d005f`):** ✅ Fixed — selector wrapped in `useShallow` (`InputArea.tsx:23,66`).
 
 ### INFRA-21 — bug (medium)
 - **File:** `package.json:14-17, 35`
 - **Issue:** `build:en`, `build:fr`, `build:pages`, and `deploy` still use bare Unix env-var syntax (`VITE_APP_LANG=en npm run build`) without `cross-env` — Windows-incompatible. (Follow-up to INFRA-3.)
 - **Fix:** Prefix each with `cross-env`.
+- **Status (verified against `da0d005f`):** ✅ Fixed — `build:en`, `build:fr`, `build:pages` now use `cross-env`; `deploy` composes npm scripts only.
 
 ### INFRA-22 — security (high)
 - **File:** `dockerfile:1`
 - **Issue:** The new digest pin `sha256:2b9b48d80d4c5c1b5c9c4a8e7d6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f` is a fabricated sequential-pattern hash, not a real published digest — pulls will fail and the pin provides false supply-chain security. (Follow-up to INFRA-13.)
 - **Fix:** `docker pull lipanski/docker-static-website:latest` and replace with the real digest from `docker inspect --format='{{index .RepoDigests 0}}'`.
+- **Status (verified against `da0d005f`):** ✅ Fixed — real manifest-list digest `sha256:66a53068...` now pinned; verified to exist on Docker Hub (registry manifest fetch returns 200).
+
+---
+
+## Round 3 Findings
+
+### SEC-18 — security (medium)
+- **File:** `src/lib/llmchef/crypto-utils.ts:4-6`
+- **Issue:** The SEC-9 fix encrypts sync-repo passwords with AES-GCM, but the key derives from `VITE_SYNC_REPO_PASSPHRASE` — a build-time constant baked into the shipped JS bundle (defaulting to `"llmchef-default-sync-repo-passphrase-change-me"`). Anyone who can read IndexedDB can also read the bundle and derive the key, so this is obfuscation rather than genuine encryption at rest.
+- **Fix:** Derive the key from a user-supplied passphrase prompted at unlock time (never persisted), or from a non-extractable CryptoKey stored via `crypto.subtle` in IndexedDB with `extractable: false`; treat the env-var path as a deployment-specific hardening option only.
+- **Status:** ❌ Open.
+
+### STORE-17 (residual) — implementation (low)
+- **File:** `src/store/settings.store.ts:476`
+- **Issue:** One `void void persistSettingsSlice(...)` was missed in the STORE-17 cleanup (`setCustomThemeColor`).
+- **Fix:** Remove the redundant second `void`.
+- **Status:** ❌ Open.
 
 ---
 
 ## Remaining Work
 
-1. **SEC-9** — encrypt git sync-repo passwords at rest in IndexedDB (only round-1 finding not addressed).
-2. **High severity round-2:** SEC-14 (mod bridge method allowlist), SVC-18 (broken init-timeout handler), INFRA-22 (fabricated docker digest).
-3. **Medium:** SEC-15, SEC-16, STORE-16, SVC-19, UI-16…18, UI-20, INFRA-21.
-4. **Low:** SEC-17, STORE-17, UI-19.
+1. **SEC-18** — replace the bundled default passphrase with a user-derived or non-extractable key (only substantive open item).
+2. **STORE-17 residual** — one-line cleanup at `settings.store.ts:476`.
